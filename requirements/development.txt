@@ -1,0 +1,5 @@
+-r base.txt
+
+
+# Useful debugging tools
+django-debug-toolbar<2.0
