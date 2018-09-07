@@ -3,15 +3,6 @@
 CONTAINER_NAME = ethicaladserver
 CONTAINER_ENVS = .envs/production.env
 
-OS = $(shell uname)
-
-ifeq ($(OS), Darwin)
-	export LANG = en_US.UTF-8
-else
-	export LANG = c.UTF-8
-endif
-
-
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  test           Run the full test suite"
