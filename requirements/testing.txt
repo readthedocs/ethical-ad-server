@@ -1,5 +1,4 @@
--r base.txt
+-r development.txt
 
 
 tox<4.0
-flake8<4.0

@@ -5,6 +5,9 @@ Ethical Ad Server
 The Ethical Ad Server is an advertising server without all the tracking.
 It is created by Read the Docs to serve the ads on Read the Docs.
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/ambv/black
+
 
 Features
 --------
@@ -28,7 +31,8 @@ To setup your environment and run a local development server::
     $ npm install
     $ npm run build
     $ pip install -r requirements/development.txt
-    $ python3 manage.py runserver     # This server runs on Python 3.6+
+    $ pre-commit install            # Install a code style pre-commit hook
+    $ python3 manage.py runserver   # This server runs on Python 3.6+
 
 To run the unit tests::
 

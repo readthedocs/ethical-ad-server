@@ -5,6 +5,6 @@ from django.shortcuts import render
 
 @login_required
 def dashboard(request):
-    return render(request, 'adserver/dashboard.html', {
-        'version': settings.ADSERVER_VERSION,
-    })
+    return render(
+        request, "adserver/dashboard.html", {"version": settings.ADSERVER_VERSION}
+    )
