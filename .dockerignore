@@ -1,0 +1,12 @@
+.git
+
+# Make absolutely sure production settings never get into Docker
+.envs
+
+# Don't put the static sources into the container
+assets/src
+
+# Django & Python ignores
+**/*.sqlite3
+**/*.pyc
+**/__pycache__

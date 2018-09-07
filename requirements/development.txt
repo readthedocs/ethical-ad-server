@@ -1,0 +1,11 @@
+-r base.txt
+
+
+# Useful debugging tools
+django-debug-toolbar<2.0
+
+# Code formatter
+black==18.6b4
+
+# For running the black code formatter before commits
+pre-commit<2.0

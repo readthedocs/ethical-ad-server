@@ -1,0 +1,7 @@
+{# Error messages for the bootstrap4 crispy forms template pack #}
+
+{% if form.non_field_errors %}
+  {% for error in form.non_field_errors %}
+    <div class="alert alert-block alert-danger">{{ error }}</div>
+  {% endfor %}
+{% endif %}

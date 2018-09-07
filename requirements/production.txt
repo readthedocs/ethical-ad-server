@@ -1,0 +1,10 @@
+-r base.txt
+
+# Gunicorn is the WSGI server used to run Django
+gunicorn==19.9.0
+
+# Database driver
+psycopg2==2.7.5
+
+# Reading Django environment variables in production
+django-environ<0.5
