@@ -8,6 +8,8 @@ It is created by Read the Docs to serve the ads on Read the Docs.
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
+.. image:: https://circleci.com/gh/rtfd/ethical-ad-server.svg?style=svg&circle-token=1a62029aff2165c86af383a1951509259136f0f3
+    :target: https://circleci.com/gh/rtfd/ethical-ad-server
 
 Features
 --------
