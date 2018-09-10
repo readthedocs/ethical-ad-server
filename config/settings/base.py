@@ -202,7 +202,13 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 # Ad server specific settings
 ############################################################################
 
+# The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
+
+# Whether Do Not Track is enabled for the ad server
+ADSERVER_DO_NOT_TRACK = False
+
+ADSERVER_PRIVACY_POLICY_URL = None
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
