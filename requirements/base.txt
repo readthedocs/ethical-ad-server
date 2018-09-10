@@ -7,3 +7,7 @@ whitenoise==4.0
 
 # Form helpers
 django-crispy-forms==1.7.2
+
+# Reading Django environment variables in production
+# Needed in the base requirements to lint settings/production.py
+django-environ<0.5

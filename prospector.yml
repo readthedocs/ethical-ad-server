@@ -1,0 +1,37 @@
+strictness: medium
+
+test-warnings: true
+doc-warnings: true
+
+uses:
+  - django
+  - celery
+
+ignore-paths:
+  - docs/
+  - node_modules
+  - manage.py
+
+ignore-patterns:
+  - /migrations/
+
+pep8:
+  # All issues of style are handled by Black
+  none: true
+
+pylint:
+  options:
+    docstring-min-length: 20
+    dummy-variables-rgx: '_$|__$|dummy'
+
+mccabe:
+  run: true
+
+pep257:
+  run: true
+  disable:
+    - D212  # Multi-line docstring summary should start at the first line
+
+pyflakes:
+  disable:
+    - F999  # Disabled for "import *" in config/settings
