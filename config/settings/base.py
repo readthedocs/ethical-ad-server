@@ -38,8 +38,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
     "crispy_forms",
     "adserver",
+    "adserver.auth",
 ]
 
 MIDDLEWARE = [
@@ -52,6 +57,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+AUTH_USER_MODEL = "adserver_auth.User"
 
 ROOT_URLCONF = "config.urls"
 
@@ -75,6 +86,8 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"  # This URL has login_required
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+SITE_ID = 1  # Required for allauth
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -197,6 +210,15 @@ LOGGING = {
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+# Django allauth
+# https://django-allauth.readthedocs.io
+
+ACCOUNT_ADAPTER = "adserver.auth.adapters.AdServerAccountAdapter"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 ############################################################################
 # Ad server specific settings

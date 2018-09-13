@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+
+{% block title %}{% block head_title %}{% trans 'Log in' %}{% endblock head_title %}{% endblock title %}
+{% block body_classes %}account-authentication{% endblock body_classes %}
+
+{% block body_content %}
+<main role="main">
+  <div class="container mt-4">
+
+    <div class="row justify-content-center align-items-center">
+      <div class="col-12 col-sm-8 col-md-6">
+        <div class="card">
+
+          <div class="card-body">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags}}{% endif %}{% endif %}" role="alert">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock content %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+{% endblock body_content %}

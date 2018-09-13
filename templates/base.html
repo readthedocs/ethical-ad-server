@@ -3,7 +3,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -11,9 +10,9 @@
 
     <title>{% block title %}{% endblock title %} &middot; {% trans 'Ethical Ad Server' %}</title>
   </head>
-  <body class="{% block body-classes %}{% endblock body-classes %}">
+  <body class="{% block body_classes %}{% endblock body_classes %}">
 
-    {% block content %}{% endblock content %}
+    {% block body_content %}{% endblock body_content %}
 
     <script src="{% static 'bundle.js' %}" ></script>
   </body>

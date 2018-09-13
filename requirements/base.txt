@@ -7,3 +7,6 @@ whitenoise==4.0
 
 # Form helpers
 django-crispy-forms==1.7.2
+
+# Authentication
+django-allauth==0.37.1
