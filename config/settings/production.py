@@ -8,6 +8,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["*"]),  # eg. "adserver.yourserver.com,adserver.yourserver.io"
     INTERNAL_IPS=(list, []),
+    REDIS_PORT=(int, 6379),
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
@@ -28,6 +29,31 @@ DATABASES = {
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 SECRET_KEY = env("SECRET_KEY")  # Django won't start unless the SECRET_KEY is non-empty
 INTERNAL_IPS = env("INTERNAL_IPS")
+
+#
+# Cache
+# https://docs.djangoproject.com/en/1.11/topics/cache/
+# https://niwinz.github.io/django-redis/
+
+# Can't use REDIS_URL due to https://github.com/joke2k/django-environ/issues/200
+# And requirement of rediss for SSL connections
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "{protocol}://{host}:{port}/0".format(
+            protocol="rediss" if int(env("REDIS_PORT")) == 6380 else "redis",
+            host=env("REDIS_HOST"),
+            port=env("REDIS_PORT"),
+        ),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": env("REDIS_PASSWORD"),
+            "IGNORE_EXCEPTIONS": True,
+            "SOCKET_CONNECT_TIMEOUT": 5,  # in seconds
+            "SOCKET_TIMEOUT": 5,  # in seconds
+        },
+    }
+}
 
 #
 # Security
