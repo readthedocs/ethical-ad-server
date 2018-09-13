@@ -30,6 +30,8 @@ mccabe:
 pep257:
   run: true
   disable:
+    - D106  # Missing docstring in public nested class
+    - D211  # Conflicts with D203
     - D212  # Multi-line docstring summary should start at the first line
 
 pyflakes:
