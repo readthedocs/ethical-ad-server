@@ -8,3 +8,6 @@ psycopg2==2.7.5
 
 # Reading Django environment variables in production
 django-environ<0.5
+
+# Email sending
+django-anymail==4.2

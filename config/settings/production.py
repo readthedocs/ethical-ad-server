@@ -46,6 +46,14 @@ if env("ADSERVER_HTTPS"):
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 #
+# Email settings
+# See: https://anymail.readthedocs.io
+
+INSTALLED_APPS += ["anymail"]
+EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+ANYMAIL = {"MAILGUN_API_KEY": env("MAILGUN_API_KEY")}
+
+#
 # Ad server settings
 
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
