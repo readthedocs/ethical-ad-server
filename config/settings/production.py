@@ -31,10 +31,13 @@ INTERNAL_IPS = env("INTERNAL_IPS")
 
 #
 # Security
+# See: https://docs.djangoproject.com/en/1.11/topics/security/
 # See: https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware
+# See: https://docs.djangoproject.com/en/1.11/ref/clickjacking/
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 
 if env("ADSERVER_HTTPS"):
     SESSION_COOKIE_SECURE = True
