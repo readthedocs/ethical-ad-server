@@ -11,6 +11,7 @@ ignore-paths:
   - docs/
   - node_modules
   - manage.py
+  - tests.py
 
 ignore-patterns:
   - /migrations/

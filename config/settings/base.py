@@ -134,7 +134,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 # https://docs.djangoproject.com/en/1.11/topics/email/
 # In development, emails are not sent and just logged to the console
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-SERVER_EMAIL = "info@example.com"
+SERVER_EMAIL = "noreply@ethicalads.io"
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 EMAIL_TIMEOUT = 5
 
