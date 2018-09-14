@@ -6,8 +6,8 @@ gunicorn==19.9.0
 # Database driver
 psycopg2==2.7.5
 
+# Email sending
+django-anymail==4.2
+
 # Redis (cache)
 django-redis==4.9.0
-
-# Reading Django environment variables in production
-django-environ<0.5
