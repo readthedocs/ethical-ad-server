@@ -9,3 +9,11 @@ black==18.6b4
 
 # For running the black code formatter before commits
 pre-commit<2.0
+
+# Sphinx for docs
+Sphinx<2.0
+sphinx-rtd-theme
+
+# Running tests in development
+# Tox will install requirements/testing.txt into its environments
+tox<4.0

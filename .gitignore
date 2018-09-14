@@ -72,3 +72,6 @@ static
 
 # Development database
 db.sqlite3
+
+# Sphinx docs output
+_build

@@ -1,0 +1,8 @@
+/*
+Hide the caption on TOC trees - we will add these manually
+
+However, we want them to be used on the sidebar
+ */
+.toctree-wrapper p.caption {
+  display: none;
+}
