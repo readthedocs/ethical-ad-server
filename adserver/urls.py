@@ -1,3 +1,5 @@
+"""Ad server URLs"""
+
 from django.conf.urls import url
 
 from .views import dashboard, do_not_track, do_not_track_policy

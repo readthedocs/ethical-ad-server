@@ -1,3 +1,9 @@
+"""
+Production Django settings for the Ethical Ad Server project.
+
+This is meant to be customized by setting environment variables.
+"""
+
 import environ
 
 from .base import *  # noqa
