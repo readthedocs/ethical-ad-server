@@ -11,6 +11,8 @@ env = environ.Env(
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
+    ADSERVER_DO_NOT_TRACK=(bool, False),
+    ADSERVER_PRIVACY_POLICY_URL=(str, None),
 )
 
 #
@@ -49,3 +51,5 @@ if env("ADSERVER_HTTPS"):
 # Ad server settings
 
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
+ADSERVER_DO_NOT_TRACK = env("ADSERVER_DO_NOT_TRACK")
+ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL")
