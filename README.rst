@@ -34,6 +34,6 @@ The Ethical Ad Server uses GeoLite2 data created by MaxMind.
 Documentation
 -------------
 
-The full documentation is available on Read the Docs.
+The `full documentation`_ is available on Read the Docs.
 
-.. TODO: get the docs up and building!
+.. _full documentation: https://read-the-docs-ethical-ad-server.readthedocs-hosted.com
