@@ -43,6 +43,6 @@ if settings.ADSERVER_ADMIN_URL:
     urlpatterns += [url(r"^{}/".format(settings.ADSERVER_ADMIN_URL), admin.site.urls)]
 
 urlpatterns += [
-    url("^accounts/", include("django.contrib.auth.urls")),
+    url(r"^accounts/", include("allauth.urls")),
     url(r"^", include("adserver.urls", namespace="adserver")),
 ]

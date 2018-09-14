@@ -1,0 +1,29 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Log in' %}{% endblock title %}
+
+
+{% block content %}
+<h1 class="card-title">{% trans 'Ethical Ad Server Log in' %}</h1>
+
+{% if next %}
+  {% if user.is_authenticated %}
+  <p>{% trans 'Your account does not have access to this page. To proceed, please log in with an account that has access.' %}</p>
+  {% else %}
+  <p>{% trans 'Please log in to see this page.' %}</p>
+  {% endif %}
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  {{ form|crispy }}
+
+  <input type="submit" value="{% trans 'Log in' %}" class="btn btn-primary" />
+  <input type="hidden" name="next" value="{{ next }}" />
+</form>
+
+<p class="mt-2"><small><a href="{% url 'account_reset_password' %}">{% trans 'Forgot password?' %}</a></small></p>
+{% endblock content %}

@@ -1,0 +1,13 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Account deactivated' %}{% endblock title %}
+
+
+{% block content %}
+<h1 class="card-title">{% trans 'Your account has been deactivated' %}</h1>
+
+{% url 'account_logout' as logout_url %}
+<p>{% blocktrans trimmed %}Please <a href="{{ logout_url }}">log out</a> and log in again.{% endblocktrans %}</p>
+{% endblock content %}
