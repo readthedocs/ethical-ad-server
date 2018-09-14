@@ -23,6 +23,7 @@ def do_not_track(request):
     if settings.ADSERVER_PRIVACY_POLICY_URL:
         data["policy"] = settings.ADSERVER_PRIVACY_POLICY_URL
 
+    # pylint: disable=redundant-content-type-for-json-response
     return JsonResponse(data, content_type="application/tracking-status+json")
 
 
