@@ -7,6 +7,9 @@ Ethical Ad Server
 The Ethical Ad Server is an advertising server without all the tracking.
 It was created by Read the Docs to serve the ads on Read the Docs.
 
+.. image:: https://img.shields.io/badge/docs-readthedocs-brightgreen.svg?longCache=true&style=flat
+    :target: https://read-the-docs-ethical-ad-server.readthedocs-hosted.com
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
