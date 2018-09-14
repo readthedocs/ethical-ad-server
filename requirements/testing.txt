@@ -2,3 +2,9 @@
 
 
 tox<4.0
+
+# Tools used to detect static code issues
+prospector<1.2
+pylint<2.2
+pylint-celery<0.4
+pylint-django<2.1

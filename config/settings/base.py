@@ -21,7 +21,7 @@ BASE_DIR = os.path.abspath(
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "Overridden in Production"
+SECRET_KEY = "Overridden in Production"  # noqa
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -224,7 +224,13 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 # Ad server specific settings
 ############################################################################
 
+# The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
+
+# Whether Do Not Track is enabled for the ad server
+ADSERVER_DO_NOT_TRACK = False
+
+ADSERVER_PRIVACY_POLICY_URL = None
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]

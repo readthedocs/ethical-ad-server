@@ -1,3 +1,9 @@
+"""
+Production Django settings for the Ethical Ad Server project.
+
+This is meant to be customized by setting environment variables.
+"""
+
 import environ
 
 from .base import *  # noqa
@@ -11,6 +17,8 @@ env = environ.Env(
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
+    ADSERVER_DO_NOT_TRACK=(bool, False),
+    ADSERVER_PRIVACY_POLICY_URL=(str, None),
 )
 
 #
@@ -31,10 +39,13 @@ INTERNAL_IPS = env("INTERNAL_IPS")
 
 #
 # Security
+# See: https://docs.djangoproject.com/en/1.11/topics/security/
 # See: https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware
+# See: https://docs.djangoproject.com/en/1.11/ref/clickjacking/
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 
 if env("ADSERVER_HTTPS"):
     SESSION_COOKIE_SECURE = True
@@ -46,3 +57,5 @@ if env("ADSERVER_HTTPS"):
 # Ad server settings
 
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
+ADSERVER_DO_NOT_TRACK = env("ADSERVER_DO_NOT_TRACK")
+ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL")
