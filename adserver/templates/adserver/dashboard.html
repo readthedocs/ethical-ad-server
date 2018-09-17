@@ -1,29 +1,16 @@
-<!doctype html>
-<html lang="en">
-<head>
-  {% block start_head %}{% endblock start_head %}
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="{% block meta_description %}{% endblock meta_description %}">
-  {% block metas %}{% endblock metas %}
+{% extends 'adserver/base.html' %}
 
-  <title>{% block fulltitle %}{% block shorttitle %}{% endblock shorttitle %} - Ethical Ad Server{% endblock fulltitle %}</title>
 
-  {% block css %}{% endblock css %}
+{% block title %}Dashboard{% endblock title %}
 
-  {% block end_head %}{% endblock end_head %}
-</head>
 
-<body class="{% block classes_body %}{% endblock classes_body %}">
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'adserver:dashboard-home' %}">Home</a>
+</li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock breadcrumbs %}
 
-  {% block start_body %}{% endblock start_body %}
 
-  {% block main_body %}Ethical Ad Server {{ version }}{% endblock main_body %}
-
-  {% block end_body %}{% endblock end_body %}
-
-  {% block js %}{% endblock js %}
-
-</body>
-
-</html>
+{% block content_container %}
+{% endblock content_container %}

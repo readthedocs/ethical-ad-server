@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+
+{% block body_classes %}adserver-dashboard{% endblock body_classes %}
+
+
+{% block body_content %}
+  <nav class="navbar navbar-expand-sm navbar-dark bg-primary p-4">
+    <a class="navbar-brand mr-0" href="{% url 'adserver:dashboard-home' %}">EthicalAds</a>
+
+    <ul class="navbar-nav ml-auto d-none d-md-block">
+      <li class="nav-item dropdown">
+        <a class="nav-item nav-link dropdown-toggle mr-md-2" id="bd-versions" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ request.user.email }}</a>
+        <div class="dropdown-menu" aria-labelledby="bd-versions">
+          <a class="dropdown-item" href="{% url 'account_change_password' %}">
+            <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span>
+            <span>{% trans 'Change password' %}</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="{% url 'account_logout' %}">
+            <span class="fa fa-sign-out fa-fw mr-2 text-muted" aria-hidden="true"></span>
+            <span>{% trans 'Sign Out' %}</span>
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <ol class="breadcrumb border-bottom rounded-0">
+    {% block breadcrumbs %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'adserver:dashboard-home' %}">Home</a>
+      </li>
+    {% endblock breadcrumbs %}
+  </ol>
+
+  <main class="main">
+    <div class="container-fluid">
+      {% block content_container %}{% endblock content_container %}
+    </div>
+  </main>
+
+  <footer>
+    <hr>
+    <div class="d-flex">
+      <div class="p-2 flex-fill">
+        <p class="text-muted"><small>© 2018 Read the Docs, Inc.</small></p>
+      </div>
+      <div class="p-2 flex-fill">
+        <p class="text-muted text-right"><small>v{{ version }}</small></p>
+      </div>
+    </div>
+  </footer>
+{% endblock body_content %}
