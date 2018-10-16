@@ -1,8 +1,19 @@
 import hashlib
 import json
+import re
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.test.client import RequestFactory
+
+from .utils import (
+    anonymize_ip_address,
+    anonymize_user_agent,
+    calculate_ecpm,
+    calculate_ctr,
+    is_click_ratelimited,
+    is_blacklisted_user_agent,
+)
 
 
 class DoNotTrackTest(TestCase):
@@ -48,3 +59,63 @@ class DoNotTrackTest(TestCase):
         shasum = hashlib.new("sha1")
         shasum.update(resp.content)
         self.assertEqual(shasum.hexdigest(), "a18e8dba6848d3fc241b03b88291cb75a3cfec3b")
+
+
+class UtilsTest(TestCase):
+    def test_anonymize_ip(self):
+        self.assertEqual(anonymize_ip_address("127.0.0.1"), "127.0.0.0")
+        self.assertEqual(anonymize_ip_address("127.127.127.127"), "127.127.0.0")
+        self.assertEqual(
+            anonymize_ip_address("3ffe:1900:4545:3:200:f8ff:fe21:67cf"),
+            "3ffe:1900:4545:3:200:f8ff:fe21:0",
+        )
+        self.assertEqual(
+            anonymize_ip_address("fe80::200:f8ff:fe21:67cf"), "fe80::200:f8ff:fe21:0"
+        )
+
+    def test_anonymize_ua(self):
+        ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+        self.assertEqual(anonymize_user_agent(ua), ua)
+
+        self.assertEqual(
+            anonymize_user_agent("Some rare user agent"), "Rare user agent"
+        )
+
+    def test_calculate_ecpm(self):
+        self.assertAlmostEqual(calculate_ecpm(100, 0), 0)
+        self.assertAlmostEqual(calculate_ecpm(100, 1), 100_000)
+        self.assertAlmostEqual(calculate_ecpm(1, 1000), 1)
+        self.assertAlmostEqual(calculate_ecpm(5, 100), 50)
+
+    def test_calculate_ctr(self):
+        self.assertAlmostEqual(calculate_ctr(100, 0), 0)
+        self.assertAlmostEqual(calculate_ctr(1, 1), 100)
+        self.assertAlmostEqual(calculate_ctr(1, 10), 10)
+        self.assertAlmostEqual(calculate_ctr(5, 25), 20)
+
+    def test_calculate_ctr(self):
+        self.assertAlmostEqual(calculate_ctr(100, 0), 0)
+        self.assertAlmostEqual(calculate_ctr(1, 1), 100)
+        self.assertAlmostEqual(calculate_ctr(1, 10), 10)
+        self.assertAlmostEqual(calculate_ctr(5, 25), 20)
+
+    def test_blacklisted_user_agent(self):
+        ua = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/69.0.3497.100 Safari/537.36"
+        )
+        self.assertFalse(is_blacklisted_user_agent(ua))
+        regexes = [re.compile("Chrome")]
+        self.assertTrue(is_blacklisted_user_agent(ua, regexes))
+
+    def test_ratelimited(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        self.assertFalse(is_click_ratelimited(request))
+
+        # The first request is "not" ratelimited; the second is
+        ratelimits = ["1/s", "1/m"]
+        self.assertFalse(is_click_ratelimited(request, ratelimits))
+        self.assertTrue(is_click_ratelimited(request, ratelimits))

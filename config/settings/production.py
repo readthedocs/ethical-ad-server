@@ -20,6 +20,8 @@ env = environ.Env(
     ADSERVER_ADMIN_URL=(str, ""),
     ADSERVER_DO_NOT_TRACK=(bool, False),
     ADSERVER_PRIVACY_POLICY_URL=(str, None),
+    ADSERVER_CLICK_RATELIMITS=(list, ["1/m", "3/10m", "10/h", "25/d"]),
+    ADSERVER_BLACKLISTED_USER_AGENTS=(list, []),
 )
 
 #

@@ -14,3 +14,9 @@ django-allauth==0.37.1
 # Reading Django environment variables in production
 # Needed in the base requirements to lint settings/production.py
 django-environ<0.5
+
+# For rate limiting advertising clicks
+django-ratelimit==1.1.0
+
+# Parsing browser user agents
+user-agents==1.1.0

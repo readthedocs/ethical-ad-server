@@ -231,6 +231,8 @@ ADSERVER_ADMIN_URL = "admin"
 ADSERVER_DO_NOT_TRACK = False
 
 ADSERVER_PRIVACY_POLICY_URL = None
+ADSERVER_CLICK_RATELIMITS = []
+ADSERVER_BLACKLISTED_USER_AGENTS = []
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
