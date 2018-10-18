@@ -56,6 +56,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "adserver.middleware.GeolocationMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -205,6 +206,8 @@ LOGGING = {
         },
     },
 }
+
+GEOIP_PATH = os.path.join(BASE_DIR, "geoip")
 
 # Django Crispy Forms
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
