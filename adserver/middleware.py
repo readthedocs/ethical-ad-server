@@ -69,5 +69,7 @@ class GeolocationMiddleware:
                 return self.geoip.city(ip)
             except AddressNotFoundError:
                 log.debug("Could not get geolocation for %s", ip)
+            except GeoIP2Exception:
+                log.warning("Geolocation configuration error")
 
         return None
