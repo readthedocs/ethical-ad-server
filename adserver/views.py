@@ -1,9 +1,9 @@
 """Ad server views"""
-
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.http import JsonResponse
 from django.shortcuts import render
-from django.http import JsonResponse, Http404
 
 
 def do_not_track(request):

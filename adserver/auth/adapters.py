@@ -1,5 +1,4 @@
 """Adapters to control Django-allauth for the ad server"""
-
 from allauth.account.adapter import DefaultAccountAdapter
 
 

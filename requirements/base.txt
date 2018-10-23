@@ -23,3 +23,9 @@ user-agents==1.1.0
 
 # GeoIP database libraries
 geoip2==2.9.0
+
+# Countries helper used in ad targeting
+django-countries==5.3.2
+
+jsonfield==2.0.2
+bleach==3.0.2

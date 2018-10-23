@@ -1,10 +1,10 @@
 """Middleware for the ad server"""
-
-from collections import namedtuple
 import logging
+from collections import namedtuple
 
 from django.conf import settings
-from django.contrib.gis.geoip2 import GeoIP2, GeoIP2Exception
+from django.contrib.gis.geoip2 import GeoIP2
+from django.contrib.gis.geoip2 import GeoIP2Exception
 from geoip2.errors import AddressNotFoundError
 
 from .utils import get_client_ip

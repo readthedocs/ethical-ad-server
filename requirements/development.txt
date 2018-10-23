@@ -4,8 +4,9 @@
 # Useful debugging tools
 django-debug-toolbar<2.0
 
-# Code formatter
+# Code formatters
 black==18.6b4
+reorder-python-imports<2.0
 
 # For running the black code formatter before commits
 pre-commit<2.0

@@ -8,3 +8,6 @@ prospector<1.2
 pylint<2.2
 pylint-celery<0.4
 pylint-django<2.1
+
+# Useful for simpler test cases
+django-dynamic-fixture==2.0.0

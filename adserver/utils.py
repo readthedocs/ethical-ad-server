@@ -1,14 +1,16 @@
 """Ad server utilities"""
-
+import hashlib
 import ipaddress
 import logging
 import re
 
 from django.conf import settings
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
-
-from user_agents import parse
 from ratelimit.utils import is_ratelimited
+from user_agents import parse
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -17,6 +19,11 @@ log = logging.getLogger(__name__)  # noqa
 BLACKLISTED_UA_REGEXES = [
     re.compile(s) for s in settings.ADSERVER_BLACKLISTED_USER_AGENTS
 ]
+
+
+def get_ad_day():
+    """Return a datetime that is the start of the current UTC day"""
+    return timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def calculate_ecpm(cost, views):
@@ -89,3 +96,29 @@ def is_blacklisted_user_agent(user_agent, blacklist_regexes=BLACKLISTED_UA_REGEX
             return True
 
     return False
+
+
+def generate_client_id(ip_address, user_agent):
+    """
+    Create an advertising ID
+
+    This simplifies things but essentially if a user has the same IP and same UA,
+    this will treat them as the same user for analytics purposes
+    """
+    salt = b"advertising-client-id"
+
+    hash_id = hashlib.sha256()
+    hash_id.update(force_bytes(settings.SECRET_KEY))
+    hash_id.update(salt)
+    if ip_address:
+        hash_id.update(force_bytes(ip_address))
+    if user_agent:
+        hash_id.update(force_bytes(user_agent))
+
+    if not ip_address and not user_agent:
+        # Since no IP and no UA were specified,
+        # there's no way to distinguish sessions.
+        # Instead, just treat every user differently
+        hash_id.update(force_bytes(get_random_string()))
+
+    return hash_id.hexdigest()

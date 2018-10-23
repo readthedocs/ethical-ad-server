@@ -1,5 +1,4 @@
 """Django admin configuration for the Ad Server authentication app."""
-
 from django.contrib import admin
 
 from .models import User

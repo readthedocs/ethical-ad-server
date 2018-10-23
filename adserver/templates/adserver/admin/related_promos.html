@@ -1,0 +1,7 @@
+{% if promos %}
+  <ul>
+    {% for promo in promos %}
+      <li><a href="{% url 'admin:donate_supporterpromo_change' promo.pk %}">{{ promo.name }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
