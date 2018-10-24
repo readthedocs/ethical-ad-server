@@ -27,6 +27,12 @@ then the Django admin will be available at the URL ``http://adserver.example.com
 By default, the Django admin is disabled.
 
 
+ADSERVER_DISABLE_ADS
+~~~~~~~~~~~~~~~~~~~~
+
+Set to ``True`` to disable all ads from serving. This can be useful during migrations.
+
+
 ADSERVER_HTTPS
 ~~~~~~~~~~~~~~
 

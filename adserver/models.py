@@ -379,33 +379,6 @@ class Flight(IndestructibleModel):
 
         return True
 
-    def show_to_programming_language(self, programming_language):
-        """
-        Check if a flight is valid for a given programming language
-
-        A ``programming_language`` of ``None`` (meaning the language is unknown)
-        will not match a flight with any ``include_programming_languages`` but wont be
-        excluded from any ``exclude_programming_languages``
-        """
-        if (
-            self.included_programming_languages
-            and programming_language not in self.included_programming_languages
-        ):
-            return False
-        if programming_language in self.excluded_programming_languages:
-            return False
-
-        return True
-
-    def show_to_project(self, project):
-        """Check if a flight is valid for a given project"""
-        if self.included_projects and (
-            not project or project.pk not in self.included_projects
-        ):
-            return False
-
-        return True
-
     def show_to_keywords(self, keywords):
         """
         Check if a flight is valid for a given keywords
@@ -416,24 +389,6 @@ class Flight(IndestructibleModel):
         if self.included_keywords and not keyword_set.intersection(
             self.included_keywords
         ):
-            return False
-
-        return True
-
-    def show_to_theme(self, theme):
-        """Check if this flight is valid for a given theme (eg. alabaster)"""
-        # Disregard theme targeting if the theme isn't known
-        included_themes = self.included_themes
-        if theme and included_themes and theme not in included_themes:
-            return False
-
-        return True
-
-    def show_to_builder(self, builder):
-        """Check if this flight is valid for a given builder (eg. mkdocs)"""
-        # Disregard builder targeting if the builder isn't known
-        included_builders = self.included_builders
-        if builder and included_builders and builder not in included_builders:
             return False
 
         return True
@@ -635,13 +590,13 @@ class Advertisement(IndestructibleModel):
             "link": link_url,
             "image": image_url,
             "has_image": self.has_image(),
-            "hash": nonce,
+            "nonce": nonce,
         }
 
     def cache_key(self, impression_type, nonce):
         assert impression_type in IMPRESSION_TYPES
-        return "advertisement:{id}:{hash}:{type}".format(
-            id=self.slug, hash=nonce, type=impression_type
+        return "advertisement:{id}:{nonce}:{type}".format(
+            id=self.slug, nonce=nonce, type=impression_type
         )
 
     def incr(self, impression_type):

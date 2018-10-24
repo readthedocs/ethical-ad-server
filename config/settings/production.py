@@ -17,6 +17,7 @@ env = environ.Env(
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
+    ADSERVER_DISABLE_ADS=(bool, False),
     ADSERVER_DO_NOT_TRACK=(bool, False),
     ADSERVER_PRIVACY_POLICY_URL=(str, None),
     ADSERVER_CLICK_RATELIMITS=(list, ["1/m", "3/10m", "10/h", "25/d"]),
@@ -94,5 +95,6 @@ ANYMAIL = {"MAILGUN_API_KEY": env("MAILGUN_API_KEY")}
 # Ad server settings
 
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
+ADSERVER_DISABLE_ADS = env("ADSERVER_DISABLE_ADS")
 ADSERVER_DO_NOT_TRACK = env("ADSERVER_DO_NOT_TRACK")
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL")

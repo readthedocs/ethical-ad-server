@@ -5,6 +5,10 @@ pytz==2018.5
 # Static files
 whitenoise==4.0
 
+# Our API
+djangorestframework==3.9.0
+djangorestframework-jsonp==1.0.2
+
 # Form helpers
 django-crispy-forms==1.7.2
 

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "crispy_forms",
+    "rest_framework",
     "adserver",
     "adserver.auth",
 ]
@@ -228,6 +229,10 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
+
+# Set to true to disable all advertising
+# This can be useful to set temporarily during migrations
+ADSERVER_DISABLE_ADS = False
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False

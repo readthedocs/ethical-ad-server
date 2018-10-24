@@ -3,14 +3,20 @@ import hashlib
 import ipaddress
 import logging
 import re
+from collections import namedtuple
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
+
+from .constants import CLICKS
+from .constants import OFFERS
+from .constants import VIEWS
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -19,6 +25,31 @@ log = logging.getLogger(__name__)  # noqa
 BLACKLISTED_UA_REGEXES = [
     re.compile(s) for s in settings.ADSERVER_BLACKLISTED_USER_AGENTS
 ]
+
+
+GeolocationTuple = namedtuple(
+    "GeolocationTuple", ["country_code", "region_code", "metro_code"]
+)
+
+
+def offer_ad(advertisement):
+    """
+    Do the book keeping required to track ad offers.
+
+    This generates a nonce as part of the return dict,
+    and that must be used throughout the ad pipeline in order to dedupe clicks.
+    """
+    promo_dict = advertisement.as_dict()
+    advertisement.incr(OFFERS)
+    # Set validation cache
+    for promo_type in [VIEWS, CLICKS]:
+        cache.set(
+            advertisement.cache_key(type=promo_type, nonce=promo_dict["hash"]),
+            0,  # Number of times used. Make this an int so we can detect multiple uses
+            60 * 60,  # hour
+        )
+
+    return promo_dict
 
 
 def get_ad_day():

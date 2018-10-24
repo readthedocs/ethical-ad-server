@@ -1,12 +1,12 @@
 """Middleware for the ad server"""
 import logging
-from collections import namedtuple
 
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
 from geoip2.errors import AddressNotFoundError
 
+from .utils import GeolocationTuple
 from .utils import get_client_ip
 
 
@@ -16,8 +16,6 @@ log = logging.getLogger(__name__)  # noqa
 class GeolocationMiddleware:
 
     """Handles IP geolocation so ads can be targeted by geolocation"""
-
-    GeolocationTuple = namedtuple("GeolocationTuple", ["country_code", "region", "dma"])
 
     def __init__(self, get_response):
         """
@@ -45,11 +43,11 @@ class GeolocationMiddleware:
         geo_data = self._get_geolocation(request)
         if geo_data:
             country_code = geo_data["country_code"]
-            region = geo_data["region"]
-            dma = geo_data["dma_code"]
-            request.geo = self.GeolocationTuple(country_code, region, dma)
+            region_code = geo_data["region"]
+            metro_code = geo_data["dma_code"]
+            request.geo = GeolocationTuple(country_code, region_code, metro_code)
         else:
-            request.geo = self.GeolocationTuple(None, None, None)
+            request.geo = GeolocationTuple(None, None, None)
 
         response = self.get_response(request)
 
@@ -57,8 +55,8 @@ class GeolocationMiddleware:
             # Show the GeoIP results for staff users in production
             # This allows debugging issues with ad targeting
             response["X-Adserver-Country"] = str(request.geo.country_code)
-            response["X-Adserver-Region"] = str(request.geo.region)
-            response["X-Adserver-DMA"] = str(request.geo.dma)
+            response["X-Adserver-Region"] = str(request.geo.region_code)
+            response["X-Adserver-Metro"] = str(request.geo.metro_code)
 
         return response
 
