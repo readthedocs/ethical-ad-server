@@ -1,17 +1,18 @@
 """Core models for the ad server"""
 import datetime
+import logging
 import math
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
-from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -30,6 +31,9 @@ from .utils import generate_client_id
 from .utils import get_ad_day
 from .utils import get_client_ip
 from .validators import TargetingParametersValidator
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 def default_flight_end_date():
@@ -559,9 +563,9 @@ class Advertisement(IndestructibleModel):
 
     def as_dict(self):
         """A dict respresentation of this for JSON encoding"""
-        nonce = get_random_string()
-
-        domain = getattr(settings, "PRODUCTION_DOMAIN", "readthedocs.org")
+        nonce = get_random_string()  # 12 chars alphanumeric
+        current_site = Site.objects.get_current()
+        domain = current_site.domain
         scheme = "http"
         if not settings.DEBUG:
             scheme = "https"
@@ -570,17 +574,15 @@ class Advertisement(IndestructibleModel):
             scheme=scheme,
             host=domain,
             url=reverse(
-                "donate_view_proxy", kwargs={"advertisement_id": self.pk, "hash": nonce}
+                "adserver:proxy-ad-view", kwargs={"ad_id": self.pk, "nonce": nonce}
             ),
         )
 
-        # TODO: Store this hash and confirm that a proper hash was sent later
         link_url = "{scheme}://{host}{url}".format(
             scheme=scheme,
             host=domain,
             url=reverse(
-                "donate_click_proxy",
-                kwargs={"advertisement_id": self.pk, "hash": nonce},
+                "adserver:proxy-ad-click", kwargs={"ad_id": self.pk, "nonce": nonce}
             ),
         )
         return {
@@ -607,11 +609,6 @@ class Advertisement(IndestructibleModel):
 
         setattr(impression, impression_type, models.F(impression_type) + 1)
         impression.save()
-
-        # TODO: Support redis, more info on this PR
-        #
-        # https://github.com/rtfd/readthedocs.org
-        #     /pull/2105/files/1b5f8568ae0a7760f7247149bcff481efc000f32#r58253051
 
     def _record_base(self, request, model, advertisement):
         ip = get_client_ip(request)
@@ -647,12 +644,14 @@ class Advertisement(IndestructibleModel):
         """
         Store view data in the DB.
 
-        Views are only stored if ``settings.ADSERVER_RECORD_VIEWS=True``.
-        For the amount of traffic that RTD generates, this is ~15GB of entries/month
+        Views are only stored if ``settings.ADSERVER_RECORD_VIEWS=True``
+        For a large scale ad server, writing a database record per ad view
+        is not feasible
         """
-        if getattr(settings, "ADSERVER_RECORD_VIEWS", False):
+        if settings.ADSERVER_RECORD_VIEWS:
             return self._record_base(request, View, advertisement)
 
+        log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
         return None
 
     def view_ratio(self, day=None):
@@ -776,17 +775,9 @@ class Advertisement(IndestructibleModel):
             )
         )
 
-    def render_ad(self, image_url=None, link_url=None):
-        return render_to_string(
-            "donate/promos/{}.html".format(self.display_type),
-            {
-                "advertisement": self,
-                "has_image": self.has_image(),
-                "image_url": image_url or self.image,
-                "link_url": link_url or self.link,
-                "ad_html": self.render_links(link=link_url),
-            },
-        ).strip()
+    def render_ad(self, image_url=None, link_url=None):  # noqa TODO: fix
+        # TODO: render the ad based on the ad type
+        return image_url or self.image
 
 
 class BaseImpression(models.Model):
@@ -795,7 +786,7 @@ class BaseImpression(models.Model):
 
     date = models.DateField(_("Date"))
 
-    # Offers include cases where the server returned a ad
+    # Offers include cases where the server returned an ad
     # but the client didn't load it
     # or the client didn't qualify as a view (staff, blacklisted, etc.)
     offers = models.IntegerField(

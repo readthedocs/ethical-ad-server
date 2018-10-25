@@ -58,11 +58,11 @@ class AdDecisionView(APIView):
 
         placements = []
         div_ids = data.get("div_ids", "").split("|")
-        display_types = data.get("display_types", "").split("|")
+        ad_types = data.get("ad_types", "").split("|")
         priorities = data.get("priorities", "").split("|")
 
-        for i, (div_id, display_type) in enumerate(zip(div_ids, display_types)):
-            placement = {"div_id": div_id, "display_type": display_type}
+        for i, (div_id, display_type) in enumerate(zip(div_ids, ad_types)):
+            placement = {"div_id": div_id, "ad_type": display_type}
             if i < len(priorities) and priorities[i]:
                 placement["priority"] = priorities[i]
 

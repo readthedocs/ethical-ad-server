@@ -27,10 +27,17 @@ then the Django admin will be available at the URL ``http://adserver.example.com
 By default, the Django admin is disabled.
 
 
-ADSERVER_DISABLE_ADS
-~~~~~~~~~~~~~~~~~~~~
+ADSERVER_DECISION_BACKEND
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Set to ``True`` to disable all ads from serving. This can be useful during migrations.
+Set to a dotted Python path to a decision backend to use for the ad server.
+Different publishers and ad networks may want different backends based on how different
+ads should be prioritized. For example, you may want to prioritize
+ads with the highest CPM/CPC or prioritize the most relevant.
+Defaults to ``adserver.decisionengine.backends.ProbabilisticClicksNeededBackend``,
+a backend that chooses ads based on how many more clicks and views are needed.
+
+Set to ``None`` to disable all ads from serving. This can be useful during migrations.
 
 
 ADSERVER_HTTPS

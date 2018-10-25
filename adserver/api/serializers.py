@@ -13,6 +13,8 @@ class AdPlacementSerializer(serializers.Serializer):
     """
 
     div_id = serializers.CharField()
+    # TODO: required once ad types are implemented
+    ad_type = serializers.CharField(required=False)
     priority = serializers.IntegerField(
         default=1, min_value=1, max_value=10, required=False
     )

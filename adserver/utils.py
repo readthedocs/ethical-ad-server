@@ -44,12 +44,18 @@ def offer_ad(advertisement):
     # Set validation cache
     for promo_type in [VIEWS, CLICKS]:
         cache.set(
-            advertisement.cache_key(type=promo_type, nonce=promo_dict["hash"]),
+            advertisement.cache_key(
+                impression_type=promo_type, nonce=promo_dict["nonce"]
+            ),
             0,  # Number of times used. Make this an int so we can detect multiple uses
             60 * 60,  # hour
         )
 
     return promo_dict
+
+
+def analytics_event(**kwargs):  # noqa TODO add this
+    pass
 
 
 def get_ad_day():

@@ -844,3 +844,63 @@ class DecisionEngineTests(TestCase):
         # Community before house
         ret = self.probabilistic_backend.choose_ad([house_ad, community_ad])
         self.assertEqual(ret, community_ad)
+
+
+class AdDecisionApiTests(TestCase):
+    def setUp(self):
+        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.flight = get(
+            Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
+        )
+        self.ad = get(
+            Advertisement,
+            slug="ad-slug",
+            name="ad",
+            link="http://example.com",
+            live=True,
+            flight=self.flight,
+        )
+
+        self.placements = [{"div_id": "a", "ad_type": "1"}]
+        self.params = {"div_ids": "abc|def", "ad_types": "a|b"}
+
+        self.user = get(get_user_model(), username="test-user")
+        self.url = reverse("adserver:api:decision")
+
+    def test_get_request(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 400)
+
+        resp = self.client.get(self.url, self.params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_post_request(self):
+        resp = self.client.post(self.url)
+        self.assertEqual(resp.status_code, 400)
+
+        data = {"placements": self.placements}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_not_live(self):
+        self.ad.live = False
+        self.ad.save()
+
+        # Not live - shouldn't be displayed
+        resp = self.client.get(self.url, self.params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Forcing the ad ignores "live"
+        self.params["force_ad"] = "ad-slug"
+        resp = self.client.get(self.url, self.params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)

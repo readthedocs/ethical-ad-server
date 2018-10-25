@@ -230,9 +230,12 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
 
-# Set to true to disable all advertising
+# The backend to be used by the ad server
+# Set to `None` to disable all advertising
 # This can be useful to set temporarily during migrations
-ADSERVER_DISABLE_ADS = False
+ADSERVER_DECISION_BACKEND = (
+    "adserver.decisionengine.backends.ProbabilisticClicksNeededBackend"
+)  # noqa
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
@@ -240,6 +243,7 @@ ADSERVER_DO_NOT_TRACK = False
 ADSERVER_PRIVACY_POLICY_URL = None
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_BLACKLISTED_USER_AGENTS = []
+ADSERVER_RECORD_VIEWS = True  # False in prod by default
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
