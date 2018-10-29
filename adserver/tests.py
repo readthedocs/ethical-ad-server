@@ -28,6 +28,7 @@ from .decisionengine.backends import AdvertisingEnabledBackend
 from .decisionengine.backends import ProbabilisticClicksNeededBackend
 from .forms import FlightForm
 from .middleware import GeolocationMiddleware
+from .middleware import RealIPAddressMiddleware
 from .models import Advertisement
 from .models import Campaign
 from .models import Flight
@@ -227,17 +228,20 @@ class TestMiddleware(TestCase):
         def test_view(request):
             return HttpResponse("Success")
 
-        self.middleware = GeolocationMiddleware(test_view)
+        self.geo_middleware = GeolocationMiddleware(test_view)
+        self.ip_middleware = RealIPAddressMiddleware(test_view)
+
+        self.staff_user = get(get_user_model(), email="test@test.com", is_staff=True)
 
     def test_geolocation_middleware_setup(self):
-        self.middleware(self.request)
+        self.geo_middleware(self.request)
         self.assertTrue(hasattr(self.request, "geo"))
         self.assertTrue(hasattr(self.request.geo, "country_code"))
         self.assertTrue(hasattr(self.request.geo, "region_code"))
         self.assertTrue(hasattr(self.request.geo, "metro_code"))
 
     def test_geolocation_middleware_headers(self):
-        response = self.middleware(self.request)
+        response = self.geo_middleware(self.request)
 
         # These are false unless DEBUG=True or user.is_staff
         self.assertFalse(response.has_header("X-Adserver-Country"))
@@ -245,11 +249,28 @@ class TestMiddleware(TestCase):
         self.assertFalse(response.has_header("X-Adserver-Metro"))
 
         # Staff get the geolocation headers
-        self.request.user = get(get_user_model(), email="test@test.com", is_staff=True)
-        response = self.middleware(self.request)
+        self.request.user = self.staff_user
+        response = self.geo_middleware(self.request)
         self.assertTrue(response.has_header("X-Adserver-Country"))
         self.assertTrue(response.has_header("X-Adserver-Region"))
         self.assertTrue(response.has_header("X-Adserver-Metro"))
+
+    def test_real_ip_middleware(self):
+        response = self.ip_middleware(self.request)
+        self.assertFalse(response.has_header("X-Adserver-RealIP"))
+        self.assertTrue(hasattr(self.request, "ip_address"))
+
+        # Staff have the real IP header
+        self.request.user = self.staff_user
+        response = self.ip_middleware(self.request)
+        self.assertTrue(response.has_header("X-Adserver-RealIP"))
+
+        # Set x-forwarded-for to fake the IP address
+        ip_address = "8.8.8.8"
+        header = "{},1.1.1.1,2.2.2.2:80".format(ip_address)
+        self.request.META["HTTP_X_FORWARDED_FOR"] = header
+        self.ip_middleware(self.request)
+        self.assertEqual(self.request.ip_address, ip_address)
 
 
 class TestValidators(TestCase):

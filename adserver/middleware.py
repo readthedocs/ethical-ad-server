@@ -13,6 +13,48 @@ from .utils import get_client_ip
 log = logging.getLogger(__name__)  # noqa
 
 
+class RealIPAddressMiddleware:
+
+    """
+    Attaches the real IP address of a request to ``request.ip_address``
+
+    Sets the real IP based on the X-Forwarded-For header.
+    This cannot be done reliably for all configurations.
+    You may need to customize this middleware depending on your load balancer
+    or disable it completely if you are not using a load balancer.
+    Only use this when you can absolutely trust the value of HTTP_X_FORWARDED_FOR.
+
+    See https://docs.djangoproject.com/en/dev/releases/1.1/#removed-setremoteaddrfromforwardedfor-middleware
+    """
+
+    def __init__(self, get_response):
+        """One-time setup"""
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.ip_address = self._get_real_ip(request)
+        response = self.get_response(request)
+
+        if settings.DEBUG or request.user.is_staff:
+            # Show the real IP for staff users in production
+            # This allows debugging issues with ad targeting
+            response["X-Adserver-RealIP"] = str(request.ip_address)
+
+        return response
+
+    def _get_real_ip(self, request):
+        ip_address = request.META.get("REMOTE_ADDR", "")
+
+        # Get the original IP address from a header set by the load balancer
+        # (eg. "X-Forwarded-For: client, proxy1, proxy2")
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0]
+        if x_forwarded_for:
+            # Some load balancers include the port number
+            ip_address = x_forwarded_for.rsplit(":")[0]
+
+        return ip_address
+
+
 class GeolocationMiddleware:
 
     """Handles IP geolocation so ads can be targeted by geolocation"""

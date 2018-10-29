@@ -80,15 +80,17 @@ def calculate_ctr(clicks, views):
 
 
 def get_client_ip(request):
-    """Gets the real IP based on a request object"""
-    ip_address = request.META.get("REMOTE_ADDR")
+    """
+    Gets the real IP based on a request object
 
-    # Get the original IP address (eg. "X-Forwarded-For: client, proxy1, proxy2")
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0]
-    if x_forwarded_for:
-        ip_address = x_forwarded_for.rsplit(":")[0]
+    Checks if ``request.ip_address`` is present from a Middleware
+    (eg. ``RealIPAddressMiddleware``) and returns that.
+    If that is not set, return the value from ``REMOTE_ADDR``.
+    """
+    if hasattr(request, "ip_address"):
+        return request.ip_address
 
-    return ip_address
+    return request.META.get("REMOTE_ADDR", "")
 
 
 def anonymize_ip_address(ip_address):
