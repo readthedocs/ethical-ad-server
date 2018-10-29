@@ -193,7 +193,12 @@ LOGGING = {
         },
     },
     "loggers": {
-        "": {"level": "DEBUG", "handlers": ["console-adserver"], "propagate": False},
+        "": {"level": "INFO", "handlers": ["console"], "propagate": False},
+        "adserver": {
+            "level": "INFO",
+            "handlers": ["console-adserver"],
+            "propagate": False,
+        },
         "django": {"level": "INFO", "handlers": ["console"], "propagate": False},
         "django.request": {
             "handlers": ["mail_admins"],
