@@ -542,8 +542,13 @@ class Advertisement(IndestructibleModel):
     slug = models.CharField(_("Slug"), max_length=200)
     text = models.TextField(_("Text"), blank=True)
     link = models.URLField(_("Link URL"), max_length=255, blank=True, null=True)
-    image = models.URLField(
-        _("Image URL"), max_length=255, blank=True, null=True, help_text=_("240x180")
+    image = models.ImageField(
+        _("Image"),
+        max_length=255,
+        upload_to="images/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_("240x180"),
     )
     live = models.BooleanField(_("Live"), default=False)
     flight = models.ForeignKey(
@@ -777,7 +782,7 @@ class Advertisement(IndestructibleModel):
 
     def render_ad(self, image_url=None, link_url=None):  # noqa TODO: fix
         # TODO: render the ad based on the ad type
-        return image_url or self.image
+        return image_url or self.image.url
 
 
 class BaseImpression(models.Model):

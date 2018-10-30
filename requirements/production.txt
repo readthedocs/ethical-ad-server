@@ -11,3 +11,8 @@ django-anymail==4.2
 
 # Redis (cache)
 django-redis==4.9.0
+
+# Upload files to cloud storage (Azure)
+django-storages==1.7.1
+azure==4.0.0
+azure-storage-blob==1.3.1

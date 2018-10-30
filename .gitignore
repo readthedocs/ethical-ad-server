@@ -69,6 +69,7 @@ mailhog
 # Compiled static files
 assets/dist
 static
+media
 
 # Development database
 db.sqlite3

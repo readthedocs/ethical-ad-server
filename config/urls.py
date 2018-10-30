@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls import url
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.views import defaults as default_views
 
@@ -29,6 +30,8 @@ if settings.DEBUG:
         ),
         url("500/", default_views.server_error),
     ]
+
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
     # Enable Django Debug Toolbar in development
     if "debug_toolbar" in settings.INSTALLED_APPS:

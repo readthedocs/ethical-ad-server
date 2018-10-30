@@ -158,6 +158,11 @@ STATIC_URL = "/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
 
+# User-uploaded files (ad images)
+# https://docs.djangoproject.com/en/1.11/topics/files/
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
+
 # Logging
 # See: https://docs.djangoproject.com/en/1.11/ref/settings/#logging
 # A sample logging configuration. The only tangible logging
