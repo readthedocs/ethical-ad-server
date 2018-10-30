@@ -214,7 +214,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def related_ads(self, obj):
         advertisements = list(obj.advertisements.all())
         return render_to_string(
-            "adserver/admin/related_promos.html", {"promos": advertisements}
+            "adserver/admin/related_ads.html", {"ads": advertisements}
         )
 
     def get_queryset(self, request):
