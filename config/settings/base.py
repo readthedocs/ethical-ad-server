@@ -7,9 +7,8 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
-import os
 import json
+import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(
@@ -43,6 +42,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "crispy_forms",
+    "rest_framework",
     "adserver",
     "adserver.auth",
 ]
@@ -56,6 +56,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "adserver.middleware.RealIPAddressMiddleware",
+    "adserver.middleware.GeolocationMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -191,7 +193,12 @@ LOGGING = {
         },
     },
     "loggers": {
-        "": {"level": "INFO", "handlers": ["console-adserver"], "propagate": False},
+        "": {"level": "INFO", "handlers": ["console"], "propagate": False},
+        "adserver": {
+            "level": "INFO",
+            "handlers": ["console-adserver"],
+            "propagate": False,
+        },
         "django": {"level": "INFO", "handlers": ["console"], "propagate": False},
         "django.request": {
             "handlers": ["mail_admins"],
@@ -205,6 +212,8 @@ LOGGING = {
         },
     },
 }
+
+GEOIP_PATH = os.path.join(BASE_DIR, "geoip")
 
 # Django Crispy Forms
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
@@ -227,10 +236,20 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
 
+# The backend to be used by the ad server
+# Set to `None` to disable all advertising
+# This can be useful to set temporarily during migrations
+ADSERVER_DECISION_BACKEND = (
+    "adserver.decisionengine.backends.ProbabilisticClicksNeededBackend"
+)  # noqa
+
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 
 ADSERVER_PRIVACY_POLICY_URL = None
+ADSERVER_CLICK_RATELIMITS = []
+ADSERVER_BLACKLISTED_USER_AGENTS = []
+ADSERVER_RECORD_VIEWS = True  # False in prod by default
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]

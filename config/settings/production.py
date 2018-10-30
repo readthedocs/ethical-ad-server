@@ -3,7 +3,6 @@ Production Django settings for the Ethical Ad Server project.
 
 This is meant to be customized by setting environment variables.
 """
-
 import environ
 
 from .base import *  # noqa
@@ -18,8 +17,12 @@ env = environ.Env(
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
+    ADSERVER_DECISION_BACKEND=(str, ADSERVER_DECISION_BACKEND),
     ADSERVER_DO_NOT_TRACK=(bool, False),
     ADSERVER_PRIVACY_POLICY_URL=(str, None),
+    ADSERVER_CLICK_RATELIMITS=(list, ["1/m", "3/10m", "10/h", "25/d"]),
+    ADSERVER_BLACKLISTED_USER_AGENTS=(list, []),
+    ADSERVER_RECORD_VIEWS=(bool, False),
 )
 
 #
@@ -95,3 +98,5 @@ ANYMAIL = {"MAILGUN_API_KEY": env("MAILGUN_API_KEY")}
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
 ADSERVER_DO_NOT_TRACK = env("ADSERVER_DO_NOT_TRACK")
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL")
+ADSERVER_DECISION_BACKEND = env("ADSERVER_DECISION_BACKEND")
+ADSERVER_RECORD_VIEWS = env("ADSERVER_RECORD_VIEWS")

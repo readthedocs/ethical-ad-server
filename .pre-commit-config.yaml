@@ -7,3 +7,8 @@ repos:
       # The excludes in pyproject.toml are ignored
       exclude: migrations
       language_version: python3.6
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v1.3.2
+    hooks:
+    -   id: reorder-python-imports
+        language_version: python3

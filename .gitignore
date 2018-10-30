@@ -75,3 +75,6 @@ db.sqlite3
 
 # Sphinx docs output
 _build
+
+# GeoIP data files
+geoip

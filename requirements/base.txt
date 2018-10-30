@@ -5,6 +5,10 @@ pytz==2018.5
 # Static files
 whitenoise==4.0
 
+# Our API
+djangorestframework==3.9.0
+djangorestframework-jsonp==1.0.2
+
 # Form helpers
 django-crispy-forms==1.7.2
 
@@ -14,3 +18,18 @@ django-allauth==0.37.1
 # Reading Django environment variables in production
 # Needed in the base requirements to lint settings/production.py
 django-environ<0.5
+
+# For rate limiting advertising clicks
+django-ratelimit==1.1.0
+
+# Parsing browser user agents
+user-agents==1.1.0
+
+# GeoIP database libraries
+geoip2==2.9.0
+
+# Countries helper used in ad targeting
+django-countries==5.3.2
+
+jsonfield==2.0.2
+bleach==3.0.2

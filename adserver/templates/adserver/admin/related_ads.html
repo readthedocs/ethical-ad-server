@@ -1,0 +1,7 @@
+{% if ads %}
+  <ul>
+    {% for ad in ads %}
+      <li><a href="{% url 'admin:adserver_advertisement_change' ad.pk %}">{{ ad.name }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}

@@ -17,6 +17,7 @@ COPY ./adserver /app/adserver
 COPY ./config /app/config
 COPY ./templates /app/templates
 COPY ./assets /app/assets
+COPY ./geoip /app/geoip
 COPY ./manage.py /app
 COPY ./package.json /app
 
