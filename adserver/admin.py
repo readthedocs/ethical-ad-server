@@ -77,7 +77,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
             return ""
 
         return mark_safe(
-            '<img src="{url}" style="width: 120px" />'.format(url=obj.image)
+            '<img src="{url}" style="width: 120px" />'.format(url=obj.image.url)
         )
 
     def num_clicks(self, obj):

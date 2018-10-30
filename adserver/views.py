@@ -153,7 +153,7 @@ def proxy_ad_view(request, ad_id, nonce):
         )
         cache.incr(ad.cache_key(impression_type=VIEWS, nonce=nonce))
     if ad.image:
-        return redirect(ad.image)
+        return redirect(ad.image.url)
 
     return HttpResponse("View Proxy")
 

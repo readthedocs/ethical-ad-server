@@ -14,6 +14,10 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["*"]),  # eg. "adserver.yourserver.com,adserver.yourserver.io"
     INTERNAL_IPS=(list, []),
     REDIS_PORT=(int, 6379),
+    # User-uploaded media
+    DEFAULT_FILE_STORAGE=(str, "storages.backends.azure_storage.AzureStorage"),
+    MEDIA_URL=(str, ""),
+    MEDIA_ROOT=(str, ""),
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
@@ -91,6 +95,17 @@ if env("ADSERVER_HTTPS"):
 INSTALLED_APPS += ["anymail"]
 EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 ANYMAIL = {"MAILGUN_API_KEY": env("MAILGUN_API_KEY")}
+
+#
+# User upload storage
+# https://docs.djangoproject.com/en/1.11/topics/files/
+# https://django-storages.readthedocs.io/en/latest/backends/azure.html
+DEFAULT_FILE_STORAGE = env("DEFAULT_FILE_STORAGE")
+MEDIA_ROOT = env("MEDIA_ROOT")
+MEDIA_URL = env("MEDIA_URL")
+AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
+AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
+AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 
 #
 # Ad server settings

@@ -5,6 +5,9 @@ pytz==2018.5
 # Static files
 whitenoise==4.0
 
+# Handling and processing uploaded images
+Pillow==5.3.0
+
 # Our API
 djangorestframework==3.9.0
 djangorestframework-jsonp==1.0.2

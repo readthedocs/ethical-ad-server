@@ -73,6 +73,14 @@ It should be off in production (which is the default).
 Set to ``True`` to enable it.
 
 
+DEFAULT_FILE_STORAGE
+~~~~~~~~~~~~~~~~~~~~
+
+Adjusts Django's ``DEFAULT_FILE_STORAGE`` setting.
+Defaults to ``storages.backends.azure_storage.AzureStorage`` which
+can be used to storage uploaded ad images in Azure.
+
+
 INTERNAL_IPS
 ~~~~~~~~~~~~
 
@@ -80,6 +88,18 @@ This setting will adjust Django's ``INTERNAL_IPS`` setting.
 This setting has a few additional meanings for the ad server including:
 
 * All ad impressions and clicks from ``INTERNAL_IPS`` are ignored for reporting purposes
+
+
+MEDIA_ROOT
+~~~~~~~~~~
+
+Adjusts Django's ``MEDIA_ROOT`` setting (default ``""``).
+
+
+MEDIA_URL
+~~~~~~~~~
+
+Adjusts Django's ``MEDIA_URL`` setting (default ``""``).
 
 
 SECRET_KEY
