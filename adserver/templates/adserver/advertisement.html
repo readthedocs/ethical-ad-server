@@ -1,0 +1,14 @@
+{# A template used to render ads with no specific ad type #}
+
+{% spaceless %}
+<div class="ethical-ad">
+  {% if ad.image %}
+    <a href="{{ link_url }}" rel="nofollow" target="_blank">
+      <img src="{{ image_url }}">
+    </a>
+  {% endif %}
+  {% if ad.text %}
+    <p class="ethical-text">{{ text_as_html }}</p>
+  {% endif %}
+</div>
+{% endspaceless %}

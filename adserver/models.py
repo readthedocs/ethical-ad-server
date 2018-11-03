@@ -13,6 +13,8 @@ from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
+from django.template import engines
+from django.template.loader import get_template
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -30,6 +32,7 @@ from .utils import calculate_ecpm
 from .utils import generate_client_id
 from .utils import get_ad_day
 from .utils import get_client_ip
+from .validators import AdvertisementValidator
 from .validators import TargetingParametersValidator
 
 
@@ -71,6 +74,49 @@ class IndestructibleModel(models.Model):
         abstract = True
 
 
+class Publisher(IndestructibleModel):
+
+    """
+    A publisher that displays advertising from the ad server
+
+    A publisher represents a site or collection of sites that displays advertising.
+    Advertisers can opt-in to displaying ads on different publishers.
+
+    An example of a publisher would be Read the Docs, our first publisher.
+    """
+
+    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
+
+    name = models.CharField(_("Name"), max_length=200)
+    slug = models.SlugField(_("Publisher Slug"), max_length=200)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        """Simple override"""
+        return self.name
+
+
+class Advertiser(IndestructibleModel):
+
+    """An advertiser who buys advertising from the ad server"""
+
+    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
+
+    name = models.CharField(_("Name"), max_length=200)
+    slug = models.SlugField(_("Publisher Slug"), max_length=200)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        """Simple override"""
+        return self.name
+
+
 class Campaign(IndestructibleModel):
 
     """
@@ -91,11 +137,25 @@ class Campaign(IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Campaign Slug"), max_length=200)
 
-    secret = models.SlugField(
-        _("Report Secret"),
-        max_length=50,
-        default=get_random_string,
-        help_text="A secret required to view advertisement reports",
+    advertiser = models.ForeignKey(
+        Advertiser,
+        blank=True,
+        null=True,
+        default=None,
+        related_name="campaigns",
+        on_delete=models.PROTECT,
+        help_text=_(
+            "The advertiser for this campaign. "
+            "A campaign without an advertiser is run by the ad network."
+        ),
+    )
+    publishers = models.ManyToManyField(
+        Publisher,
+        related_name="flights",
+        blank=True,
+        help_text=_(
+            "Ads for this campaign are eligible for display on these publishers"
+        ),
     )
 
     campaign_type = models.CharField(
@@ -515,6 +575,60 @@ class Flight(IndestructibleModel):
         return max(0, self.sold_impressions - self.total_views())
 
 
+class AdType(models.Model):
+
+    """
+    A type of advertisement including such parameters as the amount of text and images size
+
+    Many ad types are industry standards from the Interactive Advertising Bureau (IAB).
+    Some publishers prefer native ads that are custom sized for their needs.
+
+    See https://www.iab.com/newadportfolio/
+    """
+
+    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
+
+    name = models.CharField(_("Name"), max_length=200)
+    slug = models.SlugField(_("Slug"), max_length=200)
+
+    # image specifications
+    # image_height/width of null means it accepts any value (not recommended)
+    has_image = models.BooleanField(_("Has image?"), default=True)
+    image_width = models.PositiveIntegerField(blank=True, null=True)
+    image_height = models.PositiveIntegerField(blank=True, null=True)
+
+    # text specifications
+    has_text = models.BooleanField(_("Has text?"), default=True)
+    max_text_length = models.PositiveIntegerField(
+        blank=True, null=True, help_text=_("Max length does not include HTML tags")
+    )
+    allowed_html_tags = models.CharField(
+        _("Allowed HTML tags"),
+        blank=True,
+        max_length=255,
+        default="a b strong i em code",
+        help_text=_("Space separated list of allowed HTML tag names"),
+    )
+
+    publisher = models.ForeignKey(
+        Publisher, blank=True, null=True, help_text=_("For publisher-specific ad types")
+    )
+
+    template = models.TextField(
+        _("Ad template"),
+        blank=True,
+        help_text=_("A Django template for rendering this ad type"),
+    )
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        """Simple override"""
+        return self.name
+
+
 class Advertisement(IndestructibleModel):
 
     """
@@ -539,20 +653,30 @@ class Advertisement(IndestructibleModel):
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.CharField(_("Slug"), max_length=200)
-    text = models.TextField(_("Text"), blank=True)
-    link = models.URLField(_("Link URL"), max_length=255, blank=True, null=True)
+    slug = models.SlugField(_("Slug"), max_length=200)
+    text = models.TextField(
+        _("Text"),
+        blank=True,
+        help_text=_("Different ad types have different text requirements"),
+    )
+    link = models.URLField(_("Link URL"), max_length=255)
     image = models.ImageField(
         _("Image"),
         max_length=255,
         upload_to="images/%Y/%m/",
         blank=True,
         null=True,
-        help_text=_("240x180"),
+        help_text=_("Sized according to the ad type"),
     )
     live = models.BooleanField(_("Live"), default=False)
     flight = models.ForeignKey(
         Flight, related_name="advertisements", on_delete=models.PROTECT
+    )
+
+    # If this is null, no validation on the image or text is done
+    # And the ad has primitive styling
+    ad_type = models.ForeignKey(
+        AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
     )
 
     class Meta:
@@ -561,6 +685,15 @@ class Advertisement(IndestructibleModel):
     def __str__(self):
         """Simple override"""
         return self.name
+
+    def save(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        # Ensure that the model is fully validated before saving
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        AdvertisementValidator()(self)
 
     def get_absolute_url(self):
         # TODO: ad report link
@@ -596,7 +729,6 @@ class Advertisement(IndestructibleModel):
             "html": self.render_ad(link_url=link_url, image_url=image_url),
             "link": link_url,
             "image": image_url,
-            "has_image": self.has_image(),
             "nonce": nonce,
         }
 
@@ -764,9 +896,6 @@ class Advertisement(IndestructibleModel):
 
         return report
 
-    def has_image(self):
-        return not self.image
-
     def render_links(self, link=None):
         """
         Include the link in the html text.
@@ -780,9 +909,19 @@ class Advertisement(IndestructibleModel):
             )
         )
 
-    def render_ad(self, image_url=None, link_url=None):  # noqa TODO: fix
-        # TODO: render the ad based on the ad type
-        return image_url or self.image.url
+    def render_ad(self, image_url=None, link_url=None):
+        template = get_template("adserver/advertisement.html")
+        if self.ad_type:
+            template = engines["django"].from_string(self.ad_type.template)
+
+        return template.render(
+            {
+                "ad": self,
+                "image_url": image_url or self.image,
+                "link_url": link_url or self.link,
+                "text_as_html": self.render_links(link=link_url),
+            }
+        ).strip()
 
 
 class BaseImpression(models.Model):

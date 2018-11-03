@@ -1,7 +1,6 @@
 """Django admin configuration for the ad server"""
 from __future__ import absolute_import
 
-import bleach
 from django.contrib import admin
 from django.db import models
 from django.template.loader import render_to_string
@@ -10,10 +9,13 @@ from django.utils.safestring import mark_safe
 
 from .forms import FlightForm
 from .models import AdImpression
+from .models import AdType
 from .models import Advertisement
+from .models import Advertiser
 from .models import Campaign
 from .models import Click
 from .models import Flight
+from .models import Publisher
 from .models import View
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -33,6 +35,32 @@ class RemoveDeleteMixin:
         return False
 
 
+class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+
+    """Django admin configuration for publishers"""
+
+    prepopulated_fields = {"slug": ("name",)}
+
+
+class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+
+    """Django admin configuration for advertisers"""
+
+    prepopulated_fields = {"slug": ("name",)}
+
+
+class AdTypeAdmin(admin.ModelAdmin):
+
+    """Django admin configuration for ad types"""
+
+    model = AdType
+    save_as = True
+    prepopulated_fields = {"slug": ("name",)}
+    list_display = ("name", "publisher")
+    list_select_related = ("publisher",)
+    search_fields = ("name", "slug", "publisher__name", "publisher__slug")
+
+
 class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisements"""
@@ -45,6 +73,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "name",
         "slug",
         "flight",
+        "ad_type",
         "live",
         "ad_report",
         "num_views",
@@ -53,8 +82,13 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "ecpm",
     )
     list_display_links = ("name",)
-    list_select_related = ("flight", "flight__campaign")
-    list_filter = ("live", "flight__campaign__campaign_type", "flight__campaign")
+    list_select_related = ("flight", "flight__campaign", "ad_type")
+    list_filter = (
+        "live",
+        "flight__campaign__campaign_type",
+        "ad_type",
+        "flight__campaign",
+    )
     list_editable = ("live",)
     readonly_fields = ("total_views", "total_clicks", "ad_report")
     search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
@@ -118,13 +152,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
             num_views=models.Sum("impressions__views"),
         )
         return queryset
-
-    def save_model(self, request, obj, form, change):
-        # Remove malicious HTML tags, inline styles, and fix broken tags
-        obj.text = bleach.clean(
-            obj.text, tags=bleach.sanitizer.ALLOWED_TAGS + ["br"], strip=True
-        )
-        obj.save()
 
 
 class CPCCPMFilter(admin.SimpleListFilter):
@@ -240,6 +267,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     list_display = (
         "name",
+        "advertiser",
         "campaign_type",
         "campaign_report",
         "max_sale_value",
@@ -249,9 +277,9 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "ctr",
         "ecpm",
     )
-    list_filter = ("campaign_type",)
+    list_filter = ("campaign_type", "advertiser")
     readonly_fields = ("campaign_report", "total_value", "related_flights")
-    search_fields = ("name", "slug", "secret")
+    search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
         if not instance.pk:
@@ -385,9 +413,12 @@ class ViewAdmin(AdBaseAdmin):
     model = View
 
 
+admin.site.register(Publisher, PublisherAdmin)
+admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
+admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)
 admin.site.register(Flight, FlightAdmin)
 admin.site.register(Campaign, CampaignAdmin)

@@ -5,6 +5,9 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.utils.translation import ugettext as _
 
+from ..models import Advertiser
+from ..models import Publisher
+
 
 class AdServerUserManager(BaseUserManager):
 
@@ -67,6 +70,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     updated_date = models.DateTimeField(_("update date"), auto_now=True)
     created_date = models.DateTimeField(_("create date"), auto_now_add=True)
+
+    # A user may have access to zero or more advertisers or publishers
+    advertisers = models.ManyToManyField(Advertiser)
+    publishers = models.ManyToManyField(Publisher)
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"

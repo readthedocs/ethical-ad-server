@@ -4,10 +4,10 @@ import json
 import re
 
 import mock
-from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.test import override_settings
@@ -17,7 +17,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
 
-from .admin import AdvertisementAdmin
 from .constants import CLICKS
 from .constants import COMMUNITY_CAMPAIGN
 from .constants import HOUSE_CAMPAIGN
@@ -29,6 +28,7 @@ from .decisionengine.backends import ProbabilisticClicksNeededBackend
 from .forms import FlightForm
 from .middleware import GeolocationMiddleware
 from .middleware import RealIPAddressMiddleware
+from .models import AdType
 from .models import Advertisement
 from .models import Campaign
 from .models import Flight
@@ -40,6 +40,7 @@ from .utils import GeolocationTuple
 from .utils import get_ad_day
 from .utils import is_blacklisted_user_agent
 from .utils import is_click_ratelimited
+from .validators import AdvertisementValidator
 from .validators import TargetingParametersValidator
 
 
@@ -153,45 +154,6 @@ class UtilsTest(TestCase):
         self.assertTrue(is_click_ratelimited(request, ratelimits))
 
 
-class AdminTests(TestCase):
-    def setUp(self):
-        self.ad = get(
-            Advertisement,
-            slug="ad-slug",
-            link="http://example.com",
-            text="<a>test</a>",
-            live=True,
-        )
-
-        self.ad_admin = AdvertisementAdmin(Advertisement, admin.site)
-
-    def test_sanitize_promo_noop(self):
-        text = self.ad.text
-        self.ad_admin.save_model(None, self.ad, None, None)
-        self.assertEqual(self.ad.text, text)
-
-    def test_broken_html(self):
-        text = "<a>noendtag"
-        self.ad.text = text
-        self.ad.save()
-        self.ad_admin.save_model(None, self.ad, None, None)
-        self.assertEqual(self.ad.text, text + "</a>")
-
-    def test_malicious(self):
-        text = '<script>alert("foo")</script>'
-        self.ad.text = text
-        self.ad.save()
-        self.ad_admin.save_model(None, self.ad, None, None)
-        self.assertEqual(self.ad.text, 'alert("foo")')
-
-    def test_remove_inline_style(self):
-        text = '<b style="color: red">text</b>'
-        self.ad.text = text
-        self.ad.save()
-        self.ad_admin.save_model(None, self.ad, None, None)
-        self.assertEqual(self.ad.text, "<b>text</b>")
-
-
 class FormTests(TestCase):
     def setUp(self):
         self.campaign = get(Campaign, name="Test Campaign")
@@ -274,6 +236,27 @@ class TestMiddleware(TestCase):
 
 
 class TestValidators(TestCase):
+    def setUp(self):
+        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.flight = get(Flight, campaign=self.campaign)
+        self.ad = get(
+            Advertisement,
+            image=None,
+            ad_type=None,
+            text="<b>Test</b>",
+            flight=self.flight,
+        )
+
+        one_pixel_png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00"
+            b"\x01\x08\x04\x00\x00\x00\xb5\x1c\x0c\x02\x00\x00\x00\x0bIDATx"
+            b"\x9cc\xfa\xcf\x00\x00\x02\x07\x01\x02\x9a\x1c1q\x00\x00\x00"
+            b"\x00IEND\xaeB`\x82"
+        )
+        self.image = SimpleUploadedFile(
+            name="test.png", content=one_pixel_png_bytes, content_type="image/png"
+        )
+
     def test_targeting_validator(self):
         validator = TargetingParametersValidator()
 
@@ -300,6 +283,41 @@ class TestValidators(TestCase):
             ValidationError, validator, {"include_state_provinces": ["USA"]}
         )
 
+    def test_ad_validator(self):
+        text_ad_type = get(AdType, has_text=True, max_text_length=10, has_image=False)
+        image_ad_type = get(
+            AdType, has_text=False, has_image=True, image_height=None, image_width=None
+        )
+        validator = AdvertisementValidator()
+
+        # Ok
+        validator(self.ad)
+
+        # Text ad
+        self.ad.ad_type = text_ad_type
+        validator(self.ad)
+
+        # Text too long
+        self.ad.text = "*" * 100
+        self.assertRaises(ValidationError, validator, self.ad)
+
+        # Image ad - missing image
+        self.ad.text = ""
+        self.ad.ad_type = image_ad_type
+        self.assertRaises(ValidationError, validator, self.ad)
+        self.ad.image = self.image
+
+        # Ok
+        validator(self.ad)
+        image_ad_type.image_height = 1
+        image_ad_type.image_width = 1
+        validator(self.ad)
+
+        # Image incorrect dimensions
+        image_ad_type.image_height = 3
+        image_ad_type.image_width = 3
+        self.assertRaises(ValidationError, validator, self.ad)
+
 
 class TestProtectedModels(TestCase):
 
@@ -315,6 +333,8 @@ class TestProtectedModels(TestCase):
             slug="ad-slug",
             link="http://example.com",
             text="<a>test</a>",
+            image=None,
+            ad_type=None,
             live=True,
             flight=self.flight,
         )
@@ -349,7 +369,9 @@ class TestAdModels(TestCase):
             slug="ad-slug",
             link="http://example.com",
             live=True,
-            image="http://media.example.com/img.png",
+            image=None,
+            ad_type=None,
+            text="<b>Test</b>",
             flight=self.flight,
         )
 
@@ -441,9 +463,39 @@ class TestAdModels(TestCase):
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
         self.assertEqual(self.flight.views_needed_today(), 666)
 
+    def test_ad_broken_html(self):
+        # Ensures the ad validator is called from the save method
+        text = "<a>noendtag"
+        self.ad.text = text
+        self.ad.save()
+        self.assertEqual(self.ad.text, text + "</a>")
+
+    def test_ad_malicious_html(self):
+        self.ad.text = '<script>alert("foo")</script>'
+        self.ad.save()
+        self.assertEqual(self.ad.text, 'alert("foo")')
+
+    def test_ad_remove_inline_style(self):
+        self.ad.text = '<b style="color: red">text</b>'
+        self.ad.save()
+        self.assertEqual(self.ad.text, "<b>text</b>")
+
+    def test_render_ad(self):
+        self.assertIn("Test", self.ad.render_ad())
+
+        ad_type = get(
+            AdType, template="Nothing here", has_image=False, max_text_length=100
+        )
+        self.ad.ad_type = ad_type
+        self.ad.save()
+
+        self.assertIn("Nothing here", self.ad.render_ad())
+        self.assertNotIn("Test", self.ad.render_ad())
+
 
 class DecisionEngineTests(TestCase):
     def setUp(self):
+        self.ad_type = get(AdType, has_image=False, slug="z")
         self.campaign = get(Campaign, max_sale_value=2000.0)
         self.include_flight = get(
             Flight,
@@ -475,7 +527,8 @@ class DecisionEngineTests(TestCase):
             slug="ad-slug",
             link="http://example.com",
             live=True,
-            image="http://media.example.com/img.png",
+            image=None,
+            ad_type=self.ad_type,
             flight=self.include_flight,
         )
 
@@ -495,7 +548,8 @@ class DecisionEngineTests(TestCase):
             name="promo2-slug",
             link="http://example.com",
             live=True,
-            image="http://media.example.com/img.png",
+            image=None,
+            ad_type=self.ad_type,
             flight=self.exclude_flight,
         )
 
@@ -508,7 +562,8 @@ class DecisionEngineTests(TestCase):
             name="promo3-slug",
             link="http://example.com",
             live=True,
-            image="http://media.example.com/img.png",
+            image=None,
+            ad_type=self.ad_type,
             flight=self.basic_flight,
         )
 
@@ -518,7 +573,7 @@ class DecisionEngineTests(TestCase):
             self.advertisement3,
         ]
 
-        self.placements = [{"div_id": "a"}]
+        self.placements = [{"div_id": "a", "ad_type": "z"}]
 
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
@@ -832,6 +887,8 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="paid",
             slug="test-paid-ad",
+            ad_type=self.ad_type,
+            image=None,
             live=True,
             flight=paid_flight,
         )
@@ -844,6 +901,8 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="community",
             slug="test-community-ad",
+            ad_type=self.ad_type,
+            image=None,
             live=True,
             flight=community_flight,
         )
@@ -854,6 +913,8 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="house",
             slug="test-house-ad",
+            ad_type=self.ad_type,
+            image=None,
             live=True,
             flight=house_flight,
         )
@@ -873,17 +934,20 @@ class AdDecisionApiTests(TestCase):
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
         )
+        self.ad_type = get(AdType, has_image=False, slug="z")
         self.ad = get(
             Advertisement,
             slug="ad-slug",
             name="ad",
             link="http://example.com",
+            ad_type=self.ad_type,
+            image=None,
             live=True,
             flight=self.flight,
         )
 
-        self.placements = [{"div_id": "a", "ad_type": "1"}]
-        self.params = {"div_ids": "abc|def", "ad_types": "a|b"}
+        self.placements = [{"div_id": "a", "ad_type": "z"}]
+        self.params = {"div_ids": "abc|def", "ad_types": "z|y"}
 
         self.user = get(get_user_model(), username="test-user")
         self.url = reverse("adserver:api:decision")
@@ -925,3 +989,12 @@ class AdDecisionApiTests(TestCase):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_unknown_ad_type(self):
+        data = {"placements": [{"div_id": "a", "ad_type": "unknown"}]}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {}, resp_json)
