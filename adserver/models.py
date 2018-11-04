@@ -618,7 +618,8 @@ class AdType(models.Model):
     template = models.TextField(
         _("Ad template"),
         blank=True,
-        help_text=_("A Django template for rendering this ad type"),
+        null=True,
+        help_text=_("Override the template for rendering this ad type"),
     )
 
     class Meta:
@@ -911,7 +912,7 @@ class Advertisement(IndestructibleModel):
 
     def render_ad(self, image_url=None, link_url=None):
         template = get_template("adserver/advertisement.html")
-        if self.ad_type:
+        if self.ad_type and self.ad_type.template:
             template = engines["django"].from_string(self.ad_type.template)
 
         return template.render(
