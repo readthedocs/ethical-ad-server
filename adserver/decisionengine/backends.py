@@ -67,13 +67,19 @@ class BaseAdDecisionBackend:
 
     def get_placement(self, advertisement):
         """Gets the first matching placement for a given ad"""
+        if not advertisement.ad_type:
+            return None
+
         for placement in self.placements:
-            # A placement "matches" if the display type matches
+            # A placement "matches" if the ad type matches
             # If the ad or campaign is specified, they must also match
-            # TODO: handle matching ad type
-            if (not self.ad_slug or advertisement.slug == self.ad_slug) and (
-                not self.campaign_slug
-                or advertisement.flight.campaign.slug == self.campaign_slug
+            if (
+                placement["ad_type"] == advertisement.ad_type.slug
+                and (not self.ad_slug or advertisement.slug == self.ad_slug)
+                and (
+                    not self.campaign_slug
+                    or advertisement.flight.campaign.slug == self.campaign_slug
+                )
             ):
                 return placement
 
@@ -97,8 +103,8 @@ class BaseAdDecisionBackend:
             return Advertisement.objects.none()
 
         # Specifying the ad or campaign slug skips filtering by live or date
-        # TODO: handle different ad types
-        advertisements = Advertisement.objects.all()
+        ad_types = [p["ad_type"] for p in self.placements]
+        advertisements = Advertisement.objects.filter(ad_type__slug__in=ad_types)
         if self.ad_slug:
             advertisements = advertisements.filter(slug=self.ad_slug)
         elif self.campaign_slug:
@@ -120,8 +126,8 @@ class BaseAdDecisionBackend:
                     )
                 )
 
-        # Ensure we fetch flight/campaign and filter data so that isn't fetched for each ad
-        return advertisements.select_related("flight", "flight__campaign")
+        # Ensure we fetch flight/campaign/ad_type and filter data so that isn't fetched for each ad
+        return advertisements.select_related("flight", "flight__campaign", "ad_type")
 
     def annotate_queryset(self, candidate_ads):
         """
