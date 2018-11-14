@@ -31,7 +31,10 @@ from .middleware import RealIPAddressMiddleware
 from .models import AdType
 from .models import Advertisement
 from .models import Campaign
+from .models import Click
 from .models import Flight
+from .models import Publisher
+from .models import View
 from .utils import anonymize_ip_address
 from .utils import anonymize_user_agent
 from .utils import calculate_ctr
@@ -495,8 +498,11 @@ class TestAdModels(TestCase):
 
 class DecisionEngineTests(TestCase):
     def setUp(self):
+        self.publisher = get(Publisher, slug="test-publisher")
         self.ad_type = get(AdType, has_image=False, slug="z")
-        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.campaign = get(
+            Campaign, publishers=[self.publisher], max_sale_value=2000.0
+        )
         self.include_flight = get(
             Flight,
             live=True,
@@ -580,16 +586,16 @@ class DecisionEngineTests(TestCase):
         self.request.geo = GeolocationTuple("US", "CA", None)
 
         self.backend = AdvertisingEnabledBackend(
-            request=self.request, placements=self.placements
+            request=self.request, placements=self.placements, publisher=self.publisher
         )
 
         self.probabilistic_backend = ProbabilisticClicksNeededBackend(
-            request=self.request, placements=self.placements
+            request=self.request, placements=self.placements, publisher=self.publisher
         )
 
     def test_ads_disabled(self):
         backend = AdvertisingDisabledBackend(
-            request=self.request, placements=self.placements
+            request=self.request, placements=self.placements, publisher=self.publisher
         )
         ad, _ = backend.get_ad_and_placement()
         self.assertIsNone(ad)
@@ -627,7 +633,7 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(
             self.backend.filter_ads([self.advertisement1]), [self.advertisement1]
         )
-        self.advertisement1.incr(CLICKS)
+        self.advertisement1.incr(CLICKS, self.publisher)
 
         # Second time the promo is filtered out - the promo has met its max_sale_value
         self.assertEqual(self.campaign.total_value(), 2.0)
@@ -670,9 +676,9 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(self.campaign.total_value(), 0)
         self.assertEqual(ads[0].flight.campaign.campaign_total_value, 0)
 
-        self.advertisement1.incr(CLICKS)  # +2
-        self.advertisement1.incr(CLICKS)  # +2
-        self.advertisement2.incr(CLICKS)  # +5
+        self.advertisement1.incr(CLICKS, self.publisher)  # +2
+        self.advertisement1.incr(CLICKS, self.publisher)  # +2
+        self.advertisement2.incr(CLICKS, self.publisher)  # +5
 
         ads = self.backend.get_ads_queryset()
         ads = self.backend.annotate_queryset(ads)
@@ -685,6 +691,7 @@ class DecisionEngineTests(TestCase):
         backend = AdvertisingEnabledBackend(
             request=self.request,
             placements=self.placements,
+            publisher=self.publisher,
             ad_slug=self.advertisement1.slug,
         )
 
@@ -700,8 +707,8 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(ads[0].flight.flight_clicks_today, 0)
 
         # Add 2 clicks
-        self.advertisement1.incr(CLICKS)
-        self.advertisement1.incr(CLICKS)
+        self.advertisement1.incr(CLICKS, self.publisher)
+        self.advertisement1.incr(CLICKS, self.publisher)
 
         self.assertEqual(self.include_flight.clicks_remaining(), 998)
         self.assertEqual(self.include_flight.total_clicks(), 2)
@@ -718,7 +725,7 @@ class DecisionEngineTests(TestCase):
         impression.save()
 
         # Add 1 click for today
-        self.advertisement1.incr(CLICKS)
+        self.advertisement1.incr(CLICKS, self.publisher)
 
         self.assertEqual(self.include_flight.clicks_remaining(), 997)
         self.assertEqual(self.include_flight.clicks_today(), 1)
@@ -764,7 +771,7 @@ class DecisionEngineTests(TestCase):
 
         clicks_to_simulate = 10
         for _ in range(clicks_to_simulate):
-            self.advertisement1.incr(CLICKS)
+            self.advertisement1.incr(CLICKS, self.publisher)
 
         self.assertEqual(self.include_flight.clicks_needed_today(), 23)
         ads = self.backend.get_ads_queryset()
@@ -789,7 +796,7 @@ class DecisionEngineTests(TestCase):
 
         views_to_simulate = 10
         for _ in range(views_to_simulate):
-            self.advertisement1.incr(VIEWS)
+            self.advertisement1.incr(VIEWS, self.publisher)
 
         self.assertEqual(self.cpm_flight.views_needed_today(), 323)
 
@@ -930,7 +937,10 @@ class DecisionEngineTests(TestCase):
 
 class AdDecisionApiTests(TestCase):
     def setUp(self):
-        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.publisher = get(Publisher, slug="test-publisher")
+        self.campaign = get(
+            Campaign, publishers=[self.publisher], max_sale_value=2000.0
+        )
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
         )
@@ -946,8 +956,12 @@ class AdDecisionApiTests(TestCase):
             flight=self.flight,
         )
 
-        self.placements = [{"div_id": "a", "ad_type": "z"}]
-        self.params = {"div_ids": "abc|def", "ad_types": "z|y"}
+        self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
+        self.params = {
+            "div_ids": "abc|def",
+            "ad_types": "{}|y".format(self.ad_type.slug),
+            "publisher": self.publisher.slug,
+        }
 
         self.user = get(get_user_model(), username="test-user")
         self.url = reverse("adserver:api:decision")
@@ -965,7 +979,7 @@ class AdDecisionApiTests(TestCase):
         resp = self.client.post(self.url)
         self.assertEqual(resp.status_code, 400)
 
-        data = {"placements": self.placements}
+        data = {"placements": self.placements, "publisher": self.publisher.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -991,10 +1005,214 @@ class AdDecisionApiTests(TestCase):
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
     def test_unknown_ad_type(self):
-        data = {"placements": [{"div_id": "a", "ad_type": "unknown"}]}
+        data = {
+            "placements": [{"div_id": "a", "ad_type": "unknown"}],
+            "publisher": self.publisher.slug,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {}, resp_json)
+
+    def test_invalid_publisher(self):
+        # Missing publisher
+        data = {"placements": [{"div_id": "a", "ad_type": "unknown"}]}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+        # Unknown publisher
+        data["publisher"] = "does-not-exist"
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_publishers(self):
+        publisher2 = get(Publisher, slug="another-publisher")
+
+        data = {"placements": self.placements, "publisher": publisher2.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {})
+
+        # Allow this publisher on the campaign
+        self.campaign.publishers.add(publisher2)
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_campaign_types(self):
+        community_campaign = get(
+            Campaign, publishers=[self.publisher], campaign_type=COMMUNITY_CAMPAIGN
+        )
+        house_campaign = get(
+            Campaign, publishers=[self.publisher], campaign_type=HOUSE_CAMPAIGN
+        )
+
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher.slug,
+            "campaign_types": [PAID_CAMPAIGN],
+        }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Try community only
+        data["campaign_types"] = [COMMUNITY_CAMPAIGN]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {}, resp_json)
+
+        # Set the flight to a community campaign and verify that it is returned
+        self.flight.campaign = community_campaign
+        self.flight.save()
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Try multiple campaign types
+        data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {}, resp_json)
+
+        # Set the flight to a house campaign and verify that it is returned
+        self.flight.campaign = house_campaign
+        self.flight.save()
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # try an invalid campaign type
+        data["campaign_types"] = ["unknown"]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+
+class AdvertisingIntegrationTests(TestCase):
+    def setUp(self):
+        self.publisher1 = get(Publisher, slug="test-publisher")
+        self.publisher2 = get(Publisher, slug="another-publisher")
+        self.campaign = get(
+            Campaign,
+            publishers=[self.publisher1, self.publisher2],
+            max_sale_value=2000.0,
+        )
+        self.flight = get(
+            Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
+        )
+        self.ad_type = get(AdType, has_image=False, slug="z")
+        self.ad = get(
+            Advertisement,
+            slug="ad-slug",
+            name="ad",
+            link="http://example.com",
+            ad_type=self.ad_type,
+            image=None,
+            live=True,
+            flight=self.flight,
+        )
+
+        self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
+        self.user = get(get_user_model(), username="test-user")
+        self.url = reverse("adserver:api:decision")
+
+        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+
+    def test_view_tracking(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        nonce = data["nonce"]
+        view_url = reverse(
+            "adserver:proxy-ad-view", kwargs={"ad_id": self.ad.pk, "nonce": nonce}
+        )
+
+        # At this point, the ad has been "offered" but not "viewed"
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 0)
+
+        # Simulate an ad view and verify it was viewed
+        self.client.get(view_url, HTTP_USER_AGENT=self.user_agent)
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 1)
+
+        # Ensure also that a view object is written
+        self.assertEqual(
+            View.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )
+
+        # Simulate for a different publisher
+        data = {"placements": self.placements, "publisher": self.publisher2.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        impression = self.ad.impressions.filter(publisher=self.publisher2).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 0)
+
+    def test_click_tracking(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        nonce = data["nonce"]
+        click_url = reverse(
+            "adserver:proxy-ad-click", kwargs={"ad_id": self.ad.pk, "nonce": nonce}
+        )
+
+        # At this point, the ad has been "offered" but not "clicked"
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.clicks, 0)
+
+        # Simulate an ad click
+        self.client.get(click_url, HTTP_USER_AGENT=self.user_agent)
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.clicks, 1)
+
+        # Ensure also that a click object is written
+        self.assertEqual(
+            Click.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )

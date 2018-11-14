@@ -1,6 +1,11 @@
 """De-serializers for the ad server APIs"""
 from rest_framework import serializers
 
+from ..constants import COMMUNITY_CAMPAIGN
+from ..constants import HOUSE_CAMPAIGN
+from ..constants import PAID_CAMPAIGN
+from ..models import Publisher
+
 
 class AdPlacementSerializer(serializers.Serializer):
 
@@ -23,10 +28,18 @@ class AdDecisionSerializer(serializers.Serializer):
 
     """De-serializes incoming possibilities for the ad API"""
 
+    # Required fields
     placements = AdPlacementSerializer(many=True)
+    publisher = serializers.SlugField(required=True)
 
-    # Whether this request should not show paid ads
-    community_house = serializers.BooleanField(default=False, required=False)
+    keywords = serializers.ListField(
+        child=serializers.CharField(), max_length=10, required=False
+    )
+
+    # Whether this request should only consider a certain kind of ad
+    campaign_types = serializers.ListField(
+        child=serializers.CharField(), max_length=10, required=False
+    )
 
     # Used to specify a specific ad or campaign to show (used for debugging mostly)
     force_ad = serializers.CharField(required=False)  # slug
@@ -37,3 +50,24 @@ class AdDecisionSerializer(serializers.Serializer):
             raise serializers.ValidationError("At least one placement is required")
 
         return placements
+
+    def validate_campaign_types(self, campaign_types):
+        if campaign_types:
+            for campaign_type in campaign_types:
+                if campaign_type not in (
+                    PAID_CAMPAIGN,
+                    HOUSE_CAMPAIGN,
+                    COMMUNITY_CAMPAIGN,
+                ):
+                    raise serializers.ValidationError("Invalid campaign type")
+
+        return campaign_types
+
+    def validate_publisher(self, publisher_slug):
+        # Resolve the publisher slug into the actual Publisher
+        if publisher_slug:
+            publisher = Publisher.objects.filter(slug=publisher_slug).first()
+            if publisher:
+                return publisher
+
+        raise serializers.ValidationError("Invalid publisher")

@@ -14,36 +14,35 @@ from .serializers import AdDecisionSerializer
 class AdDecisionView(APIView):
 
     """
-    Decide on a `Advertisement` based on inputs, the user, and attributes of the request
+    Make a decision on an `Advertisement` to show
 
-    Input parameters
+    The ad decision is based on
 
-    * `placements` - where the ad can go
-    * `[keywords]` - keywords about the ad
-    * `[force_sf]` - force showing a specific advertisement
-    * `[force_campaign]` - force showing an ad from a specific campaign
-
-    When called via GET the placements array is passed as `|` separated strings of its components:
-
-    * `div_ids`
-    * `priorities`
-
-    The decision is based on
-
-    * the input parameters
+    * the publisher (ad campaigns may be publisher specific)
+    * the available placements (ad types and priorities)
     * minimal user agent details (browser, mobile, operating system)
-    * geo, keywords, and other targeting parameters
+    * geography (based on IP)
+    * keywords
+
+    .. http:post:: /api/v1/decision/
+
+        :param string publisher: **Required**. The slug of the publisher
+        :param array placements: **Required**. Various possible ad placements where an ad could go
+        :param array keywords: Keywords that identify the page where the ad will go
+        :param array campaign_types: Limit the ad results to certain campaign types
+        :param string force_ad: Limit results to a specific ad
+        :param string force_campaign: Limit results to ads from a specific campaign
     """
 
     permission_classes = (permissions.AllowAny,)
     renderer_classes = (JSONRenderer, JSONPRenderer)
 
-    def _prepare_response(self, ad, placement):
-        """Wrap `offer_ad` with the placement"""
+    def _prepare_response(self, ad, placement, publisher):
+        """Wrap `offer_ad` with the placement for the publisher"""
         if not ad or not placement:
             return {}
 
-        data = offer_ad(ad)
+        data = offer_ad(ad, publisher)
         data.update({"div_id": placement["div_id"]})
         return data
 
@@ -84,22 +83,31 @@ class AdDecisionView(APIView):
         return self.decision(request, request.data)
 
     def decision(self, request, data):
+        """
+        Makes a decision on what add to display based on info
+
+        :param request: the HTTP request
+        :param data: data needed for the decision (query params, post data, etc.)
+        :return: An add decision (JSON) or an empty JSON dict
+        """
         serializer = AdDecisionSerializer(data=data)
 
         if serializer.is_valid():
-            placements = serializer.validated_data["placements"]
-
-            ad_slug = serializer.validated_data.get("force_ad")
-            campaign_slug = serializer.validated_data.get("force_campaign")
-
+            publisher = serializer.validated_data["publisher"]
             backend = get_ad_decision_backend()(
+                # Required parameters
                 request=request,
-                placements=placements,
-                ad_slug=ad_slug,
-                campaign_slug=campaign_slug,
+                placements=serializer.validated_data["placements"],
+                publisher=publisher,
+                # Optional parameters
+                keywords=serializer.validated_data.get("keywords"),
+                campaign_types=serializer.validated_data.get("campaign_types"),
+                # Debugging parameters
+                ad_slug=serializer.validated_data.get("force_ad"),
+                campaign_slug=serializer.validated_data.get("force_campaign"),
             )
             ad, placement = backend.get_ad_and_placement()
 
-            return Response(self._prepare_response(ad, placement))
+            return Response(self._prepare_response(ad, placement, publisher))
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -15,6 +15,7 @@ from user_agents import parse
 from .constants import CLICKS
 from .constants import VIEWS
 from .models import Advertisement
+from .models import Publisher
 from .utils import analytics_event
 from .utils import get_client_ip
 from .utils import is_blacklisted_user_agent
@@ -65,8 +66,15 @@ def proxy_ad_click(request, ad_id, nonce):
     user_agent = request.META.get("HTTP_USER_AGENT", "")
     parsed_ua = parse(user_agent)
 
+    publisher = None
     ad = get_object_or_404(Advertisement, pk=ad_id)
     count = cache.get(ad.cache_key(impression_type=CLICKS, nonce=nonce), None)
+    publisher_slug = cache.get(
+        ad.cache_key(impression_type="publisher", nonce=nonce), None
+    )
+
+    if publisher_slug:
+        publisher = Publisher.objects.filter(slug=publisher_slug).first()
 
     event_category = "Advertisement"
     event_action = "Billed Click"
@@ -96,11 +104,14 @@ def proxy_ad_click(request, ad_id, nonce):
         # Note: Normally logging IPs is frowned upon but this is a security/billing violation
         log.warning("User (%s) has clicked too many ads recently [%s]", ip, user_agent)
         event_action = "RateLimited Click"
+    elif not publisher:
+        log.warning("Ad click for unknown publisher [%s]", publisher_slug)
+        event_action = "Unknown Publisher Click"
     elif count == 0:
         log.debug("Billed ad click")
-        ad.incr(CLICKS)
+        ad.incr(CLICKS, publisher)
         cache.incr(ad.cache_key(impression_type=CLICKS, nonce=nonce))
-        ad.record_click(request=request, advertisement=ad)
+        ad.record_click(request=request, advertisement=ad, publisher=publisher)
     else:
         log.warning(
             "Duplicate click logged. %s total clicks tried. User Agent: [%s]",
@@ -126,8 +137,15 @@ def proxy_ad_view(request, ad_id, nonce):
     user_agent = request.META.get("HTTP_USER_AGENT", "")
     parsed_ua = parse(user_agent)
 
+    publisher = None
     ad = get_object_or_404(Advertisement, pk=ad_id)
     count = cache.get(ad.cache_key(impression_type=VIEWS, nonce=nonce), None)
+    publisher_slug = cache.get(
+        ad.cache_key(impression_type="publisher", nonce=nonce), None
+    )
+
+    if publisher_slug:
+        publisher = Publisher.objects.filter(slug=publisher_slug).first()
 
     if parsed_ua.is_bot:
         log.debug("Bot view. User Agent: [%s]", user_agent)
@@ -140,11 +158,13 @@ def proxy_ad_view(request, ad_id, nonce):
         log.debug("Old or nonexistent hash tried on View.")
     elif is_blacklisted_user_agent(user_agent):
         log.debug("Blacklisted user agent view [%s]", user_agent)
+    elif not publisher:
+        log.debug("Ad view for unknown publisher [%s]", publisher_slug)
     elif count == 0:
         log.debug("Billed ad view")
-        ad.incr(VIEWS)
+        ad.incr(VIEWS, publisher)
         cache.incr(ad.cache_key(impression_type=VIEWS, nonce=nonce))
-        ad.record_view(request=request, advertisement=ad)
+        ad.record_view(request=request, advertisement=ad, publisher=publisher)
     else:
         log.debug(
             "Duplicate view logged. %s total views tried. User Agent: [%s]",

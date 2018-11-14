@@ -709,7 +709,7 @@ class Advertisement(IndestructibleModel):
         if not settings.DEBUG:
             scheme = "https"
 
-        image_url = "{scheme}://{host}{url}".format(
+        view_url = "{scheme}://{host}{url}".format(
             scheme=scheme,
             host=domain,
             url=reverse(
@@ -717,7 +717,7 @@ class Advertisement(IndestructibleModel):
             ),
         )
 
-        link_url = "{scheme}://{host}{url}".format(
+        click_url = "{scheme}://{host}{url}".format(
             scheme=scheme,
             host=domain,
             url=reverse(
@@ -727,28 +727,29 @@ class Advertisement(IndestructibleModel):
         return {
             "id": self.slug,
             "text": self.text,
-            "html": self.render_ad(link_url=link_url, image_url=image_url),
-            "link": link_url,
-            "image": image_url,
+            "html": self.render_ad(link_url=click_url, image_url=view_url),
+            "link": click_url,
+            "view_url": view_url,
+            "image": self.image.url if self.image else None,
             "nonce": nonce,
         }
 
     def cache_key(self, impression_type, nonce):
-        assert impression_type in IMPRESSION_TYPES
+        assert impression_type in IMPRESSION_TYPES + ("publisher",)
         return "advertisement:{id}:{nonce}:{type}".format(
             id=self.slug, nonce=nonce, type=impression_type
         )
 
-    def incr(self, impression_type):
+    def incr(self, impression_type, publisher):
         """Add to the number of times this action has been performed, stored in the DB"""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
-        impression, _ = self.impressions.get_or_create(date=day)
+        impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
 
         setattr(impression, impression_type, models.F(impression_type) + 1)
         impression.save()
 
-    def _record_base(self, request, model, advertisement):
+    def _record_base(self, request, model, advertisement, publisher):
         ip = get_client_ip(request)
         user_agent = request.META.get("HTTP_USER_AGENT", "") or ""
         parsed_ua = parse(user_agent)
@@ -759,6 +760,7 @@ class Advertisement(IndestructibleModel):
             user_agent = None
 
         obj = model.objects.create(
+            publisher=publisher,
             ip=anonymize_ip_address(ip),
             user_agent=user_agent,
             client_id=generate_client_id(ip, user_agent),
@@ -774,11 +776,11 @@ class Advertisement(IndestructibleModel):
         )
         return obj
 
-    def record_click(self, request, advertisement):
+    def record_click(self, request, advertisement, publisher):
         """Store click data in the DB."""
-        return self._record_base(request, Click, advertisement)
+        return self._record_base(request, Click, advertisement, publisher)
 
-    def record_view(self, request, advertisement):
+    def record_view(self, request, advertisement, publisher):
         """
         Store view data in the DB.
 
@@ -787,7 +789,7 @@ class Advertisement(IndestructibleModel):
         is not feasible
         """
         if settings.ADSERVER_RECORD_VIEWS:
-            return self._record_base(request, View, advertisement)
+            return self._record_base(request, View, advertisement, publisher)
 
         log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
         return None
@@ -979,13 +981,16 @@ class AdImpression(BaseImpression):
     Indexed one per ad per day.
     """
 
+    publisher = models.ForeignKey(
+        Publisher, null=True, blank=True, on_delete=models.PROTECT
+    )
     advertisement = models.ForeignKey(
         Advertisement, related_name="impressions", on_delete=models.PROTECT
     )
 
     class Meta:
         ordering = ("-date",)
-        unique_together = ("advertisement", "date")
+        unique_together = ("publisher", "advertisement", "date")
         verbose_name_plural = _("Ad impressions")
 
     def __str__(self):
@@ -998,6 +1003,10 @@ class AdBase(IndestructibleModel):
     """A base class for data on ad views and clicks"""
 
     date = models.DateTimeField(_("Created date"), auto_now_add=True)
+
+    publisher = models.ForeignKey(
+        Publisher, null=True, blank=True, on_delete=models.PROTECT
+    )
 
     # Click Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
