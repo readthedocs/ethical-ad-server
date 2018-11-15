@@ -957,31 +957,21 @@ class AdDecisionApiTests(TestCase):
         )
 
         self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
-        self.params = {
-            "div_ids": "abc|def",
-            "ad_types": "{}|y".format(self.ad_type.slug),
-            "publisher": self.publisher.slug,
-        }
+        self.data = {"placements": self.placements, "publisher": self.publisher.slug}
 
         self.user = get(get_user_model(), username="test-user")
         self.url = reverse("adserver:api:decision")
 
     def test_get_request(self):
         resp = self.client.get(self.url)
-        self.assertEqual(resp.status_code, 400)
-
-        resp = self.client.get(self.url, self.params)
-        self.assertEqual(resp.status_code, 200, resp.content)
-        resp_json = resp.json()
-        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+        self.assertEqual(resp.status_code, 405)
 
     def test_post_request(self):
         resp = self.client.post(self.url)
         self.assertEqual(resp.status_code, 400)
 
-        data = {"placements": self.placements, "publisher": self.publisher.slug}
         resp = self.client.post(
-            self.url, json.dumps(data), content_type="application/json"
+            self.url, json.dumps(self.data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
@@ -992,14 +982,18 @@ class AdDecisionApiTests(TestCase):
         self.ad.save()
 
         # Not live - shouldn't be displayed
-        resp = self.client.get(self.url, self.params)
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
 
         # Forcing the ad ignores "live"
-        self.params["force_ad"] = "ad-slug"
-        resp = self.client.get(self.url, self.params)
+        self.data["force_ad"] = "ad-slug"
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)

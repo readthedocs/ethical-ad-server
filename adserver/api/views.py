@@ -46,30 +46,6 @@ class AdDecisionView(APIView):
         data.update({"div_id": placement["div_id"]})
         return data
 
-    def get(self, request):
-        """
-        Decision API is called via GET
-
-        When called via GET the placements array is passed
-        as individual fields rather than a JSON dict
-        """
-        data = request.query_params.dict()
-
-        placements = []
-        div_ids = data.get("div_ids", "").split("|")
-        ad_types = data.get("ad_types", "").split("|")
-        priorities = data.get("priorities", "").split("|")
-
-        for i, (div_id, display_type) in enumerate(zip(div_ids, ad_types)):
-            placement = {"div_id": div_id, "ad_type": display_type}
-            if i < len(priorities) and priorities[i]:
-                placement["priority"] = priorities[i]
-
-            placements.append(placement)
-
-        data["placements"] = placements
-        return self.decision(request, data)
-
     def post(self, request):
         """
         Decision API called via POST
