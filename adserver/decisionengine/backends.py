@@ -4,6 +4,7 @@ import random
 
 from django.db import models
 
+from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
@@ -42,7 +43,7 @@ class BaseAdDecisionBackend:
 
         if not self.campaign_types:
             # Unless specified, ads from any campaign type can be shown
-            self.campaign_types = [HOUSE_CAMPAIGN, COMMUNITY_CAMPAIGN, PAID_CAMPAIGN]
+            self.campaign_types = ALL_CAMPAIGN_TYPES
 
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")

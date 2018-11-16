@@ -1,9 +1,7 @@
 """De-serializers for the ad server APIs"""
 from rest_framework import serializers
 
-from ..constants import COMMUNITY_CAMPAIGN
-from ..constants import HOUSE_CAMPAIGN
-from ..constants import PAID_CAMPAIGN
+from ..constants import ALL_CAMPAIGN_TYPES
 from ..models import Advertisement
 from ..models import Publisher
 
@@ -59,11 +57,7 @@ class AdDecisionSerializer(serializers.Serializer):
     def validate_campaign_types(self, campaign_types):
         if campaign_types:
             for campaign_type in campaign_types:
-                if campaign_type not in (
-                    PAID_CAMPAIGN,
-                    HOUSE_CAMPAIGN,
-                    COMMUNITY_CAMPAIGN,
-                ):
+                if campaign_type not in ALL_CAMPAIGN_TYPES:
                     raise serializers.ValidationError("Invalid campaign type")
 
         return campaign_types
