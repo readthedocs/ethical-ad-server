@@ -5,11 +5,9 @@ import re
 
 import mock
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
-from django.http import HttpResponse
 from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -26,8 +24,6 @@ from .decisionengine.backends import AdvertisingDisabledBackend
 from .decisionengine.backends import AdvertisingEnabledBackend
 from .decisionengine.backends import ProbabilisticClicksNeededBackend
 from .forms import FlightForm
-from .middleware import GeolocationMiddleware
-from .middleware import RealIPAddressMiddleware
 from .models import AdType
 from .models import Advertisement
 from .models import Campaign
@@ -182,60 +178,6 @@ class FormTests(TestCase):
         data["cpc"] = 0.0
         form = FlightForm(data=data)
         self.assertTrue(form.is_valid())
-
-
-class TestMiddleware(TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.request = self.factory.get("/")
-        self.request.user = AnonymousUser()
-
-        def test_view(request):
-            return HttpResponse("Success")
-
-        self.geo_middleware = GeolocationMiddleware(test_view)
-        self.ip_middleware = RealIPAddressMiddleware(test_view)
-
-        self.staff_user = get(get_user_model(), email="test@test.com", is_staff=True)
-
-    def test_geolocation_middleware_setup(self):
-        self.geo_middleware(self.request)
-        self.assertTrue(hasattr(self.request, "geo"))
-        self.assertTrue(hasattr(self.request.geo, "country_code"))
-        self.assertTrue(hasattr(self.request.geo, "region_code"))
-        self.assertTrue(hasattr(self.request.geo, "metro_code"))
-
-    def test_geolocation_middleware_headers(self):
-        response = self.geo_middleware(self.request)
-
-        # These are false unless DEBUG=True or user.is_staff
-        self.assertFalse(response.has_header("X-Adserver-Country"))
-        self.assertFalse(response.has_header("X-Adserver-Region"))
-        self.assertFalse(response.has_header("X-Adserver-Metro"))
-
-        # Staff get the geolocation headers
-        self.request.user = self.staff_user
-        response = self.geo_middleware(self.request)
-        self.assertTrue(response.has_header("X-Adserver-Country"))
-        self.assertTrue(response.has_header("X-Adserver-Region"))
-        self.assertTrue(response.has_header("X-Adserver-Metro"))
-
-    def test_real_ip_middleware(self):
-        response = self.ip_middleware(self.request)
-        self.assertFalse(response.has_header("X-Adserver-RealIP"))
-        self.assertTrue(hasattr(self.request, "ip_address"))
-
-        # Staff have the real IP header
-        self.request.user = self.staff_user
-        response = self.ip_middleware(self.request)
-        self.assertTrue(response.has_header("X-Adserver-RealIP"))
-
-        # Set x-forwarded-for to fake the IP address
-        ip_address = "8.8.8.8"
-        header = "{},1.1.1.1,2.2.2.2:80".format(ip_address)
-        self.request.META["HTTP_X_FORWARDED_FOR"] = header
-        self.ip_middleware(self.request)
-        self.assertEqual(self.request.ip_address, ip_address)
 
 
 class TestValidators(TestCase):
@@ -935,7 +877,7 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(ret, community_ad)
 
 
-class AdDecisionApiTests(TestCase):
+class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = get(Publisher, slug="test-publisher")
         self.campaign = get(
@@ -961,14 +903,21 @@ class AdDecisionApiTests(TestCase):
 
         self.user = get(get_user_model(), username="test-user")
         self.url = reverse("adserver:api:decision")
+        self.track_view_url = reverse("adserver:api:view-tracking")
+        self.track_click_url = reverse("adserver:api:click-tracking")
 
+        self.ip_address = "8.8.8.8"
+        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+
+
+class AdDecisionApiTests(BaseApiTest):
     def test_get_request(self):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 405)
 
     def test_post_request(self):
         resp = self.client.post(self.url)
-        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(400 <= resp.status_code <= 499)
 
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
@@ -1108,37 +1057,126 @@ class AdDecisionApiTests(TestCase):
         self.assertEqual(resp.status_code, 400, resp.content)
 
 
-class AdvertisingIntegrationTests(TestCase):
+class AdApiTrackingTests(BaseApiTest):
     def setUp(self):
-        self.publisher1 = get(Publisher, slug="test-publisher")
+        super().setUp()
+
+        self.offer = self.ad.offer_ad(self.publisher)
+
+        self.params = {
+            "nonce": self.offer["nonce"],
+            "advertisement": self.ad.slug,
+            "url": "http://example.com",
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
+
+    def test_view_tracking_invalid_nonce(self):
+        self.params["nonce"] = "asdfasfd"
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Old/Nonexistent nonce"})
+
+    def test_view_tracking_bot(self):
+        bot_ua = (
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+        )
+        self.params["user_ua"] = bot_ua
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Bot impression"})
+
+    def test_view_tracking_unknown_ua(self):
+        self.params["user_ua"] = "Unrecognized UA"
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Unrecognized user agent"})
+
+    def test_view_tracking_invalid_ad(self):
+        self.params["advertisement"] = "unknown"
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_view_tracking_invalid_ip(self):
+        self.params["user_ip"] = "not-real-ip"
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_view_tracking_invalid_url(self):
+        self.params["url"] = "not a url"
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_view_tracking_valid(self):
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Billed view"})
+
+    def test_click_tracking_valid(self):
+        resp = self.client.post(
+            self.track_click_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Billed click"})
+
+        # Don't track dupes
+        resp = self.client.post(
+            self.track_click_url,
+            json.dumps(self.params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+        self.assertDictEqual(resp.json(), {"message": "Old/Nonexistent nonce"})
+
+
+class AdvertisingIntegrationTests(BaseApiTest):
+    def setUp(self):
+        super().setUp()
+
+        self.publisher1 = self.publisher
         self.publisher2 = get(Publisher, slug="another-publisher")
-        self.campaign = get(
-            Campaign,
-            publishers=[self.publisher1, self.publisher2],
-            max_sale_value=2000.0,
-        )
-        self.flight = get(
-            Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
-        )
-        self.ad_type = get(AdType, has_image=False, slug="z")
-        self.ad = get(
-            Advertisement,
-            slug="ad-slug",
-            name="ad",
-            link="http://example.com",
-            ad_type=self.ad_type,
-            image=None,
-            live=True,
-            flight=self.flight,
-        )
+        self.campaign.publishers.add(self.publisher2)
 
-        self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
-        self.user = get(get_user_model(), username="test-user")
-        self.url = reverse("adserver:api:decision")
+        self.page_url = "http://example.com"
+        self.tracking_params = {
+            "nonce": None,
+            "advertisement": self.ad.slug,
+            "url": self.page_url,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
 
-        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
-
-    def test_view_tracking(self):
+    def test_ad_view_and_tracking(self):
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
@@ -1146,9 +1184,6 @@ class AdvertisingIntegrationTests(TestCase):
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         nonce = data["nonce"]
-        view_url = reverse(
-            "adserver:proxy-ad-view", kwargs={"ad_id": self.ad.pk, "nonce": nonce}
-        )
 
         # At this point, the ad has been "offered" but not "viewed"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
@@ -1156,7 +1191,15 @@ class AdvertisingIntegrationTests(TestCase):
         self.assertEqual(impression.views, 0)
 
         # Simulate an ad view and verify it was viewed
-        self.client.get(view_url, HTTP_USER_AGENT=self.user_agent)
+        self.tracking_params["nonce"] = nonce
+        resp = self.client.post(
+            self.track_view_url,
+            json.dumps(self.tracking_params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+
+        # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
@@ -1180,7 +1223,7 @@ class AdvertisingIntegrationTests(TestCase):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
-    def test_click_tracking(self):
+    def test_ad_click_and_tracking(self):
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
@@ -1188,9 +1231,6 @@ class AdvertisingIntegrationTests(TestCase):
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         nonce = data["nonce"]
-        click_url = reverse(
-            "adserver:proxy-ad-click", kwargs={"ad_id": self.ad.pk, "nonce": nonce}
-        )
 
         # At this point, the ad has been "offered" but not "clicked"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
@@ -1198,15 +1238,27 @@ class AdvertisingIntegrationTests(TestCase):
         self.assertEqual(impression.clicks, 0)
 
         # Simulate an ad click
-        self.client.get(click_url, HTTP_USER_AGENT=self.user_agent)
+        self.tracking_params["nonce"] = nonce
+        resp = self.client.post(
+            self.track_click_url,
+            json.dumps(self.tracking_params),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 202, resp.content)
+
+        # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 1)
 
         # Ensure also that a click object is written
-        self.assertEqual(
-            Click.objects.filter(
-                advertisement=self.ad, publisher=self.publisher1
-            ).count(),
-            1,
-        )
+        clicks = Click.objects.filter(advertisement=self.ad, publisher=self.publisher1)
+        self.assertEqual(clicks.count(), 1)
+        click = clicks.first()
+
+        # Ip is anonymized
+        self.assertEqual(click.ip, "8.8.0.0")
+        self.assertEqual(click.publisher, self.publisher1)
+        self.assertEqual(click.advertisement, self.ad)
+        self.assertEqual(click.os_family, "Mac OS X")
+        self.assertEqual(click.url, self.page_url)

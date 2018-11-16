@@ -7,8 +7,7 @@ from collections import defaultdict
 from collections import OrderedDict
 
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse
+from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -24,14 +23,19 @@ from jsonfield import JSONField
 from user_agents import parse
 
 from .constants import CAMPAIGN_TYPES
+from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
+from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
+from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
-from .utils import generate_client_id
 from .utils import get_ad_day
+from .utils import get_client_id
 from .utils import get_client_ip
+from .utils import get_client_user_agent
+from .utils import get_geolocation
 from .validators import AdvertisementValidator
 from .validators import TargetingParametersValidator
 
@@ -703,34 +707,13 @@ class Advertisement(IndestructibleModel):
     def as_dict(self):
         """A dict respresentation of this for JSON encoding"""
         nonce = get_random_string()  # 12 chars alphanumeric
-        current_site = Site.objects.get_current()
-        domain = current_site.domain
-        scheme = "http"
-        if not settings.DEBUG:
-            scheme = "https"
 
-        view_url = "{scheme}://{host}{url}".format(
-            scheme=scheme,
-            host=domain,
-            url=reverse(
-                "adserver:proxy-ad-view", kwargs={"ad_id": self.pk, "nonce": nonce}
-            ),
-        )
-
-        click_url = "{scheme}://{host}{url}".format(
-            scheme=scheme,
-            host=domain,
-            url=reverse(
-                "adserver:proxy-ad-click", kwargs={"ad_id": self.pk, "nonce": nonce}
-            ),
-        )
         return {
             "id": self.slug,
             "text": self.text,
-            "html": self.render_ad(link_url=click_url, image_url=view_url),
-            "link": click_url,
-            "view_url": view_url,
+            "html": self.render_ad(),
             "image": self.image.url if self.image else None,
+            "link": self.link,
             "nonce": nonce,
         }
 
@@ -749,9 +732,10 @@ class Advertisement(IndestructibleModel):
         setattr(impression, impression_type, models.F(impression_type) + 1)
         impression.save()
 
-    def _record_base(self, request, model, advertisement, publisher):
-        ip = get_client_ip(request)
-        user_agent = request.META.get("HTTP_USER_AGENT", "") or ""
+    def _record_base(self, request, model, publisher, url):
+        ip_address = get_client_ip(request)
+        user_agent = get_client_user_agent(request)
+        client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:
@@ -759,28 +743,39 @@ class Advertisement(IndestructibleModel):
             # we can't store UAs indefinitely from a user merely browsing
             user_agent = None
 
+        # Get country data for this request
+        country = None
+        if hasattr(request, "geo"):
+            # This is set in all API requests that use the GeoIpMixin
+            country = request.geo.country_code
+        else:
+            geo_data = get_geolocation(ip_address)
+            if geo_data:
+                country = geo_data["country_code"]
+
         obj = model.objects.create(
             publisher=publisher,
-            ip=anonymize_ip_address(ip),
+            ip=anonymize_ip_address(ip_address),
             user_agent=user_agent,
-            client_id=generate_client_id(ip, user_agent),
-            country=request.geo.country_code,
-            url=request.META.get("HTTP_REFERER"),
+            client_id=client_id,
+            country=country,
+            url=url,
             # Derived user agent data
             browser_family=parsed_ua.browser.family,
             os_family=parsed_ua.os.family,
             is_bot=parsed_ua.is_bot,
             is_mobile=parsed_ua.is_mobile,
             # Page info
-            advertisement=advertisement,
+            advertisement=self,
         )
         return obj
 
-    def record_click(self, request, advertisement, publisher):
+    def track_click(self, request, publisher, url):
         """Store click data in the DB."""
-        return self._record_base(request, Click, advertisement, publisher)
+        self.incr(CLICKS, publisher)
+        self._record_base(request, Click, publisher, url)
 
-    def record_view(self, request, advertisement, publisher):
+    def track_view(self, request, publisher, url):
         """
         Store view data in the DB.
 
@@ -788,11 +783,70 @@ class Advertisement(IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        if settings.ADSERVER_RECORD_VIEWS:
-            return self._record_base(request, View, advertisement, publisher)
+        self.incr(VIEWS, publisher)
 
-        log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
-        return None
+        if settings.ADSERVER_RECORD_VIEWS:
+            self._record_base(request, View, publisher, url)
+        else:
+            log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
+
+    def offer_ad(self, publisher):
+        """
+        Offer to display this ad on a specific publisher
+
+        Tracks an offer in the database and sets various cache variables
+        """
+        # The time after an ad has been offered where impressions (clicks) won't count
+        offer_time_limit = 60 * 60 * 4  # 4 hours
+
+        data = self.as_dict()
+        nonce = data["nonce"]
+        self.incr(OFFERS, publisher)
+        # Set validation cache
+        for impression_type in [VIEWS, CLICKS]:
+            cache.set(
+                self.cache_key(impression_type=impression_type, nonce=nonce),
+                0,  # Number of times used. Make this an int so we can detect multiple uses
+                offer_time_limit,
+            )
+
+        # Cache the publisher slug for this nonce
+        # This is needed so we can later retrieve the publisher if this ad/nonce is viewed/clicked
+        cache.set(
+            self.cache_key(impression_type="publisher", nonce=nonce),
+            publisher.slug,
+            offer_time_limit,
+        )
+
+        return data
+
+    def get_publisher(self, nonce):
+        publisher = None
+        publisher_slug = cache.get(
+            self.cache_key(impression_type="publisher", nonce=nonce), None
+        )
+
+        if publisher_slug:
+            publisher = Publisher.objects.filter(slug=publisher_slug).first()
+
+        return publisher
+
+    def is_valid_nonce(self, impression_type, nonce):
+        """
+        Returns true if this nonce (from ``offer_ad``) is valid for a given impression type (click, view)
+
+        A nonce is valid if it was generated recently (hasn't timed out)
+        and hasn't already been used
+        """
+        return (
+            cache.get(
+                self.cache_key(impression_type=impression_type, nonce=nonce), None
+            )
+            == 0
+        )
+
+    def invalidate_nonce(self, impression_type, nonce):
+        cache.delete(self.cache_key(impression_type=impression_type, nonce=nonce))
 
     def view_ratio(self, day=None):
         if not day:
@@ -912,7 +966,7 @@ class Advertisement(IndestructibleModel):
             )
         )
 
-    def render_ad(self, image_url=None, link_url=None):
+    def render_ad(self):
         template = get_template("adserver/advertisement.html")
         if self.ad_type and self.ad_type.template:
             template = engines["django"].from_string(self.ad_type.template)
@@ -920,9 +974,9 @@ class Advertisement(IndestructibleModel):
         return template.render(
             {
                 "ad": self,
-                "image_url": image_url or self.image,
-                "link_url": link_url or self.link,
-                "text_as_html": self.render_links(link=link_url),
+                "image_url": self.image,
+                "link_url": self.link,
+                "text_as_html": self.render_links(),
             }
         ).strip()
 

@@ -24,6 +24,7 @@ SECRET_KEY = "Overridden in Production"  # noqa
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+TESTING = False
 
 ALLOWED_HOSTS = []
 
@@ -56,8 +57,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "adserver.middleware.RealIPAddressMiddleware",
-    "adserver.middleware.GeolocationMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -233,6 +232,10 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+# Django Rest Framework (API)
+# https://www.django-rest-framework.org
+REST_FRAMEWORK = {"DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",)}
 
 ############################################################################
 # Ad server specific settings

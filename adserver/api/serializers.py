@@ -4,6 +4,7 @@ from rest_framework import serializers
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
+from ..models import Advertisement
 from ..models import Publisher
 
 
@@ -41,6 +42,10 @@ class AdDecisionSerializer(serializers.Serializer):
         child=serializers.CharField(), max_length=10, required=False
     )
 
+    # Used to pass the actual ad viewer's data for targeting purposes
+    user_ip = serializers.IPAddressField(required=False)
+    user_ua = serializers.CharField(required=False)
+
     # Used to specify a specific ad or campaign to show (used for debugging mostly)
     force_ad = serializers.CharField(required=False)  # slug
     force_campaign = serializers.CharField(required=False)  # slug
@@ -71,3 +76,25 @@ class AdDecisionSerializer(serializers.Serializer):
                 return publisher
 
         raise serializers.ValidationError("Invalid publisher")
+
+
+class AdTrackingSerializer(serializers.Serializer):
+
+    """A serializer for data that tracks views and clicks"""
+
+    # Required fields
+    advertisement = serializers.SlugField(required=True)
+    nonce = serializers.CharField(required=True)
+    url = serializers.URLField(required=True)
+
+    # Used to pass the actual ad viewer's data for targeting purposes
+    user_ip = serializers.IPAddressField(required=False)
+    user_ua = serializers.CharField(required=False)
+
+    def validate_advertisement(self, advertisement_slug):
+        # Resolve the slug into the actual ad
+        advertisement = Advertisement.objects.filter(slug=advertisement_slug).first()
+        if not advertisement:
+            raise serializers.ValidationError("Invalid advertisement")
+
+        return advertisement
