@@ -5,6 +5,7 @@ import logging
 import re
 from collections import namedtuple
 
+import analytical
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
@@ -54,8 +55,13 @@ def offer_ad(advertisement):
     return promo_dict
 
 
-def analytics_event(**kwargs):  # noqa TODO add this
-    pass
+def analytics_event(data):
+    """Send data to analytics with celery"""
+    if settings.ADSERVER_ANALYTICS_ID:
+        ga = analytical.Provider(
+            "googleanalytics", settings.ADSERVER_ANALYTICS_ID, asynchronously=True
+        )
+        ga.event(data)
 
 
 def get_ad_day():

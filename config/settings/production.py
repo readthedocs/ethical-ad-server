@@ -21,6 +21,7 @@ env = environ.Env(
     # Ad server settings
     ADSERVER_HTTPS=(bool, False),
     ADSERVER_ADMIN_URL=(str, ""),
+    ADSERVER_ANALYTICS_ID=(str, None),
     ADSERVER_DECISION_BACKEND=(str, ADSERVER_DECISION_BACKEND),
     ADSERVER_DO_NOT_TRACK=(bool, False),
     ADSERVER_PRIVACY_POLICY_URL=(str, None),
@@ -108,9 +109,22 @@ AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
 AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 
 #
+# Celery settings for asynchronous tasks
+# http://docs.celeryproject.org
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_RESULT_BACKEND = "{protocol}://:{password}@{host}:{port}/0".format(
+    protocol="rediss" if int(env("REDIS_PORT")) == 6380 else "redis",
+    host=env("REDIS_HOST"),
+    port=env("REDIS_PORT"),
+    password=env("REDIS_PASSWORD"),
+)
+CELERY_BROKER_URL = CELERY_RESULT_BACKEND
+
+#
 # Ad server settings
 
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL")
+ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID")
 ADSERVER_DO_NOT_TRACK = env("ADSERVER_DO_NOT_TRACK")
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL")
 ADSERVER_DECISION_BACKEND = env("ADSERVER_DECISION_BACKEND")

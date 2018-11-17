@@ -234,6 +234,21 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 
+# Celery settings for asynchronous tasks
+# http://docs.celeryproject.org/en/latest/userguide/configuration.html
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_DEFAULT_QUEUE = "celery"
+CELERY_APP_NAME = "ethicalads"
+CELERYD_TASK_TIME_LIMIT = 60 * 60  # 60 minutes
+CELERY_SEND_TASK_ERROR_EMAILS = False
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERYD_PREFETCH_MULTIPLIER = 1
+CELERY_CREATE_MISSING_QUEUES = True
+CELERY_IMPORTS = ["analytical.tasks"]
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
 ############################################################################
 # Ad server specific settings
 ############################################################################
@@ -251,6 +266,7 @@ ADSERVER_DECISION_BACKEND = (
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 
+ADSERVER_ANALYTICS_ID = None
 ADSERVER_PRIVACY_POLICY_URL = None
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_BLACKLISTED_USER_AGENTS = []
