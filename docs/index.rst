@@ -27,6 +27,7 @@ from the Ethical Ad Server.
     :maxdepth: 2
 
     user-guide/getting-started
+    user-guide/api
 
 
 Developer Guide

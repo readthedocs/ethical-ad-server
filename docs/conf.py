@@ -10,11 +10,17 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 from datetime import datetime
 
+import django
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.development"
+BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(BASE_DIR)
+
+django.setup()
 
 # -- Project information -----------------------------------------------------
 
@@ -42,6 +48,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosectionlabel",
+    "sphinxcontrib.httpdomain",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

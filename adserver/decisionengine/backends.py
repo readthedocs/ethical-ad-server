@@ -4,6 +4,7 @@ import random
 
 from django.db import models
 
+from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
@@ -20,7 +21,7 @@ class BaseAdDecisionBackend:
 
     """A base decision backend -- other decision backends should extend this"""
 
-    def __init__(self, request, placements, **kwargs):
+    def __init__(self, request, placements, publisher, **kwargs):
         """
         Initialize an ad decision based on the request data
 
@@ -30,18 +31,23 @@ class BaseAdDecisionBackend:
         """
         self.request = request
         self.placements = placements
+        self.publisher = publisher
 
         self.country_code = request.geo.country_code
         self.region_code = request.geo.region_code
         self.metro_code = request.geo.metro_code
 
-        self.keywords = kwargs.get("keywords", [])
+        # Optional parameters
+        self.keywords = kwargs.get("keywords", []) or []
+        self.campaign_types = kwargs.get("campaign_types", []) or []
+
+        if not self.campaign_types:
+            # Unless specified, ads from any campaign type can be shown
+            self.campaign_types = ALL_CAMPAIGN_TYPES
 
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")
-
-        self.show_community_house_only = kwargs.get("community_house") is True
 
     def get_ad_and_placement(self):
         """
@@ -89,10 +95,6 @@ class BaseAdDecisionBackend:
         """Whether to not display ads based on the user, request, or other settings"""
         return True
 
-    def community_house_only(self):
-        """Return True is this request should only be shown community ads"""
-        return self.show_community_house_only
-
     def get_ads_queryset(self):
         """
         Queries for all valid, live ads regardless of geo/lang targeting
@@ -102,9 +104,16 @@ class BaseAdDecisionBackend:
         if not self.should_display_ads():
             return Advertisement.objects.none()
 
-        # Specifying the ad or campaign slug skips filtering by live or date
         ad_types = [p["ad_type"] for p in self.placements]
-        advertisements = Advertisement.objects.filter(ad_type__slug__in=ad_types)
+
+        # Filter ads by campaign, and type first
+        advertisements = Advertisement.objects.filter(
+            ad_type__slug__in=ad_types,
+            flight__campaign__campaign_type__in=self.campaign_types,
+            flight__campaign__publishers=self.publisher,
+        )
+
+        # Specifying the ad or campaign slug skips filtering by live or date
         if self.ad_slug:
             advertisements = advertisements.filter(slug=self.ad_slug)
         elif self.campaign_slug:
@@ -117,14 +126,6 @@ class BaseAdDecisionBackend:
                 flight__live=True,
                 flight__start_date__lte=get_ad_day().date(),
             )
-            if self.community_house_only():
-                # Allow configuring requests for community and house ads only
-                advertisements = advertisements.filter(
-                    flight__campaign__campaign_type__in=(
-                        HOUSE_CAMPAIGN,
-                        COMMUNITY_CAMPAIGN,
-                    )
-                )
 
         # Ensure we fetch flight/campaign/ad_type and filter data so that isn't fetched for each ad
         return advertisements.select_related("flight", "flight__campaign", "ad_type")
