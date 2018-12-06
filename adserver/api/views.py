@@ -2,12 +2,9 @@
 import logging
 
 from django.conf import settings
-from rest_framework import permissions
 from rest_framework import status
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_jsonp.renderers import JSONPRenderer
 from user_agents import parse
 
 from ..constants import CLICKS
@@ -18,6 +15,7 @@ from ..utils import get_client_ip
 from ..utils import get_client_user_agent
 from ..utils import is_blacklisted_user_agent
 from .mixins import GeoIpMixin
+from .permissions import PublisherPermission
 from .serializers import AdDecisionSerializer
 from .serializers import AdTrackingSerializer
 
@@ -52,8 +50,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :param string force_campaign: Limit results to ads from a specific campaign
     """
 
-    permission_classes = (permissions.AllowAny,)
-    renderer_classes = (JSONRenderer, JSONPRenderer)
+    permission_classes = (PublisherPermission,)
 
     def _prepare_response(self, ad, placement, publisher):
         """Wrap `offer_ad` with the placement for the publisher"""
@@ -88,6 +85,7 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         if serializer.is_valid():
             publisher = serializer.validated_data["publisher"]
+            self.check_object_permissions(request, publisher)
             backend = get_ad_decision_backend()(
                 # Required parameters
                 request=request,
@@ -110,6 +108,8 @@ class AdDecisionView(GeoIpMixin, APIView):
 class BaseTrackingView(GeoIpMixin, APIView):
 
     """A base API class for tracking ad impressions"""
+
+    permission_classes = (PublisherPermission,)
 
     log_level = logging.DEBUG
     impression_type = VIEWS
@@ -189,6 +189,8 @@ class ViewTrackingView(BaseTrackingView):
             url = serializer.validated_data["url"]
             publisher = advertisement.get_publisher(nonce)
 
+            self.check_object_permissions(request, publisher)
+
             ignore_reason = self._ignore_tracking_reason(
                 request, advertisement, nonce, publisher
             )
@@ -253,6 +255,8 @@ class ClickTrackingView(BaseTrackingView):
             nonce = serializer.validated_data["nonce"]
             url = serializer.validated_data["url"]
             publisher = advertisement.get_publisher(nonce)
+
+            self.check_object_permissions(request, publisher)
 
             ignore_reason = self._ignore_tracking_reason(
                 request, advertisement, nonce, publisher

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "crispy_forms",
     "rest_framework",
+    "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
 ]
@@ -235,7 +236,14 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # Django Rest Framework (API)
 # https://www.django-rest-framework.org
-REST_FRAMEWORK = {"DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",)}
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+}
 
 ############################################################################
 # Ad server specific settings

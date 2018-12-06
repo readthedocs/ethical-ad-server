@@ -8,12 +8,14 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
+from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
+from rest_framework.authtoken.models import Token
 
 from .constants import CLICKS
 from .constants import COMMUNITY_CAMPAIGN
@@ -902,12 +904,16 @@ class BaseApiTest(TestCase):
         self.data = {"placements": self.placements, "publisher": self.publisher.slug}
 
         self.user = get(get_user_model(), username="test-user")
+        self.user.publishers.add(self.publisher)
+        self.token = Token.objects.create(user=self.user)
         self.url = reverse("adserver:api:decision")
         self.track_view_url = reverse("adserver:api:view-tracking")
         self.track_click_url = reverse("adserver:api:click-tracking")
 
         self.ip_address = "8.8.8.8"
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+
+        self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
 
 
 class AdDecisionApiTests(BaseApiTest):
@@ -925,6 +931,19 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_invalid_auth(self):
+        client = Client()
+        resp = client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 401)
+
+        client = Client(HTTP_AUTHORIZATION="invalid")
+        resp = client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 401)
 
     def test_not_live(self):
         self.ad.live = False
@@ -977,6 +996,14 @@ class AdDecisionApiTests(BaseApiTest):
     def test_publishers(self):
         publisher2 = get(Publisher, slug="another-publisher")
 
+        # the user has no permissions on this publisher
+        data = {"placements": self.placements, "publisher": publisher2.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 403, resp.content)
+
+        self.user.publishers.add(publisher2)
         data = {"placements": self.placements, "publisher": publisher2.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
@@ -1078,8 +1105,9 @@ class AdApiTrackingTests(BaseApiTest):
             json.dumps(self.params),
             content_type="application/json",
         )
-        self.assertEqual(resp.status_code, 202, resp.content)
-        self.assertDictEqual(resp.json(), {"message": "Old/Nonexistent nonce"})
+
+        # Without the nonce, we can't check the publisher permissions
+        self.assertEqual(resp.status_code, 403, resp.content)
 
     def test_view_tracking_bot(self):
         bot_ua = (
@@ -1165,6 +1193,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         self.publisher1 = self.publisher
         self.publisher2 = get(Publisher, slug="another-publisher")
+        self.user.publishers.add(self.publisher2)
         self.campaign.publishers.add(self.publisher2)
 
         self.page_url = "http://example.com"
