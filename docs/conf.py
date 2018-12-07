@@ -22,6 +22,9 @@ sys.path.append(BASE_DIR)
 
 django.setup()
 
+from django.conf import settings
+
+
 # -- Project information -----------------------------------------------------
 
 project = "Ethical Ad Server"
@@ -29,9 +32,9 @@ copyright = "{}, Read the Docs, Inc".format(datetime.now().year)
 author = "Read the Docs, Inc"
 
 # The short X.Y version
-version = ""
+version = settings.ADSERVER_VERSION
 # The full version, including alpha/beta/rc tags
-release = ""
+release = settings.ADSERVER_VERSION
 
 
 # -- General configuration ---------------------------------------------------
