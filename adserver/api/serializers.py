@@ -92,3 +92,12 @@ class AdTrackingSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid advertisement")
 
         return advertisement
+
+
+class PublisherSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Publisher
+        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        extra_kwargs = {
+            "url": {"view_name": "api:publisher-detail", "lookup_field": "slug"}
+        }

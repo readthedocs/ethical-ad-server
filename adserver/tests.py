@@ -47,8 +47,8 @@ from .validators import TargetingParametersValidator
 
 class DoNotTrackTest(TestCase):
     def setUp(self):
-        self.dnt_status_url = reverse("adserver:dnt-status")
-        self.dnt_policy_url = reverse("adserver:dnt-policy")
+        self.dnt_status_url = reverse("dnt-status")
+        self.dnt_policy_url = reverse("dnt-policy")
 
     @override_settings(ADSERVER_DO_NOT_TRACK=False)
     def test_dnt_disabled(self):
@@ -881,7 +881,8 @@ class DecisionEngineTests(TestCase):
 
 class BaseApiTest(TestCase):
     def setUp(self):
-        self.publisher = get(Publisher, slug="test-publisher")
+        self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
+        self.publisher2 = get(Publisher, slug="another-publisher")
         self.campaign = get(
             Campaign, publishers=[self.publisher], max_sale_value=2000.0
         )
@@ -906,9 +907,9 @@ class BaseApiTest(TestCase):
         self.user = get(get_user_model(), username="test-user")
         self.user.publishers.add(self.publisher)
         self.token = Token.objects.create(user=self.user)
-        self.url = reverse("adserver:api:decision")
-        self.track_view_url = reverse("adserver:api:view-tracking")
-        self.track_click_url = reverse("adserver:api:click-tracking")
+        self.url = reverse("api:decision")
+        self.track_view_url = reverse("api:view-tracking")
+        self.track_click_url = reverse("api:click-tracking")
 
         self.ip_address = "8.8.8.8"
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
@@ -994,17 +995,15 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 400, resp.content)
 
     def test_publishers(self):
-        publisher2 = get(Publisher, slug="another-publisher")
-
         # the user has no permissions on this publisher
-        data = {"placements": self.placements, "publisher": publisher2.slug}
+        data = {"placements": self.placements, "publisher": self.publisher2.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 403, resp.content)
 
-        self.user.publishers.add(publisher2)
-        data = {"placements": self.placements, "publisher": publisher2.slug}
+        self.user.publishers.add(self.publisher2)
+        data = {"placements": self.placements, "publisher": self.publisher2.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1012,7 +1011,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.json(), {})
 
         # Allow this publisher on the campaign
-        self.campaign.publishers.add(publisher2)
+        self.campaign.publishers.add(self.publisher2)
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1187,12 +1186,78 @@ class AdApiTrackingTests(BaseApiTest):
         self.assertDictEqual(resp.json(), {"message": "Old/Nonexistent nonce"})
 
 
+class PublisherApiTests(BaseApiTest):
+    def setUp(self):
+        super().setUp()
+
+        # Urls
+        self.publisher_list_url = reverse("api:publisher-list")
+        self.publisher1_detail_url = reverse(
+            "api:publisher-detail", args=[self.publisher1.slug]
+        )
+        self.publisher2_detail_url = reverse(
+            "api:publisher-detail", args=[self.publisher2.slug]
+        )
+        self.publisher1_report_url = reverse(
+            "api:publisher-report", args=[self.publisher1.slug]
+        )
+        self.publisher2_report_url = reverse(
+            "api:publisher-report", args=[self.publisher2.slug]
+        )
+
+    def test_publisher_access(self):
+        # User has access to publisher1 but not publisher2
+        resp = self.client.get(self.publisher_list_url, content_type="application/json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.publisher1.slug)
+
+        for url in (self.publisher1_detail_url, self.publisher1_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+        for url in (self.publisher2_detail_url, self.publisher2_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 404, resp.content)
+
+        # With access to publisher2, the APIs succeed
+        self.user.publishers.add(self.publisher2)
+        for url in (self.publisher2_detail_url, self.publisher2_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+    def test_publisher_report(self):
+        resp = self.client.get(
+            self.publisher1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["days"], [])
+        self.assertEqual(data["total"]["clicks"], 0)
+        self.assertEqual(data["total"]["views"], 0)
+
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(CLICKS, self.publisher1)
+
+        # For publisher 2, these shouldn't count
+        self.ad.incr(VIEWS, self.publisher2)
+        self.ad.incr(CLICKS, self.publisher2)
+
+        resp = self.client.get(
+            self.publisher1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["clicks"], 1)
+        self.assertEqual(data["total"]["views"], 2)
+
+
 class AdvertisingIntegrationTests(BaseApiTest):
     def setUp(self):
         super().setUp()
 
-        self.publisher1 = self.publisher
-        self.publisher2 = get(Publisher, slug="another-publisher")
         self.user.publishers.add(self.publisher2)
         self.campaign.publishers.add(self.publisher2)
 

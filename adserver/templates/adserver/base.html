@@ -7,7 +7,7 @@
 
 {% block body_content %}
   <nav class="navbar navbar-expand-sm navbar-dark bg-primary p-4">
-    <a class="navbar-brand mr-0" href="{% url 'adserver:dashboard-home' %}">EthicalAds</a>
+    <a class="navbar-brand mr-0" href="{% url 'dashboard-home' %}">EthicalAds</a>
 
     <ul class="navbar-nav ml-auto d-none d-md-block">
       <li class="nav-item dropdown">
@@ -30,7 +30,7 @@
   <ol class="breadcrumb border-bottom rounded-0">
     {% block breadcrumbs %}
       <li class="breadcrumb-item">
-        <a href="{% url 'adserver:dashboard-home' %}">Home</a>
+        <a href="{% url 'dashboard-home' %}">Home</a>
       </li>
     {% endblock breadcrumbs %}
   </ol>
