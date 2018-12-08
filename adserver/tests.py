@@ -28,6 +28,7 @@ from .decisionengine.backends import ProbabilisticClicksNeededBackend
 from .forms import FlightForm
 from .models import AdType
 from .models import Advertisement
+from .models import Advertiser
 from .models import Campaign
 from .models import Click
 from .models import Flight
@@ -1184,6 +1185,87 @@ class AdApiTrackingTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 202, resp.content)
         self.assertDictEqual(resp.json(), {"message": "Old/Nonexistent nonce"})
+
+
+class AdvertiserApiTests(BaseApiTest):
+    def setUp(self):
+        super().setUp()
+
+        self.advertiser1 = get(
+            Advertiser, name="Test Advertiser", slug="test-advertiser"
+        )
+        self.advertiser2 = get(
+            Advertiser, name="Another Advertiser", slug="another-advertiser"
+        )
+
+        self.user.advertisers.add(self.advertiser1)
+        self.campaign.advertiser = self.advertiser1
+        self.campaign.save()
+
+        # Urls
+        self.advertiser_list_url = reverse("api:advertiser-list")
+        self.advertiser1_detail_url = reverse(
+            "api:advertiser-detail", args=[self.advertiser1.slug]
+        )
+        self.advertiser2_detail_url = reverse(
+            "api:advertiser-detail", args=[self.advertiser2.slug]
+        )
+        self.advertiser1_report_url = reverse(
+            "api:advertiser-report", args=[self.advertiser1.slug]
+        )
+        self.advertiser2_report_url = reverse(
+            "api:advertiser-report", args=[self.advertiser2.slug]
+        )
+
+    def test_advertiser_access(self):
+        # User has access to advertiser1 but not advertiser2
+        resp = self.client.get(
+            self.advertiser_list_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.advertiser1.slug)
+
+        for url in (self.advertiser1_detail_url, self.advertiser1_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+        for url in (self.advertiser2_detail_url, self.advertiser2_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 404, resp.content)
+
+        # With access to advertiser2, the APIs succeed
+        self.user.advertisers.add(self.advertiser2)
+        for url in (self.advertiser2_detail_url, self.advertiser2_report_url):
+            resp = self.client.get(url, content_type="application/json")
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+    def test_advertiser_report(self):
+        resp = self.client.get(
+            self.advertiser1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["days"], [])
+        self.assertEqual(data["total"]["clicks"], 0)
+        self.assertEqual(data["total"]["views"], 0)
+
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(CLICKS, self.publisher1)
+
+        # These still count even though they're on a different publisher
+        self.ad.incr(VIEWS, self.publisher2)
+        self.ad.incr(CLICKS, self.publisher2)
+
+        resp = self.client.get(
+            self.advertiser1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["clicks"], 2)
+        self.assertEqual(data["total"]["views"], 3)
 
 
 class PublisherApiTests(BaseApiTest):

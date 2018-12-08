@@ -34,3 +34,9 @@ Publisher APIs
 --------------
 
 .. autoclass:: adserver.api.views.PublisherViewSet
+
+
+Advertiser APIs
+---------------
+
+.. autoclass:: adserver.api.views.AdvertiserViewSet

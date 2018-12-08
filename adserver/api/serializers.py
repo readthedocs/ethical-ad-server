@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..models import Advertisement
+from ..models import Advertiser
 from ..models import Publisher
 
 
@@ -100,4 +101,13 @@ class PublisherSerializer(serializers.HyperlinkedModelSerializer):
         fields = ("url", "name", "slug", "pub_date", "modified_date")
         extra_kwargs = {
             "url": {"view_name": "api:publisher-detail", "lookup_field": "slug"}
+        }
+
+
+class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Advertiser
+        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        extra_kwargs = {
+            "url": {"view_name": "api:advertiser-detail", "lookup_field": "slug"}
         }

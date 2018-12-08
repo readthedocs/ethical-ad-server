@@ -3,6 +3,7 @@ from django.conf.urls import url
 from rest_framework import routers
 
 from .views import AdDecisionView
+from .views import AdvertiserViewSet
 from .views import ClickTrackingView
 from .views import PublisherViewSet
 from .views import ViewTrackingView
@@ -15,5 +16,6 @@ urlpatterns = [
 ]
 
 router = routers.SimpleRouter()
+router.register(r"advertiser", AdvertiserViewSet, base_name="advertiser")
 router.register(r"publisher", PublisherViewSet, base_name="publisher")
 urlpatterns += router.urls

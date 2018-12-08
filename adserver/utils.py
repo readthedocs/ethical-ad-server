@@ -4,6 +4,7 @@ import ipaddress
 import logging
 import re
 from collections import namedtuple
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
@@ -43,6 +44,19 @@ def analytics_event(**kwargs):  # noqa TODO add this
 def get_ad_day():
     """Return a datetime that is the start of the current UTC day"""
     return timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def parse_date_string(date_str):
+    if not date_str:
+        return None
+
+    try:
+        return timezone.make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
+    except ValueError:
+        # Since this can come from GET params, handle errors
+        pass
+
+    return None
 
 
 def calculate_ecpm(cost, views):
