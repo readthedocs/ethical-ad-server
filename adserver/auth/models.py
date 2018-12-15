@@ -72,8 +72,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_date = models.DateTimeField(_("create date"), auto_now_add=True)
 
     # A user may have access to zero or more advertisers or publishers
-    advertisers = models.ManyToManyField(Advertiser)
-    publishers = models.ManyToManyField(Publisher)
+    advertisers = models.ManyToManyField(Advertiser, blank=True)
+    publishers = models.ManyToManyField(Publisher, blank=True)
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"

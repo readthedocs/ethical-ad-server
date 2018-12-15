@@ -7,17 +7,15 @@ from collections import namedtuple
 
 import analytical
 from django.conf import settings
-from django.core.cache import cache
+from django.contrib.gis.geoip2 import GeoIP2
+from django.contrib.gis.geoip2 import GeoIP2Exception
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
+from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
-
-from .constants import CLICKS
-from .constants import OFFERS
-from .constants import VIEWS
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -27,32 +25,16 @@ BLACKLISTED_UA_REGEXES = [
     re.compile(s) for s in settings.ADSERVER_BLACKLISTED_USER_AGENTS
 ]
 
+try:
+    geoip = GeoIP2()
+except GeoIP2Exception:
+    log.exception("IP Geolocation is unavailable")
+    geoip = None
+
 
 GeolocationTuple = namedtuple(
     "GeolocationTuple", ["country_code", "region_code", "metro_code"]
 )
-
-
-def offer_ad(advertisement):
-    """
-    Do the book keeping required to track ad offers.
-
-    This generates a nonce as part of the return dict,
-    and that must be used throughout the ad pipeline in order to dedupe clicks.
-    """
-    promo_dict = advertisement.as_dict()
-    advertisement.incr(OFFERS)
-    # Set validation cache
-    for promo_type in [VIEWS, CLICKS]:
-        cache.set(
-            advertisement.cache_key(
-                impression_type=promo_type, nonce=promo_dict["nonce"]
-            ),
-            0,  # Number of times used. Make this an int so we can detect multiple uses
-            60 * 60,  # hour
-        )
-
-    return promo_dict
 
 
 def analytics_event(**kwargs):
@@ -93,10 +75,31 @@ def get_client_ip(request):
     (eg. ``RealIPAddressMiddleware``) and returns that.
     If that is not set, return the value from ``REMOTE_ADDR``.
     """
-    if hasattr(request, "ip_address"):
-        return request.ip_address
+    ip = getattr(request, "ip_address", None)
+    if ip:
+        return ip
 
     return request.META.get("REMOTE_ADDR", "")
+
+
+def get_client_user_agent(request):
+    """Gets the users user agent based on the request object"""
+    ua = getattr(request, "user_agent", None)
+    if ua:
+        return ua
+
+    return request.META.get("HTTP_USER_AGENT", "")
+
+
+def get_client_id(request):
+    """Gets the user advertising client ID based on the request"""
+    client_id = getattr(request, "advertising_client_id", None)
+    if not client_id:
+        ua = get_client_user_agent(request)
+        ip = get_client_ip(request)
+        client_id = generate_client_id(ip, ua)
+
+    return client_id
 
 
 def anonymize_ip_address(ip_address):
@@ -141,6 +144,24 @@ def is_blacklisted_user_agent(user_agent, blacklist_regexes=BLACKLISTED_UA_REGEX
             return True
 
     return False
+
+
+def get_geolocation(ip_address):
+    try:
+        ipaddress.ip_address(force_text(ip_address))
+    except ValueError:
+        # Invalid IP address
+        return None
+
+    if geoip:
+        try:
+            return geoip.city(ip_address)
+        except AddressNotFoundError:
+            log.debug("Could not get geolocation for %s", ip_address)
+        except GeoIP2Exception:
+            log.warning("Geolocation configuration error")
+
+    return None
 
 
 def generate_client_id(ip_address, user_agent):

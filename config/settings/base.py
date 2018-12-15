@@ -24,6 +24,7 @@ SECRET_KEY = "Overridden in Production"  # noqa
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+TESTING = False
 
 ALLOWED_HOSTS = []
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "crispy_forms",
     "rest_framework",
+    "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
 ]
@@ -56,8 +58,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "adserver.middleware.RealIPAddressMiddleware",
-    "adserver.middleware.GeolocationMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -248,6 +248,17 @@ CELERY_IMPORTS = ["analytical.tasks"]
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+
+# Django Rest Framework (API)
+# https://www.django-rest-framework.org
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+}
 
 ############################################################################
 # Ad server specific settings
