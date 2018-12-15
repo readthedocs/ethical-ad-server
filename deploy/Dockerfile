@@ -5,7 +5,8 @@ ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y \
     python3-pip \
-    postgresql-client
+    postgresql-client \
+    nano-tiny
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
@@ -26,13 +27,17 @@ RUN addgroup --system adserver
 RUN adduser --system --ingroup adserver adserver
 RUN chown -R adserver /app
 
-COPY ./deploy/start.sh /adserver
-RUN chmod +x /adserver
-RUN chown adserver /adserver
+COPY ./deploy/start.sh /start
+RUN chmod +x /start
+RUN chown adserver /start
+
+COPY ./deploy/start-celeryworker.sh /start-celeryworker
+RUN chmod +x /start-celeryworker
+RUN chown adserver /start-celeryworker
 
 USER adserver
 WORKDIR /app
 
 EXPOSE 5000
 
-CMD ["/adserver"]
+CMD ["/start"]

@@ -1,9 +1,9 @@
 # Django itself and its requirements (pytz)
-Django==1.11.15
+Django==1.11.17
 pytz==2018.5
 
 # Asynchronous tasks
-celery<5.0
+celery[redis]<5.0
 
 # Static files
 whitenoise==4.0

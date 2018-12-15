@@ -55,13 +55,13 @@ def offer_ad(advertisement):
     return promo_dict
 
 
-def analytics_event(data):
+def analytics_event(**kwargs):
     """Send data to analytics with celery"""
     if settings.ADSERVER_ANALYTICS_ID:
         ga = analytical.Provider(
             "googleanalytics", settings.ADSERVER_ANALYTICS_ID, asynchronously=True
         )
-        ga.event(data)
+        ga.event(kwargs)
 
 
 def get_ad_day():

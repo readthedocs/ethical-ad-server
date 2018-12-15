@@ -112,13 +112,8 @@ AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 # Celery settings for asynchronous tasks
 # http://docs.celeryproject.org
 CELERY_TASK_ALWAYS_EAGER = False
-CELERY_RESULT_BACKEND = "{protocol}://:{password}@{host}:{port}/0".format(
-    protocol="rediss" if int(env("REDIS_PORT")) == 6380 else "redis",
-    host=env("REDIS_HOST"),
-    port=env("REDIS_PORT"),
-    password=env("REDIS_PASSWORD"),
-)
-CELERY_BROKER_URL = CELERY_RESULT_BACKEND
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 #
 # Ad server settings

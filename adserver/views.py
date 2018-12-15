@@ -111,10 +111,10 @@ def proxy_ad_click(request, ad_id, nonce):
         event_action = "Duplicate Click"
 
     analytics_event(
-        event_category=event_category,
-        event_action=event_action,
-        event_label=event_label,
-        event_value=event_value,
+        ec=event_category,
+        ea=event_action,
+        el=event_label,
+        ev=event_value,
         ua=user_agent,
         uip=ip,
     )
