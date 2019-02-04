@@ -1,17 +1,5 @@
 # Ethical Ads Terraform configuration
 
-# Access key is in env vars
-# https://github.com/hashicorp/terraform/issues/18325#issuecomment-419227613
-#terraform {
-#    # From an absolute fresh environment, this blob must first be created in
-#    # order to store shared Terraform state remotely
-#    backend "azurerm" {
-#        storage_account_name = "rtdbootstrap"
-#        container_name = "terraform"
-#        key = "terraform-state"
-#    }
-#}
-
 # Credentials are in env vars
 provider "azurerm" {
     version = "=1.21.0"
