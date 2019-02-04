@@ -79,3 +79,6 @@ _build
 
 # GeoIP data files
 geoip
+
+*.tfstate*
+.terraform
