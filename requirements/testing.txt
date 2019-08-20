@@ -9,8 +9,5 @@ pylint<2.2
 pylint-celery<0.4
 pylint-django<2.1
 
-# Required for certain test cases
-mock==2.0.0
-
 # Useful for simpler test cases
 django-dynamic-fixture==2.0.0
