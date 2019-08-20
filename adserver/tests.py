@@ -2,8 +2,8 @@ import datetime
 import hashlib
 import json
 import re
+from unittest import mock
 
-import mock
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
