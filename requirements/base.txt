@@ -1,38 +1,38 @@
 # Django itself and its requirements (pytz)
-Django==1.11.15
-pytz==2018.5
+Django==1.11.23
+pytz==2019.2
 
 # Static files
-whitenoise==4.0
+whitenoise==4.1.2
 
 # Handling and processing uploaded images
 Pillow==5.3.0
 
 # Our API
-djangorestframework==3.9.0
+djangorestframework==3.10.2
 djangorestframework-jsonp==1.0.2
 
 # Form helpers
 django-crispy-forms==1.7.2
 
 # Authentication
-django-allauth==0.37.1
+django-allauth==0.39.1
 
 # Reading Django environment variables in production
 # Needed in the base requirements to lint settings/production.py
-django-environ<0.5
+django-environ==0.4.5
 
 # For rate limiting advertising clicks
-django-ratelimit==1.1.0
+django-ratelimit==2.0.0
 
 # Parsing browser user agents
-user-agents==1.1.0
+user-agents==2.0
 
 # GeoIP database libraries
 geoip2==2.9.0
 
 # Countries helper used in ad targeting
-django-countries==5.3.2
+django-countries==5.4
 
 jsonfield==2.0.2
-bleach==3.0.2
+bleach==3.1.0
