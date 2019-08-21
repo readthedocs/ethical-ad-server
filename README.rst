@@ -13,7 +13,7 @@ It was created by Read the Docs to serve the ads on Read the Docs.
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
-.. image:: https://circleci.com/gh/readthedocs/ethical-ad-server.svg?style=svg&circle-token=1a62029aff2165c86af383a1951509259136f0f3
+.. image:: https://circleci.com/gh/readthedocs/ethical-ad-server.svg?style=svg&circle-token=98361fb5f0a146a2bb1f4b3c27b04b329f53e8c9
     :target: https://circleci.com/gh/readthedocs/ethical-ad-server
 
 
