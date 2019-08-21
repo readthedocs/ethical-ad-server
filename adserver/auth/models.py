@@ -1,4 +1,4 @@
-"""Custom user model for the ad server"""
+"""Custom user model for the ad server."""
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
@@ -11,7 +11,7 @@ from ..models import Publisher
 
 class AdServerUserManager(BaseUserManager):
 
-    """A django query manager for our custom user model"""
+    """A django query manager for our custom user model."""
 
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -41,7 +41,7 @@ class AdServerUserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
 
     """
-    The custom extensible user model for the ad server
+    The custom extensible user model for the ad server.
 
     https://docs.djangoproject.com/en/1.11/topics/auth/customizing/#specifying-a-custom-user-model
 
@@ -85,7 +85,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _("users")
 
     def __str__(self):
-        """Magic method override"""
+        """Magic method override."""
         return self.email
 
     def get_full_name(self):

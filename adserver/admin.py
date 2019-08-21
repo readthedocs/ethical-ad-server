@@ -1,6 +1,4 @@
-"""Django admin configuration for the ad server"""
-from __future__ import absolute_import
-
+"""Django admin configuration for the ad server."""
 from django.contrib import admin
 from django.db import models
 from django.template.loader import render_to_string
@@ -23,7 +21,7 @@ from .utils import calculate_ecpm
 
 class RemoveDeleteMixin:
 
-    """Removes the ability to delete this model from the admin"""
+    """Removes the ability to delete this model from the admin."""
 
     def get_actions(self, request):
         actions = super(RemoveDeleteMixin, self).get_actions(request)
@@ -37,21 +35,21 @@ class RemoveDeleteMixin:
 
 class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for publishers"""
+    """Django admin configuration for publishers."""
 
     prepopulated_fields = {"slug": ("name",)}
 
 
 class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for advertisers"""
+    """Django admin configuration for advertisers."""
 
     prepopulated_fields = {"slug": ("name",)}
 
 
 class AdTypeAdmin(admin.ModelAdmin):
 
-    """Django admin configuration for ad types"""
+    """Django admin configuration for ad types."""
 
     model = AdType
     save_as = True
@@ -63,7 +61,7 @@ class AdTypeAdmin(admin.ModelAdmin):
 
 class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for advertisements"""
+    """Django admin configuration for advertisements."""
 
     model = Advertisement
     save_as = True
@@ -174,7 +172,7 @@ class CPCCPMFilter(admin.SimpleListFilter):
 
 class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin admin configuration for ad Flights"""
+    """Django admin admin configuration for ad Flights."""
 
     model = Flight
     form = FlightForm
@@ -260,7 +258,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for ad campaigns"""
+    """Django admin configuration for ad campaigns."""
 
     model = Campaign
     prepopulated_fields = {"slug": ("name",)}
@@ -346,7 +344,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for the ad impressions"""
+    """Django admin configuration for the ad impressions."""
 
     readonly_fields = ("date", "advertisement", "views", "clicks", "offers")
     list_display = readonly_fields
@@ -354,13 +352,13 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     search_fields = ["advertisement__slug", "advertisement__name"]
 
     def has_add_permission(self, request):
-        """Clicks and views cannot be added through the admin"""
+        """Clicks and views cannot be added through the admin."""
         return False
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
-    """Django admin configuration for the base class of ad views and clicks"""
+    """Django admin configuration for the base class of ad views and clicks."""
 
     readonly_fields = (
         "date",
@@ -391,13 +389,13 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return mark_safe('<a href="{url}">{url}</a>'.format(url=escape(instance.url)))
 
     def has_add_permission(self, request):
-        """Clicks and views cannot be added through the admin"""
+        """Clicks and views cannot be added through the admin."""
         return False
 
 
 class ClickAdmin(AdBaseAdmin):
 
-    """Django admin configuration for ad clicks"""
+    """Django admin configuration for ad clicks."""
 
     model = Click
 
@@ -408,7 +406,7 @@ class ClickAdmin(AdBaseAdmin):
 
 class ViewAdmin(AdBaseAdmin):
 
-    """Django admin configuration for ad views"""
+    """Django admin configuration for ad views."""
 
     model = View
 

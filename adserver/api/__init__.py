@@ -1,1 +1,1 @@
-"""API for the ad server"""
+"""API for the ad server."""

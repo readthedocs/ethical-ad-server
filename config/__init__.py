@@ -1,1 +1,1 @@
-"""Configuration for the Ethical Ad Server"""
+"""Configuration for the Ethical Ad Server."""
