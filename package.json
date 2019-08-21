@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rtfd/ethical-ad-server.git"
+    "url": "git+https://github.com/readthedocs/ethical-ad-server.git"
   },
   "author": "Read the Docs, Inc.",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/rtfd/ethical-ad-server/issues"
+    "url": "https://github.com/readthedocs/ethical-ad-server/issues"
   },
-  "homepage": "https://github.com/rtfd/ethical-ad-server#readme",
+  "homepage": "https://github.com/readthedocs/ethical-ad-server#readme",
   "dependencies": {
     "bootstrap": "^4.1.1",
     "font-awesome": "^4.7.0",
