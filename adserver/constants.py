@@ -1,4 +1,4 @@
-"""Contants used for the ad server"""
+"""Contants used for the ad server."""
 from django.utils.translation import ugettext as _
 
 

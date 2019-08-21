@@ -1,4 +1,4 @@
-"""Ad decision backends"""
+"""Ad decision backends."""
 import logging
 import random
 
@@ -19,11 +19,11 @@ log = logging.getLogger(__name__)
 
 class BaseAdDecisionBackend:
 
-    """A base decision backend -- other decision backends should extend this"""
+    """A base decision backend -- other decision backends should extend this."""
 
     def __init__(self, request, placements, publisher, **kwargs):
         """
-        Initialize an ad decision based on the request data
+        Initialize an ad decision based on the request data.
 
         :param request: the HttpRequest object with geo data attached from GeolocationMiddleware
         :param placements: possible positions for the ad to go
@@ -51,7 +51,7 @@ class BaseAdDecisionBackend:
 
     def get_ad_and_placement(self):
         """
-        Choose an ad to display
+        Choose an ad to display.
 
         This is the main entry point for making an ad decision. It makes the decision
         based on the passed information including the request, the available places
@@ -72,7 +72,7 @@ class BaseAdDecisionBackend:
         )
 
     def get_placement(self, advertisement):
-        """Gets the first matching placement for a given ad"""
+        """Gets the first matching placement for a given ad."""
         if not advertisement.ad_type:
             return None
 
@@ -92,12 +92,12 @@ class BaseAdDecisionBackend:
         return None
 
     def should_display_ads(self):
-        """Whether to not display ads based on the user, request, or other settings"""
+        """Whether to not display ads based on the user, request, or other settings."""
         return True
 
     def get_ads_queryset(self):
         """
-        Queries for all valid, live ads regardless of geo/lang targeting
+        Queries for all valid, live ads regardless of geo/lang targeting.
 
         This does not take into account any priority among the ads or any clicks required.
         """
@@ -132,7 +132,7 @@ class BaseAdDecisionBackend:
 
     def annotate_queryset(self, candidate_ads):
         """
-        Annotates a queryset with additional data
+        Annotates a queryset with additional data.
 
         This is done in an efficient manner to avoid multiple duplicate queries
 
@@ -202,7 +202,7 @@ class BaseAdDecisionBackend:
 
     def filter_ads(self, candidate_ads):
         """
-        Apply targeting
+        Apply targeting.
 
         Filters ads based on:
 
@@ -254,7 +254,7 @@ class BaseAdDecisionBackend:
 
 class AdvertisingDisabledBackend(BaseAdDecisionBackend):
 
-    """A backend where no ads are displayed"""
+    """A backend where no ads are displayed."""
 
     def get_ad_and_placement(self):
         return None, None
@@ -265,11 +265,11 @@ class AdvertisingDisabledBackend(BaseAdDecisionBackend):
 
 class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
-    """A backend where ads are displayed (default ad order)"""
+    """A backend where ads are displayed (default ad order)."""
 
     def choose_ad(self, ads):
         """
-        Choose a ad among the candidates
+        Choose a ad among the candidates.
 
         This implementation picks the first ad but should be overridden in
         more sophisticated subclasses.
@@ -281,7 +281,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
     def get_ad_and_placement(self):
         """
-        Get an ad and the matching placement
+        Get an ad and the matching placement.
 
         Subclasses probably will not override this method and instead override
         `choose_ad` which actually chooses among the candidates ads.
@@ -300,7 +300,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 class ProbabilisticClicksNeededBackend(AdvertisingEnabledBackend):
 
     """
-    A backend where ads are randomly selected weighted by the flight clicks needed today
+    A backend where ads are randomly selected weighted by the flight clicks needed today.
 
     * Randomly select a paid ad based with random weights based on clicks needed
     * If no matching paid ads, randomly select a community ad
@@ -320,7 +320,7 @@ class ProbabilisticClicksNeededBackend(AdvertisingEnabledBackend):
         return chosen_ad
 
     def _choose_flight(self, ads):
-        """Choose a flight based on the possible matching ads"""
+        """Choose a flight based on the possible matching ads."""
         paid_ads = [
             ad for ad in ads if ad.flight.campaign.campaign_type == PAID_CAMPAIGN
         ]
@@ -367,7 +367,7 @@ class ProbabilisticClicksNeededBackend(AdvertisingEnabledBackend):
         return None
 
     def _choose_ad_from_flight(self, flight_ads):
-        """Choose a random ad from the flight based on the placement priority"""
+        """Choose a random ad from the flight based on the placement priority."""
         max_priority = 10
         weighted_ad_choices = []
         for advertisement in flight_ads:

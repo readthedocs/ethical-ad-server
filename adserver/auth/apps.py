@@ -1,4 +1,4 @@
-"""App config for ad server auth"""
+"""App config for ad server auth."""
 from django.apps import AppConfig
 
 

@@ -1,4 +1,4 @@
-"""APIs for the ad server"""
+"""APIs for the ad server."""
 import logging
 
 from django.conf import settings
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)  # noqa
 class AdDecisionView(GeoIpMixin, APIView):
 
     """
-    Make a decision on an `Advertisement` to show
+    Make a decision on an `Advertisement` to show.
 
     The ad decision is based on
 
@@ -53,7 +53,7 @@ class AdDecisionView(GeoIpMixin, APIView):
     permission_classes = (PublisherPermission,)
 
     def _prepare_response(self, ad, placement, publisher):
-        """Wrap `offer_ad` with the placement for the publisher"""
+        """Wrap `offer_ad` with the placement for the publisher."""
         if not ad or not placement:
             return {}
 
@@ -63,7 +63,7 @@ class AdDecisionView(GeoIpMixin, APIView):
 
     def post(self, request):
         """
-        Decision API called via POST
+        Decision API called via POST.
 
         Used for server to server ad requests.
 
@@ -75,7 +75,7 @@ class AdDecisionView(GeoIpMixin, APIView):
 
     def decision(self, request, data):
         """
-        Makes a decision on what add to display based on info
+        Makes a decision on what add to display based on info.
 
         :param request: the HTTP request
         :param data: data needed for the decision (query params, post data, etc.)
@@ -107,7 +107,7 @@ class AdDecisionView(GeoIpMixin, APIView):
 
 class BaseTrackingView(GeoIpMixin, APIView):
 
-    """A base API class for tracking ad impressions"""
+    """A base API class for tracking ad impressions."""
 
     permission_classes = (PublisherPermission,)
 
@@ -125,7 +125,7 @@ class BaseTrackingView(GeoIpMixin, APIView):
         return data
 
     def _ignore_tracking_reason(self, request, advertisement, nonce, publisher):
-        """Returns a reason this impression should not be tracked or `None` if this *should* be tracked"""
+        """Returns a reason this impression should not be tracked or `None` if this *should* be tracked."""
         reason = None
 
         ip_address = get_client_ip(request)
@@ -167,7 +167,7 @@ class BaseTrackingView(GeoIpMixin, APIView):
 class ViewTrackingView(BaseTrackingView):
 
     """
-    Track an ad view
+    Track an ad view.
 
     .. http:post:: /api/v1/track/view/
 
@@ -181,7 +181,7 @@ class ViewTrackingView(BaseTrackingView):
     """
 
     def post(self, request):
-        """Handle tracking an ad view"""
+        """Handle tracking an ad view."""
         serializer = AdTrackingSerializer(data=request.data)
         if serializer.is_valid():
             advertisement = serializer.validated_data["advertisement"]
@@ -210,7 +210,7 @@ class ViewTrackingView(BaseTrackingView):
 class ClickTrackingView(BaseTrackingView):
 
     """
-    Track an ad click
+    Track an ad click.
 
     .. http:post:: /api/v1/track/click/
 
@@ -227,7 +227,7 @@ class ClickTrackingView(BaseTrackingView):
     impression_type = CLICKS
 
     def send_click_to_analytics(self, request, advertisement, event_action):
-        """Send click data to analytics"""
+        """Send click data to analytics."""
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
 
@@ -248,7 +248,7 @@ class ClickTrackingView(BaseTrackingView):
         )
 
     def post(self, request):
-        """Handle tracking an ad click"""
+        """Handle tracking an ad click."""
         serializer = AdTrackingSerializer(data=request.data)
         if serializer.is_valid():
             advertisement = serializer.validated_data["advertisement"]

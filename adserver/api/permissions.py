@@ -1,5 +1,5 @@
 """
-Custom permissions for our API
+Custom permissions for our API.
 
 https://www.django-rest-framework.org/api-guide/permissions/#custom-permissions
 """
@@ -12,7 +12,7 @@ from ..models import Publisher
 class AdvertiserPermission(permissions.IsAuthenticated):
 
     """
-    Checks whether the authenticated user is associated with the given advertiser
+    Checks whether the authenticated user is associated with the given advertiser.
 
     For staff users, this will always return True
     For unauthenticated users, this is always False
@@ -32,7 +32,7 @@ class AdvertiserPermission(permissions.IsAuthenticated):
 class PublisherPermission(permissions.IsAuthenticated):
 
     """
-    Checks whether the authenticated user is associated with the given publisher
+    Checks whether the authenticated user is associated with the given publisher.
 
     For staff users, this will always return True
     For unauthenticated users, this is always False
