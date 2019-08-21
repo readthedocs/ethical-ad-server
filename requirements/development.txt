@@ -20,3 +20,7 @@ sphinxcontrib-httpdomain==1.7.0
 # Running tests in development
 # Tox will install requirements/testing.txt into its environments
 tox<4.0
+
+# Coverage
+coverage<5.0
+django_coverage_plugin<2.0
