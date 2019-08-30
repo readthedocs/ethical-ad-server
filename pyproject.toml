@@ -1,7 +1,7 @@
 # https://black.readthedocs.io/
 [tool.black]
 line-length = 88
-py36 = true
+target_version = ['py36']
 include = '\.pyi?$'
 exclude = '''
 /(

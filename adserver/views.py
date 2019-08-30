@@ -1,4 +1,4 @@
-"""Ad server views"""
+"""Ad server views."""
 import logging
 
 from django.conf import settings
@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)  # noqa
 
 def do_not_track(request):
     """
-    Returns the Do Not Track status for the user
+    Returns the Do Not Track status for the user.
 
     https://w3c.github.io/dnt/drafts/tracking-dnt.html#status-representation
 
@@ -34,7 +34,7 @@ def do_not_track(request):
 
 def do_not_track_policy(request):
     """
-    Returns the Do Not Track policy
+    Returns the Do Not Track policy.
 
     https://github.com/EFForg/dnt-guide#12-how-to-assert-dnt-compliance
 

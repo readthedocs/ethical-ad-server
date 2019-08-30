@@ -1,4 +1,4 @@
-"""Forms for the ad server"""
+"""Forms for the ad server."""
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 

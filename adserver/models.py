@@ -1,4 +1,4 @@
-"""Core models for the ad server"""
+"""Core models for the ad server."""
 import datetime
 import logging
 import math
@@ -49,16 +49,16 @@ def default_flight_end_date():
 
 class IndestructibleQuerySet(models.QuerySet):
 
-    """A queryset object without the delete option"""
+    """A queryset object without the delete option."""
 
     def delete(self):
-        """Always raises ``IntegrityError``"""
+        """Always raises ``IntegrityError``."""
         raise IntegrityError
 
 
 class IndestructibleManager(models.Manager):
 
-    """A model manager that generates ``IndestructibleQuerySets``"""
+    """A model manager that generates ``IndestructibleQuerySets``."""
 
     def get_queryset(self):
         return IndestructibleQuerySet(self.model, using=self._db)
@@ -66,12 +66,12 @@ class IndestructibleManager(models.Manager):
 
 class IndestructibleModel(models.Model):
 
-    """A model that disallows the delete method or deleting at the queryset level"""
+    """A model that disallows the delete method or deleting at the queryset level."""
 
     objects = IndestructibleManager()
 
     def delete(self, using=None, keep_parents=False):
-        """Always raises ``IntegrityError``"""
+        """Always raises ``IntegrityError``."""
         raise IntegrityError
 
     class Meta:
@@ -81,7 +81,7 @@ class IndestructibleModel(models.Model):
 class Publisher(IndestructibleModel):
 
     """
-    A publisher that displays advertising from the ad server
+    A publisher that displays advertising from the ad server.
 
     A publisher represents a site or collection of sites that displays advertising.
     Advertisers can opt-in to displaying ads on different publishers.
@@ -99,7 +99,7 @@ class Publisher(IndestructibleModel):
         ordering = ("name",)
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
     def daily_reports(self, start_date=None, end_date=None):
@@ -156,7 +156,7 @@ class Publisher(IndestructibleModel):
 
 class Advertiser(IndestructibleModel):
 
-    """An advertiser who buys advertising from the ad server"""
+    """An advertiser who buys advertising from the ad server."""
 
     pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
@@ -168,7 +168,7 @@ class Advertiser(IndestructibleModel):
         ordering = ("name",)
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
     def daily_reports(self, start_date=None, end_date=None):
@@ -228,7 +228,7 @@ class Advertiser(IndestructibleModel):
 class Campaign(IndestructibleModel):
 
     """
-    A collection of advertisements (:py:class:`~Advertisement`) from the same advertiser
+    A collection of advertisements (:py:class:`~Advertisement`) from the same advertiser.
 
     A campaign is typically made up of one or more :py:class:`~Flight` which are themselves
     groups of advertisements including details common among the ads.
@@ -287,7 +287,7 @@ class Campaign(IndestructibleModel):
         ordering = ("name",)
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
     def get_absolute_url(self):
@@ -298,7 +298,7 @@ class Campaign(IndestructibleModel):
         return Advertisement.objects.filter(flight__campaign=self).count()
 
     def total_value(self):
-        """Calculate total cost/revenue for all ads/flights in this campaign"""
+        """Calculate total cost/revenue for all ads/flights in this campaign."""
         # Check for a cached value that would come from an annotated queryset
         if hasattr(self, "campaign_total_value"):
             return self.campaign_total_value or 0.0
@@ -318,7 +318,7 @@ class Campaign(IndestructibleModel):
         self, start_date=None, end_date=None, name_filter=None, inactive=True
     ):
         """
-        Generates a report of clicks, views, & cost for a given time period for the Campaign
+        Generates a report of clicks, views, & cost for a given time period for the Campaign.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -378,7 +378,7 @@ class Campaign(IndestructibleModel):
 class Flight(IndestructibleModel):
 
     """
-    A flight is a collection of :py:class:`~Advertisement` objects
+    A flight is a collection of :py:class:`~Advertisement` objects.
 
     Effectively a flight is a single "ad buy". So if an advertiser wants to
     buy $2000 worth of ads at $2 CPC and run 5 variations, they would have 5
@@ -456,7 +456,7 @@ class Flight(IndestructibleModel):
         ordering = ("name",)
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
     @property
@@ -531,7 +531,7 @@ class Flight(IndestructibleModel):
 
     def show_to_geo(self, country_code, state_province_code=None, metro_code=None):
         """
-        Check if a flight is valid for a given country code
+        Check if a flight is valid for a given country code.
 
         A ``country_code`` of ``None`` (meaning the user's country is unknown)
         will not match a flight with any ``include_countries`` but wont be
@@ -553,7 +553,7 @@ class Flight(IndestructibleModel):
 
     def show_to_keywords(self, keywords):
         """
-        Check if a flight is valid for a given keywords
+        Check if a flight is valid for a given keywords.
 
         If *any* keywords match, it is considered valid
         """
@@ -569,7 +569,7 @@ class Flight(IndestructibleModel):
         return (self.end_date - self.start_date).days
 
     def days_remaining(self):
-        """Number of days left in a flight"""
+        """Number of days left in a flight."""
         days_since_start = (get_ad_day().date() - self.start_date).days
         return max(0, int(self.sold_days()) - int(days_since_start))
 
@@ -629,7 +629,7 @@ class Flight(IndestructibleModel):
         return self.views_remaining()
 
     def clicks_needed_today(self):
-        """Calculates clicks needed based on the impressions this flight's ads have"""
+        """Calculates clicks needed based on the impressions this flight's ads have."""
         if not self.live or self.sold_clicks <= 0:
             return 0
 
@@ -640,7 +640,7 @@ class Flight(IndestructibleModel):
 
     def weighted_clicks_needed_today(self):
         """
-        Calculates clicks needed taking into account a flight's priority
+        Calculates clicks needed taking into account a flight's priority.
 
         For the purpose of clicks needed, 1000 impressions = 1 click (for CPM ads)
         """
@@ -686,7 +686,7 @@ class Flight(IndestructibleModel):
 class AdType(models.Model):
 
     """
-    A type of advertisement including such parameters as the amount of text and images size
+    A type of advertisement including such parameters as the amount of text and images size.
 
     Many ad types are industry standards from the Interactive Advertising Bureau (IAB).
     Some publishers prefer native ads that are custom sized for their needs.
@@ -734,14 +734,14 @@ class AdType(models.Model):
         ordering = ("name",)
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
 
 class Advertisement(IndestructibleModel):
 
     """
-    A single advertisement creative
+    A single advertisement creative.
 
     Multiple ads are organized into a :py:class:`~Flight` which has details
     common across the ad such as targeting and desired number of clicks.
@@ -792,7 +792,7 @@ class Advertisement(IndestructibleModel):
         ordering = ("slug", "-live")
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return self.name
 
     def save(self, *args, **kwargs):  # pylint: disable=arguments-differ
@@ -809,7 +809,7 @@ class Advertisement(IndestructibleModel):
         return "#"
 
     def as_dict(self):
-        """A dict respresentation of this for JSON encoding"""
+        """A dict respresentation of this for JSON encoding."""
         nonce = get_random_string()  # 12 chars alphanumeric
 
         return {
@@ -828,7 +828,7 @@ class Advertisement(IndestructibleModel):
         )
 
     def incr(self, impression_type, publisher):
-        """Add to the number of times this action has been performed, stored in the DB"""
+        """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
         impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
@@ -896,7 +896,7 @@ class Advertisement(IndestructibleModel):
 
     def offer_ad(self, publisher):
         """
-        Offer to display this ad on a specific publisher
+        Offer to display this ad on a specific publisher.
 
         Tracks an offer in the database and sets various cache variables
         """
@@ -937,7 +937,7 @@ class Advertisement(IndestructibleModel):
 
     def is_valid_nonce(self, impression_type, nonce):
         """
-        Returns true if this nonce (from ``offer_ad``) is valid for a given impression type (click, view)
+        Returns true if this nonce (from ``offer_ad``) is valid for a given impression type (click, view).
 
         A nonce is valid if it was generated recently (hasn't timed out)
         and hasn't already been used
@@ -996,7 +996,7 @@ class Advertisement(IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for this ad
+        Generates a report of clicks, views, & cost for a given time period for this ad.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -1152,13 +1152,13 @@ class AdImpression(BaseImpression):
         verbose_name_plural = _("Ad impressions")
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return "%s on %s" % (self.advertisement, self.date)
 
 
 class AdBase(IndestructibleModel):
 
-    """A base class for data on ad views and clicks"""
+    """A base class for data on ad views and clicks."""
 
     date = models.DateTimeField(_("Created date"), auto_now_add=True)
 
@@ -1193,7 +1193,7 @@ class AdBase(IndestructibleModel):
         abstract = True
 
     def __str__(self):
-        """Simple override"""
+        """Simple override."""
         return "%s on %s (%s)" % (self._meta.object_name, self.advertisement, self.url)
 
     def get_absolute_url(self):
@@ -1202,7 +1202,7 @@ class AdBase(IndestructibleModel):
 
 class Click(AdBase):
 
-    """Contains data on ad clicks"""
+    """Contains data on ad clicks."""
 
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="clicks", on_delete=models.PROTECT
@@ -1211,7 +1211,7 @@ class Click(AdBase):
 
 class View(AdBase):
 
-    """Contains data on ad views"""
+    """Contains data on ad views."""
 
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="views", on_delete=models.PROTECT

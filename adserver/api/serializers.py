@@ -1,4 +1,4 @@
-"""De-serializers for the ad server APIs"""
+"""De-serializers for the ad server APIs."""
 from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
@@ -10,7 +10,7 @@ from ..models import Publisher
 class AdPlacementSerializer(serializers.Serializer):
 
     """
-    De-serializes incoming possible ad placements for the API
+    De-serializes incoming possible ad placements for the API.
 
     For example, a client may suggest 3 possible placements
     and have different <div> IDs for those and have different
@@ -26,7 +26,7 @@ class AdPlacementSerializer(serializers.Serializer):
 
 class AdDecisionSerializer(serializers.Serializer):
 
-    """De-serializes incoming possibilities for the ad API"""
+    """De-serializes incoming possibilities for the ad API."""
 
     # Required fields
     placements = AdPlacementSerializer(many=True)
@@ -65,17 +65,16 @@ class AdDecisionSerializer(serializers.Serializer):
 
     def validate_publisher(self, publisher_slug):
         # Resolve the publisher slug into the actual Publisher
-        if publisher_slug:
-            publisher = Publisher.objects.filter(slug=publisher_slug).first()
-            if publisher:
-                return publisher
+        publisher = Publisher.objects.filter(slug=publisher_slug).first()
+        if publisher:
+            return publisher
 
         raise serializers.ValidationError("Invalid publisher")
 
 
 class AdTrackingSerializer(serializers.Serializer):
 
-    """A serializer for data that tracks views and clicks"""
+    """A serializer for data that tracks views and clicks."""
 
     # Required fields
     advertisement = serializers.SlugField(required=True)

@@ -1,4 +1,4 @@
-"""Ad server URLs"""
+"""Ad server URLs."""
 from django.conf.urls import include
 from django.conf.urls import url
 
