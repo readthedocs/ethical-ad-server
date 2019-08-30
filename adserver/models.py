@@ -1032,7 +1032,7 @@ class AdImpression(BaseImpression):
     """
     Track stats around how successful this ad has been.
 
-    Indexed one per ad per day.
+    Indexed one per ad per day per publisher.
     """
 
     publisher = models.ForeignKey(
