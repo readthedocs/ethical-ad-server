@@ -2,6 +2,9 @@
 Django==1.11.23
 pytz==2019.2
 
+# Asynchronous tasks
+celery[redis]<5.0
+
 # Static files
 whitenoise==4.1.2
 
@@ -33,6 +36,9 @@ geoip2==2.9.0
 
 # Countries helper used in ad targeting
 django-countries==5.4
+
+# Server side analytics
+analytical==0.0.1
 
 jsonfield==2.0.2
 bleach==3.1.0
