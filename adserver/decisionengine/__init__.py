@@ -1,5 +1,5 @@
 """
-Ad decision backends for the ad server
+Ad decision backends for the ad server.
 
 Different sites may want different backends based on how different
 ads should be prioritized. For example, you may want to prioritize

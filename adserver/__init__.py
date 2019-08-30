@@ -1,4 +1,4 @@
-"""Ethical Ad Server"""
+"""Ethical Ad Server."""
 from .celery import app as celery_app  # noqa
 
 

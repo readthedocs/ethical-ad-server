@@ -1,4 +1,4 @@
-"""Ad server utilities"""
+"""Ad server utilities."""
 import hashlib
 import ipaddress
 import logging
@@ -47,12 +47,12 @@ def analytics_event(**kwargs):
 
 
 def get_ad_day():
-    """Return a datetime that is the start of the current UTC day"""
+    """Return a datetime that is the start of the current UTC day."""
     return timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def calculate_ecpm(cost, views):
-    """Return the effective cost per 1000 impressions given the total cost and views"""
+    """Return the effective cost per 1000 impressions given the total cost and views."""
     if views > 0:
         return float(cost) * 1000.0 / views
 
@@ -60,7 +60,7 @@ def calculate_ecpm(cost, views):
 
 
 def calculate_ctr(clicks, views):
-    """Return the click through rate [0.0, 100.0] given the total clicks and views"""
+    """Return the click through rate [0.0, 100.0] given the total clicks and views."""
     if views > 0:
         return float(clicks) * 100.0 / views
 
@@ -69,7 +69,7 @@ def calculate_ctr(clicks, views):
 
 def get_client_ip(request):
     """
-    Gets the real IP based on a request object
+    Gets the real IP based on a request object.
 
     Checks if ``request.ip_address`` is present from a Middleware
     (eg. ``RealIPAddressMiddleware``) and returns that.
@@ -83,7 +83,7 @@ def get_client_ip(request):
 
 
 def get_client_user_agent(request):
-    """Gets the users user agent based on the request object"""
+    """Gets the users user agent based on the request object."""
     ua = getattr(request, "user_agent", None)
     if ua:
         return ua
@@ -92,7 +92,7 @@ def get_client_user_agent(request):
 
 
 def get_client_id(request):
-    """Gets the user advertising client ID based on the request"""
+    """Gets the user advertising client ID based on the request."""
     client_id = getattr(request, "advertising_client_id", None)
     if not client_id:
         ua = get_client_user_agent(request)
@@ -103,7 +103,7 @@ def get_client_id(request):
 
 
 def anonymize_ip_address(ip_address):
-    """Anonymizes an IP address by zeroing the last 2 bytes"""
+    """Anonymizes an IP address by zeroing the last 2 bytes."""
     # Used to anonymize an IP by zero-ing out the last 2 bytes
     ip_mask = int("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000", 16)
 
@@ -117,7 +117,7 @@ def anonymize_ip_address(ip_address):
 
 
 def anonymize_user_agent(user_agent):
-    """Anonymizes rare user agents"""
+    """Anonymizes rare user agents."""
     # If the browser family is not recognized, this is a rare user agent
     parsed_ua = parse(user_agent)
     if parsed_ua.browser.family == "Other" or parsed_ua.os.family == "Other":
@@ -127,7 +127,7 @@ def anonymize_user_agent(user_agent):
 
 
 def is_click_ratelimited(request, ratelimits=settings.ADSERVER_CLICK_RATELIMITS):
-    """Returns ``True`` if this user is rate limited from clicking ads and ``False`` otherwise"""
+    """Returns ``True`` if this user is rate limited from clicking ads and ``False`` otherwise."""
     for rate in ratelimits:
         if is_ratelimited(
             request, group="ad.click", key="ip", rate=rate, increment=True
@@ -138,7 +138,7 @@ def is_click_ratelimited(request, ratelimits=settings.ADSERVER_CLICK_RATELIMITS)
 
 
 def is_blacklisted_user_agent(user_agent, blacklist_regexes=BLACKLISTED_UA_REGEXES):
-    """Returns ``True`` if the UA is blacklisted and ``False`` otherwise"""
+    """Returns ``True`` if the UA is blacklisted and ``False`` otherwise."""
     for regex in blacklist_regexes:
         if regex.search(user_agent):
             return True
@@ -166,7 +166,7 @@ def get_geolocation(ip_address):
 
 def generate_client_id(ip_address, user_agent):
     """
-    Create an advertising ID
+    Create an advertising ID.
 
     This simplifies things but essentially if a user has the same IP and same UA,
     this will treat them as the same user for analytics purposes

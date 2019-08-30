@@ -1,4 +1,4 @@
-"""Custom validators for the ad server"""
+"""Custom validators for the ad server."""
 import bleach
 from django.core.exceptions import ValidationError
 from django.core.validators import BaseValidator
@@ -10,7 +10,7 @@ from django_countries import countries
 @deconstructible
 class TargetingParametersValidator(BaseValidator):
 
-    """A Django model and form validator for validating ad targeting"""
+    """A Django model and form validator for validating ad targeting."""
 
     message = _("Enter a valid value")
     code = "targeting-validator"
@@ -33,7 +33,7 @@ class TargetingParametersValidator(BaseValidator):
     }
 
     def __init__(self, message=None):
-        """Initialization for the targeting validator"""
+        """Initialization for the targeting validator."""
         self.country_set = {cc for cc, name in countries}
         if message:
             self.message = message
@@ -83,7 +83,7 @@ class TargetingParametersValidator(BaseValidator):
 @deconstructible
 class AdvertisementValidator(BaseValidator):
 
-    """Validates an advertisement given its ad type"""
+    """Validates an advertisement given its ad type."""
 
     message = _("Enter a valid value")
     code = "advertisement-type"
@@ -103,7 +103,7 @@ class AdvertisementValidator(BaseValidator):
     }
 
     def __init__(self, message=None):
-        """Any initialization for the validator"""
+        """Any initialization for the validator."""
         if message:
             self.message = message
 

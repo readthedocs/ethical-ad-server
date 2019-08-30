@@ -1,4 +1,4 @@
-"""Ethical Ad Server URL Configuration"""
+"""Ethical Ad Server URL Configuration."""
 from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls import url

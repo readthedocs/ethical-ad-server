@@ -4,10 +4,10 @@
 gunicorn==19.9.0
 
 # Database driver
-psycopg2-binary==2.7.6.1
+psycopg2-binary==2.8.3
 
 # Email sending
-django-anymail==4.2
+django-anymail==6.1.0
 
 # Redis (cache)
 django-redis==4.10.0

@@ -1,5 +1,5 @@
 """
-Django settings for the ad server
+Django settings for the ad server.
 
 See:
 - ``base.py`` for base settings
