@@ -16,6 +16,6 @@ urlpatterns = [
 ]
 
 router = routers.SimpleRouter()
-router.register(r"advertiser", AdvertiserViewSet, base_name="advertiser")
-router.register(r"publisher", PublisherViewSet, base_name="publisher")
+router.register(r"advertisers", AdvertiserViewSet, base_name="advertisers")
+router.register(r"publishers", PublisherViewSet, base_name="publishers")
 urlpatterns += router.urls

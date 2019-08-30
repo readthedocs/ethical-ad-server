@@ -1203,18 +1203,18 @@ class AdvertiserApiTests(BaseApiTest):
         self.campaign.save()
 
         # Urls
-        self.advertiser_list_url = reverse("api:advertiser-list")
+        self.advertiser_list_url = reverse("api:advertisers-list")
         self.advertiser1_detail_url = reverse(
-            "api:advertiser-detail", args=[self.advertiser1.slug]
+            "api:advertisers-detail", args=[self.advertiser1.slug]
         )
         self.advertiser2_detail_url = reverse(
-            "api:advertiser-detail", args=[self.advertiser2.slug]
+            "api:advertisers-detail", args=[self.advertiser2.slug]
         )
         self.advertiser1_report_url = reverse(
-            "api:advertiser-report", args=[self.advertiser1.slug]
+            "api:advertisers-report", args=[self.advertiser1.slug]
         )
         self.advertiser2_report_url = reverse(
-            "api:advertiser-report", args=[self.advertiser2.slug]
+            "api:advertisers-report", args=[self.advertiser2.slug]
         )
 
     def test_advertiser_access(self):
@@ -1273,18 +1273,18 @@ class PublisherApiTests(BaseApiTest):
         super().setUp()
 
         # Urls
-        self.publisher_list_url = reverse("api:publisher-list")
+        self.publisher_list_url = reverse("api:publishers-list")
         self.publisher1_detail_url = reverse(
-            "api:publisher-detail", args=[self.publisher1.slug]
+            "api:publishers-detail", args=[self.publisher1.slug]
         )
         self.publisher2_detail_url = reverse(
-            "api:publisher-detail", args=[self.publisher2.slug]
+            "api:publishers-detail", args=[self.publisher2.slug]
         )
         self.publisher1_report_url = reverse(
-            "api:publisher-report", args=[self.publisher1.slug]
+            "api:publishers-report", args=[self.publisher1.slug]
         )
         self.publisher2_report_url = reverse(
-            "api:publisher-report", args=[self.publisher2.slug]
+            "api:publishers-report", args=[self.publisher2.slug]
         )
 
     def test_publisher_access(self):

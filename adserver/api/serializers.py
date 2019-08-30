@@ -99,7 +99,7 @@ class PublisherSerializer(serializers.HyperlinkedModelSerializer):
         model = Publisher
         fields = ("url", "name", "slug", "pub_date", "modified_date")
         extra_kwargs = {
-            "url": {"view_name": "api:publisher-detail", "lookup_field": "slug"}
+            "url": {"view_name": "api:publishers-detail", "lookup_field": "slug"}
         }
 
 
@@ -108,5 +108,5 @@ class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
         model = Advertiser
         fields = ("url", "name", "slug", "pub_date", "modified_date")
         extra_kwargs = {
-            "url": {"view_name": "api:advertiser-detail", "lookup_field": "slug"}
+            "url": {"view_name": "api:advertisers-detail", "lookup_field": "slug"}
         }

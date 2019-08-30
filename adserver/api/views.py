@@ -290,15 +290,15 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Advertiser API calls
 
-    .. http:get:: /api/v1/advertiser/
+    .. http:get:: /api/v1/advertisers/
 
         Return a list of advertisers the user has access to
 
-    .. http:get:: /api/v1/advertiser/(str:slug)/
+    .. http:get:: /api/v1/advertisers/(str:slug)/
 
         Return a specific advertiser
 
-    .. http:get:: /api/v1/advertiser/(str:slug)/report/
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/
 
         Return a report of ad performance for this advertiser
 
@@ -339,15 +339,15 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Publisher API calls
 
-    .. http:get:: /api/v1/publisher/
+    .. http:get:: /api/v1/publishers/
 
         Return a list of publishers the user has access to
 
-    .. http:get:: /api/v1/publisher/(str:slug)/
+    .. http:get:: /api/v1/publishers/(str:slug)/
 
         Return a specific publisher
 
-    .. http:get:: /api/v1/publisher/(str:slug)/report/
+    .. http:get:: /api/v1/publishers/(str:slug)/report/
 
         Return a report of ad performance for this publisher
 
