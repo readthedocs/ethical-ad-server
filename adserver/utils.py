@@ -38,7 +38,7 @@ GeolocationTuple = namedtuple(
 
 
 def analytics_event(**kwargs):
-    """Send data to analytics with celery"""
+    """Send data to analytics with celery."""
     if settings.ADSERVER_ANALYTICS_ID:
         ga = analytical.Provider(
             "googleanalytics", settings.ADSERVER_ANALYTICS_ID, asynchronously=True
