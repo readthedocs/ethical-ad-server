@@ -288,7 +288,7 @@ class ClickTrackingView(BaseTrackingView):
 class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
     """
-    Advertiser API calls
+    Advertiser API calls.
 
     .. http:get:: /api/v1/advertisers/
 
@@ -312,7 +312,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
 
     def get_queryset(self):
-        """Returns Advertisers the user has access to"""
+        """Returns Advertisers the user has access to."""
         if self.request.user.is_staff:
             return Advertiser.objects.all()
 
@@ -320,7 +320,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["get"])
     def report(self, request, slug=None):
-        """Return a report of ad performance for this advertiser"""
+        """Return a report of ad performance for this advertiser."""
         # This will raise a 404 if the user doesn't have access to the advertiser
         advertiser = self.get_object()
         start_date = parse_date_string(request.query_params.get("start_date"))
@@ -337,7 +337,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
 
     """
-    Publisher API calls
+    Publisher API calls.
 
     .. http:get:: /api/v1/publishers/
 
@@ -361,7 +361,7 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
 
     def get_queryset(self):
-        """Returns Publishers the user has access to"""
+        """Returns Publishers the user has access to."""
         if self.request.user.is_staff:
             return Publisher.objects.all()
 
@@ -369,7 +369,7 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["get"])
     def report(self, request, slug=None):
-        """Return a report of ad performance for this publisher"""
+        """Return a report of ad performance for this publisher."""
         # This will raise a 404 if the user doesn't have access to the publisher
         publisher = self.get_object()
         start_date = parse_date_string(request.query_params.get("start_date"))

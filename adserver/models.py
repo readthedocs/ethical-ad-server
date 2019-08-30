@@ -104,7 +104,7 @@ class Publisher(IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for the Publisher
+        Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -173,7 +173,7 @@ class Advertiser(IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for the Publisher
+        Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
