@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 r for r in records if r["model"] == "donate.supporterpromo"
             )
             self.import_impressions(
-                [r for r in records if r["model"] == "donate.promoimpressions"]
+                r for r in records if r["model"] == "donate.promoimpressions"
             )
             self.import_clicks([r for r in records if r["model"] == "donate.click"])
 
