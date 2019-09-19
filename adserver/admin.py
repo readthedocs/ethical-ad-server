@@ -346,14 +346,30 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the ad impressions."""
 
-    readonly_fields = ("date", "advertisement", "views", "clicks", "offers")
+    readonly_fields = (
+        "date",
+        "advertisement",
+        "publisher",
+        "views",
+        "clicks",
+        "offers",
+        "click_to_offer_rate",
+        "view_to_offer_rate",
+    )
     list_display = readonly_fields
-    list_select_related = ["advertisement"]
+    list_filter = ("advertisement__ad_type", "publisher")
+    list_select_related = ["advertisement", "publisher"]
     search_fields = ["advertisement__slug", "advertisement__name"]
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
         return False
+
+    def click_to_offer_rate(self, obj):
+        return "{:.3f}%".format(calculate_ctr(obj.clicks, obj.offers))
+
+    def view_to_offer_rate(self, obj):
+        return "{:.3f}%".format(calculate_ctr(obj.views, obj.offers))
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):

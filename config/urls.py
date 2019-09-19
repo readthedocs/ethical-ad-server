@@ -47,5 +47,5 @@ if settings.ADSERVER_ADMIN_URL:
 
 urlpatterns += [
     url(r"^accounts/", include("allauth.urls")),
-    url(r"^", include("adserver.urls", namespace="adserver")),
+    url(r"^", include("adserver.urls")),
 ]

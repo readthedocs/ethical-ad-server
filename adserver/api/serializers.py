@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..models import Advertisement
+from ..models import Advertiser
 from ..models import Publisher
 
 
@@ -91,3 +92,21 @@ class AdTrackingSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid advertisement")
 
         return advertisement
+
+
+class PublisherSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Publisher
+        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        extra_kwargs = {
+            "url": {"view_name": "api:publishers-detail", "lookup_field": "slug"}
+        }
+
+
+class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Advertiser
+        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        extra_kwargs = {
+            "url": {"view_name": "api:advertisers-detail", "lookup_field": "slug"}
+        }
