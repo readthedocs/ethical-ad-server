@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 continue
 
             self.import_campaigns(
-                [r for r in records if r["model"] == "donate.campaign"]
+                r for r in records if r["model"] == "donate.campaign"
             )
             self.import_flights([r for r in records if r["model"] == "donate.flight"])
             self.import_advertisements(
