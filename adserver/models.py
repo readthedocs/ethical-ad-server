@@ -89,7 +89,7 @@ class Publisher(IndestructibleModel):
     An example of a publisher would be Read the Docs, our first publisher.
     """
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
@@ -107,7 +107,7 @@ class Advertiser(IndestructibleModel):
 
     """An advertiser who buys advertising from the ad server."""
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
@@ -135,7 +135,7 @@ class Campaign(IndestructibleModel):
     and report to customers, they cannot be deleted once created.
     """
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
@@ -155,7 +155,7 @@ class Campaign(IndestructibleModel):
     )
     publishers = models.ManyToManyField(
         Publisher,
-        related_name="flights",
+        related_name="campaigns",
         blank=True,
         help_text=_(
             "Ads for this campaign are eligible for display on these publishers"
@@ -297,7 +297,7 @@ class Flight(IndestructibleModel):
     HIGHEST_PRIORITY_MULTIPLIER = 100
     LOWEST_PRIORITY_MULTIPLIER = 1
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
@@ -590,7 +590,7 @@ class AdType(models.Model):
     See https://www.iab.com/newadportfolio/
     """
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
@@ -654,7 +654,7 @@ class Advertisement(IndestructibleModel):
     and report to customers, they cannot be deleted once created.
     """
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
+    create_date = models.DateTimeField(_("Create date"), auto_now_add=True)
     modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
