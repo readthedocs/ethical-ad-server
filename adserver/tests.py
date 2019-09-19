@@ -248,6 +248,11 @@ class TestValidators(TestCase):
         self.ad.text = "*" * 100
         self.assertRaises(ValidationError, validator, self.ad)
 
+        # Invalid tags
+        self.ad.text = "<script /><b>Hi</b>"
+        validator(self.ad)
+        self.assertEqual(self.ad.text, "<b>Hi</b>")
+
         # Image ad - missing image
         self.ad.text = ""
         self.ad.ad_type = image_ad_type
