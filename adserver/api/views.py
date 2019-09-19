@@ -1,8 +1,12 @@
 """APIs for the ad server."""
 import logging
+from datetime import timedelta
 
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_agents import parse
@@ -10,14 +14,19 @@ from user_agents import parse
 from ..constants import CLICKS
 from ..constants import VIEWS
 from ..decisionengine import get_ad_decision_backend
+from ..models import Advertiser
+from ..models import Publisher
 from ..utils import analytics_event
 from ..utils import get_client_ip
 from ..utils import get_client_user_agent
 from ..utils import is_blacklisted_user_agent
+from ..utils import parse_date_string
 from .mixins import GeoIpMixin
 from .permissions import PublisherPermission
 from .serializers import AdDecisionSerializer
 from .serializers import AdTrackingSerializer
+from .serializers import AdvertiserSerializer
+from .serializers import PublisherSerializer
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -274,3 +283,101 @@ class ClickTrackingView(BaseTrackingView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
+
+    """
+    Advertiser API calls.
+
+    .. http:get:: /api/v1/advertisers/
+
+        Return a list of advertisers the user has access to
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/
+
+        Return a specific advertiser
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/
+
+        Return a report of ad performance for this advertiser
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+    """
+
+    serializer_class = AdvertiserSerializer
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        """Returns Advertisers the user has access to."""
+        if self.request.user.is_staff:
+            return Advertiser.objects.all()
+
+        return self.request.user.advertisers.all()
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):
+        """Return a report of ad performance for this advertiser."""
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date = parse_date_string(request.query_params.get("start_date"))
+        end_date = parse_date_string(request.query_params.get("end_date"))
+
+        if not start_date:
+            start_date = timezone.now() - timedelta(days=30)
+
+        return Response(
+            advertiser.daily_reports(start_date=start_date, end_date=end_date)
+        )
+
+
+class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
+
+    """
+    Publisher API calls.
+
+    .. http:get:: /api/v1/publishers/
+
+        Return a list of publishers the user has access to
+
+    .. http:get:: /api/v1/publishers/(str:slug)/
+
+        Return a specific publisher
+
+    .. http:get:: /api/v1/publishers/(str:slug)/report/
+
+        Return a report of ad performance for this publisher
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+    """
+
+    serializer_class = PublisherSerializer
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        """Returns Publishers the user has access to."""
+        if self.request.user.is_staff:
+            return Publisher.objects.all()
+
+        return self.request.user.publishers.all()
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):
+        """Return a report of ad performance for this publisher."""
+        # This will raise a 404 if the user doesn't have access to the publisher
+        publisher = self.get_object()
+        start_date = parse_date_string(request.query_params.get("start_date"))
+        end_date = parse_date_string(request.query_params.get("end_date"))
+
+        if not start_date:
+            start_date = timezone.now() - timedelta(days=30)
+
+        return Response(
+            publisher.daily_reports(start_date=start_date, end_date=end_date)
+        )
