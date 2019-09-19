@@ -24,6 +24,7 @@ from django.utils.dateparse import parse_date
 from django.utils.dateparse import parse_datetime
 from requests.adapters import HTTPAdapter
 
+from ...constants import PAID_CAMPAIGN
 from ...models import AdImpression
 from ...models import AdType
 from ...models import Advertisement
@@ -74,27 +75,32 @@ class Command(BaseCommand):
         """Imports campaigns and creates an advertiser for each one."""
         publisher = self._get_publisher()
 
-        campaigns = []
         for data in campaign_data:
-            advertiser = Advertiser.objects.create(
-                name=data["fields"]["name"], slug=data["fields"]["slug"]
-            )
+            campaign_type = data["fields"]["campaign_type"]
 
-            campaigns.append(
-                Campaign(
-                    pk=data["pk"],
-                    name=data["fields"]["name"],
-                    slug=data["fields"]["slug"],
-                    campaign_type=data["fields"]["campaign_type"],
-                    max_sale_value=data["fields"]["max_sale_value"],
-                    publishers=[publisher],
-                    advertiser=advertiser,
+            # Only create an advertiser for paid campaigns
+            if campaign_type == PAID_CAMPAIGN:
+                advertiser = Advertiser.objects.create(
+                    name=data["fields"]["name"], slug=data["fields"]["slug"]
                 )
-            )
+            else:
+                advertiser = None
 
-        Campaign.objects.bulk_create(campaigns)
+            # Campaigns have to be created before the many-many
+            # with publishers can be saved
+            campaign = Campaign(
+                pk=data["pk"],
+                name=data["fields"]["name"],
+                slug=data["fields"]["slug"],
+                campaign_type=campaign_type,
+                max_sale_value=data["fields"]["max_sale_value"],
+                advertiser=advertiser,
+            )
+            campaign.save()
+            campaign.publishers.add(publisher)
+
         self.stdout.write(
-            self.style.SUCCESS(f"- Imported {len(campaigns)} campaigns/advertisers")
+            self.style.SUCCESS(f"- Imported {len(campaign_data)} campaigns/advertisers")
         )
 
     def import_flights(self, flight_data):
