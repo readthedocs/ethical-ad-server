@@ -63,7 +63,7 @@ class Command(BaseCommand):
             self.import_impressions(
                 r for r in records if r["model"] == "donate.promoimpressions"
             )
-            self.import_clicks([r for r in records if r["model"] == "donate.click"])
+            self.import_clicks(r for r in records if r["model"] == "donate.click")
 
     def _get_publisher(self):
         publisher, _ = Publisher.objects.get_or_create(
