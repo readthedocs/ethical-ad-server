@@ -19,6 +19,7 @@ from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 from django_countries.fields import CountryField
+from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
 from user_agents import parse
 
@@ -78,7 +79,7 @@ class IndestructibleModel(models.Model):
         abstract = True
 
 
-class Publisher(IndestructibleModel):
+class Publisher(TimeStampedModel, IndestructibleModel):
 
     """
     A publisher that displays advertising from the ad server.
@@ -89,9 +90,6 @@ class Publisher(IndestructibleModel):
     An example of a publisher would be Read the Docs, our first publisher.
     """
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
-
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
@@ -103,13 +101,10 @@ class Publisher(IndestructibleModel):
         return self.name
 
 
-class Advertiser(IndestructibleModel):
+class Advertiser(TimeStampedModel, IndestructibleModel):
 
     """An advertiser who buys advertising from the ad server."""
 
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
-
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
@@ -121,7 +116,7 @@ class Advertiser(IndestructibleModel):
         return self.name
 
 
-class Campaign(IndestructibleModel):
+class Campaign(TimeStampedModel, IndestructibleModel):
 
     """
     A collection of advertisements (:py:class:`~Advertisement`) from the same advertiser.
@@ -134,9 +129,6 @@ class Campaign(IndestructibleModel):
     Since campaigns contain important historical data around tracking how we bill
     and report to customers, they cannot be deleted once created.
     """
-
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Campaign Slug"), max_length=200)
@@ -155,7 +147,7 @@ class Campaign(IndestructibleModel):
     )
     publishers = models.ManyToManyField(
         Publisher,
-        related_name="flights",
+        related_name="campaigns",
         blank=True,
         help_text=_(
             "Ads for this campaign are eligible for display on these publishers"
@@ -271,7 +263,7 @@ class Campaign(IndestructibleModel):
         return report
 
 
-class Flight(IndestructibleModel):
+class Flight(TimeStampedModel, IndestructibleModel):
 
     """
     A flight is a collection of :py:class:`~Advertisement` objects.
@@ -296,9 +288,6 @@ class Flight(IndestructibleModel):
 
     HIGHEST_PRIORITY_MULTIPLIER = 100
     LOWEST_PRIORITY_MULTIPLIER = 1
-
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200)
@@ -579,7 +568,7 @@ class Flight(IndestructibleModel):
         return max(0, self.sold_impressions - self.total_views())
 
 
-class AdType(models.Model):
+class AdType(TimeStampedModel, models.Model):
 
     """
     A type of advertisement including such parameters as the amount of text and images size.
@@ -589,9 +578,6 @@ class AdType(models.Model):
 
     See https://www.iab.com/newadportfolio/
     """
-
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Slug"), max_length=200)
@@ -634,7 +620,7 @@ class AdType(models.Model):
         return self.name
 
 
-class Advertisement(IndestructibleModel):
+class Advertisement(TimeStampedModel, IndestructibleModel):
 
     """
     A single advertisement creative.
@@ -653,9 +639,6 @@ class Advertisement(IndestructibleModel):
     Since ads contain important historical data around tracking how we bill
     and report to customers, they cannot be deleted once created.
     """
-
-    pub_date = models.DateTimeField(_("Publication date"), auto_now_add=True)
-    modified_date = models.DateTimeField(_("Modified date"), auto_now=True)
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Slug"), max_length=200)
