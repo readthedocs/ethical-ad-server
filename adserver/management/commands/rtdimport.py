@@ -53,9 +53,7 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(f"Invalid JSON in {fp.name}"))
                 continue
 
-            self.import_campaigns(
-                r for r in records if r["model"] == "donate.campaign"
-            )
+            self.import_campaigns(r for r in records if r["model"] == "donate.campaign")
             self.import_flights(r for r in records if r["model"] == "donate.flight")
             self.import_advertisements(
                 r for r in records if r["model"] == "donate.supporterpromo"
@@ -75,6 +73,7 @@ class Command(BaseCommand):
         """Imports campaigns and creates an advertiser for each one."""
         publisher = self._get_publisher()
 
+        campaigns = 0
         for data in campaign_data:
             campaign_type = data["fields"]["campaign_type"]
 
@@ -98,9 +97,10 @@ class Command(BaseCommand):
             )
             campaign.save()
             campaign.publishers.add(publisher)
+            campaigns += 1
 
         self.stdout.write(
-            self.style.SUCCESS(f"- Imported {len(campaign_data)} campaigns/advertisers")
+            self.style.SUCCESS(f"- Imported {campaigns} campaigns/advertisers")
         )
 
     def import_flights(self, flight_data):
