@@ -97,7 +97,7 @@ class AdTrackingSerializer(serializers.Serializer):
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Publisher
-        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        fields = ("url", "name", "slug", "created", "modified")
         extra_kwargs = {
             "url": {"view_name": "api:publishers-detail", "lookup_field": "slug"}
         }
@@ -106,7 +106,7 @@ class PublisherSerializer(serializers.HyperlinkedModelSerializer):
 class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Advertiser
-        fields = ("url", "name", "slug", "pub_date", "modified_date")
+        fields = ("url", "name", "slug", "created", "modified")
         extra_kwargs = {
             "url": {"view_name": "api:advertisers-detail", "lookup_field": "slug"}
         }

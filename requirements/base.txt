@@ -15,6 +15,9 @@ Pillow==5.3.0
 djangorestframework==3.10.2
 djangorestframework-jsonp==1.0.2
 
+# Django helpers
+django-extensions==2.2.1
+
 # Form helpers
 django-crispy-forms==1.7.2
 
