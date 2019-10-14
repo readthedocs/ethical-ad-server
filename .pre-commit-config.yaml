@@ -1,14 +1,21 @@
 repos:
--   repo: https://github.com/ambv/black
-    rev: stable
-    hooks:
-    - id: black
-      # Since the pre-commit runs on a file by file basis rather than a whole project,
-      # The excludes in pyproject.toml are ignored
-      exclude: migrations
-      language_version: python3.6
--   repo: https://github.com/asottile/reorder_python_imports
-    rev: v1.3.2
-    hooks:
-    - id: reorder-python-imports
-      language_version: python3
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.3.0
+  hooks:
+  - id: check-yaml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+    exclude: '.*/dnt-policy.txt$'
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+    # Since the pre-commit runs on a file by file basis rather than a whole project,
+    # The excludes in pyproject.toml are ignored
+    exclude: migrations
+    language_version: python3.6
+- repo: https://github.com/asottile/reorder_python_imports
+  rev: v1.3.2
+  hooks:
+  - id: reorder-python-imports
+    language_version: python3

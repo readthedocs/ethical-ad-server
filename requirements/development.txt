@@ -1,5 +1,5 @@
 -r base.txt
-
+-r testing.txt
 
 # Useful debugging tools
 django-debug-toolbar<2.0
@@ -8,7 +8,7 @@ django-debug-toolbar<2.0
 black==19.3b0
 reorder-python-imports<2.0
 
-# For running the black code formatter before commits
+# For running the black code formatter before commits and other checks
 pre-commit<2.0
 
 # Sphinx for docs
@@ -17,9 +17,9 @@ sphinx-autobuild<1.0
 sphinx-rtd-theme
 sphinxcontrib-httpdomain==1.7.0
 
-# Running tests in development
-# Tox will install requirements/testing.txt into its environments
-tox<4.0
+# Various testing tools
+prospector==1.1.7
+django-dynamic-fixture==2.0.0
 
 # Coverage
 coverage<5.0

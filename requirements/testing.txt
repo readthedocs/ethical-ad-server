@@ -1,10 +1,4 @@
--r development.txt
+# Tox will setup its own environment and so it doesn't depend on anything
 
 
 tox<4.0
-
-# Tools used to detect static code issues
-prospector==1.1.7
-
-# Useful for simpler test cases
-django-dynamic-fixture==2.0.0
