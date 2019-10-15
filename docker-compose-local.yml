@@ -1,0 +1,75 @@
+# Docker Compose Local Development Setup
+#
+# This starts a local multi-container development environment
+# with Postgres, Redis, Celery, and Django.
+# The configuration comes from .envs/local
+#
+# To run:
+#   $ make dockerbuild
+#   $ make dockerserve
+
+version: '3'
+
+volumes:
+  local_postgres_data: {}
+  local_postgres_data_backups: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./docker-compose/local/django/Dockerfile
+    image: ethicaladserver_local_django
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+    env_file:
+      - ./.envs/local/django
+      - ./.envs/local/postgres
+    ports:
+      - "8000:8000"
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./docker-compose/production/postgres/Dockerfile
+    image: ethicaladserver_production_postgres
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+      - local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/local/postgres
+
+  redis:
+    image: redis:5.0
+
+  celeryworker:
+    <<: *django
+    image: ethicaladserver_local_celeryworker
+    depends_on:
+      - redis
+      - postgres
+
+    ports: []
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: ethicaladserver_local_celerybeat
+    depends_on:
+      - redis
+      - postgres
+
+    ports: []
+    command: /start-celerybeat
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker-compose/local/frontend/Dockerfile
+    ports: []
+    volumes:
+      - .:/app
+      - /app/node_modules

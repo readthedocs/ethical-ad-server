@@ -58,13 +58,18 @@ techint/media/
 # MailHog binary
 mailhog
 
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
 
 ##########################################################################
 # Ad Server specific ignores
 ##########################################################################
 
 # Production settings
-.envs/production.env
+.envs/*
+!.envs/local/
 
 # Compiled static files
 assets/dist
