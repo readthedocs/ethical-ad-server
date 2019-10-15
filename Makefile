@@ -1,7 +1,8 @@
 .PHONY: help test clean dockerbuild dockerserve dockershell geoip
 
+GEOIP_UPDATE = geoipupdate
 GEOIP_DIR = geoip
-GEOIP_CONF_FILE = config/GeoIP.conf
+GEOIP_CONF_FILE = $(GEOIP_DIR)/GeoIP.conf
 
 DOCKER_CONFIG=docker-compose-local.yml
 
@@ -22,7 +23,7 @@ clean:
 
 # Build the local multi-container application
 # This command can take a while the first time
-dockerbuild: clean geoip
+dockerbuild: clean
 	docker-compose -f $(DOCKER_CONFIG) build
 
 # You should run "dockerbuild" at least once before running this
@@ -38,4 +39,4 @@ dockershell:
 # Get the GeoIP database from MaxMind
 # This command will probably fail unless you have "geoipupdate" installed
 geoip:
-	-geoipupdate -f $(GEOIP_CONF_FILE) -d $(GEOIP_DIR)
+	$(GEOIP_UPDATE) -f $(GEOIP_CONF_FILE) -d $(GEOIP_DIR) --verbose
