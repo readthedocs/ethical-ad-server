@@ -7,12 +7,12 @@ DOCKER_CONFIG=docker-compose-local.yml
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  test           	Run the full test suite"
-	@echo "  clean          	Delete assets processed by webpack"
-	@echo "  dockerbuild    	Build the multi-container ad server (this can take a while)"
-	@echo "  dockerserve    	Run the docker containers for the ad server"
-	@echo "  dockershell    	Connect to a shell on the Django docker container"
-	@echo "  geoip          	Download the GeoIP database from MaxMind"
+	@echo "  test           Run the full test suite"
+	@echo "  clean          Delete assets processed by webpack"
+	@echo "  dockerbuild    Build the multi-container ad server (this can take a while)"
+	@echo "  dockerserve    Run the docker containers for the ad server"
+	@echo "  dockershell    Connect to a shell on the Django docker container"
+	@echo "  geoip          Download the GeoIP database from MaxMind"
 
 test:
 	tox
