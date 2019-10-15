@@ -62,11 +62,11 @@ if env.bool("ADSERVER_HTTPS", default=False):
     SECURE_HSTS_PRELOAD = True
 
     # Redirect HTTP -> HTTPS
-    # Redirect all requests to SECURE_SSL_HOST if it is set
     # https://devcenter.heroku.com/articles/http-routing#heroku-headers
+    # Optionally enforce a specific host. Other hosts will redirect
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
-    SECURE_SSL_HOST = env("SECURE_SSL_HOST", default=None)
+    ENFORCE_HOST = env("ENFORCE_HOST", default=None)
 
 
 # Email settings
