@@ -115,3 +115,7 @@ ADSERVER_BLACKLISTED_USER_AGENTS = env.list(
 ADSERVER_CLICK_RATELIMITS = env.list(
     "ADSERVER_CLICK_RATELIMITS", default=["1/m", "3/10m", "10/h", "25/d"]
 )
+
+# GeoIP settings
+# This directory should be the path to GeoLite2-City.mmdb and GeoLite2-Country.mmdb
+GEOIP_PATH = env("GEOIP_PATH", default=GEOIP_PATH)
