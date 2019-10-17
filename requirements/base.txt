@@ -24,8 +24,7 @@ django-crispy-forms==1.7.2
 # Authentication
 django-allauth==0.39.1
 
-# Reading Django environment variables in production
-# Needed in the base requirements to lint settings/production.py
+# Reading Django settings environment variables
 django-environ==0.4.5
 
 # For rate limiting advertising clicks

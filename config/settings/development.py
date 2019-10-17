@@ -1,7 +1,15 @@
 from .base import *  # noqa
+from .base import env
 
 
-INTERNAL_IPS = ("127.0.0.1", "10.0.2.2")
+# Set the local IPs which are needed for Django Debug Toolbar
+INTERNAL_IPS = ["127.0.0.1", "10.0.2.2"]
+if env("USE_DOCKER", default=False) == "yes":
+    import socket
+
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS += [ip[:-1] + "1" for ip in ips]
+
 
 # django-debug-toolbar
 # https://django-debug-toolbar.readthedocs.io
