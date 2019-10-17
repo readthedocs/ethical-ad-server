@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "enforce_host.EnforceHostMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -97,9 +98,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 SITE_ID = 1  # Required for allauth
 
+
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
+# --------------------------------------------------------------------------
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
@@ -111,7 +113,7 @@ DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
-
+# --------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
@@ -121,11 +123,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+
 # Caching
 # Using a local memory cache for development and testing
 # and a more hardened cache in production
 # See: https://docs.djangoproject.com/en/1.11/topics/cache/
-
+# --------------------------------------------------------------------------
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -133,23 +136,28 @@ CACHES = {
     }
 }
 
+
 # Sessions
 # See: https://docs.djangoproject.com/en/1.11/topics/http/sessions/
 # Using signed cookie sessions. No session data is stored server side,
 # but sessions are tamper proof as long as the SECRET_KEY is a secret.
+# --------------------------------------------------------------------------
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+
 
 # Email
 # https://docs.djangoproject.com/en/1.11/topics/email/
 # In development, emails are not sent and just logged to the console
+# --------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 SERVER_EMAIL = "noreply@ethicalads.io"
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 EMAIL_TIMEOUT = 5
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
-
+# --------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -159,14 +167,16 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
-
+# --------------------------------------------------------------------------
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
 
+
 # User-uploaded files (ad images)
 # https://docs.djangoproject.com/en/1.11/topics/files/
+# --------------------------------------------------------------------------
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
@@ -176,6 +186,7 @@ MEDIA_URL = "/media/"
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.
 # See: http://docs.djangoproject.com/en/1.11/topics/logging
+# --------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -225,16 +236,31 @@ LOGGING = {
     },
 }
 
+# Security settings
+# https://docs.djangoproject.com/en/1.11/topics/security/
+# https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware
+# https://docs.djangoproject.com/en/1.11/ref/clickjacking/
+# These are only the settings that don't matter whether the request is HTTPS or not
+# See settings/production.py for additional settings
+# --------------------------------------------------------------------------
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
 GEOIP_PATH = os.path.join(BASE_DIR, "geoip")
+
 
 # Django Crispy Forms
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
-
+# --------------------------------------------------------------------------
 CRISPY_TEMPLATE_PACK = "bootstrap4"
+
 
 # Django allauth
 # https://django-allauth.readthedocs.io
-
+# --------------------------------------------------------------------------
 ACCOUNT_ADAPTER = "adserver.auth.adapters.AdServerAccountAdapter"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
@@ -243,6 +269,7 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # Celery settings for asynchronous tasks
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html
+# --------------------------------------------------------------------------
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_DEFAULT_QUEUE = "celery"
 CELERY_APP_NAME = "ethicalads"
@@ -256,8 +283,10 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
+
 # Django Rest Framework (API)
 # https://www.django-rest-framework.org
+# --------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
@@ -269,10 +298,10 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 100,
 }
 
-############################################################################
-# Ad server specific settings
-############################################################################
 
+# Ad server specific settings
+# https://read-the-docs-ethical-ad-server.readthedocs-hosted.com/en/latest/install/configuration.html
+# --------------------------------------------------------------------------
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
 

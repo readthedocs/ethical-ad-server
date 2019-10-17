@@ -12,6 +12,8 @@ if env("USE_DOCKER", default=False) == "yes":
 
 
 # django-debug-toolbar
+# https://django-debug-toolbar.readthedocs.io
+# --------------------------------------------------------------------------
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 INSTALLED_APPS += ["debug_toolbar"]
 DEBUG_TOOLBAR_CONFIG = {

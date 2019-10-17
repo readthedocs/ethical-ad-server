@@ -44,3 +44,6 @@ analytical==0.0.1
 
 jsonfield==2.0.2
 bleach==3.1.0
+
+# Security features
+django-enforce-host==1.0.1
