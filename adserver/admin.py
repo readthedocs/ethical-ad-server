@@ -378,19 +378,20 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     readonly_fields = (
         "date",
+        "advertisement",
+        "publisher",
         "page_url",
         "country",
         "browser_family",
         "os_family",
-        "is_bot",
         "is_mobile",
         "user_agent",
         "ip",
         "client_id",
     )
     list_display = readonly_fields[:-3]
-    list_select_related = ("advertisement",)
-    list_filter = ("is_mobile", "is_bot")
+    list_select_related = ("advertisement", "publisher")
+    list_filter = ("is_mobile",)
     exclude = ("advertisement", "url")
     search_fields = (
         "advertisement__name",

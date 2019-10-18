@@ -15,6 +15,7 @@ This command is run (on the ad server):
 """
 import argparse
 import json
+from collections import defaultdict
 from io import BytesIO
 
 import requests
@@ -53,26 +54,91 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(f"Invalid JSON in {fp.name}"))
                 continue
 
-            self.import_campaigns(r for r in records if r["model"] == "donate.campaign")
+            # Get a mapping of project IDs to publishers
+            # This is used later when importing impressions and clicks
+            publisher_mapping = self.import_publishers(
+                r for r in records if r["model"] == "donate.projectgroup"
+            )
+
+            # Get the "readthedocs" publisher
+            readthedocs_publisher = self._get_readthedocs_publisher(publisher_mapping)
+            if not readthedocs_publisher:
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"  Can't find the 'readthedocs' publisher in {fp.name}"
+                    )
+                )
+                continue
+
+            self.import_campaigns(
+                (r for r in records if r["model"] == "donate.campaign"),
+                list(set(publisher_mapping.values())),
+            )
             self.import_flights(r for r in records if r["model"] == "donate.flight")
             self.import_advertisements(
                 r for r in records if r["model"] == "donate.supporterpromo"
             )
-            self.import_impressions(
-                r for r in records if r["model"] == "donate.promoimpressions"
+            self.import_clicks(
+                (r for r in records if r["model"] == "donate.click"),
+                publisher_mapping,
+                readthedocs_publisher,
             )
-            self.import_clicks(r for r in records if r["model"] == "donate.click")
+            revshare_impressions = self.import_revshare_impressions(
+                (r for r in records if r["model"] == "donate.projectimpressions"),
+                publisher_mapping,
+                readthedocs_publisher,
+            )
+            self.import_readthedocs_impressions(
+                (r for r in records if r["model"] == "donate.promoimpressions"),
+                revshare_impressions,
+                readthedocs_publisher,
+            )
 
-    def _get_publisher(self):
-        publisher, _ = Publisher.objects.get_or_create(
-            slug="readthedocs", defaults={"name": "Read the Docs"}
+    def _get_readthedocs_publisher(self, publisher_mapping):
+        readthedocs_publisher = None
+        rtd_publishers = [
+            pub for pub in publisher_mapping.values() if pub.slug == "readthedocs"
+        ]
+        if rtd_publishers:
+            readthedocs_publisher = rtd_publishers[0]
+
+        return readthedocs_publisher
+
+    def import_publishers(self, publisher_data):
+        """
+        Imports publishers from the Read the Docs database.
+
+        Treat project groups as publishers as those are the projects involved in revenue shares.
+        One of those project groups is the "readthedocs" group.
+
+        :returns: a mapping of project slugs to publisher objects
+        """
+        publishers_count = 0
+        publisher_mapping = {}
+        for data in publisher_data:
+            slug = data["fields"]["slug"]
+
+            # Prepend readthedocs- to revshare projects
+            # eg. readthedocs-pallets, readthedocs-celery
+            if not slug.startswith("readthedocs"):
+                slug = "readthedocs-" + slug
+
+            # Publishers need to go one-by-one so because `bulk_create` doesn't set the primary_key
+            publisher = Publisher(name=data["fields"]["name"], slug=slug)
+            publisher.save()
+            publishers_count += 1
+
+            for project_id in data["fields"]["projects"]:
+                publisher_mapping[project_id] = publisher
+
+        self.stdout.write(
+            self.style.SUCCESS(f"- Imported {publishers_count} publishers")
         )
-        return publisher
 
-    def import_campaigns(self, campaign_data):
+        return publisher_mapping
+
+    def import_campaigns(self, campaign_data, publishers):
         """Imports campaigns and creates an advertiser for each one."""
-        publisher = self._get_publisher()
-
         campaigns = 0
         for data in campaign_data:
             campaign_type = data["fields"]["campaign_type"]
@@ -96,8 +162,9 @@ class Command(BaseCommand):
                 advertiser=advertiser,
             )
             campaign.save()
-            campaign.publishers.add(publisher)
             campaigns += 1
+            for publisher in publishers:
+                campaign.publishers.add(publisher)
 
         self.stdout.write(
             self.style.SUCCESS(f"- Imported {campaigns} campaigns/advertisers")
@@ -134,8 +201,6 @@ class Command(BaseCommand):
 
     def import_advertisements(self, advertisements_data):
         """Imports advertisements."""
-        publisher = self._get_publisher()
-
         ad_type_mapping = {
             "doc": AdType.objects.create(
                 name="RTD Sidebar",
@@ -143,7 +208,6 @@ class Command(BaseCommand):
                 has_image=True,  # Can't enforce image sizes due to bad data
                 has_text=True,
                 max_text_length=150,  # Many ads exceed the "allowed" 80
-                publisher=publisher,
             ),
             "site-footer": AdType.objects.create(
                 name="RTD Footer",
@@ -153,7 +217,6 @@ class Command(BaseCommand):
                 image_height=180,
                 has_text=True,
                 max_text_length=300,
-                publisher=publisher,
             ),
             "fixed-footer": AdType.objects.create(
                 name="RTD Fixed Footer",
@@ -161,7 +224,6 @@ class Command(BaseCommand):
                 has_image=False,
                 has_text=True,
                 max_text_length=100,
-                publisher=publisher,
             ),
             # There are two "error" ads but they are old and problematic
             # The images are SVGs (can't be stored in an ImageField)
@@ -206,35 +268,15 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"- Imported {len(advertisements)} advertisements")
         )
 
-    def import_impressions(self, impressions_data):
-        """Import impression data."""
-        publisher = self._get_publisher()
-
-        impressions = []
-        for data in impressions_data:
-            impressions.append(
-                AdImpression(
-                    pk=data["pk"],
-                    date=parse_date(data["fields"]["date"]),
-                    publisher=publisher,
-                    advertisement_id=data["fields"]["promo"],
-                    offers=data["fields"]["offers"],
-                    views=data["fields"]["views"],
-                    clicks=data["fields"]["clicks"],
-                )
-            )
-
-        AdImpression.objects.bulk_create(impressions)
-        self.stdout.write(
-            self.style.SUCCESS(f"- Imported {len(impressions)} impressions")
-        )
-
-    def import_clicks(self, clicks_data):
+    def import_clicks(self, clicks_data, publisher_mapping, readthedocs_publisher):
         """Import click data."""
-        publisher = self._get_publisher()
-
         clicks = []
         for data in clicks_data:
+            # Associate the click with a publisher (revshare partner)
+            # Or default to associating with Read the Docs
+            project = data["fields"]["project"]
+            publisher = publisher_mapping.get(project, readthedocs_publisher)
+
             clicks.append(
                 Click(
                     pk=data["pk"],
@@ -255,3 +297,105 @@ class Command(BaseCommand):
 
         Click.objects.bulk_create(clicks)
         self.stdout.write(self.style.SUCCESS(f"- Imported {len(clicks)} clicks"))
+
+    def import_revshare_impressions(
+        self, project_impressions_data, publisher_mapping, readthedocs_publisher
+    ):
+        """
+        Import impression data for revshare publishers.
+
+        Compared with the other import methods, this has the most complex logic.
+        The best way to reason about this is that the old PromoImpressions model
+        has one entry per day/ad combination while the old ProjectImpressions model
+        has one entry per project/day/ad combination but only for select revshare projects.
+        The new AdImpression model has one entry per publisher/ad/day combination.
+
+        All PromoImpressions that aren't attributed to a project should be associated
+        with the "readthedocs" publisher but that is done in ``import_readthedocs_impressions``.
+        """
+        # Maps "{publisher}_{advertisement}_{date} => impression
+        impressions_map = {}
+
+        # Save all impression data for publishers other than "readthedocs"
+        for data in project_impressions_data:
+            # Associate impression with a publisher (revshare partner)
+            project = data["fields"]["project"]
+            publisher = publisher_mapping.get(project, None)
+            advertisement_id = data["fields"]["promo"]
+            date = data["fields"]["date"]
+
+            # Skip unknown projects/publishers, those aren't revshare publishers
+            if not publisher or publisher == readthedocs_publisher:
+                continue
+
+            key = f"{publisher.id}__{advertisement_id}__{date}"
+            if key in impressions_map:
+                # Add to the existing impression data for this day
+                impressions_map[key].offers += data["fields"]["offers"]
+                impressions_map[key].views += data["fields"]["views"]
+                impressions_map[key].clicks += data["fields"]["clicks"]
+            else:
+                # Create new impression data for this day
+                impressions_map[key] = AdImpression(
+                    date=parse_date(date),
+                    publisher=publisher,
+                    advertisement_id=advertisement_id,
+                    offers=data["fields"]["offers"],
+                    views=data["fields"]["views"],
+                    clicks=data["fields"]["clicks"],
+                )
+
+        impressions = list(impressions_map.values())
+        AdImpression.objects.bulk_create(impressions)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"- Imported {len(impressions)} revshare publisher impressions"
+            )
+        )
+        return impressions
+
+    def import_readthedocs_impressions(
+        self, overall_impressions_data, revshare_impressions, readthedocs_publisher
+    ):
+        """
+        Import impressions for non-revshare impressions (that is, Read the Docs itself).
+
+        This method takes the overall impression data (from the old PromoImpressions model)
+        and subtracts any impressions attributed to a revshare publisher.
+        """
+        # Maps "{advertisement}_{date} => [matching_impressions]
+        revshare_impressions_mapping = defaultdict(list)
+        for impression in revshare_impressions:
+            key = f"{impression.advertisement_id}__{impression.date}"
+            revshare_impressions_mapping[key].append(impression)
+
+        impressions = []
+        for data in overall_impressions_data:
+            publisher = readthedocs_publisher
+            advertisement_id = data["fields"]["promo"]
+            date = data["fields"]["date"]
+            impression = AdImpression(
+                date=parse_date(date),
+                publisher=publisher,
+                advertisement_id=advertisement_id,
+                offers=data["fields"]["offers"],
+                views=data["fields"]["views"],
+                clicks=data["fields"]["clicks"],
+            )
+
+            # Subtract impressions on revshare partners that happened
+            # for the same ad/day combination
+            key = f"{impression.advertisement_id}__{impression.date}"
+            for imp in revshare_impressions_mapping[key]:
+                impression.offers -= imp.offers
+                impression.views -= imp.views
+                impression.clicks -= imp.clicks
+
+            impressions.append(impression)
+
+        AdImpression.objects.bulk_create(impressions)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"- Imported {len(impressions)} Read the Docs impressions"
+            )
+        )

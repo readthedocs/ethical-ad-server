@@ -1,0 +1,177 @@
+[
+  {
+    "model": "donate.projectgroup",
+    "pk": 1,
+    "fields": {
+      "pub_date": "2018-10-23T11:12:41.527Z",
+      "modified_date": "2018-10-23T11:12:41.527Z",
+      "name": "Read the Docs",
+      "slug": "readthedocs",
+      "projects": [
+        1,
+        2
+      ]
+    }
+  },
+  {
+    "model": "donate.projectgroup",
+    "pk": 2,
+    "fields": {
+      "pub_date": "2018-10-23T17:48:04.769Z",
+      "modified_date": "2019-03-19T19:58:23.302Z",
+      "name": "Pallets Projects",
+      "slug": "pallets",
+      "projects": [
+        3,
+        4,
+        5
+      ]
+    }
+  },
+  {
+    "model": "donate.supporterpromo",
+    "pk": 1,
+    "fields": {
+      "pub_date": "2015-07-16T21:46:10.354Z",
+      "modified_date": "2018-08-13T17:18:51.013Z",
+      "name": "rtd-com",
+      "analytics_id": "rtd-com",
+      "text": "Love Read the Docs? Check out our private hosting.",
+      "link": "https://readthedocs.com/",
+      "image": null,
+      "display_type": "doc",
+      "live": true,
+      "flight": 1
+    }
+  },
+  {
+    "model": "donate.supporterpromo",
+    "pk": 2,
+    "fields": {
+      "pub_date": "2015-07-16T21:46:10.354Z",
+      "modified_date": "2018-08-13T17:18:51.013Z",
+      "name": "rtd-com2",
+      "analytics_id": "rtd-com2",
+      "text": "Love Read the Docs? Donate today!.",
+      "link": "https://readthedocs.com/",
+      "image": null,
+      "display_type": "doc",
+      "live": true,
+      "flight": 1
+    }
+  },
+  {
+    "model": "donate.flight",
+    "pk": 1,
+    "fields": {
+      "pub_date": "2018-03-26T23:36:36.847Z",
+      "modified_date": "2018-03-28T23:10:53.624Z",
+      "name": "House Flight",
+      "slug": "house-flight",
+      "start_date": "2016-04-07",
+      "end_date": "2016-05-07",
+      "live": true,
+      "priority_multiplier": 1,
+      "cpc": "0.00",
+      "sold_clicks": 0,
+      "cpm": "0.00",
+      "sold_impressions": 0,
+      "campaign": 32,
+      "targeting_parameters": "{}"
+    }
+  },
+  {
+    "model": "donate.campaign",
+    "pk": 1,
+    "fields": {
+      "pub_date": "2018-01-16T23:07:26.678Z",
+      "modified_date": "2018-01-16T23:07:57.519Z",
+      "name": "House Campaign",
+      "slug": "house",
+      "campaign_type": "house",
+      "max_sale_value": null
+    }
+  },
+  {
+    "model": "donate.click",
+    "pk": 1,
+    "fields": {
+      "date": "2017-12-07T19:31:26.384Z",
+      "ip": "127.0.0.0",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36",
+      "client_id": "xxxxxxxxxxxx",
+      "country": "US",
+      "url": "http://pip.readthedocs.io/en/stable/",
+      "browser_family": "Chrome",
+      "os_family": "Mac OS X",
+      "is_bot": false,
+      "is_mobile": false,
+      "project": 1,
+      "promo": 1
+    }
+  },
+  {
+    "model": "donate.click",
+    "pk": 2,
+    "fields": {
+      "date": "2017-12-07T20:31:26.384Z",
+      "ip": "127.0.0.0",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36",
+      "client_id": "xxxxxxxxxxxx",
+      "country": "US",
+      "url": "http://flask.readthedocs.io/en/stable/",
+      "browser_family": "Chrome",
+      "os_family": "Mac OS X",
+      "is_bot": false,
+      "is_mobile": false,
+      "project": 2,
+      "promo": 1
+    }
+  },
+  {
+    "model": "donate.projectimpressions",
+    "pk": 1,
+    "fields": {
+      "date": "2017-12-07",
+      "offers": 50,
+      "views": 40,
+      "clicks": 0,
+      "promo": 1,
+      "project": 4
+    }
+  },
+  {
+    "model": "donate.projectimpressions",
+    "pk": 2,
+    "fields": {
+      "date": "2017-12-07",
+      "offers": 50,
+      "views": 30,
+      "clicks": 0,
+      "promo": 1,
+      "project": 5
+    }
+  },
+  {
+    "model": "donate.promoimpressions",
+    "pk": 10,
+      "fields": {
+      "date": "2017-12-07",
+      "offers": 200,
+      "views": 150,
+      "clicks": 5,
+      "promo": 1
+    }
+  },
+  {
+    "model": "donate.promoimpressions",
+    "pk": 20,
+      "fields": {
+      "date": "2017-12-07",
+      "offers": 50,
+      "views": 50,
+      "clicks": 1,
+      "promo": 2
+    }
+  }
+]

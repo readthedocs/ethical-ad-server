@@ -1,13 +1,17 @@
 import datetime
 import hashlib
+import io
 import json
+import os
 import re
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
+from django.db import models
 from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
@@ -26,6 +30,7 @@ from .decisionengine.backends import AdvertisingDisabledBackend
 from .decisionengine.backends import AdvertisingEnabledBackend
 from .decisionengine.backends import ProbabilisticClicksNeededBackend
 from .forms import FlightForm
+from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
@@ -1560,3 +1565,53 @@ class TestReportViews(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(url2)
         self.assertEqual(response.status_code, 200)
+
+
+class TestImporterManagementCommand(TestCase):
+    def setUp(self):
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        dumpfile = os.path.join(base_path, "test_fixtures/import_dumpfile.json")
+        out = io.StringIO()
+        management.call_command("rtdimport", dumpfile, stdout=out)
+
+    def test_import_counts(self):
+        self.assertEqual(Publisher.objects.count(), 2)
+        self.assertEqual(Advertisement.objects.count(), 2)
+        self.assertEqual(Flight.objects.count(), 1)
+        self.assertEqual(Campaign.objects.count(), 1)
+
+        # House ads don't generate an advertiser
+        self.assertEqual(Advertiser.objects.count(), 0)
+
+        self.assertEqual(Click.objects.count(), 2)
+
+        # The 2 project impressions collapse into 1
+        # since they are the same "publisher" and ad
+        self.assertEqual(AdImpression.objects.count(), 3)
+
+    def test_impression_values(self):
+        readthedocs_publisher = Publisher.objects.get(slug="readthedocs")
+        other_publisher = Publisher.objects.get(slug="readthedocs-pallets")
+
+        # take the total and subtract the impressions from other publishers (150 - 40 - 30)
+        self.assertEqual(
+            AdImpression.objects.filter(
+                advertisement_id=1, publisher=readthedocs_publisher
+            ).aggregate(sum_views=models.Sum("views"))["sum_views"],
+            80,
+        )
+
+        # 40 + 30
+        self.assertEqual(
+            AdImpression.objects.filter(
+                advertisement_id=1, publisher=other_publisher
+            ).aggregate(sum_views=models.Sum("views"))["sum_views"],
+            70,
+        )
+
+        self.assertEqual(
+            AdImpression.objects.filter(advertisement_id=1).aggregate(
+                sum_views=models.Sum("views")
+            )["sum_views"],
+            150,
+        )
