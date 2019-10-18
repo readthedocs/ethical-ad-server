@@ -9,7 +9,7 @@ Only a few environment variables are required:
 - ALLOWED_HOSTS
 - REDIS_URL
 - DATABASE_URL
-- MAILGUN_API_KEY
+- SENDGRID_API_KEY
 """
 import environ
 
@@ -73,8 +73,8 @@ if env.bool("ADSERVER_HTTPS", default=False):
 # See: https://anymail.readthedocs.io
 # --------------------------------------------------------------------------
 INSTALLED_APPS += ["anymail"]
-EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-ANYMAIL = {"MAILGUN_API_KEY": env("MAILGUN_API_KEY")}
+EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 
 # User upload storage
