@@ -13,8 +13,15 @@
       <li class="nav-item dropdown">
         <a class="nav-item nav-link dropdown-toggle mr-md-2" id="bd-versions" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ request.user.email }}</a>
         <div class="dropdown-menu" aria-labelledby="bd-versions">
+          {% if request.user.is_staff %}
+            <a class="dropdown-item" href="{% url 'admin:index' %}">
+              <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'Administration' %}</span>
+            </a>
+            <div class="dropdown-divider"></div>
+          {% endif %}
           <a class="dropdown-item" href="{% url 'account_change_password' %}">
-            <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span>
+            <span class="fa fa-key fa-fw mr-2 text-muted" aria-hidden="true"></span>
             <span>{% trans 'Change password' %}</span>
           </a>
           <div class="dropdown-divider"></div>
@@ -36,7 +43,7 @@
   </ol>
 
   <main class="main">
-    <div class="container-fluid">
+    <div class="container">
       {% block content_container %}{% endblock content_container %}
     </div>
   </main>
@@ -45,10 +52,11 @@
     <hr>
     <div class="d-flex">
       <div class="p-2 flex-fill">
-        <p class="text-muted"><small>© 2018 Read the Docs, Inc.</small></p>
+        <p class="text-muted"><small>© {% now "Y" %} Read the Docs, Inc.</small></p>
       </div>
       <div class="p-2 flex-fill">
-        <p class="text-muted text-right"><small>v{{ version }}</small></p>
+        {# Relies on the custom context processor #}
+        <p class="text-muted text-right"><small>v{{ adserver_version }}</small></p>
       </div>
     </div>
   </footer>

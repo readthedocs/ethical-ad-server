@@ -1,16 +1,45 @@
 {% extends 'adserver/base.html' %}
+{% load i18n %}
 
-
-{% block title %}Dashboard{% endblock title %}
+{% block title %}{% trans 'Dashboard' %}{% endblock title %}
 
 
 {% block breadcrumbs %}
 <li class="breadcrumb-item">
-  <a href="{% url 'dashboard-home' %}">Home</a>
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
 </li>
-<li class="breadcrumb-item active">Dashboard</li>
+<li class="breadcrumb-item active">{% trans 'Dashboard' %}</li>
 {% endblock breadcrumbs %}
 
 
 {% block content_container %}
+
+  {% if publishers %}
+    <h2>{% trans 'Publishers' %}</h2>
+    <ul>
+      {% if request.user.is_staff %}
+        <li><a href="{% url 'all_publishers_report' %}">{% trans 'All publishers' %}</a></li>
+      {% endif %}
+      {% for publisher in publishers %}
+        <li><a href="{% url 'publisher_report' publisher.slug %}">{{ publisher.name }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if advertisers %}
+    <h2>{% trans 'Advertisers' %}</h2>
+    <ul>
+      {% if request.user.is_staff %}
+        <li><a href="{% url 'all_advertisers_report' %}">{% trans 'All advertisers' %}</a></li>
+      {% endif %}
+      {% for advertiser in advertisers %}
+        <li><a href="{% url 'advertiser_report' advertiser.slug %}">{{ advertiser.name }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if not publishers and not advertisers %}
+    <p>{% trans 'You do not have access to anything.' %}</p>
+  {% endif %}
+
 {% endblock content_container %}

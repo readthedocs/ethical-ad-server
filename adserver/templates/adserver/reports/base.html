@@ -1,0 +1,225 @@
+{% extends "adserver/base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+
+{% block title %}{% trans "Advertising Report" %}{% endblock %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans "Advertising Report" %}{% endblock heading %}</h1>
+
+
+{% block filters %}
+  <section class="mb-5">
+    <div>
+      <form method="get">
+        <div class="form-row">
+          <div class="col-lg-2 col-md-4 mb-3">
+            <label class="col-form-label" for="id_start_date">Start Date</label>
+            <input class="form-control" name="start_date" id="id_start_date" type="date" value="{{ start_date|date:"Y-m-d" }}" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
+          </div>
+
+          <div class="col-lg-2 col-md-4 mb-3">
+            <label class="col-form-label" for="id_end_date">End Date</label>
+            <input class="form-control" name="end_date" id="id_end_date" type="date" value="{% if end_date %}{{ end_date|date:"Y-m-d" }}{% endif %}" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
+          </div>
+
+          {% block additional_filters %}{% endblock additional_filters %}
+        </div>
+        <button class="btn btn-primary" type="submit">{% trans 'Filter report' %}</button>
+      </form>
+    </div>
+  </section>
+{% endblock filters %}
+
+
+{% block toc %}
+<section class="mb-5">
+  {% if ads_and_reports %}
+    <h2>Advertisements</h2>
+    <ul>
+    {% for ad, _ in ads_and_reports %}
+      <li><a href="#{{ ad.slug }}">{{ ad }}</a></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock toc %}
+
+
+{% block summary %}{% endblock summary %}
+
+
+{% block report %}
+{% if ads_and_reports %}
+<div>
+{% for ad, report in ads_and_reports %}
+  <a name="{{ ad.slug }}"></a>
+  <section>
+
+    <h3>
+    Results for {{ ad.name }} ({{ ad.slug }})
+    </h3>
+
+    <div class="example">
+
+      <div class="filters">
+        {% if not ad.live or not ad.flight.live %}
+          <dl>
+            <dt>Inactive</dt>
+            <dd>This ad is not currently being shown</dd>
+          </dl>
+        {% endif %}
+
+        {% if ad.flight.campaign.campaign_type == 'community' %}
+          <dl>
+            <dt>Community ad</dt>
+            <dd>This ad is done for the benefit of the community</dd>
+          </dl>
+        {% endif %}
+
+        {% if ad.flight.campaign.campaign_type == 'house' %}
+          <dl>
+            <dt>House ad</dt>
+            <dd>This ad promotes Read the Docs</dd>
+          </dl>
+        {% endif %}
+
+        {% if ad.flight.cpc %}
+          <dl>
+            <dt>Cost per click (CPC)</dt>
+            <dd>${{ ad.flight.cpc|floatformat:2 }}</dd>
+          </dl>
+        {% endif %}
+
+        {% if ad.flight.cpm %}
+          <dl>
+            <dt>Cost per 1,000 impressions (CPM)</dt>
+            <dd>${{ ad.flight.cpm|floatformat:2 }}</dd>
+          </dl>
+        {% endif %}
+
+        {% if ad.ad_type %}
+        <dl>
+          <dt>Display</dt>
+          <dd>{{ ad.ad_type }}</dd>
+        </dl>
+        {% endif %}
+
+        {% if ad.flight.targeting_parameters %}
+          <dl>
+            <dt>Filters</dt>
+            <dd>
+              <ul>
+                {% if ad.flight.targeting_parameters.include_countries %}
+                  <li>Include countries: {{ ad.flight.get_include_countries_display | join:', ' }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.exclude_countries %}
+                  <li>Exclude countries: {{ ad.flight.get_exclude_countries_display | join:', ' }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_state_provinces %}
+                  <li>Include States/Provinces: {{ ad.flight.targeting_parameters.include_state_provinces | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_metro_codes %}
+                  <li>Include Metros/DMAs: {{ ad.flight.targeting_parameters.include_metro_codes | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_programming_languages %}
+                  <li>Include languages: {{ ad.flight.targeting_parameters.include_programming_languages | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.exclude_programming_languages %}
+                  <li>Exclude languages: {{ ad.flight.targeting_parameters.exclude_programming_languages | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_keywords %}
+                  <li>Include keywords: {{ ad.flight.targeting_parameters.include_keywords | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_projects %}
+                  <li>Include projects: {{ ad.flight.get_include_projects_display | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_themes %}
+                  <li>Include themes: {{ ad.flight.targeting_parameters.include_themes | join:", " }}</li>
+                {% endif %}
+                {% if ad.flight.targeting_parameters.include_builders %}
+                  <li>Include builders: {{ ad.flight.targeting_parameters.include_builders | join:", " }}</li>
+                {% endif %}
+              </ul>
+            </dd>
+          </dl>
+        {% endif %}
+
+      </div>
+
+
+      <div>
+        {% if ad.image %}
+        <div>
+          <a href="{{ ad.link }}">
+            <img width="120" height="90" src="{{ ad.image }}">
+          </a>
+        </div>
+        {% endif %}
+
+        <div>
+          {{ ad.render_links }}
+        </div>
+      </div>
+
+      <div class="clearfix"></div>
+
+    </div>
+
+    {% block ad_data %}
+      {# Used by both a project specific report and an advertiser report #}
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th><strong>Day (UTC)</strong></th>
+            <th><strong>Views</strong></th>
+            <th><strong>Clicks</strong></th>
+            <th><strong>Cost</strong></th>
+            <th><strong><abbr title="Click through rate">CTR</abbr></strong></th>
+          </tr>
+        </thead>
+        {% for day in report.days %}
+          {% if day.views > 0 or day.clicks > 0 %}
+          <tr>
+            <td>{{ day.date }}</td>
+            <td>{{ day.views|intcomma }}</td>
+            <td>{{ day.clicks|intcomma }}</td>
+            <td>${{ day.cost|floatformat:2|intcomma }}</td>
+            <td>{{ day.ctr|floatformat:3 }}%</td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+        <tfoot>
+          <tr>
+            <td><strong>Total</strong> </td>
+            <td><strong>{{ report.total.views|intcomma }}</strong></td>
+            <td><strong>{{ report.total.clicks|intcomma }}</strong></td>
+            <td><strong>${{ report.total.cost|floatformat:2|intcomma }}</strong></td>
+            <td><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+    {% endblock ad_data %}
+
+  </section>
+
+{% endfor %}
+</div>
+
+{% else %}
+
+No ads match this query.
+
+{% endif %}
+{% endblock report %}
+
+{% block report_extras %}{% endblock report_extras %}
+
+{% endblock content_container %}

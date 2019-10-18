@@ -1443,3 +1443,120 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(click.advertisement, self.ad)
         self.assertEqual(click.os_family, "Mac OS X")
         self.assertEqual(click.url, self.page_url)
+
+
+class TestReportViews(TestCase):
+    def setUp(self):
+        self.advertiser1 = get(
+            Advertiser, name="Test Advertiser", slug="test-advertiser"
+        )
+        self.advertiser2 = get(
+            Advertiser, name="Another Advertiser", slug="another-advertiser"
+        )
+        self.publisher1 = get(Publisher, slug="test-publisher")
+        self.publisher2 = get(Publisher, slug="another-publisher")
+
+        self.user = get(get_user_model(), username="test-user")
+        self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+
+    def test_all_advertiser_report_access(self):
+        url = reverse("all_advertisers_report")
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # No access
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Staff only has has access
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_all_publishers_report_access(self):
+        url = reverse("all_publishers_report")
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # No access
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Staff only has has access
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_advertiser_report_access(self):
+        url = reverse("advertiser_report", args=[self.advertiser1.slug])
+        url2 = reverse("advertiser_report", args=[self.advertiser2.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # No access
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Grant that user access
+        self.user.advertisers.add(self.advertiser1)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # No access to advertiser2
+        response = self.client.get(url2)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Staff has has access
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url2)
+        self.assertEqual(response.status_code, 200)
+
+    def test_publisher_report_access(self):
+        url = reverse("publisher_report", args=[self.publisher1.slug])
+        url2 = reverse("publisher_report", args=[self.publisher2.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # No access
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Grant that user access
+        self.user.publishers.add(self.publisher1)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # No access to publisher2
+        response = self.client.get(url2)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Staff has has access
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url2)
+        self.assertEqual(response.status_code, 200)
