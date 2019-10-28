@@ -39,12 +39,12 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th><strong>Time Period</strong></th>
-            <th><strong>Total&nbsp;Views</strong></th>
-            <th><strong>Total&nbsp;Clicks</strong></th>
-            <th><strong>Total&nbsp;Cost</strong></th>
-            <th><strong>Total&nbsp;<abbr title="Effective cost per thousand impressions">eCPM</abbr></strong></th>
-            <th><strong>Total&nbsp;<abbr title="Click through rate">CTR</abbr></strong></th>
+            <th><strong>{% trans 'Time Period' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}Total&nbsp;<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+            <th><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
           </tr>
         </thead>
         <tbody>
@@ -81,12 +81,12 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th><strong>Day (UTC)</strong></th>
-            <th><strong>Views</strong></th>
-            <th><strong>Clicks</strong></th>
-            <th><strong>Cost</strong></th>
-            <th><strong><abbr title="Effective cost per thousand impressions">eCPM</abbr></strong></th>
-            <th><strong><abbr title="Click through rate">CTR</abbr></strong></th>
+            <th><strong>{% trans 'Day (UTC)' %}</strong></th>
+            <th><strong>{% trans 'Views' %}</strong></th>
+            <th><strong>{% trans 'Clicks' %}</strong></th>
+            <th><strong>{% trans 'Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
           </tr>
         </thead>
         {% for day in report.days %}
@@ -116,7 +116,7 @@
 
   {% empty %}
 
-    <p>{% trans 'No advertisers match this query %}</p>
+    <p>{% trans 'No advertisers match this query' %}</p>
 
   {% endfor %}
 {% endblock report %}
