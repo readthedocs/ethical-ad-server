@@ -65,9 +65,22 @@
     Results for {{ ad.name }} ({{ ad.slug }})
     </h3>
 
-    <div class="example">
+    <div class="row">
 
-      <div class="filters">
+      <div class="col">
+        <div class="w-75 p-3 mx-auto">
+          {% if ad.image %}
+          <div class="text-center">
+            <a href="{{ ad.link }}">
+              <img width="120" height="90" src="{{ ad.image.url }}">
+            </a>
+          </div>
+          {% endif %}
+          <div class="text-center">{{ ad.render_links }}</div>
+        </div>
+      </div>
+
+      <div class="col">
         {% if not ad.live or not ad.flight.live %}
           <dl>
             <dt>{% trans 'Inactive' %}</dt>
@@ -151,23 +164,6 @@
         {% endif %}
 
       </div>
-
-
-      <div>
-        {% if ad.image %}
-        <div>
-          <a href="{{ ad.link }}">
-            <img width="120" height="90" src="{{ ad.image }}">
-          </a>
-        </div>
-        {% endif %}
-
-        <div>
-          {{ ad.render_links }}
-        </div>
-      </div>
-
-      <div class="clearfix"></div>
 
     </div>
 
