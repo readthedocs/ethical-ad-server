@@ -61,9 +61,7 @@
   <a name="{{ ad.slug }}"></a>
   <section>
 
-    <h3>
-    Results for {{ ad.name }} ({{ ad.slug }})
-    </h3>
+    <h3>{% blocktrans with ad_name=ad.name ad_slug=ad.slug%}Results for {{ ad_name }} ({{ ad_slug }}){% endblocktrans %}</h3>
 
     <div class="row">
 
@@ -129,34 +127,34 @@
             <dd>
               <ul>
                 {% if ad.flight.targeting_parameters.include_countries %}
-                  <li>Include countries: {{ ad.flight.get_include_countries_display | join:', ' }}</li>
+                  <li>{% blocktrans with value=ad.flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.exclude_countries %}
-                  <li>Exclude countries: {{ ad.flight.get_exclude_countries_display | join:', ' }}</li>
+                  <li>{% blocktrans with value=ad.flight.get_exclude_countries_display|join:', ' %}Exclude countries: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_state_provinces %}
-                  <li>Include States/Provinces: {{ ad.flight.targeting_parameters.include_state_provinces | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_state_provinces|join:", " %}Include States/Provinces: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_metro_codes %}
-                  <li>Include Metros/DMAs: {{ ad.flight.targeting_parameters.include_metro_codes | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_programming_languages %}
-                  <li>Include languages: {{ ad.flight.targeting_parameters.include_programming_languages | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_programming_languages|join:", " %}Include languages: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.exclude_programming_languages %}
-                  <li>Exclude languages: {{ ad.flight.targeting_parameters.exclude_programming_languages | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.exclude_programming_languages|join:", " %}Exclude languages: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_keywords %}
-                  <li>Include keywords: {{ ad.flight.targeting_parameters.include_keywords | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_projects %}
-                  <li>Include projects: {{ ad.flight.get_include_projects_display | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.get_include_projects_display|join:", " %}Include projects: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_themes %}
-                  <li>Include themes: {{ ad.flight.targeting_parameters.include_themes | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_themes|join:", " %}Include themes: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
                 {% if ad.flight.targeting_parameters.include_builders %}
-                  <li>Include builders: {{ ad.flight.targeting_parameters.include_builders | join:", " }}</li>
+                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_builders|join:", " %}Include builders: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
               </ul>
             </dd>
@@ -173,11 +171,11 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th><strong>Day (UTC)</strong></th>
-            <th><strong>Views</strong></th>
-            <th><strong>Clicks</strong></th>
-            <th><strong>Cost</strong></th>
-            <th><strong><abbr title="Click through rate">CTR</abbr></strong></th>
+            <th><strong>{% trans 'Day (UTC)' %}</strong></th>
+            <th><strong>{% trans 'Views' %}</strong></th>
+            <th><strong>{% trans 'Clicks' %}</strong></th>
+            <th><strong>{% trans 'Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
           </tr>
         </thead>
         {% for day in report.days %}
