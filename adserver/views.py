@@ -122,11 +122,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             if start_date:
                 return start_date
 
-        # Handle the days parameter for backward compatibility
-        if "days" in self.request.GET and self.request.GET["days"].isdigit():
-            days = int(self.request.GET["days"])
-            return get_ad_day() - timedelta(days=days)
-
         return get_ad_day() - timedelta(days=self.DEFAULT_REPORT_DAYS)
 
     def get_end_date(self):
