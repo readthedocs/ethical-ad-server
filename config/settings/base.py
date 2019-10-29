@@ -308,9 +308,10 @@ ADSERVER_ADMIN_URL = "admin"
 # The backend to be used by the ad server
 # Set to `None` to disable all advertising
 # This can be useful to set temporarily during migrations
-ADSERVER_DECISION_BACKEND = (
-    "adserver.decisionengine.backends.ProbabilisticClicksNeededBackend"
-)  # noqa
+ADSERVER_DECISION_BACKEND = env(
+    "ADSERVER_DECISION_BACKEND",
+    default="adserver.decisionengine.backends.ProbabilisticClicksNeededBackend",
+)
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
