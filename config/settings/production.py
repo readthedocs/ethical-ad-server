@@ -11,12 +11,8 @@ Only a few environment variables are required:
 - DATABASE_URL
 - SENDGRID_API_KEY
 """
-import environ
-
 from .base import *  # noqa
-
-
-env = environ.Env()
+from .base import env
 
 
 # Django Settings
@@ -46,7 +42,7 @@ DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
 # https://docs.djangoproject.com/en/1.11/topics/cache/
 # https://niwinz.github.io/django-redis/
 # --------------------------------------------------------------------------
-CACHES = env.cache("REDIS_URL")
+CACHES = {"default": env.cache("REDIS_URL")}
 
 
 # Security
