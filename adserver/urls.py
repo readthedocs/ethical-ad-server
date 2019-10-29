@@ -2,9 +2,13 @@
 from django.conf.urls import include
 from django.conf.urls import url
 
+from .views import AdvertiserReportView
+from .views import AllAdvertiserReportView
+from .views import AllPublisherReportView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
+from .views import PublisherReportView
 
 
 urlpatterns = [
@@ -14,4 +18,25 @@ urlpatterns = [
     url(r"^\.well-known/dnt-policy.txt$", do_not_track_policy, name="dnt-policy"),
     # Ad API
     url(r"^api/v1/", include("adserver.api.urls", namespace="api")),
+    # Advertiser and publisher reports
+    url(
+        r"^advertiser/all/report/$",
+        AllAdvertiserReportView.as_view(),
+        name="all_advertisers_report",
+    ),
+    url(
+        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/report/$",
+        AdvertiserReportView.as_view(),
+        name="advertiser_report",
+    ),
+    url(
+        r"^publisher/all/report/$",
+        AllPublisherReportView.as_view(),
+        name="all_publishers_report",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report/$",
+        PublisherReportView.as_view(),
+        name="publisher_report",
+    ),
 ]

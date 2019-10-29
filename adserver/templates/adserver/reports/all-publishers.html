@@ -1,0 +1,135 @@
+{% extends "adserver/reports/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'All Publishers Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'All Publishers Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'All Publishers Report' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block additional_filters %}
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_campaign_type">{% trans 'Campaign type' %}</label>
+  <select class="form-control" name="campaign_type" id="id_campaign_type" {% if request.GET.campaign_type %}value="{{ request.GET.campaign_type }}"{% endif %}>
+    <option>All types</option>
+    {% for slug, type in campaign_types %}
+      <option value="{{ slug }}">{{ type }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endblock additional_filters %}
+
+
+{% block toc %}
+<section class="mb-5">
+  {% if publishers %}
+    <h2>{% trans 'Publishers '%}</h2>
+    <ul>
+    {% for publisher in publishers %}
+      <li><a href="#{{ publisher.slug }}">{{ publisher }}</a></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock toc %}
+
+
+{% block summary %}
+  <section>
+    {% if publishers %}
+    <div>
+      <h2>
+        {% trans 'Total results for all publishers' %}
+      </h2>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th><strong>{% trans 'Time Period' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
+            <th><strong>{% trans 'Total&nbsp;Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}Total&nbsp;<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+            <th><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
+            <td><strong>{{ total_views|intcomma }}</strong></td>
+            <td><strong>{{ total_clicks|intcomma }}</strong></td>
+            <td><strong>${{ total_cost|floatformat:2|intcomma }}</strong></td>
+            <td><strong>${{ total_ecpm|floatformat:2 }}</strong></td>
+            <td><strong>{{ total_ctr|floatformat:3 }}%</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+{% endblock summary %}
+
+
+{% block report %}
+  {% for publisher, report in publishers_and_reports %}
+    <a name="{{ publisher.slug }}"></a>
+    <section>
+
+      <h3>{{ publisher.name }}</h3>
+
+      <dl>
+        <dt>
+          <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}">Publisher detail</a>
+        </dt>
+      </dl>
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th><strong>{% trans 'Day (UTC)' %}</strong></th>
+            <th><strong>{% trans 'Views' %}</strong></th>
+            <th><strong>{% trans 'Clicks' %}</strong></th>
+            <th><strong>{% trans 'Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+          </tr>
+        </thead>
+        {% for day in report.days %}
+          {% if day.views > 0 or day.clicks > 0 %}
+          <tr>
+            <td>{{ day.date }}</td>
+            <td>{{ day.views|intcomma }}</td>
+            <td>{{ day.clicks|intcomma }}</td>
+            <td>${{ day.cost|floatformat:2|intcomma }}</td>
+            <td>${{ day.ecpm|floatformat:2 }}</td>
+            <td>{{ day.ctr|floatformat:3 }}%</td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+        <tfoot>
+          <tr>
+            <td><strong>{% trans 'Total' %}</strong> </td>
+            <td><strong>{{ report.total.views|intcomma }}</strong></td>
+            <td><strong>{{ report.total.clicks|intcomma }}</strong></td>
+            <td><strong>${{ report.total.cost|floatformat:2|intcomma }}</strong></td>
+            <td><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
+            <td><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+
+  {% empty %}
+
+    <p>{% trans 'No publishers match this query' %}</p>
+
+  {% endfor %}
+{% endblock report %}

@@ -1,0 +1,60 @@
+{% extends "adserver/reports/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Advertiser Report' %} - {{ campaign }}{% endblock %}
+
+
+{% block heading %}{% blocktrans %}Advertiser Report for {{ advertiser }}{% endblocktrans %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{{ advertiser }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block summary %}
+  {% if ads_and_reports|length > 1 %}
+    <section>
+      <div>
+        <h2>
+          {% trans 'Total results for all ads' %}
+        </h2>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th><strong>{% trans 'Time Period' %}</strong></th>
+              <th><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
+              <th><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
+              <th><strong>{% trans 'Total&nbsp;Cost' %}</strong></th>
+              <th><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for day in advertiser_report.days %}
+              {% if day.views > 0 or day.clicks > 0 %}
+              <tr>
+                <td>{{ day.date }}</td>
+                <td>{{ day.views|intcomma }}</td>
+                <td>{{ day.clicks|intcomma }}</td>
+                <td>${{ day.cost|floatformat:2|intcomma }}</td>
+                <td>{{ day.ctr|floatformat:3 }}%</td>
+              </tr>
+              {% endif %}
+            {% endfor %}
+            <tr>
+              <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
+              <td><strong>{{ total_views|intcomma }}</strong></td>
+              <td><strong>{{ total_clicks|intcomma }}</strong></td>
+              <td><strong>${{ total_cost|floatformat:2|intcomma }}</strong></td>
+              <td><strong>{{ total_ctr|floatformat:3 }}%</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+
+{% endblock summary %}

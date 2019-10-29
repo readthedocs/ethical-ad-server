@@ -997,19 +997,25 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         else:
             impressions = impressions.all()
 
+        days = OrderedDict()
         for impression in impressions:
-            report["days"].append(
-                {
-                    "date": impression.date,
-                    "views": impression.views,
-                    "clicks": impression.clicks,
-                    "cost": (
-                        (impression.clicks * float(self.flight.cpc))
-                        + (impression.views * float(self.flight.cpm) / 1000.0)
-                    ),
-                    "ctr": impression.click_ratio,
-                }
+            if impression.date not in days:
+                days[impression.date] = defaultdict(int)
+
+            days[impression.date]["date"] = impression.date
+            days[impression.date]["views"] += impression.views
+            days[impression.date]["clicks"] += impression.clicks
+            days[impression.date]["cost"] += (
+                impression.clicks * float(impression.advertisement.flight.cpc)
+            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
+            days[impression.date]["ctr"] = calculate_ctr(
+                days[impression.date]["clicks"], days[impression.date]["views"]
             )
+            days[impression.date]["ecpm"] = calculate_ecpm(
+                days[impression.date]["cost"], days[impression.date]["views"]
+            )
+
+        report["days"] = days.values()
 
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
