@@ -422,13 +422,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
     cpc = models.DecimalField(
         _("Cost Per Click"), max_digits=5, decimal_places=2, default=0
     )
-    sold_clicks = models.IntegerField(_("Sold Clicks"), default=0)
+    sold_clicks = models.PositiveIntegerField(_("Sold Clicks"), default=0)
 
     # CPM
     cpm = models.DecimalField(
         _("Cost Per 1k Impressions"), max_digits=5, decimal_places=2, default=0
     )
-    sold_impressions = models.IntegerField(_("Sold Impressions"), default=0)
+    sold_impressions = models.PositiveIntegerField(_("Sold Impressions"), default=0)
 
     campaign = models.ForeignKey(
         Campaign, related_name="flights", on_delete=models.PROTECT
@@ -1083,7 +1083,7 @@ class BaseImpression(models.Model):
     # Offers include cases where the server returned an ad
     # but the client didn't load it
     # or the client didn't qualify as a view (staff, blacklisted, etc.)
-    offers = models.IntegerField(
+    offers = models.PositiveIntegerField(
         _("Offers"),
         default=0,
         help_text=_(
@@ -1093,12 +1093,12 @@ class BaseImpression(models.Model):
     )
 
     # Views & Clicks don't count actions that are blacklisted, done by staff, bots, etc.
-    views = models.IntegerField(
+    views = models.PositiveIntegerField(
         _("Views"),
         default=0,
         help_text=_("Number of times the ad was legitimately viewed"),
     )
-    clicks = models.IntegerField(
+    clicks = models.PositiveIntegerField(
         _("Clicks"),
         default=0,
         help_text=_("Number of times the ad was legitimately clicked"),
