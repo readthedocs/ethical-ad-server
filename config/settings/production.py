@@ -111,4 +111,6 @@ ADSERVER_CLICK_RATELIMITS = env.list(
 
 # GeoIP settings
 # This directory should be the path to GeoLite2-City.mmdb and GeoLite2-Country.mmdb
-GEOIP_PATH = env("GEOIP_PATH", default=GEOIP_PATH)
+GEOIP_PATH = env("GEOIP_GEOLITE2_PATH", default=GEOIP_PATH)
+GEOIP_CITY = env("GEOIP_GEOLITE2_CITY_FILENAME", default=None)
+GEOIP_COUNTRY = env("GEOIP_GEOLITE2_COUNTRY_FILENAME", default=None)
