@@ -14,6 +14,7 @@ from user_agents import parse
 from ..constants import CLICKS
 from ..constants import VIEWS
 from ..decisionengine import get_ad_decision_backend
+from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Publisher
 from ..utils import analytics_event
@@ -25,6 +26,7 @@ from .mixins import GeoIpMixin
 from .permissions import PublisherPermission
 from .serializers import AdDecisionSerializer
 from .serializers import AdTrackingSerializer
+from .serializers import AdvertisementSerializer
 from .serializers import AdvertiserSerializer
 from .serializers import PublisherSerializer
 
@@ -329,9 +331,18 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
 
-        return Response(
-            advertiser.daily_reports(start_date=start_date, end_date=end_date)
-        )
+        data = advertiser.daily_reports(start_date=start_date, end_date=end_date)
+
+        # Add the daily performance of all ads within the timeframe
+        data["advertisements"] = []
+        for ad in Advertisement.objects.filter(flight__campaign__advertiser=advertiser):
+            report = ad.daily_reports(start_date=start_date, end_date=end_date)
+            if report["total"]["views"]:
+                ad_data = AdvertisementSerializer(ad).data
+                ad_data["report"] = report
+                data["advertisements"].append(ad_data)
+
+        return Response(data)
 
 
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):

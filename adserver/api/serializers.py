@@ -110,3 +110,18 @@ class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {
             "url": {"view_name": "api:advertisers-detail", "lookup_field": "slug"}
         }
+
+
+class AdvertisementSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Advertisement
+        fields = (
+            "name",
+            "slug",
+            "text",
+            "image",
+            "link",
+            "live",
+            "created",
+            "modified",
+        )
