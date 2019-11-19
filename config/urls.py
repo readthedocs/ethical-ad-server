@@ -31,7 +31,8 @@ if settings.DEBUG:
         url("500/", default_views.server_error),
     ]
 
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # We can't use `settings.MEDIA_URL` as the pattern since MEDIA_URL may be fully qualified
+    urlpatterns += static("/media/", document_root=settings.MEDIA_ROOT)
 
     # Enable Django Debug Toolbar in development
     if "debug_toolbar" in settings.INSTALLED_APPS:

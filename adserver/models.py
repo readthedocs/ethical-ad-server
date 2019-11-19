@@ -1067,7 +1067,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return template.render(
             {
                 "ad": self,
-                "image_url": self.image,
+                "image_url": self.image.url if self.image else None,
                 "link_url": self.link,
                 "text_as_html": self.render_links(),
             }
