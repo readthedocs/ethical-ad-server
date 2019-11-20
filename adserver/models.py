@@ -473,40 +473,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_countries", [])
 
     @property
-    def included_programming_languages(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_programming_languages", [])
-
-    @property
-    def excluded_programming_languages(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("exclude_programming_languages", [])
-
-    @property
-    def included_projects(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_projects", [])
-
-    @property
     def included_keywords(self):
         if not self.targeting_parameters:
             return []
         return self.targeting_parameters.get("include_keywords", [])
-
-    @property
-    def included_themes(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_themes", [])
-
-    @property
-    def included_builders(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_builders", [])
 
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
