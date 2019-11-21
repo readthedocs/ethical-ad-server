@@ -10,7 +10,7 @@ class XForwardedForMiddleware:
     https://devcenter.heroku.com/articles/http-routing#heroku-headers
 
     SECURITY NOTE: This middleware *SHOULD BE DISABLED* if the x-forwarded-for
-        header is not guaranteed from the load balancer as a user could fake it. 
+        header is not guaranteed from the load balancer as a user could fake it.
     """
 
     def __init__(self, get_response):
