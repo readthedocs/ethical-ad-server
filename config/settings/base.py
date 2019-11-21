@@ -180,7 +180,9 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
 # https://docs.djangoproject.com/en/1.11/topics/files/
 # --------------------------------------------------------------------------
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-MEDIA_URL = "/media/"
+# Even for dev, this should be fully qualified
+# This allows showing images from the ad server elsewhere more easily
+MEDIA_URL = env("MEDIA_URL", default="/media/")
 
 # Logging
 # See: https://docs.djangoproject.com/en/1.11/ref/settings/#logging
