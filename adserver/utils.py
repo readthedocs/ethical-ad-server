@@ -140,11 +140,20 @@ def anonymize_user_agent(user_agent):
     return user_agent
 
 
-def is_click_ratelimited(request, ratelimits=settings.ADSERVER_CLICK_RATELIMITS):
+def is_click_ratelimited(request, ratelimits=None):
     """Returns ``True`` if this user is rate limited from clicking ads and ``False`` otherwise."""
+    if ratelimits is None:
+        # Explicitly set the rate limits ONLY if the parameter is `None`
+        # If it is an empty list, there's simply no rate limiting
+        ratelimits = settings.ADSERVER_CLICK_RATELIMITS
+
     for rate in ratelimits:
         if is_ratelimited(
-            request, group="ad.click", key="ip", rate=rate, increment=True
+            request,
+            group="ad.click",
+            key=lambda _, req: get_client_ip(req),
+            rate=rate,
+            increment=True,
         ):
             return True
 

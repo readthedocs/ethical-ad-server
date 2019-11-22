@@ -4,16 +4,10 @@ from rest_framework import routers
 
 from .views import AdDecisionView
 from .views import AdvertiserViewSet
-from .views import ClickTrackingView
 from .views import PublisherViewSet
-from .views import ViewTrackingView
 
 
-urlpatterns = [
-    url(r"^decision/$", AdDecisionView.as_view(), name="decision"),
-    url(r"^track/view/$", ViewTrackingView.as_view(), name="view-tracking"),
-    url(r"^track/click/$", ClickTrackingView.as_view(), name="click-tracking"),
-]
+urlpatterns = [url(r"^decision/$", AdDecisionView.as_view(), name="decision")]
 
 router = routers.SimpleRouter()
 router.register(r"advertisers", AdvertiserViewSet, base_name="advertisers")

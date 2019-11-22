@@ -115,8 +115,10 @@ class BaseAdDecisionBackend:
 
         # Specifying the ad or campaign slug skips filtering by live or date
         if self.ad_slug:
+            log.debug("Restricting ad decision ad_slug=%s", self.ad_slug)
             advertisements = advertisements.filter(slug=self.ad_slug)
         elif self.campaign_slug:
+            log.debug("Restricting ad decision campaign=%s", self.campaign_slug)
             advertisements = advertisements.filter(
                 flight__campaign__slug=self.campaign_slug
             )

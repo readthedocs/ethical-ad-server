@@ -2,7 +2,9 @@
 from django.conf.urls import include
 from django.conf.urls import url
 
+from .views import AdClickProxyView
 from .views import AdvertiserReportView
+from .views import AdViewProxyView
 from .views import AllAdvertiserReportView
 from .views import AllPublisherReportView
 from .views import dashboard
@@ -18,6 +20,17 @@ urlpatterns = [
     url(r"^\.well-known/dnt-policy.txt$", do_not_track_policy, name="dnt-policy"),
     # Ad API
     url(r"^api/v1/", include("adserver.api.urls", namespace="api")),
+    # View & Click proxies
+    url(
+        r"^proxy/view/(?P<advertisement_id>\d+)/(?P<nonce>\w+)/$",
+        AdViewProxyView.as_view(),
+        name="view-proxy",
+    ),
+    url(
+        r"^proxy/click/(?P<advertisement_id>\d+)/(?P<nonce>\w+)/$",
+        AdClickProxyView.as_view(),
+        name="click-proxy",
+    ),
     # Advertiser and publisher reports
     url(
         r"^advertiser/all/report/$",
