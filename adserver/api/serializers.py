@@ -2,7 +2,6 @@
 from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
-from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Publisher
 
@@ -71,27 +70,12 @@ class AdDecisionSerializer(serializers.Serializer):
 
         raise serializers.ValidationError("Invalid publisher")
 
+    def validate_keywords(self, keywords):
+        if keywords:
+            # Lowercase all the keywords
+            keywords = [k.lower() for k in keywords]
 
-class AdTrackingSerializer(serializers.Serializer):
-
-    """A serializer for data that tracks views and clicks."""
-
-    # Required fields
-    advertisement = serializers.SlugField(required=True)
-    nonce = serializers.CharField(required=True)
-    url = serializers.URLField(required=True)
-
-    # Used to pass the actual ad viewer's data for targeting purposes
-    user_ip = serializers.IPAddressField(required=False)
-    user_ua = serializers.CharField(required=False)
-
-    def validate_advertisement(self, advertisement_slug):
-        # Resolve the slug into the actual ad
-        advertisement = Advertisement.objects.filter(slug=advertisement_slug).first()
-        if not advertisement:
-            raise serializers.ValidationError("Invalid advertisement")
-
-        return advertisement
+        return keywords
 
 
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
