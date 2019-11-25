@@ -42,6 +42,35 @@ class Command(BaseCommand):
 
     help = "Import advertising DB data from a Read the Docs data dump"
 
+    # Maps programming languages as they appear for flight targeting
+    # To a proper keyword respresentation
+    PROGRAMMING_LANGUAGE_MAPPING = {
+        "c": "c",
+        "coffee": "coffeescript",
+        "cpp": "c++",
+        "csharp": "c#",
+        "css": "css",
+        "go": "go",
+        "groovy": "groovy",
+        "haskell": "haskell",
+        "java": "java",
+        "js": "javascript",
+        "julia": "julia",
+        "lua": "lua",
+        "objc": "objective-c",
+        "other": "other",
+        "perl": "perl",
+        "php": "php",
+        "py": "python",
+        "r": "r",
+        "ruby": "ruby",
+        "scala": "scala",
+        "swift": "swift",
+        "ts": "typescript",
+        "vb": "visual-basic",
+        "words": "only-words",
+    }
+
     def add_arguments(self, parser):
         parser.add_argument("dumpfile", nargs="+", type=argparse.FileType("r"))
 
@@ -183,7 +212,7 @@ class Command(BaseCommand):
                 targeting_keywords = targeting_params.get("include_keywords", [])
                 if "include_programming_languages" in targeting_params:
                     new_keywords = [
-                        f"readthedocs-language-{lang}"
+                        self.PROGRAMMING_LANGUAGE_MAPPING[lang]
                         for lang in targeting_params["include_programming_languages"]
                     ]
                     targeting_keywords.extend(new_keywords)
