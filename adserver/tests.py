@@ -221,13 +221,22 @@ class TestValidators(TestCase):
         validator({"include_state_provinces": ["CA", "ID", "OR"]})
         validator({"include_metro_codes": [1, 2]})
 
-        # Unknown parameters - these are ok
-        validator({"include_programming_languages": ["py", "js"]})
-        validator({"exclude_programming_languages": ["py", "words"]})
-        validator({"include_projects": [1, 2]})
-        validator({"include_themes": ["alabaster", "rtd"]})
-        validator({"include_builders": ["sphinx", "mkdocs"]})
-        validator({"a": "b"})
+        # Unknown (old) parameters - these raise an error
+        self.assertRaises(
+            ValidationError, validator, {"include_programming_languages": ["py", "js"]}
+        )
+        self.assertRaises(
+            ValidationError,
+            validator,
+            {"exclude_programming_languages": ["py", "words"]},
+        )
+        self.assertRaises(ValidationError, validator, {"include_projects": [1, 2]})
+        self.assertRaises(
+            ValidationError, validator, {"include_themes": ["alabaster", "rtd"]}
+        )
+        self.assertRaises(
+            ValidationError, validator, {"include_builders": ["sphinx", "mkdocs"]}
+        )
 
         # Invalid
         self.assertRaises(ValidationError, validator, {"include_countries": "ZZ"})

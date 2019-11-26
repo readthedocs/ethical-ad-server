@@ -44,6 +44,35 @@ class Command(BaseCommand):
     help = "Import advertising DB data from a Read the Docs data dump"
     BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
+    # Maps programming languages as they appear for flight targeting
+    # To a proper keyword respresentation
+    PROGRAMMING_LANGUAGE_MAPPING = {
+        "c": "c",
+        "coffee": "coffeescript",
+        "cpp": "c++",
+        "csharp": "c#",
+        "css": "css",
+        "go": "go",
+        "groovy": "groovy",
+        "haskell": "haskell",
+        "java": "java",
+        "js": "javascript",
+        "julia": "julia",
+        "lua": "lua",
+        "objc": "objective-c",
+        "other": "other",
+        "perl": "perl",
+        "php": "php",
+        "py": "python",
+        "r": "r",
+        "ruby": "ruby",
+        "scala": "scala",
+        "swift": "swift",
+        "ts": "typescript",
+        "vb": "visual-basic",
+        "words": "only-words",
+    }
+
     def add_arguments(self, parser):
         parser.add_argument("dumpfile", nargs="+", type=argparse.FileType("r"))
 
@@ -185,10 +214,40 @@ class Command(BaseCommand):
         """Imports flights."""
         flights = []
         for data in flight_data:
+            flight_name = data["fields"]["name"]
+
+            # Convert old RTD targeting to always use keywords
+            targeting_params = {}
+            if data["fields"]["targeting_parameters"]:
+                targeting_params = json.loads(data["fields"]["targeting_parameters"])
+                targeting_keywords = targeting_params.get("include_keywords", [])
+                if "include_programming_languages" in targeting_params:
+                    new_keywords = [
+                        self.PROGRAMMING_LANGUAGE_MAPPING[lang]
+                        for lang in targeting_params["include_programming_languages"]
+                    ]
+                    targeting_keywords.extend(new_keywords)
+                    del targeting_params["include_programming_languages"]
+                if "include_projects" in targeting_params:
+                    new_keywords = [
+                        f"readthedocs-project-{project}"
+                        for project in targeting_params["include_projects"]
+                    ]
+                    targeting_keywords.extend(new_keywords)
+                    del targeting_params["include_projects"]
+
+                # Remove unused targeting parameters
+                if "exclude_programming_languages" in targeting_params:
+                    del targeting_params["exclude_programming_languages"]
+
+                # Save the keywords as the new way to target by language/project/etc.
+                if targeting_keywords:
+                    targeting_params["include_keywords"] = targeting_keywords
+
             flights.append(
                 Flight(
                     pk=data["pk"],
-                    name=data["fields"]["name"],
+                    name=flight_name,
                     slug=data["fields"]["slug"],
                     live=data["fields"]["live"],
                     priority_multiplier=data["fields"]["priority_multiplier"],
@@ -199,11 +258,7 @@ class Command(BaseCommand):
                     campaign_id=data["fields"]["campaign"],
                     start_date=parse_date(data["fields"]["start_date"]),
                     end_date=parse_date(data["fields"]["end_date"]),
-                    targeting_parameters=json.loads(
-                        data["fields"]["targeting_parameters"]
-                    )
-                    if data["fields"]["targeting_parameters"]
-                    else {},
+                    targeting_parameters=targeting_params,
                 )
             )
 
