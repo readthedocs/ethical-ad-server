@@ -54,10 +54,14 @@ class GeoIpMixin:
         if settings.DEBUG or request.user.is_staff:
             # Show the real IP and geo for staff users in production
             # This allows debugging issues with ad targeting
-            response["X-Adserver-RealIP"] = str(request.ip_address)
-            response["X-Adserver-ClientID"] = str(request.advertising_client_id)
-            response["X-Adserver-Country"] = str(request.geo.country_code)
-            response["X-Adserver-Region"] = str(request.geo.region_code)
-            response["X-Adserver-Metro"] = str(request.geo.metro_code)
+            response["X-Adserver-RealIP"] = str(getattr(request, "ip_address", ""))
+            response["X-Adserver-ClientID"] = str(
+                getattr(request, "advertising_client_id", "")
+            )
+            geo = getattr(request, "geo", None)
+            if geo:
+                response["X-Adserver-Country"] = str(geo.country_code)
+                response["X-Adserver-Region"] = str(geo.region_code)
+                response["X-Adserver-Metro"] = str(geo.metro_code)
 
         return response

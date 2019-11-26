@@ -138,23 +138,8 @@
                 {% if ad.flight.targeting_parameters.include_metro_codes %}
                   <li>{% blocktrans with value=ad.flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
-                {% if ad.flight.targeting_parameters.include_programming_languages %}
-                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_programming_languages|join:", " %}Include languages: {{ value }}{% endblocktrans %}</li>
-                {% endif %}
-                {% if ad.flight.targeting_parameters.exclude_programming_languages %}
-                  <li>{% blocktrans with value=ad.flight.targeting_parameters.exclude_programming_languages|join:", " %}Exclude languages: {{ value }}{% endblocktrans %}</li>
-                {% endif %}
                 {% if ad.flight.targeting_parameters.include_keywords %}
                   <li>{% blocktrans with value=ad.flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
-                {% endif %}
-                {% if ad.flight.targeting_parameters.include_projects %}
-                  <li>{% blocktrans with value=ad.flight.get_include_projects_display|join:", " %}Include projects: {{ value }}{% endblocktrans %}</li>
-                {% endif %}
-                {% if ad.flight.targeting_parameters.include_themes %}
-                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_themes|join:", " %}Include themes: {{ value }}{% endblocktrans %}</li>
-                {% endif %}
-                {% if ad.flight.targeting_parameters.include_builders %}
-                  <li>{% blocktrans with value=ad.flight.targeting_parameters.include_builders|join:", " %}Include builders: {{ value }}{% endblocktrans %}</li>
                 {% endif %}
               </ul>
             </dd>
