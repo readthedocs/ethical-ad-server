@@ -1,0 +1,38 @@
+{% load i18n %}
+
+
+{% spaceless %}
+<div class="ethical-fixedfooter">
+
+{% block content %}
+  <div class="ethical-content">
+    {# Hide the ad link #}
+    <div class="ethical-close">
+      <a href="javascript:$('.ethical-fixedfooter').hide()" aria-label="Close Ad">&#xd7;</a>
+    </div>
+
+    {# No image on the fixed footer ad #}
+    {% if image_url %}
+      <img src="{{ image_url }}" class="ethical-pixel">
+    {% endif %}
+    <div>
+      <a href="{{ link_url }}" rel="nofollow" target="_blank">
+        <span class="ethical-text">{{ text_as_html }}</span>
+      </a>
+      <span class="ethical-callout">
+        {% if promo.flight.campaign.campaign_type == 'community' %}
+          <small><em>
+            <a href="https://docs.readthedocs.io/en/latest/advertising/ethical-advertising.html#community-ads" rel="nofollow" target="_blank">community ad</a>
+          </em></small>
+        {% else %}
+          <small><em>
+            <a href="https://docs.readthedocs.io/en/latest/ethical-advertising.html" rel="nofollow" target="_blank">ads served ethically</a>
+          </em></small>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+{% endblock content %}
+
+</div>
+{% endspaceless %}

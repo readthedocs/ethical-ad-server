@@ -8,20 +8,32 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.utils import timezone
+from django.views import View
 from django.views.generic import TemplateView
+from user_agents import parse as parse_user_agent
 
 from .constants import CAMPAIGN_TYPES
+from .constants import CLICKS
+from .constants import VIEWS
 from .models import AdImpression
 from .models import Advertisement
 from .models import Advertiser
 from .models import Publisher
+from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import get_ad_day
+from .utils import get_client_ip
+from .utils import get_client_user_agent
+from .utils import get_geolocation
+from .utils import is_blacklisted_user_agent
+from .utils import is_click_ratelimited
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -77,6 +89,160 @@ def dashboard(request):
         "adserver/dashboard.html",
         {"advertisers": advertisers, "publishers": publishers},
     )
+
+
+class BaseProxyView(View):
+
+    """A base view for proxying ad views and clicks and collecting relevant metrics on clicks and views."""
+
+    log_level = logging.DEBUG
+    log_security_level = logging.WARNING
+    impression_type = VIEWS
+    success_message = "Billed impression"
+
+    def ignore_tracking_reason(self, request, advertisement, nonce, publisher):
+        """Returns a reason this impression should not be tracked or `None` if this *should* be tracked."""
+        reason = None
+
+        ip_address = get_client_ip(request)
+        user_agent = get_client_user_agent(request)
+        parsed_ua = parse_user_agent(user_agent)
+
+        country_code = None
+        geo_data = get_geolocation(ip_address)
+        if geo_data:
+            country_code = geo_data["country_code"]
+
+        valid_nonce = advertisement.is_valid_nonce(self.impression_type, nonce)
+
+        if not valid_nonce:
+            log.log(self.log_level, "Old or nonexistent impression nonce")
+            reason = "Old/Nonexistent nonce"
+        elif parsed_ua.is_bot:
+            log.log(self.log_level, "Bot impression. User Agent: [%s]", user_agent)
+            reason = "Bot impression"
+        elif ip_address in settings.INTERNAL_IPS:
+            log.log(
+                self.log_level, "Internal IP impression. User Agent: [%s]", user_agent
+            )
+            reason = "Internal IP"
+        elif parsed_ua.os.family == "Other" and parsed_ua.browser.family == "Other":
+            # This is probably a bot/proxy server/prefetcher/etc.
+            log.log(self.log_level, "Unknown user agent impression [%s]", user_agent)
+            reason = "Unrecognized user agent"
+        elif request.user.is_staff:
+            log.log(self.log_level, "Ignored staff user ad impression")
+            reason = "Staff impression"
+        elif is_blacklisted_user_agent(user_agent):
+            log.log(
+                self.log_level, "Blacklisted user agent impression [%s]", user_agent
+            )
+            reason = "Blacklisted impression"
+        elif not publisher:
+            log.log(self.log_level, "Ad impression for unknown publisher")
+            reason = "Unknown publisher"
+        elif not advertisement.flight.show_to_geo(country_code):
+            # This is very rare but it is visible in ad reports
+            # I believe the most common cause for this is somebody uses a VPN and is served an ad
+            # Then they turn off their VPN and click on the ad
+            log.log(
+                self.log_security_level,
+                "Invalid geo targeting for ad [%s]. Country: [%s]",
+                advertisement,
+                country_code,
+            )
+            reason = "Invalid targeting impression"
+        elif self.impression_type == CLICKS and is_click_ratelimited(request):
+            # Note: Normally logging IPs is frowned upon for DNT
+            # but this is a security/billing violation
+            log.log(
+                self.log_security_level,
+                "User has clicked too many ads recently, IP = [%s], User Agent = [%s]",
+                ip_address,
+                user_agent,
+            )
+            reason = "Ratelimited impression"
+
+        return reason
+
+    def send_to_analytics(self, request, advertisement, message):
+        """A no-op by default, sublcasses may override it to send view/clicks to analytics."""
+
+    def get(self, request, advertisement_id, nonce):
+        """Handles proxying ad views and clicks and collecting metrics on them."""
+        advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
+        publisher = advertisement.get_publisher(nonce)
+        referrer = request.META.get("HTTP_REFERER")
+
+        ignore_reason = self.ignore_tracking_reason(
+            request, advertisement, nonce, publisher
+        )
+
+        if not ignore_reason:
+            log.log(self.log_level, self.success_message)
+            advertisement.invalidate_nonce(self.impression_type, nonce)
+            advertisement.track_impression(
+                request, self.impression_type, publisher, referrer
+            )
+
+        message = ignore_reason or self.success_message
+        response = self.get_response(request, advertisement)
+
+        # Add the reason for accepting or rejecting the impression to the headers
+        # but only for staff or in DEBUG/TESTING
+        if settings.DEBUG or settings.TESTING or request.user.is_staff:
+            response["X-Adserver-Reason"] = message
+
+        return response
+
+    def get_response(self, request, advertisement):
+        """Subclasses *must* override this method."""
+        raise NotImplementedError
+
+
+class AdViewProxyView(BaseProxyView):
+
+    """Track an ad view."""
+
+    impression_type = VIEWS
+    success_message = "Billed view"
+
+    def get_response(self, request, advertisement):
+        return HttpResponse(
+            "<svg><!-- View Proxy --></svg>", content_type="image/svg+xml"
+        )
+
+
+class AdClickProxyView(BaseProxyView):
+
+    """Track an ad click and redirect to the ad destination link."""
+
+    impression_type = CLICKS
+    success_message = "Billed click"
+
+    def send_to_analytics(self, request, advertisement, message):
+        ip_address = get_client_ip(request)
+        user_agent = get_client_user_agent(request)
+
+        event_category = "Advertisement"
+        event_label = advertisement.slug
+        event_action = message
+
+        # The event_value is in US cents (eg. for $2 CPC, the value is 200)
+        # CPMs are too small to register
+        event_value = int(advertisement.flight.cpc * 100)
+
+        analytics_event(
+            event_category=event_category,
+            event_action=event_action,
+            event_label=event_label,
+            event_value=event_value,
+            ua=user_agent,
+            uip=ip_address,  # will be anonymized
+        )
+
+    def get_response(self, request, advertisement):
+        return HttpResponseRedirect(advertisement.link)
 
 
 class BaseReportView(UserPassesTestMixin, TemplateView):

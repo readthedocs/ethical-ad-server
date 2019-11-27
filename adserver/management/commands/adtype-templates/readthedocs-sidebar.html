@@ -1,0 +1,36 @@
+{% load i18n %}
+
+
+{% spaceless %}
+<div class="ethical-sidebar">
+  {% block content %}
+    <div class="ethical-content">
+      {% if ad.image %}
+        <a href="{{ link_url }}" rel="nofollow" target="_blank" class="ethical-image-link">
+          <img src="{{ image_url }}">
+        </a>
+      {% elif  image_url %}
+        <img src="{{ image_url }}" class="ethical-pixel">
+      {% endif %}
+
+      <div class="ethical-text">{{ text_as_html }}</div>
+    </div>
+  {% endblock content %}
+
+  {% block callout %}
+    <div class="ethical-callout">
+      {% if promo.flight.campaign.campaign_type == 'community' %}
+        <small><em>
+          <a href="https://docs.readthedocs.io/en/latest/advertising/ethical-advertising.html#community-ads">{% trans 'Community Ad' %}</a>
+        </em></small>
+      {% else %}
+        <small><em>
+          <a href="https://readthedocs.org/sustainability/advertising/">{% trans 'Sponsored' %}</a>
+          <span> &middot; </span>
+          <a href="https://docs.readthedocs.io/en/latest/ethical-advertising.html">{% trans 'Ads served ethically' %}</a>
+        </em></small>
+      {% endif %}
+    </div>
+  {% endblock callout %}
+</div>
+{% endspaceless %}

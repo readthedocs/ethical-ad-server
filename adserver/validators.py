@@ -18,6 +18,7 @@ class TargetingParametersValidator(BaseValidator):
 
     messages = {
         "invalid_type": _("Value must be a dict, not %(type)s"),
+        "unknown_key": _("%(key)s is not a valid targeting parameter"),
         "country_code": _("%(code)s is not a valid country code"),
         "state_province_code": _("%(code)s is not a valid state/province code"),
         "metro_code": _("%(code)s is not a valid metro code"),
@@ -47,7 +48,9 @@ class TargetingParametersValidator(BaseValidator):
 
             for key in value:
                 if key not in self.validators:
-                    continue
+                    raise ValidationError(
+                        self.messages["unknown_key"], params={"key": key}
+                    )
 
                 validator = self.validators[key]
                 func = getattr(self, validator)

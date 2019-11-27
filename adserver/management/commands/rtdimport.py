@@ -15,6 +15,7 @@ This command is run (on the ad server):
 """
 import argparse
 import json
+import os
 from collections import defaultdict
 from io import BytesIO
 
@@ -41,9 +42,46 @@ class Command(BaseCommand):
     """Management command to import advertising DB data from a Read the Docs data dump."""
 
     help = "Import advertising DB data from a Read the Docs data dump"
+    BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+
+    # Maps programming languages as they appear for flight targeting
+    # To a proper keyword respresentation
+    PROGRAMMING_LANGUAGE_MAPPING = {
+        "c": "c",
+        "coffee": "coffeescript",
+        "cpp": "c++",
+        "csharp": "c#",
+        "css": "css",
+        "go": "go",
+        "groovy": "groovy",
+        "haskell": "haskell",
+        "java": "java",
+        "js": "javascript",
+        "julia": "julia",
+        "lua": "lua",
+        "objc": "objective-c",
+        "other": "other",
+        "perl": "perl",
+        "php": "php",
+        "py": "python",
+        "r": "r",
+        "ruby": "ruby",
+        "scala": "scala",
+        "swift": "swift",
+        "ts": "typescript",
+        "vb": "visual-basic",
+        "words": "only-words",
+    }
 
     def add_arguments(self, parser):
         parser.add_argument("dumpfile", nargs="+", type=argparse.FileType("r"))
+
+        parser.add_argument(
+            "--skip-impressions",
+            action="store_true",
+            default=False,
+            help="Skip importing impressions which can be a large amount of data",
+        )
 
     def handle(self, *args, **options):
         for fp in options["dumpfile"]:
@@ -83,16 +121,18 @@ class Command(BaseCommand):
                 publisher_mapping,
                 readthedocs_publisher,
             )
-            revshare_impressions = self.import_revshare_impressions(
-                (r for r in records if r["model"] == "donate.projectimpressions"),
-                publisher_mapping,
-                readthedocs_publisher,
-            )
-            self.import_readthedocs_impressions(
-                (r for r in records if r["model"] == "donate.promoimpressions"),
-                revshare_impressions,
-                readthedocs_publisher,
-            )
+
+            if not options["skip_impressions"]:
+                revshare_impressions = self.import_revshare_impressions(
+                    (r for r in records if r["model"] == "donate.projectimpressions"),
+                    publisher_mapping,
+                    readthedocs_publisher,
+                )
+                self.import_readthedocs_impressions(
+                    (r for r in records if r["model"] == "donate.promoimpressions"),
+                    revshare_impressions,
+                    readthedocs_publisher,
+                )
 
     def _get_readthedocs_publisher(self, publisher_mapping):
         readthedocs_publisher = None
@@ -174,10 +214,40 @@ class Command(BaseCommand):
         """Imports flights."""
         flights = []
         for data in flight_data:
+            flight_name = data["fields"]["name"]
+
+            # Convert old RTD targeting to always use keywords
+            targeting_params = {}
+            if data["fields"]["targeting_parameters"]:
+                targeting_params = json.loads(data["fields"]["targeting_parameters"])
+                targeting_keywords = targeting_params.get("include_keywords", [])
+                if "include_programming_languages" in targeting_params:
+                    new_keywords = [
+                        self.PROGRAMMING_LANGUAGE_MAPPING[lang]
+                        for lang in targeting_params["include_programming_languages"]
+                    ]
+                    targeting_keywords.extend(new_keywords)
+                    del targeting_params["include_programming_languages"]
+                if "include_projects" in targeting_params:
+                    new_keywords = [
+                        f"readthedocs-project-{project}"
+                        for project in targeting_params["include_projects"]
+                    ]
+                    targeting_keywords.extend(new_keywords)
+                    del targeting_params["include_projects"]
+
+                # Remove unused targeting parameters
+                if "exclude_programming_languages" in targeting_params:
+                    del targeting_params["exclude_programming_languages"]
+
+                # Save the keywords as the new way to target by language/project/etc.
+                if targeting_keywords:
+                    targeting_params["include_keywords"] = targeting_keywords
+
             flights.append(
                 Flight(
                     pk=data["pk"],
-                    name=data["fields"]["name"],
+                    name=flight_name,
                     slug=data["fields"]["slug"],
                     live=data["fields"]["live"],
                     priority_multiplier=data["fields"]["priority_multiplier"],
@@ -188,11 +258,7 @@ class Command(BaseCommand):
                     campaign_id=data["fields"]["campaign"],
                     start_date=parse_date(data["fields"]["start_date"]),
                     end_date=parse_date(data["fields"]["end_date"]),
-                    targeting_parameters=json.loads(
-                        data["fields"]["targeting_parameters"]
-                    )
-                    if data["fields"]["targeting_parameters"]
-                    else {},
+                    targeting_parameters=targeting_params,
                 )
             )
 
@@ -201,6 +267,25 @@ class Command(BaseCommand):
 
     def import_advertisements(self, advertisements_data):
         """Imports advertisements."""
+        allowed_tags = [
+            # Defaults from bleach
+            "a",
+            "abbr",
+            "acronym",
+            "b",
+            "blockquote",
+            "code",
+            "em",
+            "i",
+            "li",
+            "ol",
+            "strong",
+            "ul",
+            # Added for RTD
+            "br",
+            "small",
+        ]
+
         ad_type_mapping = {
             "doc": AdType.objects.create(
                 name="RTD Sidebar",
@@ -208,6 +293,13 @@ class Command(BaseCommand):
                 has_image=True,  # Can't enforce image sizes due to bad data
                 has_text=True,
                 max_text_length=150,  # Many ads exceed the "allowed" 80
+                allowed_html_tags=" ".join(allowed_tags),
+                template=open(
+                    os.path.join(
+                        self.BASE_DIR, "adtype-templates/readthedocs-sidebar.html"
+                    ),
+                    "r",
+                ).read(),
             ),
             "site-footer": AdType.objects.create(
                 name="RTD Footer",
@@ -217,6 +309,13 @@ class Command(BaseCommand):
                 image_height=180,
                 has_text=True,
                 max_text_length=300,
+                allowed_html_tags=" ".join(allowed_tags),
+                template=open(
+                    os.path.join(
+                        self.BASE_DIR, "adtype-templates/readthedocs-footer.html"
+                    ),
+                    "r",
+                ).read(),
             ),
             "fixed-footer": AdType.objects.create(
                 name="RTD Fixed Footer",
@@ -224,6 +323,13 @@ class Command(BaseCommand):
                 has_image=False,
                 has_text=True,
                 max_text_length=100,
+                allowed_html_tags=" ".join(allowed_tags),
+                template=open(
+                    os.path.join(
+                        self.BASE_DIR, "adtype-templates/readthedocs-fixedfooter.html"
+                    ),
+                    "r",
+                ).read(),
             ),
             # There are two "error" ads but they are old and problematic
             # The images are SVGs (can't be stored in an ImageField)

@@ -7,7 +7,9 @@ from collections import defaultdict
 from collections import OrderedDict
 
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -473,40 +475,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_countries", [])
 
     @property
-    def included_programming_languages(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_programming_languages", [])
-
-    @property
-    def excluded_programming_languages(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("exclude_programming_languages", [])
-
-    @property
-    def included_projects(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_projects", [])
-
-    @property
     def included_keywords(self):
         if not self.targeting_parameters:
             return []
         return self.targeting_parameters.get("include_keywords", [])
-
-    @property
-    def included_themes(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_themes", [])
-
-    @property
-    def included_builders(self):
-        if not self.targeting_parameters:
-            return []
-        return self.targeting_parameters.get("include_builders", [])
 
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
@@ -793,15 +765,39 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def as_dict(self):
         """A dict respresentation of this for JSON encoding."""
-        nonce = get_random_string()  # 12 chars alphanumeric
+        nonce = get_random_string(16)
+
+        site = get_current_site(None)
+        domain = site.domain
+        scheme = "http"
+        if settings.ADSERVER_HTTPS:
+            scheme = "https"
+
+        view_url = "{scheme}://{domain}{url}".format(
+            scheme=scheme,
+            domain=domain,
+            url=reverse(
+                "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            ),
+        )
+
+        click_url = "{scheme}://{domain}{url}".format(
+            scheme=scheme,
+            domain=domain,
+            url=reverse(
+                "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            ),
+        )
 
         return {
             "id": self.slug,
             "text": self.text,
-            "html": self.render_ad(),
+            "html": self.render_ad(click_url=click_url, view_url=view_url),
             "image": self.image.url if self.image else None,
-            "link": self.link,
+            "link": click_url,
+            "view_url": view_url,
             "nonce": nonce,
+            "display_type": self.ad_type.slug,
         }
 
     def cache_key(self, impression_type, nonce):
@@ -856,6 +852,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             advertisement=self,
         )
         return obj
+
+    def track_impression(self, request, impression_type, publisher, url):
+        if impression_type not in (CLICKS, VIEWS):
+            raise RuntimeError("Impression must be either a click or a view")
+
+        self.incr(impression_type, publisher)
+        model = Click if impression_type == CLICKS else View
+        self._record_base(request, model, publisher, url)
 
     def track_click(self, request, publisher, url):
         """Store click data in the DB."""
@@ -1059,17 +1063,21 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self):
+    def render_ad(self, click_url=None, view_url=None):
+        """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         template = get_template("adserver/advertisement.html")
+
+        # Check if the ad type has a specific template
         if self.ad_type and self.ad_type.template:
             template = engines["django"].from_string(self.ad_type.template)
 
         return template.render(
             {
                 "ad": self,
-                "image_url": self.image,
-                "link_url": self.link,
-                "text_as_html": self.render_links(),
+                "image_url": self.image.url if self.image else None,
+                "link_url": click_url or self.link,
+                "view_url": view_url,
+                "text_as_html": self.render_links(link=click_url),
             }
         ).strip()
 
