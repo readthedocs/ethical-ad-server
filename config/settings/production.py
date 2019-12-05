@@ -94,6 +94,18 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 
+# Sentry settings for error monitoring
+# https://docs.sentry.io/platforms/python/django/
+# --------------------------------------------------------------------------
+SENTRY_DSN = env.bool("SENTRY_DSN", default=None)
+if SENTRY_DSN:
+    # pylint: disable=import-error
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
+
+
 # Production ad server specific settings
 # https://read-the-docs-ethical-ad-server.readthedocs-hosted.com/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
