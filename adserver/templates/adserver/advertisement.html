@@ -2,11 +2,14 @@
 
 {% spaceless %}
 <div class="ethical-ad">
-  {% if ad.image %}
+  {% if image_url %}
     <a href="{{ link_url }}" rel="nofollow" target="_blank">
       <img src="{{ image_url }}">
     </a>
+  {% elif view_url %}
+    <img src="{{ view_url }}" class="ethical-pixel">
   {% endif %}
+
   {% if ad.text %}
     <p class="ethical-text">{{ text_as_html }}</p>
   {% endif %}
