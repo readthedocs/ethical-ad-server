@@ -459,6 +459,18 @@ class TestAdModels(TestCase):
         self.assertIn("Nothing here", self.ad.render_ad())
         self.assertNotIn("Test", self.ad.render_ad())
 
+    def test_click_view_links_in_render(self):
+        self.ad.text = "<a>Call to Action!</a>"
+        self.ad.save()
+
+        self.assertIn(self.ad.link, self.ad.render_ad())
+
+        view_url = "http://view.link"
+        click_url = "http://view.link"
+        output = self.ad.render_ad(click_url=click_url, view_url=view_url)
+        self.assertIn(view_url, output)
+        self.assertIn(click_url, output)
+
 
 class DecisionEngineTests(TestCase):
     def setUp(self):
