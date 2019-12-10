@@ -11,10 +11,11 @@
       <a href="javascript:$('.ethical-fixedfooter').hide()" aria-label="Close Ad">&#xd7;</a>
     </div>
 
-    {# No image on the fixed footer ad #}
-    {% if image_url %}
-      <img src="{{ image_url }}" class="ethical-pixel">
+    {# No image on the fixed footer ad - just a metrics pixel #}
+    {% if view_url %}
+      <img src="{{ view_url }}" class="ethical-pixel">
     {% endif %}
+
     <div>
       <a href="{{ link_url }}" rel="nofollow" target="_blank">
         <span class="ethical-text">{{ text_as_html }}</span>

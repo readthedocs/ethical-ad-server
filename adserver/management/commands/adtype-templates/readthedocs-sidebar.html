@@ -5,12 +5,12 @@
 <div class="ethical-sidebar">
   {% block content %}
     <div class="ethical-content">
-      {% if ad.image %}
+      {% if image_url %}
         <a href="{{ link_url }}" rel="nofollow" target="_blank" class="ethical-image-link">
           <img src="{{ image_url }}">
         </a>
-      {% elif  image_url %}
-        <img src="{{ image_url }}" class="ethical-pixel">
+      {% elif view_url %}
+        <img src="{{ view_url }}" class="ethical-pixel">
       {% endif %}
 
       <div class="ethical-text">{{ text_as_html }}</div>
