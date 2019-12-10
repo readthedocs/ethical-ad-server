@@ -44,6 +44,8 @@ class Command(BaseCommand):
     help = "Import advertising DB data from a Read the Docs data dump"
     BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
+    BATCH_SIZE = 500
+
     # Maps programming languages as they appear for flight targeting
     # To a proper keyword respresentation
     PROGRAMMING_LANGUAGE_MAPPING = {
@@ -262,7 +264,7 @@ class Command(BaseCommand):
                 )
             )
 
-        Flight.objects.bulk_create(flights)
+        Flight.objects.bulk_create(flights, batch_size=self.BATCH_SIZE)
         self.stdout.write(self.style.SUCCESS(f"- Imported {len(flights)} flights"))
 
     def import_advertisements(self, advertisements_data):
@@ -369,7 +371,7 @@ class Command(BaseCommand):
                 )
             )
 
-        Advertisement.objects.bulk_create(advertisements)
+        Advertisement.objects.bulk_create(advertisements, batch_size=self.BATCH_SIZE)
         self.stdout.write(
             self.style.SUCCESS(f"- Imported {len(advertisements)} advertisements")
         )
@@ -401,7 +403,7 @@ class Command(BaseCommand):
                 )
             )
 
-        Click.objects.bulk_create(clicks)
+        Click.objects.bulk_create(clicks, batch_size=self.BATCH_SIZE)
         self.stdout.write(self.style.SUCCESS(f"- Imported {len(clicks)} clicks"))
 
     def import_revshare_impressions(
@@ -452,7 +454,7 @@ class Command(BaseCommand):
                 )
 
         impressions = list(impressions_map.values())
-        AdImpression.objects.bulk_create(impressions)
+        AdImpression.objects.bulk_create(impressions, batch_size=self.BATCH_SIZE)
         self.stdout.write(
             self.style.SUCCESS(
                 f"- Imported {len(impressions)} revshare publisher impressions"
@@ -499,7 +501,7 @@ class Command(BaseCommand):
 
             impressions.append(impression)
 
-        AdImpression.objects.bulk_create(impressions)
+        AdImpression.objects.bulk_create(impressions, batch_size=self.BATCH_SIZE)
         self.stdout.write(
             self.style.SUCCESS(
                 f"- Imported {len(impressions)} Read the Docs impressions"
