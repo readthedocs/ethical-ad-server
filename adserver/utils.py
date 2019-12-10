@@ -44,6 +44,15 @@ def analytics_event(**kwargs):
         ga = analytical.Provider(
             "googleanalytics", settings.ADSERVER_ANALYTICS_ID, asynchronously=True
         )
+        kwargs["an"] = "Ethical Ad Server"
+        kwargs["av"] = settings.ADSERVER_VERSION
+        kwargs["aip"] = "1"
+
+        if kwargs.get("uip"):
+            kwargs["uip"] = anonymize_ip_address(kwargs["uip"])
+        if kwargs.get("ua"):
+            kwargs["ua"] = anonymize_user_agent(kwargs["ua"])
+
         ga.event(kwargs)
 
 

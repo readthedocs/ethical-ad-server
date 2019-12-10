@@ -188,6 +188,8 @@ class BaseProxyView(View):
         message = ignore_reason or self.success_message
         response = self.get_response(request, advertisement)
 
+        self.send_to_analytics(request, advertisement, message)
+
         # Add the reason for accepting or rejecting the impression to the headers
         # but only for staff or in DEBUG/TESTING
         if settings.DEBUG or settings.TESTING or request.user.is_staff:
@@ -233,10 +235,10 @@ class AdClickProxyView(BaseProxyView):
         event_value = int(advertisement.flight.cpc * 100)
 
         analytics_event(
-            event_category=event_category,
-            event_action=event_action,
-            event_label=event_label,
-            event_value=event_value,
+            ec=event_category,
+            ea=event_action,
+            el=event_label,
+            ev=event_value,
             ua=user_agent,
             uip=ip_address,  # will be anonymized
         )
