@@ -97,7 +97,7 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # Sentry settings for error monitoring
 # https://docs.sentry.io/platforms/python/django/
 # --------------------------------------------------------------------------
-SENTRY_DSN = env.bool("SENTRY_DSN", default=None)
+SENTRY_DSN = env("SENTRY_DSN", default=None)
 if SENTRY_DSN:
     # pylint: disable=import-error
     import sentry_sdk
