@@ -190,7 +190,7 @@ class FormTests(TestCase):
 
 class TestValidators(TestCase):
     def setUp(self):
-        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.campaign = get(Campaign)
         self.flight = get(Flight, campaign=self.campaign)
         self.ad = get(
             Advertisement,
@@ -319,7 +319,7 @@ class TestProtectedModels(TestCase):
 
 class TestAdModels(TestCase):
     def setUp(self):
-        self.campaign = get(Campaign, max_sale_value=2000.0)
+        self.campaign = get(Campaign)
         self.flight = get(
             Flight,
             live=True,
@@ -476,9 +476,7 @@ class DecisionEngineTests(TestCase):
     def setUp(self):
         self.publisher = get(Publisher, slug="test-publisher")
         self.ad_type = get(AdType, has_image=False, slug="z")
-        self.campaign = get(
-            Campaign, publishers=[self.publisher], max_sale_value=2000.0
-        )
+        self.campaign = get(Campaign, publishers=[self.publisher])
         self.include_flight = get(
             Flight,
             live=True,
@@ -597,24 +595,6 @@ class DecisionEngineTests(TestCase):
         ads = self.backend.get_ads_queryset()
         self.assertFalse(ads.exists())
 
-    def test_campaign_max_sale_value(self):
-        self.campaign.max_sale_value = 2.0
-        self.campaign.save()
-
-        self.include_flight.cpc = 2.0
-        self.include_flight.save()
-
-        # First choice should get the promo
-        self.assertEqual(self.campaign.total_value(), 0)
-        self.assertEqual(
-            self.backend.filter_ads([self.advertisement1]), [self.advertisement1]
-        )
-        self.advertisement1.incr(CLICKS, self.publisher)
-
-        # Second time the promo is filtered out - the promo has met its max_sale_value
-        self.assertEqual(self.campaign.total_value(), 2.0)
-        self.assertEqual(self.backend.filter_ads([self.advertisement1]), [])
-
     def test_no_clicks_needed(self):
         ret = self.backend.filter_ads([self.advertisement1])
         self.assertEqual(len(ret), 1)
@@ -643,24 +623,6 @@ class DecisionEngineTests(TestCase):
         self.cpm_flight.save()
         ret = self.backend.filter_ads([self.advertisement1])
         self.assertEqual(len(ret), 0)
-
-    def test_campaign_total_value(self):
-        # Tests the campaign_total_value optimization
-        ads = self.backend.get_ads_queryset()
-        ads = self.backend.annotate_queryset(ads)
-
-        self.assertEqual(self.campaign.total_value(), 0)
-        self.assertEqual(ads[0].flight.campaign.campaign_total_value, 0)
-
-        self.advertisement1.incr(CLICKS, self.publisher)  # +2
-        self.advertisement1.incr(CLICKS, self.publisher)  # +2
-        self.advertisement2.incr(CLICKS, self.publisher)  # +5
-
-        ads = self.backend.get_ads_queryset()
-        ads = self.backend.annotate_queryset(ads)
-
-        self.assertAlmostEqual(self.campaign.total_value(), 9.0)
-        self.assertAlmostEqual(ads[0].flight.campaign.campaign_total_value, 9.0)
 
     def test_flight_clicks(self):
         # Tests the flight_clicks_today, flight_total_clicks optimizations
@@ -789,9 +751,8 @@ class DecisionEngineTests(TestCase):
             ads = list(self.backend.get_ads_queryset())
             self.assertEqual(len(ads), 3)
 
-        with self.assertNumQueries(3):
-            # One query for campaign max value, one for flight total clicks
-            #  and one for flight clicks today
+        with self.assertNumQueries(2):
+            # One query for flight total clicks and one for flight clicks today
             # For all campaigns/flights
             ads = self.backend.annotate_queryset(ads)
             self.assertEqual(len(ads), 3)
@@ -804,9 +765,7 @@ class DecisionEngineTests(TestCase):
             self.assertTrue(ad in self.possible_ads)
 
     def test_click_probability(self):
-        priority_range = range(
-            Flight.LOWEST_PRIORITY_MULTIPLIER, Flight.HIGHEST_PRIORITY_MULTIPLIER, 15
-        )
+        priority_range = [1, 2, 10, 50, 100, 10000]
 
         flight1 = get(Flight, campaign=self.campaign, live=True, sold_clicks=100)
         flight2 = get(Flight, campaign=self.campaign, live=True, sold_clicks=100)
@@ -915,9 +874,7 @@ class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
         self.publisher2 = get(Publisher, slug="another-publisher")
-        self.campaign = get(
-            Campaign, publishers=[self.publisher], max_sale_value=2000.0
-        )
+        self.campaign = get(Campaign, publishers=[self.publisher])
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
         )

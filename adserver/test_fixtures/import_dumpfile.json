@@ -88,8 +88,7 @@
       "modified_date": "2018-01-16T23:07:57.519Z",
       "name": "House Campaign",
       "slug": "house",
-      "campaign_type": "house",
-      "max_sale_value": null
+      "campaign_type": "house"
     }
   },
   {
@@ -100,8 +99,7 @@
       "modified_date": "2018-01-16T23:07:57.519Z",
       "name": "Community Campaign",
       "slug": "community",
-      "campaign_type": "community",
-      "max_sale_value": null
+      "campaign_type": "community"
     }
   },
   {
