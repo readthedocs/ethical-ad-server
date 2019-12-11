@@ -25,6 +25,7 @@ from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
 from user_agents import parse
 
+from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
@@ -102,12 +103,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def daily_reports(self, start_date=None, end_date=None):
+    def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
+        :param campaign_type: only return campaigns of a specific type (eg. house, paid)
         :return: A dictionary containing a list of days for the report
             and an aggregated total
         """
@@ -117,6 +119,10 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
                 impressions = impressions.filter(date__lte=end_date)
+        if campaign_type and campaign_type in ALL_CAMPAIGN_TYPES:
+            impressions = impressions.filter(
+                advertisement__flight__campaign__campaign_type=campaign_type
+            )
         impressions = impressions.select_related(
             "advertisement", "advertisement__flight"
         )

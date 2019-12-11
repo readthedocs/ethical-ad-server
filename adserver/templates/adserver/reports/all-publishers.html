@@ -18,10 +18,10 @@
 {% block additional_filters %}
 <div class="col-lg-2 col-md-4 mb-3">
   <label class="col-form-label" for="id_campaign_type">{% trans 'Campaign type' %}</label>
-  <select class="form-control" name="campaign_type" id="id_campaign_type" {% if request.GET.campaign_type %}value="{{ request.GET.campaign_type }}"{% endif %}>
+  <select class="form-control" name="campaign_type" id="id_campaign_type">
     <option>All types</option>
     {% for slug, type in campaign_types %}
-      <option value="{{ slug }}">{{ type }}</option>
+      <option value="{{ slug }}"{% if campaign_type == slug %} selected{% endif %}>{{ type }}</option>
     {% endfor %}
   </select>
 </div>
