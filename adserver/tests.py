@@ -1612,10 +1612,10 @@ class TestImporterManagementCommand(TestCase):
         self.assertEqual(Publisher.objects.count(), 2)
         self.assertEqual(Advertisement.objects.count(), 2)
         self.assertEqual(Flight.objects.count(), 1)
-        self.assertEqual(Campaign.objects.count(), 1)
+        self.assertEqual(Campaign.objects.count(), 2)
 
-        # House ads don't generate an advertiser
-        self.assertEqual(Advertiser.objects.count(), 0)
+        # House/Community ads create a single advertiser
+        self.assertEqual(Advertiser.objects.count(), 1)
 
         self.assertEqual(Click.objects.count(), 2)
 
