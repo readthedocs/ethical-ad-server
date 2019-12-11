@@ -182,6 +182,11 @@ class Command(BaseCommand):
     def import_campaigns(self, campaign_data, publishers):
         """Imports campaigns and creates an advertiser for each one."""
         campaigns = 0
+
+        advertiser_readthedocs = Advertiser.objects.create(
+            name="Read the Docs", slug="readthedocs"
+        )
+
         for data in campaign_data:
             campaign_type = data["fields"]["campaign_type"]
 
@@ -191,7 +196,8 @@ class Command(BaseCommand):
                     name=data["fields"]["name"], slug=data["fields"]["slug"]
                 )
             else:
-                advertiser = None
+                # All house and community ads are by Read the Docs
+                advertiser = advertiser_readthedocs
 
             # Campaigns have to be created before the many-many
             # with publishers can be saved

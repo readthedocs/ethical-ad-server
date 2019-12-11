@@ -93,6 +93,18 @@
     }
   },
   {
+    "model": "donate.campaign",
+    "pk": 2,
+    "fields": {
+      "pub_date": "2018-01-16T23:07:26.678Z",
+      "modified_date": "2018-01-16T23:07:57.519Z",
+      "name": "Community Campaign",
+      "slug": "community",
+      "campaign_type": "community",
+      "max_sale_value": null
+    }
+  },
+  {
     "model": "donate.click",
     "pk": 1,
     "fields": {
