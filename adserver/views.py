@@ -477,16 +477,15 @@ class AllPublisherReportView(BaseReportView):
         impressions = AdImpression.objects.filter(date__gte=context["start_date"])
         if context["end_date"]:
             impressions = impressions.filter(date__lte=context["end_date"])
-        if context["campaign_type"] and context["campaign_type"] in CAMPAIGN_TYPES:
-            impressions = impressions.filter(
-                advertisement__flight__campaign__campaign_type=context["campaign_type"]
-            )
+
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
         publishers_and_reports = []
         for publisher in publishers:
             report = publisher.daily_reports(
-                start_date=context["start_date"], end_date=context["end_date"]
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+                campaign_type=context["campaign_type"],
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
