@@ -1,6 +1,6 @@
 # General
 # ------------------------------------------------------------------------------
-USE_DOCKER=yes
+USE_DOCKER=true
 IPYTHONDIR=/app/.ipython
 MEDIA_URL=http://localhost:5000/media/
 
