@@ -16,6 +16,7 @@ from django.db import IntegrityError
 from django.db import models
 from django.template import engines
 from django.template.loader import get_template
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
@@ -843,6 +844,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 country = geo_data["country_code"]
 
         obj = model.objects.create(
+            date=timezone.now(),
             publisher=publisher,
             ip=anonymize_ip_address(ip_address),
             user_agent=user_agent,
@@ -1088,7 +1090,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         ).strip()
 
 
-class BaseImpression(models.Model):
+class BaseImpression(TimeStampedModel, models.Model):
 
     """Statistics for tracking."""
 
@@ -1159,11 +1161,11 @@ class AdImpression(BaseImpression):
         return "%s on %s" % (self.advertisement, self.date)
 
 
-class AdBase(IndestructibleModel):
+class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
 
-    date = models.DateTimeField(_("Created date"), auto_now_add=True)
+    date = models.DateTimeField(_("Impression date"))
 
     publisher = models.ForeignKey(
         Publisher, null=True, blank=True, on_delete=models.PROTECT
