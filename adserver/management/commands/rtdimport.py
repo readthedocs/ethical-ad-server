@@ -206,7 +206,6 @@ class Command(BaseCommand):
                 name=data["fields"]["name"],
                 slug=data["fields"]["slug"],
                 campaign_type=campaign_type,
-                max_sale_value=data["fields"]["max_sale_value"],
                 advertiser=advertiser,
             )
             campaign.save()

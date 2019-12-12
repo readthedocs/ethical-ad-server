@@ -271,19 +271,6 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         _("Campaign Type"), max_length=20, choices=CAMPAIGN_TYPES, default=PAID_CAMPAIGN
     )
 
-    max_sale_value = models.DecimalField(
-        _("Max Sale Value"),
-        max_digits=8,
-        decimal_places=2,
-        default=None,
-        blank=True,
-        null=True,
-        help_text=_(
-            "If set, ads will not be displayed if (cpc * total_clicks) "
-            "+ (cpm * total_views / 1000) for all ads exceeds this"
-        ),
-    )
-
     class Meta:
         ordering = ("name",)
 
@@ -399,7 +386,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     and report to customers, they cannot be deleted once created.
     """
 
-    HIGHEST_PRIORITY_MULTIPLIER = 100
+    HIGHEST_PRIORITY_MULTIPLIER = 1000000
     LOWEST_PRIORITY_MULTIPLIER = 1
 
     name = models.CharField(_("Name"), max_length=200)

@@ -268,7 +268,6 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "advertiser",
         "campaign_type",
         "campaign_report",
-        "max_sale_value",
         "total_value",
         "num_flights",
         "num_ads",

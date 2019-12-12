@@ -10,7 +10,6 @@ from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..models import AdImpression
 from ..models import Advertisement
-from ..models import Campaign
 from ..models import Flight
 from ..utils import get_ad_day
 
@@ -113,6 +112,12 @@ class BaseAdDecisionBackend:
             flight__campaign__publishers=self.publisher,
         )
 
+        if self.campaign_types != ALL_CAMPAIGN_TYPES:
+            log.debug(
+                "Ads restricted to the following campaign types: %s",
+                self.campaign_types,
+            )
+
         # Specifying the ad or campaign slug skips filtering by live or date
         if self.ad_slug:
             log.debug("Restricting ad decision ad_slug=%s", self.ad_slug)
@@ -144,6 +149,7 @@ class BaseAdDecisionBackend:
         # Get the unique set of flights and campaigns for the candidates
         flights = set()
         campaigns = set()
+
         for ad in candidate_ads:
             if ad.flight:
                 flights.add(ad.flight.pk)
@@ -180,26 +186,6 @@ class BaseAdDecisionBackend:
                     ad.flight.flight_clicks_today += impression.clicks
                     ad.flight.flight_views_today += impression.views
 
-        # Annotate with campaign total value
-        for c in Campaign.objects.filter(pk__in=campaigns).annotate(
-            value=models.Sum(
-                (
-                    models.F("flights__advertisements__impressions__clicks")
-                    * models.F("flights__cpc")
-                )
-                + (
-                    models.F("flights__advertisements__impressions__views")
-                    * models.F("flights__cpm")
-                    / 1000
-                ),
-                output_field=models.FloatField(),
-            )
-        ):
-            campaign_total_value = c.value or 0
-            for ad in candidate_ads:
-                if ad.flight and ad.flight.campaign and ad.flight.campaign.pk == c.pk:
-                    ad.flight.campaign.campaign_total_value = campaign_total_value
-
         return candidate_ads
 
     def filter_ads(self, candidate_ads):
@@ -221,7 +207,6 @@ class BaseAdDecisionBackend:
 
         for advertisement in candidate_ads:
             flight = advertisement.flight
-            campaign = flight.campaign
 
             # Skip if we aren't meant to show to this country/state/dma
             if not flight.show_to_geo(
@@ -239,14 +224,6 @@ class BaseAdDecisionBackend:
 
             # Skip if there are no clicks or views needed today (ad pacing)
             if flight.weighted_clicks_needed_today() <= 0:
-                continue
-
-            # Don't show the ad if it campaign meets or exceeds its max sale value
-            if (
-                campaign
-                and campaign.max_sale_value
-                and campaign.total_value() >= campaign.max_sale_value
-            ):
                 continue
 
             filtered_ads.append(advertisement)
