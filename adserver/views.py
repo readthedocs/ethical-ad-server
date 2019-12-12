@@ -121,7 +121,8 @@ class BaseProxyView(View):
         elif parsed_ua.is_bot:
             log.log(self.log_level, "Bot impression. User Agent: [%s]", user_agent)
             reason = "Bot impression"
-        elif ip_address in settings.INTERNAL_IPS:
+        elif not settings.DEBUG and ip_address in settings.INTERNAL_IPS:
+            # Ignore internal IPs except in DEBUG where all IPs are probably internal
             log.log(
                 self.log_level, "Internal IP impression. User Agent: [%s]", user_agent
             )
