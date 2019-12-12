@@ -1076,11 +1076,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def render_ad(self, click_url=None, view_url=None):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
-        template = get_template("adserver/advertisement.html")
-
-        # Check if the ad type has a specific template
         if self.ad_type and self.ad_type.template:
+            # Check if the ad type has a specific template
             template = engines["django"].from_string(self.ad_type.template)
+        else:
+            # Otherwise get the default template
+            template = get_template("adserver/advertisement.html")
 
         return template.render(
             {
