@@ -817,10 +817,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
+
+        # Ensure that an impression object exists for today
         impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
 
-        setattr(impression, impression_type, models.F(impression_type) + 1)
-        impression.save()
+        AdImpression.objects.filter(pk=impression.pk).update(
+            **{impression_type: models.F(impression_type) + 1}
+        )
 
     def _record_base(self, request, model, publisher, url):
         ip_address = get_client_ip(request)
