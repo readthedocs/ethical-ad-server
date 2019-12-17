@@ -315,7 +315,7 @@ ADSERVER_ADMIN_URL = "admin"
 # This can be useful to set temporarily during migrations
 ADSERVER_DECISION_BACKEND = env(
     "ADSERVER_DECISION_BACKEND",
-    default="adserver.decisionengine.backends.ProbabilisticClicksNeededBackend",
+    default="adserver.decisionengine.backends.ProbabilisticFlightBackend",
 )
 
 # Whether Do Not Track is enabled for the ad server

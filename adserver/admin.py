@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
-from .forms import FlightForm
+from .forms import FlightAdminForm
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -175,7 +175,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     """Django admin admin configuration for ad Flights."""
 
     model = Flight
-    form = FlightForm
+    form = FlightAdminForm
     save_as = True
 
     list_display = (
@@ -191,11 +191,11 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "cpm",
         "clicks_remaining",
         "views_remaining",
-        "clicks_needed_today",  # Note: this requires an additional query per live CPC flight
-        "views_needed_today",  # Note: this requires an additional query per live CPM flight
+        "clicks_needed_today",
+        "views_needed_today",
         "priority_multiplier",
-        "num_clicks",
-        "num_views",
+        "total_clicks",
+        "total_views",
         "num_ads",
         "ctr",
         "ecpm",
@@ -205,6 +205,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_select_related = ("campaign",)
     readonly_fields = (
         "related_ads",
+        "total_value",
         "total_clicks",
         "total_views",
         "clicks_today",
@@ -216,23 +217,23 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
 
-    def num_clicks(self, obj):
-        return obj.flight_total_clicks or 0
-
-    def num_views(self, obj):
-        return obj.num_views or 0
-
     def num_ads(self, obj):
         return obj.num_ads or 0
 
+    def total_value(self, obj):
+        total = 0.0
+        total += float(obj.cpm * obj.total_views) / 1000.0
+        total += float(obj.cpc * obj.total_clicks)
+        return "${:.2f}".format(total)
+
     def ctr(self, obj):
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
+        clicks = obj.total_clicks
+        views = obj.total_views
         return "{:.3f}%".format(calculate_ctr(clicks, views))
 
     def ecpm(self, obj):
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
+        clicks = obj.total_clicks
+        views = obj.total_views
         cost = (clicks * float(obj.cpc)) + (views * float(obj.cpm) / 1000.0)
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
@@ -244,14 +245,8 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super(FlightAdmin, self).get_queryset(request)
-
-        # TODO: after we upgrade to Django 2.0, add `flight_clicks_today`
-        # https://docs.djangoproject.com/en/2.0/topics/db/aggregation/#filtering-on-annotations
         queryset = queryset.annotate(
-            flight_total_clicks=models.Sum("advertisements__impressions__clicks"),
-            flight_total_views=models.Sum("advertisements__impressions__views"),
-            num_views=models.Sum("advertisements__impressions__views"),
-            num_ads=models.Count("advertisements", distinct=True),
+            num_ads=models.Count("advertisements", distinct=True)
         )
         return queryset
 
@@ -271,10 +266,13 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "total_value",
         "num_flights",
         "num_ads",
+        "total_views",
+        "total_clicks",
         "ctr",
         "ecpm",
     )
     list_filter = ("campaign_type", "advertiser")
+    list_select_related = ("advertiser",)
     readonly_fields = ("campaign_report", "total_value", "related_flights")
     search_fields = ("name", "slug")
 
@@ -294,22 +292,22 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def num_flights(self, obj):
         return obj.num_flights or 0
 
-    def num_clicks(self, obj):
-        return obj.num_clicks or 0
+    def total_clicks(self, obj):
+        return obj.total_clicks or 0
 
-    def num_views(self, obj):
-        return obj.num_views or 0
+    def total_views(self, obj):
+        return obj.total_views or 0
 
     def total_value(self, obj):
         return "${:.2f}".format(obj.total_value())
 
     def ctr(self, obj):
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
+        clicks = self.total_clicks(obj)
+        views = self.total_views(obj)
         return "{:.3f}%".format(calculate_ctr(clicks, views))
 
     def ecpm(self, obj):
-        views = self.num_views(obj)
+        views = self.total_views(obj)
         return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
 
     def related_flights(self, obj):
@@ -335,8 +333,8 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
             ),
             num_flights=models.Count("flights", distinct=True),
             num_ads=models.Count("flights__advertisements", distinct=True),
-            num_clicks=models.Sum("flights__advertisements__impressions__clicks"),
-            num_views=models.Sum("flights__advertisements__impressions__views"),
+            total_clicks=models.Sum("flights__advertisements__impressions__clicks"),
+            total_views=models.Sum("flights__advertisements__impressions__views"),
         )
         return queryset
 

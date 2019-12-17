@@ -291,11 +291,10 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         if hasattr(self, "campaign_total_value"):
             return self.campaign_total_value or 0.0
 
-        ads = Advertisement.objects.filter(flight__campaign=self)
-        aggregation = AdImpression.objects.filter(advertisement__in=ads).aggregate(
+        aggregation = Flight.objects.filter(campaign=self).aggregate(
             total_value=models.Sum(
-                (models.F("clicks") * models.F("advertisement__flight__cpc"))
-                + (models.F("views") * models.F("advertisement__flight__cpm") / 1000.0),
+                (models.F("total_clicks") * models.F("cpc"))
+                + (models.F("total_views") * models.F("cpm") / 1000.0),
                 output_field=models.FloatField(),
             )
         )["total_value"]
@@ -394,6 +393,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     start_date = models.DateField(
         _("Start Date"),
         default=datetime.date.today,
+        db_index=True,
         help_text=_("This ad will not be shown before this date"),
     )
     end_date = models.DateField(
@@ -435,6 +435,14 @@ class Flight(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         validators=[TargetingParametersValidator()],
+    )
+
+    # Denormalized fields
+    total_views = models.PositiveIntegerField(
+        default=0, help_text=_("Views across all ads in this flight")
+    )
+    total_clicks = models.PositiveIntegerField(
+        default=0, help_text=_("Clicks across all ads in this flight")
     )
 
     class Meta:
@@ -501,7 +509,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return False
         if self.included_metro_codes and metro_code not in self.included_metro_codes:
             return False
-        if country_code in self.excluded_countries:
+        if self.excluded_countries and country_code in self.excluded_countries:
             return False
 
         return True
@@ -512,43 +520,40 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         If *any* keywords match, it is considered valid
         """
-        keyword_set = set(keywords)
-        if self.included_keywords and not keyword_set.intersection(
-            self.included_keywords
-        ):
-            return False
+        if self.included_keywords:
+            keyword_set = set(keywords)
+            if not keyword_set.intersection(self.included_keywords):
+                return False
 
         return True
 
     def sold_days(self):
-        return (self.end_date - self.start_date).days
+        # Add one to count both the start and end day
+        return max(0, (self.end_date - self.start_date).days) + 1
 
     def days_remaining(self):
         """Number of days left in a flight."""
-        days_since_start = (get_ad_day().date() - self.start_date).days
-        return max(0, int(self.sold_days()) - int(days_since_start))
+        return max(0, (self.end_date - get_ad_day().date()).days)
 
     def views_per_day(self):
         if not self.live:
             return 0
 
         days_left = self.days_remaining()
-        views_remaining = self.views_remaining()
         if days_left <= 0:
-            return views_remaining
+            return self.views_remaining()
 
-        return views_remaining // days_left
+        return self.views_remaining() // days_left
 
     def clicks_per_day(self):
         if not self.live:
             return 0
 
         days_left = self.days_remaining()
-        clicks_remaining = self.clicks_remaining()
         if days_left <= 0:
-            return clicks_remaining
+            return self.clicks_remaining()
 
-        return clicks_remaining // days_left
+        return self.clicks_remaining() // days_left
 
     def views_today(self):
         # Check for a cached value that would come from an annotated queryset
@@ -575,21 +580,39 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return aggregation or 0
 
     def views_needed_today(self):
-        if not self.live or self.sold_impressions <= 0:
+        if (
+            not self.live
+            or self.views_remaining() <= 0
+            or self.start_date > get_ad_day().date()
+        ):
             return 0
 
         if self.days_remaining() > 0:
-            return self.views_per_day() - self.views_today()
+            flight_remaining_percentage = self.days_remaining() / self.sold_days()
+
+            # This is how many views should be remaining this far in the flight
+            flight_views_pace = int(self.sold_impressions * flight_remaining_percentage)
+
+            return max(0, self.views_remaining() - flight_views_pace)
 
         return self.views_remaining()
 
     def clicks_needed_today(self):
         """Calculates clicks needed based on the impressions this flight's ads have."""
-        if not self.live or self.sold_clicks <= 0:
+        if (
+            not self.live
+            or self.clicks_remaining() <= 0
+            or self.start_date > get_ad_day().date()
+        ):
             return 0
 
         if self.days_remaining() > 0:
-            return self.clicks_per_day() - self.clicks_today()
+            flight_remaining_percentage = self.days_remaining() / self.sold_days()
+
+            # This is how many clicks we should have remaining this far in the flight
+            flight_clicks_pace = int(self.sold_clicks * flight_remaining_percentage)
+
+            return max(0, self.clicks_remaining() - flight_clicks_pace)
 
         return self.clicks_remaining()
 
@@ -607,35 +630,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return impressions_needed * self.priority_multiplier
 
-    def total_clicks(self):
-        # Check for a cached value that would come from an annotated queryset
-        if hasattr(self, "flight_total_clicks"):
-            return self.flight_total_clicks or 0
-
-        aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all()
-        ).aggregate(total_clicks=models.Sum("clicks"))["total_clicks"]
-
-        # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
-
-    def total_views(self):
-        # Check for a cached value that would come from an annotated queryset
-        if hasattr(self, "flight_total_views"):
-            return self.flight_total_views or 0
-
-        aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all()
-        ).aggregate(total_views=models.Sum("views"))["total_views"]
-
-        # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
-
     def clicks_remaining(self):
-        return max(0, self.sold_clicks - self.total_clicks())
+        return max(0, self.sold_clicks - self.total_clicks)
 
     def views_remaining(self):
-        return max(0, self.sold_impressions - self.total_views())
+        return max(0, self.sold_impressions - self.total_views)
 
 
 class AdType(TimeStampedModel, models.Model):
@@ -811,6 +810,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         AdImpression.objects.filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
+
+        # Update the denormalized fields on the Flight
+        if impression_type == VIEWS:
+            Flight.objects.filter(pk=self.flight_id).update(
+                total_views=models.F("total_views") + 1
+            )
+        elif impression_type == CLICKS:
+            Flight.objects.filter(pk=self.flight_id).update(
+                total_clicks=models.F("total_clicks") + 1
+            )
 
     def _record_base(self, request, model, publisher, url):
         ip_address = get_client_ip(request)

@@ -5,10 +5,26 @@ from django.utils.translation import ugettext_lazy as _
 from .models import Flight
 
 
-class FlightForm(forms.ModelForm):
+class FlightAdminForm(forms.ModelForm):
+
+    """The form for flights used by the Django Admin."""
+
     class Meta:
         model = Flight
-        fields = "__all__"
+        fields = (
+            "name",
+            "slug",
+            "campaign",
+            "start_date",
+            "end_date",
+            "live",
+            "priority_multiplier",
+            "cpc",
+            "sold_clicks",
+            "cpm",
+            "sold_impressions",
+            "targeting_parameters",
+        )
 
     def clean(self):
         cpc = self.cleaned_data.get("cpc")
