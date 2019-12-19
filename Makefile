@@ -1,15 +1,17 @@
-.PHONY: help test clean dockerbuild dockerserve dockershell geoip
+.PHONY: help test clean dockerbuild dockerserve dockershell dockerprod geoip
 
 GEOIP_UPDATE = geoipupdate
 GEOIP_DIR = geoip
 GEOIP_CONF_FILE = $(GEOIP_DIR)/GeoIP.conf
 
 DOCKER_CONFIG=docker-compose-local.yml
+DOCKER_IMAGE_NAME=ethicaladserver
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  test           Run the full test suite"
 	@echo "  clean          Delete assets processed by webpack"
+	@echo "  dockerprod     Build a single-container ad server for production (this can take a while)"
 	@echo "  dockerbuild    Build the multi-container ad server (this can take a while)"
 	@echo "  dockerserve    Run the docker containers for the ad server"
 	@echo "  dockershell    Connect to a shell on the Django docker container"
@@ -20,6 +22,11 @@ test:
 
 clean:
 	rm -rf assets/dist/*
+
+# Build the production single-container application
+# This command can take a while the first time
+dockerprod:
+	docker build -t $(DOCKER_IMAGE_NAME) -f docker-compose/production/django/Dockerfile  .
 
 # Build the local multi-container application
 # This command can take a while the first time

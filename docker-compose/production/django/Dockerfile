@@ -1,4 +1,5 @@
 FROM python:3.6-alpine
+MAINTAINER Read the Docs, Inc. <support@readthedocs.org>
 
 ENV PYTHONUNBUFFERED 1
 
@@ -9,7 +10,13 @@ RUN apk update \
   # Pillow dependencies
   && apk add jpeg-dev zlib-dev freetype-dev lcms2-dev openjpeg-dev tiff-dev tk-dev tcl-dev \
   # CFFI dependencies
-  && apk add libffi-dev py-cffi
+  && apk add libffi-dev py-cffi \
+  # Translations dependencies
+  && apk add gettext \
+  # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
+  && apk add postgresql-client \
+  # Add Node dependencies for building static files
+  && apk add nodejs npm
 
 RUN addgroup -S django \
     && adduser -S -G django django
@@ -18,10 +25,6 @@ RUN addgroup -S django \
 COPY ./requirements /requirements
 RUN pip install --no-cache-dir -r /requirements/production.txt \
     && rm -rf /requirements
-
-COPY ./docker-compose/production/django/entrypoint /entrypoint
-RUN chmod +x /entrypoint
-RUN chown django /entrypoint
 
 COPY ./docker-compose/production/django/start /start
 RUN chmod +x /start
@@ -35,10 +38,31 @@ COPY ./docker-compose/production/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
 RUN chown django /start-celerybeat
 
-RUN chown -R django /app
+# Explicitly copy files/directories so no configuration/data/secrets get copied
+COPY ./adserver /app/adserver
+COPY ./assets /app/assets
+COPY ./config /app/config
+COPY ./geoip /app/geoip
+COPY ./templates /app/templates
+COPY ./manage.py /app
+COPY ./newrelic.ini /app
+COPY ./package.json /app
+COPY ./package-lock.json /app
+COPY ./webpack.config.js /app
 
-USER django
+# Allow Azure to SSH into the running container
+# Although the root password is known, port 2222 is inaccessible from the internet
+# https://docs.microsoft.com/en-us/azure/app-service/containers/configure-custom-container#enable-ssh
+RUN apk add openssh \
+     && echo "root:Docker!" | chpasswd
+COPY ./docker-compose/production/django/sshd_config /etc/ssh/
+
 
 WORKDIR /app
 
-ENTRYPOINT ["/entrypoint"]
+# Install node dependencies
+RUN npm install
+
+EXPOSE 2222 5000
+
+CMD ["/start"]
