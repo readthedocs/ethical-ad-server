@@ -35,7 +35,7 @@ DATABASES = {
     "default": env.db()  # Raises ImproperlyConfigured exception if DATABASE_URL not set
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
 
 
 # Cache
@@ -43,6 +43,13 @@ DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=600)
 # https://niwinz.github.io/django-redis/
 # --------------------------------------------------------------------------
 CACHES = {"default": env.cache("REDIS_URL")}
+
+# Secure connection workaround
+# https://github.com/joke2k/django-environ/pull/211
+if env.bool("REDIS_SSL", default=False):
+    CACHES["default"]["LOCATION"] = CACHES["default"]["LOCATION"].replace(
+        "redis://", "rediss://"
+    )
 
 
 # Security
@@ -90,7 +97,7 @@ AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 # http://docs.celeryproject.org
 # --------------------------------------------------------------------------
 CELERY_TASK_ALWAYS_EAGER = False
-CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 

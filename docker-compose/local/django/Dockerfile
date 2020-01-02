@@ -20,7 +20,7 @@ COPY ./requirements /requirements
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
 
-COPY ./docker-compose/production/django/entrypoint /entrypoint
+COPY ./docker-compose/local/django/entrypoint /entrypoint
 RUN chmod +x /entrypoint
 
 COPY ./docker-compose/local/django/start /start

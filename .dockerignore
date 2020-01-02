@@ -3,10 +3,16 @@
 # Make absolutely sure production settings never get into Docker
 .envs
 
-# Don't put the static sources into the container
-assets/src
+# Don't put any static assets build on the local machine into the container
+/assets/dist
 
 # Django & Python ignores
 **/*.sqlite3
 **/*.pyc
 **/__pycache__
+
+/celerybeat*
+/.tox
+/.venv
+/media
+/node_modules
