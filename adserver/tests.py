@@ -28,8 +28,8 @@ from .constants import PAID_CAMPAIGN
 from .constants import VIEWS
 from .decisionengine.backends import AdvertisingDisabledBackend
 from .decisionengine.backends import AdvertisingEnabledBackend
-from .decisionengine.backends import ProbabilisticClicksNeededBackend
-from .forms import FlightForm
+from .decisionengine.backends import ProbabilisticFlightBackend
+from .forms import FlightAdminForm
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -179,12 +179,12 @@ class FormTests(TestCase):
             "start_date": get_ad_day().date(),
             "end_date": get_ad_day().date() + datetime.timedelta(days=2),
         }
-        form = FlightForm(data=data)
+        form = FlightAdminForm(data=data)
         self.assertFalse(form.is_valid())
 
         # A flight can't have both a CPC & CPM
         data["cpc"] = 0.0
-        form = FlightForm(data=data)
+        form = FlightAdminForm(data=data)
         self.assertTrue(form.is_valid())
 
 
@@ -319,7 +319,8 @@ class TestProtectedModels(TestCase):
 
 class TestAdModels(TestCase):
     def setUp(self):
-        self.campaign = get(Campaign)
+        self.publisher = get(Publisher)
+        self.campaign = get(Campaign, publishers=[self.publisher])
         self.flight = get(
             Flight,
             live=True,
@@ -404,10 +405,9 @@ class TestAdModels(TestCase):
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
         self.flight.save()
 
-        ret = self.flight.days_remaining()
-        self.assertEqual(ret, 16)
-        ret = self.flight.clicks_needed_today()
-        self.assertEqual(ret, 62)
+        self.assertEqual(self.flight.days_remaining(), 16)
+        # 15/31% through the flight, 0% through the clicks
+        self.assertEqual(self.flight.clicks_needed_today(), 484)
 
         self.flight.start_date = get_ad_day().date()
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
@@ -415,6 +415,7 @@ class TestAdModels(TestCase):
 
         self.flight.sold_clicks = 1000
         self.assertEqual(self.flight.days_remaining(), 30)
+        self.assertEqual(self.flight.clicks_remaining(), 1000)
         self.assertEqual(self.flight.clicks_needed_today(), 33)
 
         self.flight.sold_clicks = 950
@@ -424,11 +425,13 @@ class TestAdModels(TestCase):
         self.assertEqual(self.flight.clicks_needed_today(), 0)
 
         self.flight.sold_impressions = 10000
-        self.assertEqual(self.flight.views_needed_today(), 333)
+        # 0% through the views, 31 days
+        self.assertEqual(self.flight.views_needed_today(), 323)
 
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=15)
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
-        self.assertEqual(self.flight.views_needed_today(), 666)
+        # 16/31% through the flight, 0% through the views
+        self.assertEqual(self.flight.views_needed_today(), 5162)
 
     def test_ad_broken_html(self):
         # Ensures the ad validator is called from the save method
@@ -470,6 +473,44 @@ class TestAdModels(TestCase):
         output = self.ad.render_ad(click_url=click_url, view_url=view_url)
         self.assertIn(view_url, output)
         self.assertIn(click_url, output)
+
+    def test_campaign_totals(self):
+        self.assertAlmostEqual(self.campaign.total_value(), 0.0)
+
+        # Each click is $2
+        self.ad.incr(CLICKS, self.publisher)
+        self.ad.incr(CLICKS, self.publisher)
+
+        self.assertAlmostEqual(self.campaign.total_value(), 4.0)
+
+        cpm_flight = get(
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_impressions=10,
+            cpm=100,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            targeting_parameters={},
+        )
+        ad2 = get(
+            Advertisement,
+            name="promo slug",
+            slug="ad-slug2",
+            link="http://example.com",
+            live=True,
+            image=None,
+            ad_type=None,
+            text="<b>Test</b>",
+            flight=cpm_flight,
+        )
+
+        # Each view is $0.1
+        ad2.incr(VIEWS, self.publisher)
+        ad2.incr(VIEWS, self.publisher)
+        ad2.incr(VIEWS, self.publisher)
+
+        self.assertAlmostEqual(self.campaign.total_value(), 4.3)
 
 
 class DecisionEngineTests(TestCase):
@@ -519,7 +560,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=100,
             cpc=5.0,
             # Don't show in AZ
-            targeting_parameters={"exclude_countries": ["AZ"]},
+            targeting_parameters={"exclude_countries": ["US", "AZ"]},
         )
 
         # Don't show in AZ and only for JS projects
@@ -563,7 +604,7 @@ class DecisionEngineTests(TestCase):
             request=self.request, placements=self.placements, publisher=self.publisher
         )
 
-        self.probabilistic_backend = ProbabilisticClicksNeededBackend(
+        self.probabilistic_backend = ProbabilisticFlightBackend(
             request=self.request, placements=self.placements, publisher=self.publisher
         )
 
@@ -575,34 +616,35 @@ class DecisionEngineTests(TestCase):
         self.assertIsNone(ad)
 
     def test_before_start_date(self):
-        ads = self.backend.get_ads_queryset()
-        self.assertTrue(ads.exists())
+        flights = self.backend.get_candidate_flights()
+        self.assertTrue(flights.exists())
 
         # Change flight start dates to the future
         for flight in (self.include_flight, self.exclude_flight, self.basic_flight):
             flight.start_date = get_ad_day().date() + datetime.timedelta(days=1)
             flight.save()
 
-        # Now none of the ads are selected (they start in the future)
-        ads = self.backend.get_ads_queryset()
-        self.assertFalse(ads.exists())
+        # Now none of the flights are selected (they start in the future)
+        flights = self.backend.get_candidate_flights()
+        self.assertFalse(flights.exists())
 
     def test_nonlive_flight(self):
+        flights = self.backend.get_candidate_flights()
+        self.assertTrue(flights.exists())
+
         for flight in (self.include_flight, self.exclude_flight, self.basic_flight):
             flight.live = False
             flight.save()
 
-        ads = self.backend.get_ads_queryset()
-        self.assertFalse(ads.exists())
+        flights = self.backend.get_candidate_flights()
+        self.assertFalse(flights.exists())
 
     def test_no_clicks_needed(self):
-        ret = self.backend.filter_ads([self.advertisement1])
-        self.assertEqual(len(ret), 1)
+        self.assertTrue(self.backend.filter_flight(self.include_flight))
 
         self.include_flight.sold_clicks = 0
         self.include_flight.save()
-        ret = self.backend.filter_ads([self.advertisement1])
-        self.assertEqual(len(ret), 0)
+        self.assertFalse(self.backend.filter_flight(self.include_flight))
         self.assertEqual(self.include_flight.clicks_remaining(), 0)
 
     def test_no_views_needed(self):
@@ -610,19 +652,16 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.flight = self.cpm_flight
         self.advertisement1.save()
 
-        ret = self.backend.filter_ads([self.advertisement1])
-        self.assertEqual(len(ret), 1)
+        self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
         self.cpm_flight.sold_impressions = 32
         self.cpm_flight.save()
-        ret = self.backend.filter_ads([self.advertisement1])
-        self.assertEqual(len(ret), 1)
+        self.assertTrue(self.backend.filter_flight(self.cpm_flight))
         self.assertEqual(self.cpm_flight.views_remaining(), 32)
 
         self.cpm_flight.sold_impressions = 0
         self.cpm_flight.save()
-        ret = self.backend.filter_ads([self.advertisement1])
-        self.assertEqual(len(ret), 0)
+        self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_flight_clicks(self):
         # Tests the flight_clicks_today, flight_total_clicks optimizations
@@ -634,28 +673,21 @@ class DecisionEngineTests(TestCase):
         )
 
         self.assertEqual(self.include_flight.clicks_remaining(), 1000)
-        self.assertEqual(self.include_flight.total_clicks(), 0)
+        self.assertEqual(self.include_flight.total_clicks, 0)
         self.assertEqual(self.include_flight.clicks_today(), 0)
-        ads = backend.get_ads_queryset()
-        self.assertEqual(len(ads), 1)
-        ads = backend.annotate_queryset(ads)
-        self.assertEqual(len(ads), 1)
-        # Fields added by `annotate_queryset`
-        self.assertEqual(ads[0].flight.flight_total_clicks, 0)
-        self.assertEqual(ads[0].flight.flight_clicks_today, 0)
+        flights = backend.get_candidate_flights()
+        self.assertEqual(len(flights), 1)
 
         # Add 2 clicks
         self.advertisement1.incr(CLICKS, self.publisher)
         self.advertisement1.incr(CLICKS, self.publisher)
 
+        # Refresh the data on the include_flight - gets the denormalized views
+        self.include_flight.refresh_from_db()
+
         self.assertEqual(self.include_flight.clicks_remaining(), 998)
-        self.assertEqual(self.include_flight.total_clicks(), 2)
+        self.assertEqual(self.include_flight.total_clicks, 2)
         self.assertEqual(self.include_flight.clicks_today(), 2)
-        ads = backend.get_ads_queryset()
-        ads = backend.annotate_queryset(ads)
-        self.assertEqual(ads[0].flight.flight_total_clicks, 2)
-        self.assertEqual(ads[0].flight.flight_clicks_today, 2)
-        self.assertEqual(self.include_flight.clicks_remaining(), 998)
 
         # Change those 2 clicks to yesterday
         impression = self.advertisement1.impressions.all()[0]
@@ -665,21 +697,23 @@ class DecisionEngineTests(TestCase):
         # Add 1 click for today
         self.advertisement1.incr(CLICKS, self.publisher)
 
+        # Refresh the data on the include_flight - gets the denormalized views
+        self.include_flight.refresh_from_db()
+
         self.assertEqual(self.include_flight.clicks_remaining(), 997)
         self.assertEqual(self.include_flight.clicks_today(), 1)
-        ads = backend.get_ads_queryset()
-        ads = backend.annotate_queryset(ads)
-        self.assertEqual(self.include_flight.total_clicks(), 3)
-        self.assertEqual(ads[0].flight.flight_total_clicks, 3)
-        self.assertEqual(ads[0].flight.flight_clicks_today, 1)
 
-    def test_get_ad(self):
-        # Remove the ad without targeting for this test
-        self.advertisement3.live = False
-        self.advertisement3.save()
+    def test_flight_geo_targeting(self):
+        # Remove the flight without targeting for this test
+        self.basic_flight.live = False
+        self.basic_flight.save()
 
         ad, _ = self.backend.get_ad_and_placement()
         self.assertTrue(ad in (self.advertisement1, self.advertisement2))
+
+        self.backend.country_code = "US"
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertEqual(ad, self.advertisement1)
 
         self.backend.country_code = "MX"
         ad, _ = self.backend.get_ad_and_placement()
@@ -698,24 +732,16 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(ad, self.advertisement2)
 
     def test_clicks_needed(self):
-        # Tests an optimization method `annotate_queryset`
-        ads = self.backend.get_ads_queryset()
-        ads = self.backend.annotate_queryset(ads)
-        self.assertEqual(len(ads), 3)
-
         self.assertEqual(self.include_flight.clicks_needed_today(), 33)
-        annotated_flight = [p.flight for p in ads if p.flight == self.include_flight][0]
-        self.assertEqual(annotated_flight.clicks_needed_today(), 33)
 
         clicks_to_simulate = 10
         for _ in range(clicks_to_simulate):
             self.advertisement1.incr(CLICKS, self.publisher)
 
+        # Refresh the data on the include_flight - gets the denormalized views
+        self.include_flight.refresh_from_db()
+
         self.assertEqual(self.include_flight.clicks_needed_today(), 23)
-        ads = self.backend.get_ads_queryset()
-        ads = self.backend.annotate_queryset(ads)
-        annotated_flight = [p.flight for p in ads if p.flight == self.include_flight][0]
-        self.assertEqual(annotated_flight.clicks_needed_today(), 23)
 
         # Set to a date in the past
         self.include_flight.end_date = get_ad_day().date() - datetime.timedelta(days=2)
@@ -730,13 +756,17 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.save()
 
         self.assertEqual(self.cpm_flight.clicks_needed_today(), 0)
-        self.assertEqual(self.cpm_flight.views_needed_today(), 333)
+        # 0% through the flight, 31 days
+        self.assertEqual(self.cpm_flight.views_needed_today(), 323)
 
         views_to_simulate = 10
         for _ in range(views_to_simulate):
             self.advertisement1.incr(VIEWS, self.publisher)
 
-        self.assertEqual(self.cpm_flight.views_needed_today(), 323)
+        # Refresh the data on the include_flight - gets the denormalized views
+        self.cpm_flight.refresh_from_db()
+
+        self.assertEqual(self.cpm_flight.views_needed_today(), 313)
 
         # Set to a date in the past
         self.cpm_flight.end_date = get_ad_day().date() - datetime.timedelta(days=2)
@@ -747,24 +777,29 @@ class DecisionEngineTests(TestCase):
 
     def test_database_queries_made(self):
         with self.assertNumQueries(1):
-            # 1 for promos/campaigns - no queries in a loop
-            ads = list(self.backend.get_ads_queryset())
-            self.assertEqual(len(ads), 3)
+            flights = list(self.probabilistic_backend.get_candidate_flights())
+            self.assertEqual(len(flights), 3)
+
+        with self.assertNumQueries(1):
+            # This should just be the same query from `get_candidate_flights` above
+            flight = self.probabilistic_backend.select_flight()
+
+        with self.assertNumQueries(1):
+            # One query to get the specific ad for the chosen flight
+            ad = self.probabilistic_backend.select_ad_for_flight(flight)
+            self.assertTrue(ad in self.possible_ads, ad)
 
         with self.assertNumQueries(2):
-            # One query for flight total clicks and one for flight clicks today
-            # For all campaigns/flights
-            ads = self.backend.annotate_queryset(ads)
-            self.assertEqual(len(ads), 3)
-
-        with self.assertNumQueries(0):
-            # Everything should be prefetched at this point
-            ads = self.backend.filter_ads(ads)
-            self.assertEqual(len(ads), 3)
-            ad = self.backend.choose_ad(ads)
-            self.assertTrue(ad in self.possible_ads)
+            # Two total queries to get an ad placement
+            ad, _ = self.probabilistic_backend.get_ad_and_placement()
+            self.assertTrue(ad in self.possible_ads, ad)
 
     def test_click_probability(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
         priority_range = [1, 2, 10, 50, 100, 10000]
 
         flight1 = get(Flight, campaign=self.campaign, live=True, sold_clicks=100)
@@ -786,45 +821,62 @@ class DecisionEngineTests(TestCase):
                 flight1_prob = flight1.weighted_clicks_needed_today()
                 flight2_prob = flight2.weighted_clicks_needed_today()
                 total = flight1_prob + flight2_prob
-                possible_ads = [self.advertisement1, self.advertisement2]
 
                 with mock.patch("random.randint") as randint:
 
                     randint.return_value = -1
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, None)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, None)
 
                     randint.return_value = 0
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement1)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement1)
 
                     randint.return_value = flight1_prob - 1
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement1)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement1)
 
                     randint.return_value = flight1_prob
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement1)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement1)
 
                     randint.return_value = flight1_prob + 1
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement2)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement2)
 
                     randint.return_value = total - 1
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement2)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement2)
 
                     randint.return_value = total
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, self.advertisement2)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, self.advertisement2)
 
                     randint.return_value = total + 1
-                    ret = self.probabilistic_backend.choose_ad(possible_ads)
-                    self.assertEqual(ret, None)
+                    ad, _ = self.probabilistic_backend.get_ad_and_placement()
+                    self.assertEqual(ad, None)
 
-    def test_ad_type_priority(self):
-        paid_campaign = get(Campaign, campaign_type=PAID_CAMPAIGN)
-        paid_flight = get(Flight, campaign=paid_campaign, live=True, sold_clicks=100)
+    def test_campaign_type_priority(self):
+        # First disable all the flights from the test case constructor
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        flights = self.probabilistic_backend.get_candidate_flights()
+        self.assertFalse(flights.exists())
+
+        paid_campaign = get(
+            Campaign, campaign_type=PAID_CAMPAIGN, publishers=[self.publisher]
+        )
+        paid_flight = get(
+            Flight,
+            campaign=paid_campaign,
+            live=True,
+            cpc=True,
+            sold_clicks=100,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+        )
         paid_ad = get(
             Advertisement,
             name="paid",
@@ -835,9 +887,16 @@ class DecisionEngineTests(TestCase):
             flight=paid_flight,
         )
 
-        community_campaign = get(Campaign, campaign_type=COMMUNITY_CAMPAIGN)
+        community_campaign = get(
+            Campaign, campaign_type=COMMUNITY_CAMPAIGN, publishers=[self.publisher]
+        )
         community_flight = get(
-            Flight, campaign=community_campaign, live=True, sold_clicks=100
+            Flight,
+            campaign=community_campaign,
+            live=True,
+            sold_clicks=100,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
         )
         community_ad = get(
             Advertisement,
@@ -849,8 +908,19 @@ class DecisionEngineTests(TestCase):
             flight=community_flight,
         )
 
-        house_campaign = get(Campaign, campaign_type=HOUSE_CAMPAIGN)
-        house_flight = get(Flight, campaign=house_campaign, live=True, sold_clicks=100)
+        house_campaign = get(
+            Campaign, campaign_type=HOUSE_CAMPAIGN, publishers=[self.publisher]
+        )
+        house_campaign.campaign_type = HOUSE_CAMPAIGN
+        house_campaign.save()
+        house_flight = get(
+            Flight,
+            campaign=house_campaign,
+            live=True,
+            sold_clicks=100,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+        )
         house_ad = get(
             Advertisement,
             name="house",
@@ -862,19 +932,22 @@ class DecisionEngineTests(TestCase):
         )
 
         # Paid before community
-        ret = self.probabilistic_backend.choose_ad([house_ad, community_ad, paid_ad])
-        self.assertEqual(ret, paid_ad)
+        ad, _ = self.probabilistic_backend.get_ad_and_placement()
+        self.assertEqual(ad, paid_ad)
+
+        paid_flight.live = False
+        paid_flight.save()
 
         # Community before house
-        ret = self.probabilistic_backend.choose_ad([house_ad, community_ad])
-        self.assertEqual(ret, community_ad)
+        ad, _ = self.probabilistic_backend.get_ad_and_placement()
+        self.assertEqual(ad, community_ad)
 
 
 class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
         self.publisher2 = get(Publisher, slug="another-publisher")
-        self.campaign = get(Campaign, publishers=[self.publisher])
+        self.campaign = get(Campaign, slug="campaign-slug", publishers=[self.publisher])
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
         )
@@ -945,6 +1018,19 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
 
+    def test_force_ad(self):
+        self.data["force_ad"] = "unknown-slug"
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Mark a live ad to non-live
+        self.ad.live = False
+        self.ad.save()
+
         # Forcing the ad ignores "live"
         self.data["force_ad"] = "ad-slug"
         resp = self.client.post(
@@ -952,6 +1038,26 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_force_campaign(self):
+        self.data["force_campaign"] = "unknown-campaign"
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Force the ad campaign
+        self.data["force_campaign"] = self.campaign.slug
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
     def test_unknown_ad_type(self):

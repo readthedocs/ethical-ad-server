@@ -22,6 +22,7 @@ from io import BytesIO
 import requests
 from django.core.files import File
 from django.core.management.base import BaseCommand
+from django.db import models
 from django.utils.dateparse import parse_date
 from django.utils.dateparse import parse_datetime
 from requests.adapters import HTTPAdapter
@@ -135,6 +136,8 @@ class Command(BaseCommand):
                     revshare_impressions,
                     readthedocs_publisher,
                 )
+
+                self.calculate_flight_totals()
 
     def _get_readthedocs_publisher(self, publisher_mapping):
         readthedocs_publisher = None
@@ -511,4 +514,21 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"- Imported {len(impressions)} Read the Docs impressions"
             )
+        )
+
+    def calculate_flight_totals(self):
+        for flight in Flight.objects.all().annotate(
+            flight_total_clicks=models.Sum(
+                models.F("advertisements__impressions__clicks")
+            ),
+            flight_total_views=models.Sum(
+                models.F("advertisements__impressions__views")
+            ),
+        ):
+            flight.total_clicks = flight.flight_total_clicks or 0
+            flight.total_views = flight.flight_total_views or 0
+            flight.save()
+
+        self.stdout.write(
+            self.style.SUCCESS(f"- Calculated totals across imported flights")
         )
