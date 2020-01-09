@@ -33,7 +33,7 @@ class AdDecisionSerializer(serializers.Serializer):
     publisher = serializers.SlugField(required=True)
 
     keywords = serializers.ListField(
-        child=serializers.CharField(), max_length=10, required=False
+        child=serializers.CharField(), max_length=100, required=False
     )
 
     # Whether this request should only consider a certain kind of ad
