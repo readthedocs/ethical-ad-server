@@ -33,7 +33,7 @@ class AdDecisionSerializer(serializers.Serializer):
     publisher = serializers.SlugField(required=True)
 
     keywords = serializers.ListField(
-        child=serializers.CharField(), max_length=100, required=False
+        child=serializers.CharField(allow_blank=True), max_length=100, required=False
     )
 
     # Whether this request should only consider a certain kind of ad
@@ -73,8 +73,8 @@ class AdDecisionSerializer(serializers.Serializer):
 
     def validate_keywords(self, keywords):
         if keywords:
-            # Lowercase all the keywords
-            keywords = [k.lower() for k in keywords]
+            # Lowercase all the keywords and strip surrounding whitespace
+            keywords = [k.lower().strip() for k in keywords if k.strip()]
 
         return keywords
 
