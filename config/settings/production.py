@@ -58,6 +58,7 @@ if env.bool("REDIS_SSL", default=False):
 # https://docs.djangoproject.com/en/1.11/ref/clickjacking/
 # --------------------------------------------------------------------------
 if env.bool("ADSERVER_HTTPS", default=False):
+    ADSERVER_HTTPS = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365  # 1 year is recommended: 31536000
