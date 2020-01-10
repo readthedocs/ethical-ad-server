@@ -923,9 +923,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         if impression_type not in (CLICKS, VIEWS):
             raise RuntimeError("Impression must be either a click or a view")
 
-        self.incr(impression_type, publisher)
-        model = Click if impression_type == CLICKS else View
-        self._record_base(request, model, publisher, url)
+        if impression_type == CLICKS:
+            self.track_click(request, publisher, url)
+        elif impression_type == VIEWS:
+            self.track_view(request, publisher, url)
 
     def track_click(self, request, publisher, url):
         """Store click data in the DB."""
