@@ -636,6 +636,65 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def views_remaining(self):
         return max(0, self.sold_impressions - self.total_views)
 
+    def daily_reports(
+        self, start_date=None, end_date=None, name_filter=None, inactive=True
+    ):
+        """
+        Generates a report of clicks, views, & cost for a given time period for the Flight.
+
+        :param start_date: the start date to generate the report (or all time)
+        :param end_date: the end date for the report (ignored if no `start_date`)
+        :param name_filter: ignore ads that don't match the specified string
+        :param inactive: if True, show inactive ads in addition to live ones
+        :return: A dictionary containing a list of days for the report and an aggregated total
+        """
+        report = {"days": [], "total": {}}
+
+        impressions = AdImpression.objects.filter(advertisement__flight=self)
+        if name_filter:
+            impressions = impressions.filter(advertisement__name__icontains=name_filter)
+        if not inactive:
+            impressions = impressions.filter(advertisement__live=True)
+        if start_date:
+            impressions = impressions.filter(date__gte=start_date)
+            if end_date:
+                impressions = impressions.filter(date__lte=end_date)
+        impressions = impressions.select_related(
+            "advertisement", "advertisement__flight"
+        )
+
+        days = OrderedDict()
+        for impression in impressions:
+            if impression.date not in days:
+                days[impression.date] = defaultdict(int)
+
+            days[impression.date]["date"] = impression.date
+            days[impression.date]["views"] += impression.views
+            days[impression.date]["clicks"] += impression.clicks
+            days[impression.date]["cost"] += (
+                impression.clicks * float(impression.advertisement.flight.cpc)
+            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
+            days[impression.date]["ctr"] = calculate_ctr(
+                days[impression.date]["clicks"], days[impression.date]["views"]
+            )
+            days[impression.date]["ecpm"] = calculate_ecpm(
+                days[impression.date]["cost"], days[impression.date]["views"]
+            )
+
+        report["days"] = days.values()
+
+        report["total"]["views"] = sum(day["views"] for day in report["days"])
+        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
+        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
+        report["total"]["ctr"] = calculate_ctr(
+            report["total"]["clicks"], report["total"]["views"]
+        )
+        report["total"]["ecpm"] = calculate_ecpm(
+            report["total"]["cost"], report["total"]["views"]
+        )
+
+        return report
+
 
 class AdType(TimeStampedModel, models.Model):
 

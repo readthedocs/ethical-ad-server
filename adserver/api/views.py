@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from ..decisionengine import get_ad_decision_backend
 from ..models import Advertisement
 from ..models import Advertiser
+from ..models import Flight
 from ..models import Publisher
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
@@ -19,6 +20,7 @@ from .permissions import PublisherPermission
 from .serializers import AdDecisionSerializer
 from .serializers import AdvertisementSerializer
 from .serializers import AdvertiserSerializer
+from .serializers import FlightSerializer
 from .serializers import PublisherSerializer
 
 
@@ -153,14 +155,27 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         data = advertiser.daily_reports(start_date=start_date, end_date=end_date)
 
-        # Add the daily performance of all ads within the timeframe
-        data["advertisements"] = []
-        for ad in Advertisement.objects.filter(flight__campaign__advertiser=advertiser):
-            report = ad.daily_reports(start_date=start_date, end_date=end_date)
+        # Add the daily performance of all flights and ads within the timeframe
+        data["flights"] = []
+        for flight in Flight.objects.filter(campaign__advertiser=advertiser):
+            report = flight.daily_reports(start_date=start_date, end_date=end_date)
             if report["total"]["views"]:
-                ad_data = AdvertisementSerializer(ad).data
-                ad_data["report"] = report
-                data["advertisements"].append(ad_data)
+                flight_data = FlightSerializer(flight).data
+                flight_data["report"] = report
+                flight_data["advertisements"] = []
+
+                for ad in Advertisement.objects.filter(flight=flight).select_related(
+                    "ad_type"
+                ):
+                    ad_report = ad.daily_reports(
+                        start_date=start_date, end_date=end_date
+                    )
+                    if ad_report["total"]["views"]:
+                        ad_data = AdvertisementSerializer(ad).data
+                        ad_data["report"] = ad_report
+                        flight_data["advertisements"].append(ad_data)
+
+                data["flights"].append(flight_data)
 
         return Response(data)
 
