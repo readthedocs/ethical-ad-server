@@ -4,6 +4,7 @@ from rest_framework import serializers
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..models import Advertisement
 from ..models import Advertiser
+from ..models import Flight
 from ..models import Publisher
 
 
@@ -97,7 +98,31 @@ class AdvertiserSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 
-class AdvertisementSerializer(serializers.HyperlinkedModelSerializer):
+class FlightSerializer(serializers.ModelSerializer):
+    targeting_parameters = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Flight
+        fields = (
+            "name",
+            "slug",
+            "live",
+            "cpc",
+            "cpm",
+            "targeting_parameters",
+            "start_date",
+            "end_date",
+            "created",
+            "modified",
+        )
+
+    def get_targeting_parameters(self, obj):
+        return obj.targeting_parameters
+
+
+class AdvertisementSerializer(serializers.ModelSerializer):
+    ad_type_short = serializers.SerializerMethodField()
+
     class Meta:
         model = Advertisement
         fields = (
@@ -106,7 +131,11 @@ class AdvertisementSerializer(serializers.HyperlinkedModelSerializer):
             "text",
             "image",
             "link",
+            "ad_type_short",
             "live",
             "created",
             "modified",
         )
+
+    def get_ad_type_short(self, obj):
+        return obj.ad_type.name if obj.ad_type else None
