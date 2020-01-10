@@ -325,7 +325,8 @@ ADSERVER_ANALYTICS_ID = None
 ADSERVER_PRIVACY_POLICY_URL = None
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_BLACKLISTED_USER_AGENTS = []
-ADSERVER_RECORD_VIEWS = True  # False in prod by default
+# Recording views is highly discouraged in production but useful in development
+ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
