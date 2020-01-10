@@ -1175,6 +1175,35 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 400, resp.content)
 
+    def test_keywords(self):
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher.slug,
+            "campaign_types": [PAID_CAMPAIGN],
+            "keywords": [""],  # Blank keyword - should be ok
+        }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Lots of keywords but not too many
+        data["keywords"] = [f"a-{i}" for i in range(100)]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Too many keywords - reject it!
+        data["keywords"] = [f"a-{i}" for i in range(101)]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
 
 class AdvertiserApiTests(BaseApiTest):
     def setUp(self):
