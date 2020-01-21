@@ -38,6 +38,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("modified", "created")
 
     def report(self, instance):
         if not instance.pk:
@@ -56,6 +57,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("modified", "created")
 
     def report(self, instance):
         if not instance.pk:
@@ -77,6 +79,7 @@ class AdTypeAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     list_display = ("name", "publisher")
     list_select_related = ("publisher",)
+    readonly_fields = ("modified", "created")
     search_fields = ("name", "slug", "publisher__name", "publisher__slug")
 
 
@@ -156,7 +159,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
         "flight__campaign",
     )
     list_editable = ("live",)
-    readonly_fields = ("total_views", "total_clicks")
+    readonly_fields = ("total_views", "total_clicks", "modified", "created")
     search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
 
     # Exclude deprecated fields
@@ -284,6 +287,8 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
         "clicks_needed_today",
         "views_needed_today",
         "weighted_clicks_needed_today",
+        "modified",
+        "created",
     )
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
@@ -349,7 +354,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_filter = ("campaign_type", "advertiser")
     list_select_related = ("advertiser",)
-    readonly_fields = ("campaign_report", "total_value")
+    readonly_fields = ("campaign_report", "total_value", "modified", "created")
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
@@ -427,6 +432,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_display = readonly_fields
     list_filter = ("advertisement__ad_type", "publisher")
     list_select_related = ["advertisement", "publisher"]
+    readonly_fields = ("modified", "created")
     search_fields = ["advertisement__slug", "advertisement__name"]
 
     def has_add_permission(self, request):
@@ -453,14 +459,16 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "browser_family",
         "os_family",
         "is_mobile",
+        "is_bot",
         "user_agent",
         "ip",
         "client_id",
+        "modified",
+        "created",
     )
     list_display = readonly_fields[:-3]
     list_select_related = ("advertisement", "publisher")
     list_filter = ("is_mobile",)
-    exclude = ("advertisement", "url")
     search_fields = (
         "advertisement__name",
         "url",
