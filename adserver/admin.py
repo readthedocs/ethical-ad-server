@@ -1,7 +1,6 @@
 """Django admin configuration for the ad server."""
 from django.contrib import admin
 from django.db import models
-from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
@@ -37,7 +36,18 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for publishers."""
 
+    list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+
+    def report(self, instance):
+        if not instance.pk:
+            return ""
+
+        return mark_safe(
+            '<a href="{url}">{name}</a>'.format(
+                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+            )
+        )
 
 
 class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
@@ -70,7 +80,55 @@ class AdTypeAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug", "publisher__name", "publisher__slug")
 
 
-class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class AdvertisementMixin:
+
+    """Used by the AdvertisementInline and the AdvertisementAdmin."""
+
+    MAX_IMAGE_WIDTH = 120
+
+    def ad_image(self, obj):
+        if not obj.image:
+            return ""
+
+        return mark_safe(
+            f'<img src="{obj.image.url}" style="max-width: {self.MAX_IMAGE_WIDTH}px" />'
+        )
+
+    def num_clicks(self, obj):
+        return obj.num_clicks or 0
+
+    def num_views(self, obj):
+        return obj.num_views or 0
+
+    def ctr(self, obj):
+        clicks = self.num_clicks(obj)
+        views = self.num_views(obj)
+        return "{:.3f}%".format(calculate_ctr(clicks, views))
+
+    def ecpm(self, obj):
+        if not obj.flight:
+            return None
+
+        clicks = self.num_clicks(obj)
+        views = self.num_views(obj)
+
+        cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
+        return "${:.2f}".format(calculate_ecpm(cost, views))
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if self.list_select_related is True:
+            queryset = queryset.select_related()
+        elif self.list_select_related:
+            queryset = queryset.select_related(*self.list_select_related)
+        queryset = queryset.annotate(
+            num_clicks=models.Sum("impressions__clicks"),
+            num_views=models.Sum("impressions__views"),
+        )
+        return queryset
+
+
+class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisements."""
 
@@ -78,7 +136,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     save_as = True
     prepopulated_fields = {"slug": ("name",)}
     list_display = (
-        "display_image",
+        "ad_image",
         "name",
         "slug",
         "flight",
@@ -114,43 +172,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "campaign",
     )
 
-    def display_image(self, obj):
-        if not obj.image:
-            return ""
-
-        return mark_safe(
-            '<img src="{url}" style="width: 120px" />'.format(url=obj.image.url)
-        )
-
-    def num_clicks(self, obj):
-        return obj.num_clicks or 0
-
-    def num_views(self, obj):
-        return obj.num_views or 0
-
-    def ctr(self, obj):
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
-
-    def ecpm(self, obj):
-        if not obj.flight:
-            return None
-
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
-
-        cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
-        return "${:.2f}".format(calculate_ecpm(cost, views))
-
-    def get_queryset(self, request):
-        queryset = super(AdvertisementAdmin, self).get_queryset(request)
-        queryset = queryset.annotate(
-            num_clicks=models.Sum("impressions__clicks"),
-            num_views=models.Sum("impressions__views"),
-        )
-        return queryset
-
 
 class CPCCPMFilter(admin.SimpleListFilter):
     title = "Paid Ad Type"
@@ -170,7 +191,57 @@ class CPCCPMFilter(admin.SimpleListFilter):
         return queryset
 
 
-class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
+
+    """An inline for displaying non-editable list of advertisements."""
+
+    model = Advertisement
+
+    can_delete = False
+    fields = (
+        "ad_image",
+        "name",
+        "ad_type",
+        "live",
+        "num_views",
+        "num_clicks",
+        "ctr",
+        "ecpm",
+    )
+    list_select_related = ("flight", "ad_type")
+    readonly_fields = fields
+    show_change_link = True
+
+    def has_add_permission(self, request):
+        return False
+
+
+class FlightMixin:
+
+    """Used by the FlightAdmin and FlightInline."""
+
+    def num_ads(self, obj):
+        return obj.num_ads or 0
+
+    def total_value(self, obj):
+        total = 0.0
+        total += float(obj.cpm * obj.total_views) / 1000.0
+        total += float(obj.cpc * obj.total_clicks)
+        return "${:.2f}".format(total)
+
+    def ctr(self, obj):
+        clicks = obj.total_clicks
+        views = obj.total_views
+        return "{:.3f}%".format(calculate_ctr(clicks, views))
+
+    def ecpm(self, obj):
+        clicks = obj.total_clicks
+        views = obj.total_views
+        cost = (clicks * float(obj.cpc)) + (views * float(obj.cpm) / 1000.0)
+        return "${:.2f}".format(calculate_ecpm(cost, views))
+
+
+class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
 
     """Django admin admin configuration for ad Flights."""
 
@@ -178,6 +249,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     form = FlightAdminForm
     save_as = True
 
+    inlines = (AdvertisementsInline,)
     list_display = (
         "name",
         "slug",
@@ -204,7 +276,6 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_filter = ("live", "campaign__campaign_type", CPCCPMFilter, "campaign")
     list_select_related = ("campaign",)
     readonly_fields = (
-        "related_ads",
         "total_value",
         "total_clicks",
         "total_views",
@@ -217,38 +288,42 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
 
-    def num_ads(self, obj):
-        return obj.num_ads or 0
-
-    def total_value(self, obj):
-        total = 0.0
-        total += float(obj.cpm * obj.total_views) / 1000.0
-        total += float(obj.cpc * obj.total_clicks)
-        return "${:.2f}".format(total)
-
-    def ctr(self, obj):
-        clicks = obj.total_clicks
-        views = obj.total_views
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
-
-    def ecpm(self, obj):
-        clicks = obj.total_clicks
-        views = obj.total_views
-        cost = (clicks * float(obj.cpc)) + (views * float(obj.cpm) / 1000.0)
-        return "${:.2f}".format(calculate_ecpm(cost, views))
-
-    def related_ads(self, obj):
-        advertisements = list(obj.advertisements.all())
-        return render_to_string(
-            "adserver/admin/related_ads.html", {"ads": advertisements}
-        )
-
     def get_queryset(self, request):
         queryset = super(FlightAdmin, self).get_queryset(request)
         queryset = queryset.annotate(
             num_ads=models.Count("advertisements", distinct=True)
         )
         return queryset
+
+
+class FlightsInline(FlightMixin, admin.TabularInline):
+
+    """An inline for displaying non-editable list of flights."""
+
+    model = Flight
+
+    can_delete = False
+    fields = (
+        "name",
+        "live",
+        "start_date",
+        "end_date",
+        "sold_clicks",
+        "sold_impressions",
+        "cpc",
+        "cpm",
+        "clicks_remaining",
+        "views_remaining",
+        "total_clicks",
+        "total_views",
+        "ctr",
+        "ecpm",
+    )
+    readonly_fields = fields
+    show_change_link = True
+
+    def has_add_permission(self, request):
+        return False
 
 
 class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
@@ -258,6 +333,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     model = Campaign
     prepopulated_fields = {"slug": ("name",)}
 
+    inlines = (FlightsInline,)
     list_display = (
         "name",
         "advertiser",
@@ -273,7 +349,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_filter = ("campaign_type", "advertiser")
     list_select_related = ("advertiser",)
-    readonly_fields = ("campaign_report", "total_value", "related_flights")
+    readonly_fields = ("campaign_report", "total_value")
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
@@ -310,12 +386,6 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def ecpm(self, obj):
         views = self.total_views(obj)
         return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
-
-    def related_flights(self, obj):
-        flights = list(obj.flights.all())
-        return render_to_string(
-            "adserver/admin/related_flights.html", {"flights": flights}
-        )
 
     def get_queryset(self, request):
         queryset = super(CampaignAdmin, self).get_queryset(request)

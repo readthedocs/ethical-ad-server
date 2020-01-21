@@ -104,6 +104,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
+    def get_absolute_url(self):
+        return reverse("publisher_report", kwargs={"publisher_slug": self.slug})
+
     def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
