@@ -44,7 +44,18 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisers."""
 
+    list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+
+    def report(self, instance):
+        if not instance.pk:
+            return ""
+
+        return mark_safe(
+            '<a href="{url}">{name}</a>'.format(
+                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+            )
+        )
 
 
 class AdTypeAdmin(admin.ModelAdmin):
@@ -73,7 +84,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "flight",
         "ad_type",
         "live",
-        "ad_report",
         "num_views",
         "num_clicks",
         "ctr",
@@ -88,7 +98,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "flight__campaign",
     )
     list_editable = ("live",)
-    readonly_fields = ("total_views", "total_clicks", "ad_report")
+    readonly_fields = ("total_views", "total_clicks")
     search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
 
     # Exclude deprecated fields
@@ -132,16 +142,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
         cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
         return "${:.2f}".format(calculate_ecpm(cost, views))
-
-    def ad_report(self, instance):
-        if not instance.slug:
-            return ""
-
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
-        )
 
     def get_queryset(self, request):
         queryset = super(AdvertisementAdmin, self).get_queryset(request)
@@ -277,12 +277,13 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
-        if not instance.pk:
+        if not instance.pk or not instance.advertiser:
             return ""
 
         return mark_safe(
             '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+                name=escape(instance.name) + " Report",
+                url=instance.advertiser.get_absolute_url(),
             )
         )
 
