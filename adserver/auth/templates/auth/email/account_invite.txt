@@ -1,0 +1,8 @@
+{% load i18n %}{% blocktrans with site_name=site.name user_display=user.get_full_name %}Hello {{ user_display }}!
+
+You're receiving this email because you've been invited to create an account on {{ site_name }}.
+
+To create your account, go to {{ activate_url }}
+
+Thank you from {{ site_name }}!
+{% endblocktrans %}
