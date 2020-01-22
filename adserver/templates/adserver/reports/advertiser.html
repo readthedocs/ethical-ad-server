@@ -15,8 +15,22 @@
 {% endblock breadcrumbs %}
 
 
+{% block toc %}
+<section class="mb-5">
+  {% if flights %}
+    <h2>Flights</h2>
+    <ul>
+    {% for flight in flights %}
+      <li><a href="#{{ flight.slug }}">{{ flight.name }}</a></li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock toc %}
+
+
 {% block summary %}
-  {% if ads_and_reports|length > 1 %}
+  {% if flights %}
     <section>
       <div>
         <h2>
@@ -58,3 +72,152 @@
   {% endif %}
 
 {% endblock summary %}
+
+
+{% block report %}
+<div>
+{% if flights %}
+{% for flight in flights %}
+  <section id="{{ flight.slug }}">
+
+    <h3>{% trans 'Flight' %}: {{ flight.name }}</h3>
+
+    <dl>
+      {% if not flight.live %}
+         <dt>{% trans 'Inactive' %}</dt>
+         <dd>{% trans 'This flight is not currently being shown' %}</dd>
+      {% endif %}
+      {% if flight.campaign.campaign_type == 'community' %}
+        <dt>{% trans 'Community ad' %}</dt>
+        <dd>{% trans 'This ad is done for the benefit of the community' %}</dd>
+      {% endif %}
+      {% if flight.campaign.campaign_type == 'house' %}
+        <dt>{% trans 'House ad' %}</dt>
+        <dd>{% trans 'This is a house advertisement' %}</dd>
+      {% endif %}
+      {% if flight.cpc %}
+        <dt>{% trans 'Cost per click (CPC)' %}</dt>
+        <dd>${{ flight.cpc|floatformat:2 }}</dd>
+      {% endif %}
+      {% if flight.cpm %}
+        <dt>{% trans 'Cost per 1,000 impressions (CPM)' %}</dt>
+        <dd>${{ flight.cpm|floatformat:2 }}</dd>
+      {% endif %}
+      {% if flight.start_date %}
+        <dt>{% trans 'Estimated start date' %}</dt>
+        <dd>{{ flight.start_date }}</dd>
+      {% endif %}
+      {% if flight.end_date %}
+        <dt>{% trans 'Estimated end date' %}</dt>
+        <dd>{{ flight.end_date }}</dd>
+      {% endif %}
+      {% if flight.targeting_parameters %}
+         <dt>{% trans 'Targeting parameters' %}</dt>
+         <dd>
+           <ul>
+             {% if flight.targeting_parameters.include_countries %}
+               <li>{% blocktrans with value=flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
+             {% endif %}
+             {% if flight.targeting_parameters.exclude_countries %}
+               <li>{% blocktrans with value=flight.get_exclude_countries_display|join:', ' %}Exclude countries: {{ value }}{% endblocktrans %}</li>
+             {% endif %}
+             {% if flight.targeting_parameters.include_state_provinces %}
+               <li>{% blocktrans with value=flight.targeting_parameters.include_state_provinces|join:", " %}Include States/Provinces: {{ value }}{% endblocktrans %}</li>
+             {% endif %}
+             {% if flight.targeting_parameters.include_metro_codes %}
+               <li>{% blocktrans with value=flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
+             {% endif %}
+             {% if flight.targeting_parameters.include_keywords %}
+               <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
+             {% endif %}
+           </ul>
+         </dd>
+       {% endif %}
+    </dl>
+
+    {% for ad in flight.ads %}
+
+      <h4>{% trans 'Advertisement' %}: {{ ad.name }}</h4>
+
+      <div class="row">
+
+        {# Show the ad #}
+        <div class="col">
+          <div class="w-75 p-3 mx-auto">
+            {% if ad.image %}
+            <div class="text-center">
+              <a href="{{ ad.link }}">
+                <img width="120" height="90" src="{{ ad.image.url }}">
+              </a>
+            </div>
+            {% endif %}
+            <div class="text-center">{{ ad.render_links }}</div>
+          </div>
+        </div>
+
+        {# Ad metadata #}
+        <div class="col">
+          <dl>
+            {% if not ad.live %}
+              <dt>{% trans 'Inactive' %}</dt>
+              <dd>{% trans 'This promo is not currently being shown' %}</dd>
+            {% endif %}
+            {% if ad.ad_type %}
+              <dt>{% trans 'Display' %}</dt>
+              <dd>{{ ad.ad_type.name }}</dd>
+            {% endif %}
+            {% if ad.link %}
+              <dt>{% trans 'Click-through link' %}</dt>
+              <dd><small><a href="{{ ad.link }}">{{ ad.link|truncatechars:50 }}</a></small></dd>
+            {% endif %}
+          </dl>
+        </div>
+
+      </div>
+
+      {# Ad summary data #}
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th><strong>{% trans 'Day (UTC)' %}</strong></th>
+            <th><strong>{% trans 'Views' %}</strong></th>
+            <th><strong>{% trans 'Clicks' %}</strong></th>
+            <th><strong>{% trans 'Cost' %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+          </tr>
+        </thead>
+        {% for day in ad.report.days %}
+          {% if day.views > 0 or day.clicks > 0 %}
+          <tr>
+            <td>{{ day.date }}</td>
+            <td>{{ day.views|intcomma }}</td>
+            <td>{{ day.clicks|intcomma }}</td>
+            <td>${{ day.cost|floatformat:2|intcomma }}</td>
+            <td>{{ day.ctr|floatformat:3 }}%</td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+        <tfoot>
+          <tr>
+            <td><strong>{% trans 'Total' %}</strong> </td>
+            <td><strong>{{ ad.report.total.views|intcomma }}</strong></td>
+            <td><strong>{{ ad.report.total.clicks|intcomma }}</strong></td>
+            <td><strong>${{ ad.report.total.cost|floatformat:2|intcomma }}</strong></td>
+            <td><strong>{{ ad.report.total.ctr|floatformat:3 }}%</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+    {% endfor %}{# // advertisements #}
+
+  </section>
+
+{% endfor %}{# // flights #}
+</div>
+
+{% else %}{# No flights #}
+
+{% trans 'No ad data in this time period.' %}
+
+{% endif %}
+{% endblock report %}

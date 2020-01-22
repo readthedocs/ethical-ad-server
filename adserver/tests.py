@@ -1285,6 +1285,25 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["total"]["clicks"], 2)
         self.assertEqual(data["total"]["views"], 3)
 
+        # Test flight and advertisement details
+        self.assertEqual(len(data["flights"]), 1)
+        self.assertEqual(data["flights"][0]["slug"], self.flight.slug)
+        self.assertEqual(data["flights"][0]["report"]["total"]["clicks"], 2)
+        self.assertEqual(data["flights"][0]["report"]["total"]["views"], 3)
+        self.assertEqual(len(data["flights"][0]["report"]["days"]), 1)
+
+        self.assertEqual(len(data["flights"][0]["advertisements"]), 1)
+        self.assertEqual(data["flights"][0]["advertisements"][0]["slug"], self.ad.slug)
+        self.assertEqual(
+            data["flights"][0]["advertisements"][0]["report"]["total"]["clicks"], 2
+        )
+        self.assertEqual(
+            data["flights"][0]["advertisements"][0]["report"]["total"]["views"], 3
+        )
+        self.assertEqual(
+            len(data["flights"][0]["advertisements"][0]["report"]["days"]), 1
+        )
+
 
 class PublisherApiTests(BaseApiTest):
     def setUp(self):
@@ -1607,6 +1626,9 @@ class TestProxyViews(BaseApiTest):
 
 
 class TestReportViews(TestCase):
+
+    """These are the HTML reports that logged-in advertisers and publishers see."""
+
     def setUp(self):
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
