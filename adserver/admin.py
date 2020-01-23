@@ -1,7 +1,6 @@
 """Django admin configuration for the ad server."""
 from django.contrib import admin
 from django.db import models
-from django.template.loader import render_to_string
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
@@ -37,14 +36,38 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for publishers."""
 
+    list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("modified", "created")
+
+    def report(self, instance):
+        if not instance.pk:
+            return ""
+
+        return mark_safe(
+            '<a href="{url}">{name}</a>'.format(
+                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+            )
+        )
 
 
 class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisers."""
 
+    list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("modified", "created")
+
+    def report(self, instance):
+        if not instance.pk:
+            return ""
+
+        return mark_safe(
+            '<a href="{url}">{name}</a>'.format(
+                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+            )
+        )
 
 
 class AdTypeAdmin(admin.ModelAdmin):
@@ -56,60 +79,22 @@ class AdTypeAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     list_display = ("name", "publisher")
     list_select_related = ("publisher",)
+    readonly_fields = ("modified", "created")
     search_fields = ("name", "slug", "publisher__name", "publisher__slug")
 
 
-class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class AdvertisementMixin:
 
-    """Django admin configuration for advertisements."""
+    """Used by the AdvertisementInline and the AdvertisementAdmin."""
 
-    model = Advertisement
-    save_as = True
-    prepopulated_fields = {"slug": ("name",)}
-    list_display = (
-        "display_image",
-        "name",
-        "slug",
-        "flight",
-        "ad_type",
-        "live",
-        "ad_report",
-        "num_views",
-        "num_clicks",
-        "ctr",
-        "ecpm",
-    )
-    list_display_links = ("name",)
-    list_select_related = ("flight", "flight__campaign", "ad_type")
-    list_filter = (
-        "live",
-        "flight__campaign__campaign_type",
-        "ad_type",
-        "flight__campaign",
-    )
-    list_editable = ("live",)
-    readonly_fields = ("total_views", "total_clicks", "ad_report")
-    search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
+    MAX_IMAGE_WIDTH = 120
 
-    # Exclude deprecated fields
-    exclude = (
-        "start_date",
-        "sold_impressions",
-        "sold_days",
-        "sold_clicks",
-        "cpc",
-        "theme",
-        "house",
-        "community",
-        "campaign",
-    )
-
-    def display_image(self, obj):
+    def ad_image(self, obj):
         if not obj.image:
             return ""
 
         return mark_safe(
-            '<img src="{url}" style="width: 120px" />'.format(url=obj.image.url)
+            f'<img src="{obj.image.url}" style="max-width: {self.MAX_IMAGE_WIDTH}px" />'
         )
 
     def num_clicks(self, obj):
@@ -133,23 +118,62 @@ class AdvertisementAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
-    def ad_report(self, instance):
-        if not instance.slug:
-            return ""
-
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
-        )
-
     def get_queryset(self, request):
-        queryset = super(AdvertisementAdmin, self).get_queryset(request)
+        queryset = super().get_queryset(request)
+        if self.list_select_related is True:
+            queryset = queryset.select_related()
+        elif self.list_select_related:
+            queryset = queryset.select_related(*self.list_select_related)
         queryset = queryset.annotate(
             num_clicks=models.Sum("impressions__clicks"),
             num_views=models.Sum("impressions__views"),
         )
         return queryset
+
+
+class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin):
+
+    """Django admin configuration for advertisements."""
+
+    model = Advertisement
+    save_as = True
+    prepopulated_fields = {"slug": ("name",)}
+    list_display = (
+        "ad_image",
+        "name",
+        "slug",
+        "flight",
+        "ad_type",
+        "live",
+        "num_views",
+        "num_clicks",
+        "ctr",
+        "ecpm",
+    )
+    list_display_links = ("name",)
+    list_select_related = ("flight", "flight__campaign", "ad_type")
+    list_filter = (
+        "live",
+        "flight__campaign__campaign_type",
+        "ad_type",
+        "flight__campaign",
+    )
+    list_editable = ("live",)
+    readonly_fields = ("total_views", "total_clicks", "modified", "created")
+    search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
+
+    # Exclude deprecated fields
+    exclude = (
+        "start_date",
+        "sold_impressions",
+        "sold_days",
+        "sold_clicks",
+        "cpc",
+        "theme",
+        "house",
+        "community",
+        "campaign",
+    )
 
 
 class CPCCPMFilter(admin.SimpleListFilter):
@@ -170,7 +194,57 @@ class CPCCPMFilter(admin.SimpleListFilter):
         return queryset
 
 
-class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
+
+    """An inline for displaying non-editable list of advertisements."""
+
+    model = Advertisement
+
+    can_delete = False
+    fields = (
+        "ad_image",
+        "name",
+        "ad_type",
+        "live",
+        "num_views",
+        "num_clicks",
+        "ctr",
+        "ecpm",
+    )
+    list_select_related = ("flight", "ad_type")
+    readonly_fields = fields
+    show_change_link = True
+
+    def has_add_permission(self, request):
+        return False
+
+
+class FlightMixin:
+
+    """Used by the FlightAdmin and FlightInline."""
+
+    def num_ads(self, obj):
+        return obj.num_ads or 0
+
+    def total_value(self, obj):
+        total = 0.0
+        total += float(obj.cpm * obj.total_views) / 1000.0
+        total += float(obj.cpc * obj.total_clicks)
+        return "${:.2f}".format(total)
+
+    def ctr(self, obj):
+        clicks = obj.total_clicks
+        views = obj.total_views
+        return "{:.3f}%".format(calculate_ctr(clicks, views))
+
+    def ecpm(self, obj):
+        clicks = obj.total_clicks
+        views = obj.total_views
+        cost = (clicks * float(obj.cpc)) + (views * float(obj.cpm) / 1000.0)
+        return "${:.2f}".format(calculate_ecpm(cost, views))
+
+
+class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
 
     """Django admin admin configuration for ad Flights."""
 
@@ -178,6 +252,7 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     form = FlightAdminForm
     save_as = True
 
+    inlines = (AdvertisementsInline,)
     list_display = (
         "name",
         "slug",
@@ -204,7 +279,6 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_filter = ("live", "campaign__campaign_type", CPCCPMFilter, "campaign")
     list_select_related = ("campaign",)
     readonly_fields = (
-        "related_ads",
         "total_value",
         "total_clicks",
         "total_views",
@@ -213,35 +287,11 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "clicks_needed_today",
         "views_needed_today",
         "weighted_clicks_needed_today",
+        "modified",
+        "created",
     )
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
-
-    def num_ads(self, obj):
-        return obj.num_ads or 0
-
-    def total_value(self, obj):
-        total = 0.0
-        total += float(obj.cpm * obj.total_views) / 1000.0
-        total += float(obj.cpc * obj.total_clicks)
-        return "${:.2f}".format(total)
-
-    def ctr(self, obj):
-        clicks = obj.total_clicks
-        views = obj.total_views
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
-
-    def ecpm(self, obj):
-        clicks = obj.total_clicks
-        views = obj.total_views
-        cost = (clicks * float(obj.cpc)) + (views * float(obj.cpm) / 1000.0)
-        return "${:.2f}".format(calculate_ecpm(cost, views))
-
-    def related_ads(self, obj):
-        advertisements = list(obj.advertisements.all())
-        return render_to_string(
-            "adserver/admin/related_ads.html", {"ads": advertisements}
-        )
 
     def get_queryset(self, request):
         queryset = super(FlightAdmin, self).get_queryset(request)
@@ -251,6 +301,36 @@ class FlightAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return queryset
 
 
+class FlightsInline(FlightMixin, admin.TabularInline):
+
+    """An inline for displaying non-editable list of flights."""
+
+    model = Flight
+
+    can_delete = False
+    fields = (
+        "name",
+        "live",
+        "start_date",
+        "end_date",
+        "sold_clicks",
+        "sold_impressions",
+        "cpc",
+        "cpm",
+        "clicks_remaining",
+        "views_remaining",
+        "total_clicks",
+        "total_views",
+        "ctr",
+        "ecpm",
+    )
+    readonly_fields = fields
+    show_change_link = True
+
+    def has_add_permission(self, request):
+        return False
+
+
 class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for ad campaigns."""
@@ -258,6 +338,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     model = Campaign
     prepopulated_fields = {"slug": ("name",)}
 
+    inlines = (FlightsInline,)
     list_display = (
         "name",
         "advertiser",
@@ -273,16 +354,17 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_filter = ("campaign_type", "advertiser")
     list_select_related = ("advertiser",)
-    readonly_fields = ("campaign_report", "total_value", "related_flights")
+    readonly_fields = ("campaign_report", "total_value", "modified", "created")
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
-        if not instance.pk:
+        if not instance.pk or not instance.advertiser:
             return ""
 
         return mark_safe(
             '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
+                name=escape(instance.name) + " Report",
+                url=instance.advertiser.get_absolute_url(),
             )
         )
 
@@ -309,12 +391,6 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def ecpm(self, obj):
         views = self.total_views(obj)
         return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
-
-    def related_flights(self, obj):
-        flights = list(obj.flights.all())
-        return render_to_string(
-            "adserver/admin/related_flights.html", {"flights": flights}
-        )
 
     def get_queryset(self, request):
         queryset = super(CampaignAdmin, self).get_queryset(request)
@@ -356,6 +432,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_display = readonly_fields
     list_filter = ("advertisement__ad_type", "publisher")
     list_select_related = ["advertisement", "publisher"]
+    readonly_fields = ("modified", "created")
     search_fields = ["advertisement__slug", "advertisement__name"]
 
     def has_add_permission(self, request):
@@ -382,14 +459,16 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "browser_family",
         "os_family",
         "is_mobile",
+        "is_bot",
         "user_agent",
         "ip",
         "client_id",
+        "modified",
+        "created",
     )
     list_display = readonly_fields[:-3]
     list_select_related = ("advertisement", "publisher")
     list_filter = ("is_mobile",)
-    exclude = ("advertisement", "url")
     search_fields = (
         "advertisement__name",
         "url",

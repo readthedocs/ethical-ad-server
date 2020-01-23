@@ -1,7 +1,0 @@
-{% if flights %}
-  <ul>
-    {% for flight in flights %}
-      <li><a href="{% url 'admin:adserver_flight_change' flight.pk %}">{{ flight.name }}</a></li>
-    {% endfor %}
-  </ul>
-{% endif %}

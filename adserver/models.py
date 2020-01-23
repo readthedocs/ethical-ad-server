@@ -104,6 +104,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
+    def get_absolute_url(self):
+        return reverse("publisher_report", kwargs={"publisher_slug": self.slug})
+
     def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -174,6 +177,9 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     def __str__(self):
         """Simple override."""
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("advertiser_report", kwargs={"advertiser_slug": self.slug})
 
     def daily_reports(self, start_date=None, end_date=None):
         """
@@ -277,10 +283,6 @@ class Campaign(TimeStampedModel, IndestructibleModel):
     def __str__(self):
         """Simple override."""
         return self.name
-
-    def get_absolute_url(self):
-        # TODO: ad report link
-        return "#"
 
     def ad_count(self):
         return Advertisement.objects.filter(flight__campaign=self).count()
@@ -810,10 +812,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def clean(self):
         super().clean()
         AdvertisementValidator()(self)
-
-    def get_absolute_url(self):
-        # TODO: ad report link
-        return "#"
 
     def as_dict(self):
         """A dict respresentation of this for JSON encoding."""
