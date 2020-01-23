@@ -697,6 +697,23 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return report
 
+    def ad_reports(self, start_date=None, end_date=None):
+        """
+        Generates a report broken down by advertisement in the given time period.
+
+        :param start_date: the start date to generate the report (or all time)
+        :param end_date: the end date for the report (ignored if no `start_date`)
+        :return: A list of ads and their daily report for all ads in the time period.
+        """
+        ad_reports = []
+
+        for ad in self.advertisements.select_related("ad_type"):
+            report = ad.daily_reports(start_date=start_date, end_date=end_date)
+            if report["total"]["views"]:
+                ad_reports.append((ad, report))
+
+        return ad_reports
+
 
 class AdType(TimeStampedModel, models.Model):
 

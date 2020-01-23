@@ -24,6 +24,7 @@ from .constants import VIEWS
 from .models import AdImpression
 from .models import Advertisement
 from .models import Advertiser
+from .models import Flight
 from .models import Publisher
 from .utils import analytics_event
 from .utils import calculate_ctr
@@ -322,33 +323,37 @@ class AdvertiserReportView(BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
 
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
         advertiser_slug = kwargs.get("advertiser_slug", "")
 
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
-        advertisements = Advertisement.objects.filter(
-            flight__campaign__advertiser=advertiser
-        )
-        advertisements = advertisements.select_related(
-            "flight", "flight__campaign", "flight__campaign"
-        )
-
-        ads_and_reports = []
-        for ad in advertisements:
-            report = ad.daily_reports(
-                start_date=context["start_date"], end_date=context["end_date"]
-            )
-            if report["total"]["views"]:
-                ads_and_reports.append((ad, report))
-
         advertiser_report = advertiser.daily_reports(
-            start_date=context["start_date"], end_date=context["end_date"]
+            start_date=start_date, end_date=end_date
         )
+
+        flights = []
+        for flight in Flight.objects.filter(
+            campaign__advertiser=advertiser
+        ).select_related("campaign"):
+            flight.report = flight.daily_reports(
+                start_date=start_date, end_date=end_date
+            )
+            if flight.report["total"]["views"]:
+                flight.ads = []
+                flights.append(flight)
+                for ad, ad_report in flight.ad_reports(
+                    start_date=start_date, end_date=end_date
+                ):
+                    ad.report = ad_report
+                    flight.ads.append(ad)
 
         context.update(
             {
                 "advertiser": advertiser,
                 "advertiser_report": advertiser_report,
-                "ads_and_reports": ads_and_reports,
+                "flights": flights,
                 "total_clicks": advertiser_report["total"]["clicks"],
                 "total_cost": advertiser_report["total"]["cost"],
                 "total_views": advertiser_report["total"]["views"],

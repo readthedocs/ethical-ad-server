@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..decisionengine import get_ad_decision_backend
-from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
@@ -164,16 +163,12 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
                 flight_data["report"] = report
                 flight_data["advertisements"] = []
 
-                for ad in Advertisement.objects.filter(flight=flight).select_related(
-                    "ad_type"
+                for ad, ad_report in flight.ad_reports(
+                    start_date=start_date, end_date=end_date
                 ):
-                    ad_report = ad.daily_reports(
-                        start_date=start_date, end_date=end_date
-                    )
-                    if ad_report["total"]["views"]:
-                        ad_data = AdvertisementSerializer(ad).data
-                        ad_data["report"] = ad_report
-                        flight_data["advertisements"].append(ad_data)
+                    ad_data = AdvertisementSerializer(ad).data
+                    ad_data["report"] = ad_report
+                    flight_data["advertisements"].append(ad_data)
 
                 data["flights"].append(flight_data)
 
