@@ -17,12 +17,18 @@ Start a local multi-container application with Postgres, Redis, Celery, and Djan
 
     $ make dockerserve
 
-To get a shell into the Django container where you can run ``createsuperuser``,
+To get a shell into the Django container where you can run ``./manage.py createsuperuser``,
 get a Django shell, or run other commands:
 
 .. code-block:: bash
 
     $ make dockershell
+    ...
+    /app # ./manage.py createsuperuser
+
+After setting up your super user account on your local development instance,
+you'll still need to set the :ref:`install/installation:Set the ad server URL`
+to something like ``localhost:5000``.
 
 
 Developing locally

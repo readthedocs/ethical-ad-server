@@ -17,6 +17,11 @@ Authentication works in one of two ways:
    Where the value of the header is the string "Token"
    followed by a space and your 40 character API key.
 
+.. note::
+
+    Creating a token for a user can be done in the :doc:`administration interface </user-guide/administration>`
+    section under :guilabel:`Auth Token`.
+
 Ad decision
 -----------
 
