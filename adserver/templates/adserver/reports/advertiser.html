@@ -18,7 +18,7 @@
 {% block toc %}
 <section class="mb-5">
   {% if flights %}
-    <h2>Flights</h2>
+    <h2>{% trans 'Flights' %}</h2>
     <ul>
     {% for flight in flights %}
       <li><a href="#{{ flight.slug }}">{{ flight.name }}</a></li>
