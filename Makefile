@@ -15,6 +15,8 @@ help:
 	@echo "  dockerbuild    Build the multi-container ad server (this can take a while)"
 	@echo "  dockerserve    Run the docker containers for the ad server"
 	@echo "  dockershell    Connect to a shell on the Django docker container"
+	@echo "  dockerstart    Start all services in the background"
+	@echo "  dockerstop     Stop all services started by dockerstart"
 	@echo "  geoip          Download the GeoIP database from MaxMind"
 
 test:
@@ -37,6 +39,15 @@ dockerbuild: clean
 # It isn't a dependency because running "dockerbuild" can take some time
 dockerserve:
 	docker-compose -f $(DOCKER_CONFIG) up
+
+# This is similar to dockerserve, but it doesn't build the containers
+# and start all services in the background.
+dockerstart:
+	docker-compose -f $(DOCKER_CONFIG) start
+
+# Stop all services that were started by "dockerstart"
+dockerstop:
+	docker-compose -f $(DOCKER_CONFIG) stop
 
 # Use this command to inspect the container, run management commands,
 # or run anything else on the Django container
