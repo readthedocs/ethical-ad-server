@@ -169,7 +169,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     """An advertiser who buys advertising from the ad server."""
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Publisher Slug"), max_length=200)
+    slug = models.SlugField(_("Advertiser Slug"), max_length=200)
 
     class Meta:
         ordering = ("name",)
