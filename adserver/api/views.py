@@ -41,16 +41,25 @@ class AdDecisionView(GeoIpMixin, APIView):
 
     .. http:post:: /api/v1/decision/
 
-        :param string publisher: **Required**. The slug of the publisher
-        :param array placements: **Required**. Various possible ad placements where an ad could go
-        :param array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
-        :param array campaign_types: Limit the ad results to certain campaign types
-        :param string user_ip: User's IP address used for targeting
+        :<json string publisher: **Required**. The slug of the publisher
+        :<json array placements: **Required**. Various possible ad placements where an ad could go
+        :<json array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
+        :<json array campaign_types: Limit the ad results to certain campaign types
+        :<json string user_ip: User's IP address used for targeting
             (the requestor's IP will be used if not present)
-        :param string user_ua: User's user agent used for targeting
+        :<json string user_ua: User's user agent used for targeting
             (the requestor's UA will be used if not present)
-        :param string force_ad: Limit results to a specific ad
-        :param string force_campaign: Limit results to ads from a specific campaign
+        :<json string force_ad: Limit results to a specific ad
+        :<json string force_campaign: Limit results to ads from a specific campaign
+
+        :>json string id: The advertisement slug of the chosen ad
+        :>json string text: The text of the ad
+        :>json string html: An HTML rendering of the ad
+        :>json string link: A click URL for the ad
+        :>json string view_url: A view URL to count an ad view
+        :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
+        :>json string display_type: The slug of type of ad (eg. sidebar)
+        :>json string div_id: The <div> ID where the ad will be inserted
     """
 
     permission_classes = (PublisherPermission,)
@@ -117,9 +126,20 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         Return a list of advertisers the user has access to
 
+        :>json int count: The number of advertisers returned
+        :>json string next: A URL to the next page of advertisers (if needed)
+        :>json string previous: A URL to the previous page of advertisers (if needed)
+        :>json array results: An array of advertiser results (see advertiser details call)
+
     .. http:get:: /api/v1/advertisers/(str:slug)/
 
         Return a specific advertiser
+
+        :>json string url: The URL to this report
+        :>json string name: The name of the advertiser
+        :>json string slug: A slug for the advertiser
+        :>json date created: An array of advertiser results
+        :>json date modified: The date the advertiser was last modified
 
     .. http:get:: /api/v1/advertisers/(str:slug)/report/
 
@@ -129,6 +149,10 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
             If not specified, defaults to 30 days ago
         :query date end_date: End the report on a given day inclusive.
             If not specified, no end time is used (up to current)
+
+        :>json array days: An array of advertiser results per day
+        :>json object total: An object of aggregated totals for the advertiser
+        :>json array flights: An array of flights for this advertiser in the time period
     """
 
     serializer_class = AdvertiserSerializer
@@ -184,9 +208,20 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
 
         Return a list of publishers the user has access to
 
+        :>json int count: The number of publisher returned
+        :>json string next: A URL to the next page of publisher (if needed)
+        :>json string previous: A URL to the previous page of publisher (if needed)
+        :>json array results: An array of publisher results (see publisher details call)
+
     .. http:get:: /api/v1/publishers/(str:slug)/
 
         Return a specific publisher
+
+        :>json string url: The URL to this report
+        :>json string name: The name of the publisher
+        :>json string slug: A slug for the publisher
+        :>json date created: An array of publisher results
+        :>json date modified: The date the publisher was last modified
 
     .. http:get:: /api/v1/publishers/(str:slug)/report/
 
@@ -196,6 +231,9 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
             If not specified, defaults to 30 days ago
         :query date end_date: End the report on a given day inclusive.
             If not specified, no end time is used (up to current)
+
+        :>json array days: An array of publisher results per day
+        :>json object total: An object of aggregated totals for the publisher
     """
 
     serializer_class = PublisherSerializer

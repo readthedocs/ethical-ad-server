@@ -86,6 +86,20 @@ pygments_style = "sphinx"
 # http://www.sphinx-doc.org/en/1.7/ext/autosectionlabel.html
 autosectionlabel_prefix_document = True
 
+# Warn about all references where the target cannot be found
+nitpicky = True
+
+# Ignore missing targets for the http:obj <type>
+# This is used for input/output fields in the API docs.
+nitpick_ignore = [
+    ("http:obj", "array"),
+    ("http:obj", "boolean"),
+    ("http:obj", "int"),
+    ("http:obj", "float"),
+    ("http:obj", "date"),
+    ("http:obj", "object"),
+    ("http:obj", "string"),
+]
 
 # -- Options for HTML output -------------------------------------------------
 
