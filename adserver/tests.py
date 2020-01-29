@@ -29,6 +29,8 @@ from .constants import VIEWS
 from .decisionengine.backends import AdvertisingDisabledBackend
 from .decisionengine.backends import AdvertisingEnabledBackend
 from .decisionengine.backends import ProbabilisticFlightBackend
+from .forms import AdvertisementCreateForm
+from .forms import AdvertisementUpdateForm
 from .forms import FlightAdminForm
 from .models import AdImpression
 from .models import AdType
@@ -164,6 +166,8 @@ class UtilsTest(TestCase):
 class FormTests(TestCase):
     def setUp(self):
         self.campaign = get(Campaign, name="Test Campaign")
+        self.flight = get(Flight, name="Test Flight", campaign=self.campaign)
+        self.ad = get(Advertisement, name="Test Ad", flight=self.flight)
 
     def test_flight_form(self):
         data = {
@@ -185,6 +189,35 @@ class FormTests(TestCase):
         # A flight can't have both a CPC & CPM
         data["cpc"] = 0.0
         form = FlightAdminForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    def test_ad_update_form(self):
+        data = {
+            "name": "Test Ad",
+            "link": "http://example.com",
+            "image": None,
+            "live": True,
+            "text": "This is a test",
+        }
+        form = AdvertisementUpdateForm(data=data, instance=self.ad)
+        self.assertTrue(form.is_valid())
+        ad = form.save()
+
+        self.assertEqual(ad.text, "<a>This is a test</a>")
+
+    def test_ad_create_form(self):
+        data = {
+            "name": "Test Ad",
+            "link": "http://example.com",
+            "image": None,
+            "live": True,
+            "text": "This is a test",
+        }
+        form = AdvertisementCreateForm(data=data, flight=self.flight)
+        self.assertFalse(form.is_valid())  # Name exists
+
+        data["name"] = "Another test"
+        form = AdvertisementCreateForm(data=data, flight=self.flight)
         self.assertTrue(form.is_valid())
 
 
@@ -1623,6 +1656,151 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+
+class TestAdvertiserCrudViews(TestCase):
+
+    """Test the advertiser CRUD interface for creating and updating ads."""
+
+    def setUp(self):
+        self.advertiser = get(
+            Advertiser, name="Test Advertiser", slug="test-advertiser"
+        )
+        self.campaign = get(
+            Campaign,
+            name="Test Campaign",
+            slug="test-campaign",
+            advertiser=self.advertiser,
+        )
+        self.flight = get(
+            Flight, name="Test Flight", slug="test-flight", campaign=self.campaign
+        )
+        self.ad_type = get(AdType, name="Ad Type", has_image=False)
+        self.ad = get(Advertisement, name="Test Ad", slug="test-ad", flight=self.flight)
+
+        self.user = get(
+            get_user_model(), username="test-user", advertisers=[self.advertiser]
+        )
+
+    def test_flight_list_view(self):
+        url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.flight.name)
+
+    def test_flight_detail_view(self):
+        url = reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad.name)
+
+    def test_ad_detail_view(self):
+        url = reverse(
+            "advertisement_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad.name)
+
+    def test_ad_update_view(self):
+        url = reverse(
+            "advertisement_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad.name)
+
+        data = {
+            "name": "New Name",
+            "live": True,
+            "link": "http://example.com",
+            "text": "Sample text",
+            "image": None,
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        # Verify the DB was updated
+        self.ad.refresh_from_db()
+        self.assertEqual(self.ad.name, data["name"])
+
+    def test_ad_create_view(self):
+        url = reverse(
+            "advertisement_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Create advertisement")
+
+        data = {
+            "name": "New Name",
+            "live": True,
+            "link": "http://example.com",
+            "text": "Sample text",
+            "image": None,
+            "ad_type": self.ad_type.pk,
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.assertTrue(
+            Advertisement.objects.filter(flight=self.flight, name="New Name").exists()
+        )
 
 
 class TestReportViews(TestCase):

@@ -143,15 +143,8 @@
 
         {# Show the ad #}
         <div class="col">
-          <div class="w-75 p-3 mx-auto">
-            {% if ad.image %}
-            <div class="text-center">
-              <a href="{{ ad.link }}">
-                <img width="120" height="90" src="{{ ad.image.url }}">
-              </a>
-            </div>
-            {% endif %}
-            <div class="text-center">{{ ad.render_links }}</div>
+          <div class="advertisement-preview">
+            <div class="mx-auto">{{ ad.render_ad | safe }}</div>
           </div>
         </div>
 

@@ -1,0 +1,41 @@
+{% extends "adserver/base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">{{ advertiser }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug advertisement.flight.slug %}">{{ advertisement.flight.name }}</a></li>
+  <li class="breadcrumb-item active"><a href="{% url 'advertisement_detail' advertiser.slug advertisement.flight.slug advertisement.slug %}">{{ advertisement.name }}</a></li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
+
+<div class="row">
+
+  <div class="col">
+    {% crispy form form.helper %}
+  </div>
+
+  {# Preview the ad #}
+  <div class="col ml-5">
+    <h5>{% trans 'Preview' %}</h5>
+    <div class="advertisement-preview">
+      <div class="mx-auto">{{ advertisement.render_ad | safe }}</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock content_container %}

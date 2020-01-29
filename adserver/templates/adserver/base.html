@@ -42,14 +42,49 @@
     {% endblock breadcrumbs %}
   </ol>
 
-  <main class="main">
-    <div class="container">
+  <div>
+    <div class="container-fluid">
 
-      {% include 'includes/messages.html' %}
+      <div class="row">
+        <nav class="col-lg-2">
+          {% if advertiser %}
+            <h6 class="text-muted">{{ advertiser }}</h6>
 
-      {% block content_container %}{% endblock content_container %}
+            <ul class="nav flex-column mb-2">
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'flight_list' advertiser.slug %}">
+                  <span class="fa fa-calendar fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Flights' %}</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'advertiser_report' advertiser.slug %}">
+                  <span class="fa fa-bar-chart fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Reports' %}</span>
+                </a>
+              </li>
+            </ul>
+          {% elif publisher %}
+            <h6 class="text-muted">{{ publisher }}</h6>
+
+            <ul class="nav flex-column mb-2">
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_report' publisher.slug %}">
+                  <span class="fa fa-bar-chart fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Reports' %}</span>
+                </a>
+              </li>
+            </ul>
+          {% endif %}
+        </nav>
+        <main class="main col-lg-10 ml-sm-auto px-4">
+          {% include 'includes/messages.html' %}
+
+          {% block content_container %}{% endblock content_container %}
+        </main>
+      </div>
     </div>
-  </main>
+  </div>
 
   <footer>
     <hr>
