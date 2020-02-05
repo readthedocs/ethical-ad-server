@@ -5,8 +5,13 @@ from datetime import datetime
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.paginator import EmptyPage
+from django.core.paginator import PageNotAnInteger
+from django.core.paginator import Paginator
+from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -14,13 +19,22 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.views import View
+from django.views.generic import CreateView
+from django.views.generic import DetailView
+from django.views.generic import ListView
 from django.views.generic import TemplateView
+from django.views.generic import UpdateView
 from user_agents import parse as parse_user_agent
 
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
+from .forms import AdvertisementCreateForm
+from .forms import AdvertisementUpdateForm
+from .mixins import AdvertiserAccessMixin
+from .mixins import PublisherAccessMixin
 from .models import AdImpression
 from .models import Advertisement
 from .models import Advertiser
@@ -90,6 +104,173 @@ def dashboard(request):
         "adserver/dashboard.html",
         {"advertisers": advertisers, "publishers": publishers},
     )
+
+
+class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
+
+    """List view for advertiser flights."""
+
+    model = Flight
+    template_name = "adserver/advertiser/flight-list.html"
+    PER_PAGE = 25
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+
+        paginator = Paginator(self.get_queryset(), self.PER_PAGE)
+
+        # Note: Pagination has been greatly simplified in Django 2.x
+        try:
+            flight_list = paginator.page(self.request.GET.get("page"))
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            flight_list = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            flight_list = paginator.page(paginator.num_pages)
+
+        context.update({"advertiser": self.advertiser, "flight_list": flight_list})
+
+        return context
+
+    def get_queryset(self):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
+            "-live", "-end_date", "name"
+        )
+
+
+class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
+
+    """Detail view for flights."""
+
+    model = Flight
+    template_name = "adserver/advertiser/flight-detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        advertisement_list = self.object.advertisements.order_by("-live", "name")
+        context.update(
+            {"advertiser": self.advertiser, "advertisement_list": advertisement_list}
+        )
+        return context
+
+    def get_object(self, queryset=None):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return get_object_or_404(
+            Flight,
+            campaign__advertiser=self.advertiser,
+            slug=self.kwargs["flight_slug"],
+        )
+
+
+class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
+
+    """Detail view for advertisements."""
+
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_object(self, queryset=None):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return get_object_or_404(
+            Advertisement,
+            flight__campaign__advertiser=self.advertiser,
+            slug=self.kwargs["advertisement_slug"],
+        )
+
+
+class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
+
+    """Update view for advertisements."""
+
+    form_class = AdvertisementUpdateForm
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-update.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ad_name = form.cleaned_data["name"]
+        messages.success(self.request, _("Successfully saved %(ad)s") % {"ad": ad_name})
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_object(self, queryset=None):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return get_object_or_404(
+            Advertisement,
+            flight__campaign__advertiser=self.advertiser,
+            slug=self.kwargs["advertisement_slug"],
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "advertisement_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.flight.slug,
+                "advertisement_slug": self.object.slug,
+            },
+        )
+
+
+class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
+
+    """Create view for advertisements."""
+
+    form_class = AdvertisementCreateForm
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-create.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ad_name = form.cleaned_data["name"]
+        messages.success(self.request, _("Successfully saved %(ad)s") % {"ad": ad_name})
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context.update({"advertiser": self.advertiser, "flight": self.flight})
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
+        return kwargs
+
+    def get_success_url(self):
+        return reverse(
+            "advertisement_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.object.slug,
+            },
+        )
 
 
 class BaseProxyView(View):
@@ -303,22 +484,11 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         return None
 
 
-class AdvertiserReportView(BaseReportView):
+class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one advertiser."""
 
     template_name = "adserver/reports/advertiser.html"
-
-    def test_func(self):
-        """The user must have access on the advertiser or be staff."""
-        if self.request.user.is_anonymous:
-            return False
-
-        advertiser = get_object_or_404(Advertiser, slug=self.kwargs["advertiser_slug"])
-        return (
-            self.request.user.is_staff
-            or advertiser in self.request.user.advertisers.all()
-        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
@@ -438,22 +608,11 @@ class AllAdvertiserReportView(BaseReportView):
         return context
 
 
-class PublisherReportView(BaseReportView):
+class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher.html"
-
-    def test_func(self):
-        """The user must have access on the publisher or be staff."""
-        if self.request.user.is_anonymous:
-            return False
-
-        publisher = get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
-        return (
-            self.request.user.is_staff
-            or publisher in self.request.user.publishers.all()
-        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()

@@ -1,0 +1,35 @@
+{% extends "adserver/base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Create advertisement' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">{{ advertiser }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Create advertisement' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Create advertisement' %}{% endblock heading %}</h1>
+
+<div class="row">
+
+  <div class="col">
+    {% crispy form form.helper %}
+  </div>
+
+  <div class="col"></div>
+
+</div>
+
+{% endblock content_container %}

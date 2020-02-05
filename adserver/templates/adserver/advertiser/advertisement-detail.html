@@ -1,0 +1,61 @@
+{% extends "adserver/base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+
+{% block title %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">{{ advertiser }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug advertisement.flight.slug %}">{{ advertisement.flight.name }}</a></li>
+  <li class="breadcrumb-item active">{{ advertisement.name }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
+
+<div class="row">
+
+  {# Show the ad #}
+  <div class="col">
+    <div class="advertisement-preview">
+      <div class="mx-auto">{{ advertisement.render_ad | safe }}</div>
+    </div>
+  </div>
+
+  {# Ad metadata #}
+  <div class="col">
+    <dl>
+      <dt>{% trans 'Flight' %}</dt>
+      <dd>{{ advertisement.flight.name }}</dd>
+      {% if not advertisement.live %}
+        <dt>{% trans 'Inactive' %}</dt>
+        <dd>{% trans 'This promo is not currently being shown' %}</dd>
+      {% endif %}
+      {% if advertisement.ad_type %}
+        <dt>{% trans 'Display' %}</dt>
+        <dd>{{ advertisement.ad_type.name }}</dd>
+      {% endif %}
+      {% if advertisement.link %}
+        <dt>{% trans 'Click-through link' %}</dt>
+        <dd><small><a href="{{ advertisement.link }}">{{ advertisement.link|truncatechars:50 }}</a></small></dd>
+      {% endif %}
+    </dl>
+  </div>
+
+</div>
+
+<div class="row mt-5">
+  <div class="col">
+    <a href="{% url 'advertisement_update' advertiser.slug advertisement.flight.slug advertisement.slug %}" class="btn btn-outline-primary" role="button" aria-pressed="true">{% trans 'Edit advertisement' %}</a>
+  </div>
+</div>
+
+{% endblock content_container %}

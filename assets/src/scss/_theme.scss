@@ -10,4 +10,92 @@ body {
   footer {
     padding: 0.75rem 1rem;
   }
+
+  /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
+  .advertisement-preview {
+    .ethical-callout {
+      padding-top: 1em;
+      clear: both;
+    }
+
+    .ethical-pixel {
+      display: none !important;
+    }
+
+    .ethical-image-link {
+      border: 0;
+    }
+
+    .ethical-close {
+      display: none !important;
+    }
+
+    & img {
+      width: 120px;
+      height: 90px;
+      display: inline-block;
+    }
+
+    .ethical-sidebar,
+    .ethical-footer {
+      padding: 0.5em;
+      margin: 1em 0;
+
+      background-color: #eee;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      color: #0a0a0a;
+      font-size: 14px;
+      line-height: 20px;
+
+      .ethical-callout {
+        text-align: center;
+      }
+
+      .ethical-text {
+        margin-top: 1em;
+      }
+    }
+
+    .ethical-sidebar {
+      text-align: center;
+      max-width: 300px;
+    }
+    .ethical-footer {
+      text-align: left;
+
+      & img {
+        float: right;
+        margin-left: 25px;
+      }
+    }
+
+    .ethical-fixedfooter {
+      background-color: #eee;
+      padding: 0.5em 1.5em;
+      text-align: center;
+      color: #404040;
+      width: 100%;
+
+      .ethical-text:before {
+        margin-right: 4px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background-color: #4caf50;
+        color: #fff;
+        content: "Sponsored";
+      }
+      .ethical-callout {
+        color: #999;
+        padding-left: 6px;
+        white-space: nowrap;
+      }
+    }
+
+    a, a:visited, a:hover, a:active {
+      color: #0a0a0a;
+      text-decoration: none !important;
+      border-bottom: 0 !important;
+    }
+  }
 }
