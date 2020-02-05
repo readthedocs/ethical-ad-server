@@ -226,6 +226,9 @@ class FlightMixin:
     def num_ads(self, obj):
         return obj.num_ads or 0
 
+    def value_remaining(self, obj):
+        return "${:.2f}".format(obj.value_remaining())
+
     def total_value(self, obj):
         total = 0.0
         total += float(obj.cpm * obj.total_views) / 1000.0
@@ -264,8 +267,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
         "sold_impressions",
         "cpc",
         "cpm",
-        "clicks_remaining",
-        "views_remaining",
+        "value_remaining",
         "clicks_needed_today",
         "views_needed_today",
         "priority_multiplier",
@@ -279,6 +281,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
     list_filter = ("live", "campaign__campaign_type", CPCCPMFilter, "campaign")
     list_select_related = ("campaign",)
     readonly_fields = (
+        "value_remaining",
         "total_value",
         "total_clicks",
         "total_views",

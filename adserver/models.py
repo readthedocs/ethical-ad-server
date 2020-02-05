@@ -638,6 +638,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def views_remaining(self):
         return max(0, self.sold_impressions - self.total_views)
 
+    def value_remaining(self):
+        """Value remaining on this ad flight."""
+        value_clicks_remaining = float(self.clicks_remaining() * self.cpc)
+        value_views_remaining = float(self.views_remaining() * self.cpm) / 1000.0
+        return value_clicks_remaining + value_views_remaining
+
     def daily_reports(
         self, start_date=None, end_date=None, name_filter=None, inactive=True
     ):
