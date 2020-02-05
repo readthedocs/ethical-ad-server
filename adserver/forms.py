@@ -2,6 +2,7 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
+from django.forms.widgets import FileInput
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -71,10 +72,9 @@ class AdvertisementUpdateForm(forms.ModelForm):
             return self.fields["image"].help_text
 
         if ad_type.image_width and ad_type.image_height:
-            return _("Sized to %(width)s * %(height)s") % {
-                "width": ad_type.image_width,
-                "height": ad_type.image_height,
-            }
+            return _(
+                "To replace the existing image, choose a new one sized to %(width)spx * %(height)spx."
+            ) % {"width": ad_type.image_width, "height": ad_type.image_height}
 
         # This is not recommended!
         return _("Any image size is supported")
@@ -105,6 +105,7 @@ class AdvertisementUpdateForm(forms.ModelForm):
     class Meta:
         model = Advertisement
         fields = ("name", "live", "image", "link", "text")
+        widgets = {"image": FileInput()}
 
 
 class AdvertisementCreateForm(AdvertisementUpdateForm):
