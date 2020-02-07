@@ -97,7 +97,7 @@
       {% endif %}
       {% if flight.campaign.campaign_type == 'paid' and flight.live %}
         <dt>{% trans 'Value remaining' %}</dt>
-        <dd>${{ flight.value_remaining|floatformat:2 }}</dd>
+        <dd>${{ flight.value_remaining|floatformat:2 }} / ${{ flight.projected_total_value|floatformat:2 }}</dd>
       {% endif %}
       {% if flight.cpc %}
         <dt>{% trans 'Cost per click (CPC)' %}</dt>

@@ -573,8 +573,26 @@ class TestAdModels(TestCase):
             self.ad.incr(VIEWS, self.publisher)
 
         self.flight.refresh_from_db()
-
         self.assertAlmostEqual(self.flight.value_remaining(), 5.0 - (25 * 0.05))
+
+    def test_projected_total_value(self):
+        self.assertAlmostEqual(self.flight.projected_total_value(), 1000 * 2)
+
+        # Clicks don't affect the projected total value
+        self.ad.incr(CLICKS, self.publisher)
+        self.ad.incr(CLICKS, self.publisher)
+        self.ad.incr(CLICKS, self.publisher)
+
+        self.flight.refresh_from_db()
+        self.assertAlmostEqual(self.flight.projected_total_value(), 1000 * 2)
+
+        self.flight.cpm = 50.0
+        self.flight.cpc = 0
+        self.flight.sold_clicks = 0
+        self.flight.sold_impressions = 100
+        self.flight.save()
+
+        self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
 
 
 class DecisionEngineTests(TestCase):

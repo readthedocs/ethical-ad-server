@@ -229,11 +229,8 @@ class FlightMixin:
     def value_remaining(self, obj):
         return "${:.2f}".format(obj.value_remaining())
 
-    def total_value(self, obj):
-        total = 0.0
-        total += float(obj.cpm * obj.total_views) / 1000.0
-        total += float(obj.cpc * obj.total_clicks)
-        return "${:.2f}".format(total)
+    def projected_total_value(self, obj):
+        return "${:.2f}".format(obj.projected_total_value())
 
     def ctr(self, obj):
         clicks = obj.total_clicks
@@ -282,7 +279,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
     list_select_related = ("campaign",)
     readonly_fields = (
         "value_remaining",
-        "total_value",
+        "projected_total_value",
         "total_clicks",
         "total_views",
         "clicks_today",
@@ -320,8 +317,7 @@ class FlightsInline(FlightMixin, admin.TabularInline):
         "sold_impressions",
         "cpc",
         "cpm",
-        "clicks_remaining",
-        "views_remaining",
+        "value_remaining",
         "total_clicks",
         "total_views",
         "ctr",
