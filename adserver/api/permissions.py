@@ -19,7 +19,7 @@ class AdvertiserPermission(permissions.IsAuthenticated):
     """
 
     def has_object_permission(self, request, view, obj):
-        if not isinstance(obj, Advertiser):
+        if not isinstance(obj, Advertiser) or request.user.is_anonymous():
             return False
 
         advertiser = obj
@@ -39,7 +39,7 @@ class PublisherPermission(permissions.IsAuthenticated):
     """
 
     def has_object_permission(self, request, view, obj):
-        if not isinstance(obj, Publisher):
+        if not isinstance(obj, Publisher) or request.user.is_anonymous():
             return False
 
         publisher = obj

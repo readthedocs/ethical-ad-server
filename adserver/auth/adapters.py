@@ -5,4 +5,4 @@ from allauth.account.adapter import DefaultAccountAdapter
 class AdServerAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
         """Open user registration is disabled."""
-        return False
+        return False  # pragma: no cover

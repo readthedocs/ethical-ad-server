@@ -40,12 +40,12 @@ class TargetingParametersValidator(BaseValidator):
             self.message = message
 
     def __call__(self, value):
-        if value:
-            if not isinstance(value, dict):
-                raise ValidationError(
-                    self.messages["invalid_type"], params={"type": type(value)}
-                )
+        if not isinstance(value, dict):
+            raise ValidationError(
+                self.messages["invalid_type"], params={"type": type(value)}
+            )
 
+        if value:
             for key in value:
                 if key not in self.validators:
                     raise ValidationError(

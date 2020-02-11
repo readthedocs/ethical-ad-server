@@ -5,6 +5,21 @@ plugins =
 source =
     adserver
     templates
+omit =
+    # Skip django AppConfig files
+    */apps.py
+    */tests.py
+    */tests/*
+
+    # Skip local virtual and tox environments
+    */.tox/*
+    */.venv/*
+
+    */migrations/*.py
+    templates/admin/*.html
+    templates/account/*.html
+    templates/includes/*.html
+    adserver/management/commands/adtype-templates/*.html
 
 [report]
 # Regexes for lines to exclude from consideration
