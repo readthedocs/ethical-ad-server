@@ -349,7 +349,7 @@ class Campaign(TimeStampedModel, IndestructibleModel):
                 days[impression.date]["cost"], days[impression.date]["views"]
             )
 
-        report["days"] = days.values()
+        report["days"] = list(days.values())
 
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
@@ -536,26 +536,6 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def days_remaining(self):
         """Number of days left in a flight."""
         return max(0, (self.end_date - get_ad_day().date()).days)
-
-    def views_per_day(self):
-        if not self.live:
-            return 0
-
-        days_left = self.days_remaining()
-        if days_left <= 0:
-            return self.views_remaining()
-
-        return self.views_remaining() // days_left
-
-    def clicks_per_day(self):
-        if not self.live:
-            return 0
-
-        days_left = self.days_remaining()
-        if days_left <= 0:
-            return self.clicks_remaining()
-
-        return self.clicks_remaining() // days_left
 
     def views_today(self):
         # Check for a cached value that would come from an annotated queryset
@@ -1124,23 +1104,19 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         return report
 
-    def detail_report(self, start_date, end_date=None):
-        report = {
-            "country_breakdown": Counter(Unknown=0),
-            "language_breakdown": Counter(Unknown=0),
-        }
+    def country_click_breakdown(self, start_date, end_date=None):
+        report = Counter()
 
         clicks = self.clicks.filter(date__gte=start_date)
         if end_date:
             clicks = clicks.filter(date__lte=end_date)
 
         for click in clicks:
-            language = country = "Unknown"
+            country = "Unknown"
 
             if click.country:
                 country = str(click.country.name)
-            report["country_breakdown"][country] += 1
-            report["language_breakdown"][language] += 1
+            report[country] += 1
 
         return report
 

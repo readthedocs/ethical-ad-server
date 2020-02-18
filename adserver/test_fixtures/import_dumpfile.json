@@ -77,7 +77,27 @@
       "cpm": "0.00",
       "sold_impressions": 0,
       "campaign": 1,
-      "targeting_parameters": "{}"
+      "targeting_parameters": "{\"exclude_programming_languages\": [\"python\"]}"
+    }
+  },
+  {
+    "model": "donate.flight",
+    "pk": 2,
+    "fields": {
+      "pub_date": "2018-03-26T23:36:36.847Z",
+      "modified_date": "2018-03-28T23:10:53.624Z",
+      "name": "House Flight 2",
+      "slug": "house-flight-2",
+      "start_date": "2016-04-07",
+      "end_date": "2016-05-07",
+      "live": false,
+      "priority_multiplier": 1,
+      "cpc": "0.00",
+      "sold_clicks": 0,
+      "cpm": "0.00",
+      "sold_impressions": 0,
+      "campaign": 1,
+      "targeting_parameters": "{\"include_projects\": [123], \"include_programming_languages\": [\"py\"]}"
     }
   },
   {
