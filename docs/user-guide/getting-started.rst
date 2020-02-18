@@ -31,8 +31,8 @@ Publishers
 Campaigns
     Campaigns generally represents a group of ad flights from an advertiser.
     No ad targeting is done at the campaign level.
-    While most campaigns are probably "paid" campaigns, it's possible to have "house" or "community" campaigns
-    which usually have a lower priority than paid.
+    While most campaigns are "paid", ad server admins can configure "affiliate", "house" or "community" campaigns
+    which have a lower priority than paid (Paid > Affiliate > Community > House).
     Most advertisers will only have 1 campaign (but multiple Flights) although sometimes multiple are needed
     if the advertiser has both "paid" and "community" ads or if they want to have
     different campaigns for different Publishers.

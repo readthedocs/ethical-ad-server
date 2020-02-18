@@ -274,7 +274,13 @@ class Campaign(TimeStampedModel, IndestructibleModel):
     )
 
     campaign_type = models.CharField(
-        _("Campaign Type"), max_length=20, choices=CAMPAIGN_TYPES, default=PAID_CAMPAIGN
+        _("Campaign Type"),
+        max_length=20,
+        choices=CAMPAIGN_TYPES,
+        default=PAID_CAMPAIGN,
+        help_text=_(
+            "Most campaigns are paid but ad server admins can configure other lower priority campaign types."
+        ),
     )
 
     class Meta:
