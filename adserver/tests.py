@@ -223,7 +223,7 @@ class UtilsTest(TestCase):
         self.assertIsNone(get_geolocation("invalid-ip"))
 
         with mock.patch("adserver.utils.geoip") as geoip:
-            geoip.city = lambda x: {
+            geoip.city.return_value = {
                 "country_code": "FR",
                 "region": None,
                 "dma_code": None,
@@ -258,11 +258,13 @@ class UtilsTest(TestCase):
         )
 
         with mock.patch("adserver.utils.analytical") as analytical:
-            analytical.provider = mock.MagicMock()
+            analytical.Provider = mock.MagicMock()
 
             analytics_event(uip="7.7.7.7", ua="")
             analytics_event(uip="7.7.7.7", ua=ua)
             analytics_event(param="value")
+
+            self.assertTrue(analytical.Provider.called)
 
 
 class FormTests(TestCase):
@@ -287,6 +289,9 @@ class FormTests(TestCase):
         }
         form = FlightAdminForm(data=data)
         self.assertFalse(form.is_valid())
+        self.assertEquals(
+            form.errors["__all__"], ["A flight cannot have both CPC & CPM"]
+        )
 
         # A flight can't have both a CPC & CPM
         data["cpc"] = 0.0
@@ -345,6 +350,19 @@ class FormTests(TestCase):
         form = AdvertisementUpdateForm(data=data, instance=self.ad)
         self.assertFalse(form.is_valid())
 
+        # This is a non-field error since it depends on the ad type
+        self.assertEquals(
+            form.errors["__all__"],
+            [
+                AdvertisementValidator.messages["text_too_long"]
+                % {
+                    "ad_type": str(self.ad.ad_type),
+                    "ad_type_max_chars": self.ad.ad_type.max_text_length,
+                    "text_len": len(data["text"]),
+                }
+            ],
+        )
+
     def test_ad_create_form(self):
         data = {
             "name": "Test Ad",
@@ -355,6 +373,7 @@ class FormTests(TestCase):
         }
         form = AdvertisementCreateForm(data=data, flight=self.flight)
         self.assertFalse(form.is_valid())  # Name exists
+        self.assertEquals(form.errors["name"], ["An ad with this name already exists."])
 
         data["name"] = "Another test"
         form = AdvertisementCreateForm(data=data, flight=self.flight)

@@ -44,7 +44,7 @@ class UserModelAndManagerTest(TestCase):
         email1 = "test1@example.com"
         password = "*(FSD&sadflk"
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError, msg="Email must be set"):
             User.objects.create_user(email="", password=password)
 
         user = User.objects.create_user(email=email1, password=password)
@@ -53,11 +53,13 @@ class UserModelAndManagerTest(TestCase):
 
         email2 = "test2@example.com"
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError, msg="Superuser must have is_staff=True."):
             User.objects.create_superuser(
                 email=email2, password=password, is_staff=False
             )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(
+            ValueError, msg="Superuser must have is_superuser=True."
+        ):
             User.objects.create_superuser(
                 email=email2, password=password, is_superuser=False
             )
