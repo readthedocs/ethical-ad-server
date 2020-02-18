@@ -6,7 +6,10 @@ import os
 import re
 from unittest import mock
 
+import pytz
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.gis.geoip2 import GeoIP2Exception
 from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -19,14 +22,18 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
+from geoip2.errors import AddressNotFoundError
 from rest_framework.authtoken.models import Token
 
+from .api.permissions import AdvertiserPermission
+from .api.permissions import PublisherPermission
 from .constants import AFFILIATE_CAMPAIGN
 from .constants import CLICKS
 from .constants import COMMUNITY_CAMPAIGN
 from .constants import HOUSE_CAMPAIGN
 from .constants import PAID_CAMPAIGN
 from .constants import VIEWS
+from .decisionengine import get_ad_decision_backend
 from .decisionengine.backends import AdvertisingDisabledBackend
 from .decisionengine.backends import AdvertisingEnabledBackend
 from .decisionengine.backends import ProbabilisticFlightBackend
@@ -42,16 +49,31 @@ from .models import Click
 from .models import Flight
 from .models import Publisher
 from .models import View
+from .utils import analytics_event
 from .utils import anonymize_ip_address
 from .utils import anonymize_user_agent
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_client_id
 from .utils import GeolocationTuple
 from .utils import get_ad_day
+from .utils import get_client_id
+from .utils import get_client_user_agent
+from .utils import get_geolocation
 from .utils import is_blacklisted_user_agent
 from .utils import is_click_ratelimited
+from .utils import parse_date_string
 from .validators import AdvertisementValidator
 from .validators import TargetingParametersValidator
+from .views import FlightListView
+
+
+ONE_PIXEL_PNG_BYTES = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00"
+    b"\x01\x08\x04\x00\x00\x00\xb5\x1c\x0c\x02\x00\x00\x00\x0bIDATx"
+    b"\x9cc\xfa\xcf\x00\x00\x02\x07\x01\x02\x9a\x1c1q\x00\x00\x00"
+    b"\x00IEND\xaeB`\x82"
+)
 
 
 class DoNotTrackTest(TestCase):
@@ -106,6 +128,8 @@ class UtilsTest(TestCase):
         self.assertIsInstance(day, datetime.datetime)
 
     def test_anonymize_ip(self):
+        self.assertIsNone(anonymize_ip_address("invalid-ip"))
+
         self.assertEqual(anonymize_ip_address("127.0.0.1"), "127.0.0.0")
         self.assertEqual(anonymize_ip_address("127.127.127.127"), "127.127.0.0")
         self.assertEqual(
@@ -136,12 +160,6 @@ class UtilsTest(TestCase):
         self.assertAlmostEqual(calculate_ctr(1, 10), 10)
         self.assertAlmostEqual(calculate_ctr(5, 25), 20)
 
-    def test_calculate_ctr(self):
-        self.assertAlmostEqual(calculate_ctr(100, 0), 0)
-        self.assertAlmostEqual(calculate_ctr(1, 1), 100)
-        self.assertAlmostEqual(calculate_ctr(1, 10), 10)
-        self.assertAlmostEqual(calculate_ctr(5, 25), 20)
-
     def test_blacklisted_user_agent(self):
         ua = (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) "
@@ -151,6 +169,9 @@ class UtilsTest(TestCase):
         self.assertFalse(is_blacklisted_user_agent(ua))
         regexes = [re.compile("Chrome")]
         self.assertTrue(is_blacklisted_user_agent(ua, regexes))
+
+        regexes = [re.compile("this isn't found"), re.compile("neither is this")]
+        self.assertFalse(is_blacklisted_user_agent(ua, regexes))
 
     def test_ratelimited(self):
         factory = RequestFactory()
@@ -163,10 +184,93 @@ class UtilsTest(TestCase):
         self.assertFalse(is_click_ratelimited(request, ratelimits))
         self.assertTrue(is_click_ratelimited(request, ratelimits))
 
+    def test_generate_client_id(self):
+        hexdigest1 = generate_client_id("8.8.8.8", "Mac OS, Safari, 10.x.x")
+        hexdigest2 = generate_client_id("8.8.8.8", "Mac OS, Safari, 11.x.x")
+        self.assertNotEqual(hexdigest1, hexdigest2)
+
+        hexdigest3 = generate_client_id("", "")
+        hexdigest4 = generate_client_id("", "")
+        self.assertNotEqual(hexdigest3, hexdigest4)
+
+    def test_get_client_id(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        self.assertIsNotNone(get_client_id(request))
+
+        client_id = "a-test-id"
+        request.advertising_client_id = client_id
+        self.assertEqual(get_client_id(request), client_id)
+
+    def test_get_client_ua(self):
+        ua = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+        )
+
+        factory = RequestFactory(HTTP_USER_AGENT=ua)
+        request = factory.get("/")
+
+        self.assertEqual(get_client_user_agent(request), ua)
+
+        # Force the ua
+        forced_ua = "Test-UA"
+        request.user_agent = forced_ua
+        self.assertEqual(get_client_user_agent(request), forced_ua)
+
+    def test_geolocation(self):
+        """The GeoIP database is not available in CI."""
+        self.assertIsNone(get_geolocation("invalid-ip"))
+
+        with mock.patch("adserver.utils.geoip") as geoip:
+            geoip.city.return_value = {
+                "country_code": "FR",
+                "region": None,
+                "dma_code": None,
+            }
+            geolocation = get_geolocation("8.8.8.8")
+            self.assertIsNotNone(geolocation)
+            self.assertEqual(geolocation["country_code"], "FR")
+
+        with mock.patch("adserver.utils.geoip") as geoip:
+            geoip.city.side_effect = AddressNotFoundError()
+            self.assertIsNone(get_geolocation("8.8.8.8"))
+
+        with mock.patch("adserver.utils.geoip") as geoip:
+            geoip.city.side_effect = GeoIP2Exception()
+            self.assertIsNone(get_geolocation("8.8.8.8"))
+
+    def test_parse_date_string(self):
+        self.assertIsNone(parse_date_string("not-a-date"))
+        self.assertIsNone(parse_date_string(""))
+        self.assertIsNone(parse_date_string(None))
+
+        self.assertEqual(
+            parse_date_string("2020-01-01"),
+            datetime.datetime(year=2020, month=1, day=1, tzinfo=pytz.utc),
+        )
+
+    @override_settings(ADSERVER_ANALYTICS_ID="FAKE-XXXXX-1")
+    def test_analytics_event(self):
+        ua = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+        )
+
+        with mock.patch("adserver.utils.analytical") as analytical:
+            analytical.Provider = mock.MagicMock()
+
+            analytics_event(uip="7.7.7.7", ua="")
+            analytics_event(uip="7.7.7.7", ua=ua)
+            analytics_event(param="value")
+
+            self.assertTrue(analytical.Provider.called)
+
 
 class FormTests(TestCase):
     def setUp(self):
-        self.campaign = get(Campaign, name="Test Campaign")
+        self.campaign = get(Campaign, name="Test Campaign", slug="test-campaign")
         self.flight = get(Flight, name="Test Flight", campaign=self.campaign)
         self.ad = get(Advertisement, name="Test Ad", flight=self.flight)
 
@@ -186,6 +290,9 @@ class FormTests(TestCase):
         }
         form = FlightAdminForm(data=data)
         self.assertFalse(form.is_valid())
+        self.assertEquals(
+            form.errors["__all__"], ["A flight cannot have both CPC & CPM"]
+        )
 
         # A flight can't have both a CPC & CPM
         data["cpc"] = 0.0
@@ -206,6 +313,57 @@ class FormTests(TestCase):
 
         self.assertEqual(ad.text, "<a>This is a test</a>")
 
+    def test_ad_update_ad_type(self):
+        text_ad_type = get(AdType, has_text=True, max_text_length=100, has_image=False)
+        image_ad_type = get(
+            AdType, has_text=True, has_image=True, image_height=None, image_width=None
+        )
+
+        self.ad.ad_type = image_ad_type
+        self.ad.save()
+
+        data = {
+            "name": "Test Ad",
+            "link": "http://example.com",
+            "image": SimpleUploadedFile(
+                name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
+            ),
+            "live": True,
+            "text": "This is a test",
+        }
+
+        # Valid - image is present
+        form = AdvertisementUpdateForm(data=data, instance=self.ad)
+        self.assertTrue(form.is_valid())
+
+        self.ad.ad_type = text_ad_type
+        self.ad.image = None
+        self.ad.save()
+
+        # Valid - image is ignored
+        form = AdvertisementUpdateForm(data=data, instance=self.ad)
+        self.assertTrue(form.is_valid())
+
+        self.ad.ad_type.max_text_length = 10
+        self.ad.ad_type.save()
+
+        # Invalid - text too long
+        form = AdvertisementUpdateForm(data=data, instance=self.ad)
+        self.assertFalse(form.is_valid())
+
+        # This is a non-field error since it depends on the ad type
+        self.assertEquals(
+            form.errors["__all__"],
+            [
+                AdvertisementValidator.messages["text_too_long"]
+                % {
+                    "ad_type": str(self.ad.ad_type),
+                    "ad_type_max_chars": self.ad.ad_type.max_text_length,
+                    "text_len": len(data["text"]),
+                }
+            ],
+        )
+
     def test_ad_create_form(self):
         data = {
             "name": "Test Ad",
@@ -216,10 +374,36 @@ class FormTests(TestCase):
         }
         form = AdvertisementCreateForm(data=data, flight=self.flight)
         self.assertFalse(form.is_valid())  # Name exists
+        self.assertEquals(form.errors["name"], ["An ad with this name already exists."])
 
         data["name"] = "Another test"
         form = AdvertisementCreateForm(data=data, flight=self.flight)
         self.assertTrue(form.is_valid())
+
+        ad = form.save()
+        self.assertEqual(ad.flight, self.flight)
+        self.assertEqual(ad.slug, "test-campaign-another-test")
+        self.assertEqual(ad.name, data["name"])
+        self.assertEqual(ad.text, "<a>This is a test</a>")
+
+        # Another test that would cause a slug collision
+        data["name"] = "Another test!!"
+        form = AdvertisementCreateForm(data=data, flight=self.flight)
+        self.assertTrue(form.is_valid())
+        ad = form.save()
+        self.assertEqual(ad.flight, self.flight)
+        self.assertEqual(ad.name, data["name"])
+        self.assertNotEqual(ad.slug, "test-campaign-another-test")
+        self.assertTrue(ad.slug.startswith("test-campaign-another-test-"))
+
+        # Another with no need to rewrite the slug
+        data["name"] = "Test Campaign Third Test"
+        data["text"] = "a <a>test</a>"
+        form = AdvertisementCreateForm(data=data, flight=self.flight)
+        self.assertTrue(form.is_valid())
+        ad = form.save()
+        self.assertEqual(ad.slug, "test-campaign-third-test")
+        self.assertEqual(ad.text, data["text"])
 
 
 class TestValidators(TestCase):
@@ -234,18 +418,12 @@ class TestValidators(TestCase):
             flight=self.flight,
         )
 
-        one_pixel_png_bytes = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00"
-            b"\x01\x08\x04\x00\x00\x00\xb5\x1c\x0c\x02\x00\x00\x00\x0bIDATx"
-            b"\x9cc\xfa\xcf\x00\x00\x02\x07\x01\x02\x9a\x1c1q\x00\x00\x00"
-            b"\x00IEND\xaeB`\x82"
-        )
         self.image = SimpleUploadedFile(
-            name="test.png", content=one_pixel_png_bytes, content_type="image/png"
+            name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
         )
 
     def test_targeting_validator(self):
-        validator = TargetingParametersValidator()
+        validator = TargetingParametersValidator(message="Test Message")
 
         # Ok
         validator({})
@@ -273,18 +451,21 @@ class TestValidators(TestCase):
         )
 
         # Invalid
+        self.assertRaises(ValidationError, validator, "str")
+        self.assertRaises(ValidationError, validator, [])
         self.assertRaises(ValidationError, validator, {"include_countries": "ZZ"})
         self.assertRaises(ValidationError, validator, {"include_keywords": [1]})
         self.assertRaises(
             ValidationError, validator, {"include_state_provinces": ["USA"]}
         )
+        self.assertRaises(ValidationError, validator, {"include_metro_codes": ["USA"]})
 
     def test_ad_validator(self):
         text_ad_type = get(AdType, has_text=True, max_text_length=10, has_image=False)
         image_ad_type = get(
             AdType, has_text=False, has_image=True, image_height=None, image_width=None
         )
-        validator = AdvertisementValidator()
+        validator = AdvertisementValidator(message="Test message")
 
         # Ok
         validator(self.ad)
@@ -293,9 +474,18 @@ class TestValidators(TestCase):
         self.ad.ad_type = text_ad_type
         validator(self.ad)
 
+        # Text ad with image
+        self.ad.image = self.image
+        self.assertRaises(ValidationError, validator, self.ad)
+        self.ad.image = None
+        validator(self.ad)
+
         # Text too long
         self.ad.text = "*" * 100
         self.assertRaises(ValidationError, validator, self.ad)
+        self.ad.ad_type.max_text_length = None
+        self.ad.ad_type.save()
+        validator(self.ad)
 
         # Invalid tags
         self.ad.text = "<script /><b>Hi</b>"
@@ -307,9 +497,9 @@ class TestValidators(TestCase):
         self.ad.ad_type = image_ad_type
         self.assertRaises(ValidationError, validator, self.ad)
         self.ad.image = self.image
+        validator(self.ad)
 
         # Ok
-        validator(self.ad)
         image_ad_type.image_height = 1
         image_ad_type.image_width = 1
         validator(self.ad)
@@ -320,41 +510,13 @@ class TestValidators(TestCase):
         self.assertRaises(ValidationError, validator, self.ad)
 
 
-class TestProtectedModels(TestCase):
-
-    """Test that models extending IndestructibleModel can't be deleted"""
-
-    def setUp(self):
-        self.campaign = get(Campaign, name="Test Campaign")
-
-        self.flight = get(Flight, name="Test Flight", campaign=self.campaign)
-
-        self.ad = get(
-            Advertisement,
-            slug="ad-slug",
-            link="http://example.com",
-            text="<a>test</a>",
-            image=None,
-            ad_type=None,
-            live=True,
-            flight=self.flight,
-        )
-
-    def test_delete_model(self):
-        self.assertRaises(IntegrityError, self.ad.delete)
-        self.assertRaises(IntegrityError, self.campaign.delete)
-        self.assertRaises(IntegrityError, self.flight.delete)
-
-    def test_queryset(self):
-        self.assertRaises(IntegrityError, Advertisement.objects.all().delete)
-        self.assertRaises(IntegrityError, Flight.objects.all().delete)
-        self.assertRaises(IntegrityError, Campaign.objects.all().delete)
-
-
-class TestAdModels(TestCase):
+class BaseAdModelsTestCase(TestCase):
     def setUp(self):
         self.publisher = get(Publisher)
-        self.campaign = get(Campaign, publishers=[self.publisher])
+        self.advertiser = get(Advertiser)
+        self.campaign = get(
+            Campaign, advertiser=self.advertiser, publishers=[self.publisher]
+        )
         self.flight = get(
             Flight,
             live=True,
@@ -365,10 +527,10 @@ class TestAdModels(TestCase):
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
             targeting_parameters={},
         )
-        self.ad = get(
+        self.ad1 = get(
             Advertisement,
-            name="promo slug",
-            slug="ad-slug",
+            name="Ad name 1",
+            slug="ad-slug-1",
             link="http://example.com",
             live=True,
             image=None,
@@ -376,7 +538,44 @@ class TestAdModels(TestCase):
             text="<b>Test</b>",
             flight=self.flight,
         )
+        self.ad2 = get(
+            Advertisement,
+            name="Ad name 2",
+            slug="ad-slug-2",
+            link="http://example.com",
+            live=True,
+            image=SimpleUploadedFile(
+                name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
+            ),
+            ad_type=None,
+            text="<b>Test</b>",
+            flight=self.flight,
+        )
 
+        self.staff_user = get(
+            get_user_model(),
+            is_staff=True,
+            is_superuser=True,
+            email="test-admin@example.com",
+        )
+
+
+class TestProtectedModels(BaseAdModelsTestCase):
+
+    """Test that models extending IndestructibleModel can't be deleted"""
+
+    def test_delete_model(self):
+        self.assertRaises(IntegrityError, self.ad1.delete)
+        self.assertRaises(IntegrityError, self.campaign.delete)
+        self.assertRaises(IntegrityError, self.flight.delete)
+
+    def test_queryset(self):
+        self.assertRaises(IntegrityError, Advertisement.objects.all().delete)
+        self.assertRaises(IntegrityError, Flight.objects.all().delete)
+        self.assertRaises(IntegrityError, Campaign.objects.all().delete)
+
+
+class TestAdModels(BaseAdModelsTestCase):
     def test_geo_include(self):
         # Show to countries if no targeting/excludes
         self.assertTrue(self.flight.show_to_geo("US"))
@@ -470,50 +669,86 @@ class TestAdModels(TestCase):
     def test_ad_broken_html(self):
         # Ensures the ad validator is called from the save method
         text = "<a>noendtag"
-        self.ad.text = text
-        self.ad.save()
-        self.assertEqual(self.ad.text, text + "</a>")
+        self.ad1.text = text
+        self.ad1.save()
+        self.assertEqual(self.ad1.text, text + "</a>")
 
     def test_ad_malicious_html(self):
-        self.ad.text = '<script>alert("foo")</script>'
-        self.ad.save()
-        self.assertEqual(self.ad.text, 'alert("foo")')
+        self.ad1.text = '<script>alert("foo")</script>'
+        self.ad1.save()
+        self.assertEqual(self.ad1.text, 'alert("foo")')
 
     def test_ad_remove_inline_style(self):
-        self.ad.text = '<b style="color: red">text</b>'
-        self.ad.save()
-        self.assertEqual(self.ad.text, "<b>text</b>")
+        self.ad1.text = '<b style="color: red">text</b>'
+        self.ad1.save()
+        self.assertEqual(self.ad1.text, "<b>text</b>")
 
     def test_render_ad(self):
-        self.assertIn("Test", self.ad.render_ad())
+        self.assertIn("<b>Test</b>", self.ad1.render_ad())
 
-        ad_type = get(
+        ad_type1 = get(
+            AdType,
+            template=None,
+            has_image=True,
+            max_text_length=100,
+            image_height=None,
+            image_width=None,
+        )
+
+        self.ad2.ad_type = ad_type1
+        self.ad2.save()
+
+        self.assertIn("ethical-ad", self.ad2.render_ad())
+        self.assertIn("<img", self.ad2.render_ad())
+        self.assertIn("<b>Test</b>", self.ad2.render_ad())
+
+        ad_type2 = get(
             AdType, template="Nothing here", has_image=False, max_text_length=100
         )
-        self.ad.ad_type = ad_type
-        self.ad.save()
+        self.ad1.image = None
+        self.ad1.ad_type = ad_type2
+        self.ad1.save()
 
-        self.assertIn("Nothing here", self.ad.render_ad())
-        self.assertNotIn("Test", self.ad.render_ad())
+        self.assertIn("Nothing here", self.ad1.render_ad())
+        self.assertNotIn("Test", self.ad1.render_ad())
 
     def test_click_view_links_in_render(self):
-        self.ad.text = "<a>Call to Action!</a>"
-        self.ad.save()
+        self.ad1.text = "<a>Call to Action!</a>"
+        self.ad1.save()
 
-        self.assertIn(self.ad.link, self.ad.render_ad())
+        self.assertIn(self.ad1.link, self.ad1.render_ad())
 
         view_url = "http://view.link"
         click_url = "http://view.link"
-        output = self.ad.render_ad(click_url=click_url, view_url=view_url)
+        output = self.ad1.render_ad(click_url=click_url, view_url=view_url)
         self.assertIn(view_url, output)
         self.assertIn(click_url, output)
+
+    def test_ad_country_click_breakdown(self):
+        dt = timezone.now() - datetime.timedelta(days=30)
+        report = self.ad1.country_click_breakdown(dt, timezone.now())
+        self.assertDictEqual(report, {})
+
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        request.ip_address = "127.0.0.1"
+        request.user_agent = "test user agent"
+
+        self.ad1.track_click(request, self.publisher, None)
+        self.ad1.track_click(request, self.publisher, None)
+        self.ad1.track_impression(request, CLICKS, self.publisher, None)
+        self.ad1.track_impression(request, VIEWS, self.publisher, None)  # Doesn't count
+
+        report = self.ad1.country_click_breakdown(dt, timezone.now())
+        self.assertDictEqual(report, {"Unknown": 3})
 
     def test_campaign_totals(self):
         self.assertAlmostEqual(self.campaign.total_value(), 0.0)
 
         # Each click is $2
-        self.ad.incr(CLICKS, self.publisher)
-        self.ad.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
 
         self.assertAlmostEqual(self.campaign.total_value(), 4.0)
 
@@ -546,6 +781,28 @@ class TestAdModels(TestCase):
 
         self.assertAlmostEqual(self.campaign.total_value(), 4.3)
 
+    def test_campaign_daily_report(self):
+        report = self.campaign.daily_reports()
+        self.assertEqual(report["days"], [])
+        self.assertDictEqual(
+            report["total"],
+            {"views": 0, "clicks": 0, "cost": 0.0, "ctr": 0.0, "ecpm": 0.0},
+        )
+
+        self.ad1.incr(CLICKS, self.publisher)  # $2
+        self.ad1.incr(CLICKS, self.publisher)  # $2
+        self.ad1.incr(VIEWS, self.publisher)  # $0
+        self.ad1.incr(VIEWS, self.publisher)
+        self.ad1.incr(VIEWS, self.publisher)
+
+        report = self.campaign.daily_reports()
+        self.assertEqual(len(report["days"]), 1)
+        self.assertAlmostEqual(report["total"]["views"], 3)
+        self.assertAlmostEqual(report["total"]["clicks"], 2)
+        self.assertAlmostEqual(report["total"]["cost"], 4.0)
+        self.assertAlmostEqual(report["total"]["ctr"], 100 * 2 / 3)
+        self.assertAlmostEqual(report["total"]["ecpm"], calculate_ecpm(4.0, 3))
+
     def test_flight_value_remaining(self):
         self.assertAlmostEqual(self.flight.value_remaining(), 1000 * 2)
 
@@ -554,9 +811,9 @@ class TestAdModels(TestCase):
         self.assertAlmostEqual(self.flight.value_remaining(), 100 * 2)
 
         # Each click is worth $2
-        self.ad.incr(CLICKS, self.publisher)
-        self.ad.incr(CLICKS, self.publisher)
-        self.ad.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
 
         self.flight.refresh_from_db()
         self.assertAlmostEqual(self.flight.value_remaining(), 97 * 2)
@@ -571,7 +828,7 @@ class TestAdModels(TestCase):
 
         # Each view is $0.05
         for _ in range(25):
-            self.ad.incr(VIEWS, self.publisher)
+            self.ad1.incr(VIEWS, self.publisher)
 
         self.flight.refresh_from_db()
         self.assertAlmostEqual(self.flight.value_remaining(), 5.0 - (25 * 0.05))
@@ -580,9 +837,9 @@ class TestAdModels(TestCase):
         self.assertAlmostEqual(self.flight.projected_total_value(), 1000 * 2)
 
         # Clicks don't affect the projected total value
-        self.ad.incr(CLICKS, self.publisher)
-        self.ad.incr(CLICKS, self.publisher)
-        self.ad.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
 
         self.flight.refresh_from_db()
         self.assertAlmostEqual(self.flight.projected_total_value(), 1000 * 2)
@@ -594,6 +851,94 @@ class TestAdModels(TestCase):
         self.flight.save()
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
+
+
+class AdModelAdminTests(BaseAdModelsTestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.client.force_login(self.staff_user)
+
+    def test_no_delete(self):
+        change_url = reverse("admin:adserver_publisher_changelist")
+        data = {
+            "action": "delete_selected",
+            "_selected_action": [str(self.publisher.pk)],
+        }
+        response = self.client.post(change_url, data, follow=True)
+
+        self.assertTrue(response.status_code, 200)
+        self.assertTrue(Publisher.objects.filter(pk=self.publisher.pk).exists())
+
+    def test_publisher_admin(self):
+        list_url = reverse("admin:adserver_publisher_changelist")
+        detail_url = reverse(
+            "admin:adserver_publisher_change", args=[self.publisher.pk]
+        )
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_advertiser_admin(self):
+        list_url = reverse("admin:adserver_advertiser_changelist")
+        detail_url = reverse(
+            "admin:adserver_advertiser_change", args=[self.advertiser.pk]
+        )
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_advertisement_admin(self):
+        list_url = reverse("admin:adserver_advertisement_changelist")
+        detail_url = reverse("admin:adserver_advertisement_change", args=[self.ad1.pk])
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_flight_admin(self):
+        list_url = reverse("admin:adserver_flight_changelist")
+        detail_url = reverse("admin:adserver_flight_change", args=[self.flight.pk])
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_campaign_admin(self):
+        list_url = reverse("admin:adserver_campaign_changelist")
+        detail_url = reverse("admin:adserver_campaign_change", args=[self.campaign.pk])
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_adimpression_admin(self):
+        self.ad1.incr(VIEWS, self.publisher)
+        self.ad1.incr(CLICKS, self.publisher)
+        impression = self.ad1.impressions.all().first()
+
+        list_url = reverse("admin:adserver_adimpression_changelist")
+        detail_url = reverse("admin:adserver_adimpression_change", args=[impression.pk])
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
+
+    def test_click_admin(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        self.ad1.track_click(request, self.publisher, "http://example.com")
+        click = Click.objects.all().first()
+
+        list_url = reverse("admin:adserver_click_changelist")
+        detail_url = reverse("admin:adserver_click_change", args=[click.pk])
+
+        for url in (list_url, detail_url):
+            response = self.client.get(url)
+            self.assertTrue(response.status_code, 200)
 
 
 class DecisionEngineTests(TestCase):
@@ -691,10 +1036,14 @@ class DecisionEngineTests(TestCase):
             request=self.request, placements=self.placements, publisher=self.publisher
         )
 
+    @override_settings(ADSERVER_DECISION_BACKEND=None)
     def test_ads_disabled(self):
-        backend = AdvertisingDisabledBackend(
+        # Setting no backend defaults to disabled (settings/base has a non-None default)
+        backend_class = get_ad_decision_backend()
+        backend = backend_class(
             request=self.request, placements=self.placements, publisher=self.publisher
         )
+        self.assertTrue(isinstance(backend, AdvertisingDisabledBackend))
         ad, _ = backend.get_ad_and_placement()
         self.assertIsNone(ad)
 
@@ -1059,6 +1408,108 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(ad, community_ad)
 
 
+class ApiPermissionTest(TestCase):
+    def setUp(self):
+        self.advertiser = get(Advertiser, slug="test-advertiser")
+        self.publisher = get(Publisher, slug="test-publisher")
+
+        self.publisher_permission = PublisherPermission()
+        self.advertiser_permission = AdvertiserPermission()
+
+        self.user = get(get_user_model(), email="test1@example.com")
+        self.staff_user = get(
+            get_user_model(), email="test2@example.com", is_staff=True
+        )
+
+        self.factory = RequestFactory()
+        self.request = self.factory.get("/")
+        self.request.user = AnonymousUser()
+
+    def test_publisher_permission(self):
+        # obj is not a publisher
+        self.assertFalse(
+            self.publisher_permission.has_object_permission(self.request, None, None)
+        )
+        self.assertFalse(
+            self.publisher_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+        # User not authed
+        self.assertFalse(
+            self.publisher_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+        self.request.user = self.user
+
+        # No access on publisher
+        self.assertFalse(
+            self.publisher_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+        self.user.publishers.add(self.publisher)
+
+        self.assertTrue(
+            self.publisher_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+        self.request.user = self.staff_user
+        self.assertTrue(
+            self.publisher_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+    def test_advertiser_permission(self):
+        # obj is not a advertiser
+        self.assertFalse(
+            self.advertiser_permission.has_object_permission(self.request, None, None)
+        )
+        self.assertFalse(
+            self.advertiser_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+        # User not authed
+        self.assertFalse(
+            self.advertiser_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+        self.request.user = self.user
+
+        # No access on publisher
+        self.assertFalse(
+            self.advertiser_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+        self.user.advertisers.add(self.advertiser)
+
+        self.assertTrue(
+            self.advertiser_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+        self.request.user = self.staff_user
+        self.assertTrue(
+            self.advertiser_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+
 class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
@@ -1087,10 +1538,18 @@ class BaseApiTest(TestCase):
         self.token = Token.objects.create(user=self.user)
         self.url = reverse("api:decision")
 
+        self.staff_user = get(
+            get_user_model(), email="test-staff@example.com", is_staff=True
+        )
+        self.staff_token = Token.objects.create(user=self.staff_user)
+
         self.ip_address = "8.8.8.8"
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
 
         self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
+        self.staff_client = Client(
+            HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
+        )
 
 
 class AdDecisionApiTests(BaseApiTest):
@@ -1121,6 +1580,13 @@ class AdDecisionApiTests(BaseApiTest):
             self.url, json.dumps(self.data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 401)
+
+    def test_no_placements(self):
+        self.data["placements"] = []
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
 
     def test_not_live(self):
         self.ad.live = False
@@ -1285,11 +1751,18 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
         # try an invalid campaign type
-        data["campaign_types"] = ["unknown"]
+        data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN, "unknown"]
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 400, resp.content)
+
+        # No campaign type -> all campaign types are valid
+        data["campaign_types"] = []
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
 
     def test_keywords(self):
         data = {
@@ -1298,6 +1771,15 @@ class AdDecisionApiTests(BaseApiTest):
             "campaign_types": [PAID_CAMPAIGN],
             "keywords": [""],  # Blank keyword - should be ok
         }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Empty keywords should be fine too
+        data["keywords"] = []
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1375,6 +1857,14 @@ class AdvertiserApiTests(BaseApiTest):
             resp = self.client.get(url, content_type="application/json")
             self.assertEqual(resp.status_code, 200, resp.content)
 
+        # Staff also has access
+        resp = self.staff_client.get(
+            self.advertiser_list_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 2)
+
     def test_advertiser_report(self):
         resp = self.client.get(
             self.advertiser1_report_url, content_type="application/json"
@@ -1420,6 +1910,25 @@ class AdvertiserApiTests(BaseApiTest):
             len(data["flights"][0]["advertisements"][0]["report"]["days"]), 1
         )
 
+        # Check with a specified start date
+        start_date = (timezone.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        resp = self.client.get(
+            self.advertiser1_report_url,
+            data={"start_date": start_date},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["days"], [])
+        self.assertEqual(data["total"]["clicks"], 0)
+        self.assertEqual(data["total"]["views"], 0)
+
+        # Staff also has access
+        resp = self.staff_client.get(
+            self.advertiser1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
 
 class PublisherApiTests(BaseApiTest):
     def setUp(self):
@@ -1462,6 +1971,12 @@ class PublisherApiTests(BaseApiTest):
             resp = self.client.get(url, content_type="application/json")
             self.assertEqual(resp.status_code, 200, resp.content)
 
+        # Staff also has access
+        resp = self.staff_client.get(
+            self.publisher_list_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
     def test_publisher_report(self):
         resp = self.client.get(
             self.publisher1_report_url, content_type="application/json"
@@ -1487,6 +2002,25 @@ class PublisherApiTests(BaseApiTest):
         data = resp.json()
         self.assertEqual(data["total"]["clicks"], 1)
         self.assertEqual(data["total"]["views"], 2)
+
+        # Check with a specified start date
+        start_date = (timezone.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        resp = self.client.get(
+            self.publisher1_report_url,
+            data={"start_date": start_date},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["days"], [])
+        self.assertEqual(data["total"]["clicks"], 0)
+        self.assertEqual(data["total"]["views"], 0)
+
+        # Staff also has access
+        resp = self.staff_client.get(
+            self.publisher1_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
 
 
 class AdvertisingIntegrationTests(BaseApiTest):
@@ -1551,7 +2085,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.views, 0)
 
     def test_ad_click_and_tracking(self):
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1754,12 +2293,62 @@ class TestAdvertiserCrudViews(TestCase):
             name="Test Campaign",
             slug="test-campaign",
             advertiser=self.advertiser,
+            campaign_type=PAID_CAMPAIGN,
         )
         self.flight = get(
-            Flight, name="Test Flight", slug="test-flight", campaign=self.campaign
+            Flight,
+            name="Test Flight",
+            slug="test-flight",
+            campaign=self.campaign,
+            live=True,
+            cpc=2.0,
+            sold_clicks=2000,
+            targeting_parameters={
+                "include_countries": ["US", "CA"],
+                "exclude_countries": ["DE"],
+                "include_keywords": ["python"],
+                "include_metro_codes": [205],
+                "include_state_provinces": ["CA", "NY"],
+            },
         )
-        self.ad_type = get(AdType, name="Ad Type", has_image=False)
-        self.ad = get(Advertisement, name="Test Ad", slug="test-ad", flight=self.flight)
+        self.ad_type1 = get(AdType, name="Ad Type", has_image=False)
+        self.ad1 = get(
+            Advertisement,
+            name="Test Ad 1",
+            slug="test-ad-1",
+            flight=self.flight,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        self.ad_type2 = get(
+            AdType,
+            name="Ad Type 2",
+            has_image=True,
+            image_height=None,
+            image_width=None,
+            max_text_length=1000,
+            allowed_html_tags="",
+        )
+        self.ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight,
+            ad_type=self.ad_type2,
+            image=SimpleUploadedFile(
+                name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
+            ),
+        )
+
+        self.ad3 = get(
+            Advertisement,
+            name="Test Ad 3",
+            slug="test-ad-3",
+            flight=self.flight,
+            ad_type=None,
+            image=None,
+        )
 
         self.user = get(
             get_user_model(), username="test-user", advertisers=[self.advertiser]
@@ -1772,6 +2361,15 @@ class TestAdvertiserCrudViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Trigger pagination of flights
+        for i in range(FlightListView.PER_PAGE * 2):
+            get(
+                Flight,
+                name=f"Test Flight {i}",
+                slug=f"test-flight-{i}",
+                campaign=self.campaign,
+            )
 
         self.client.force_login(self.user)
         response = self.client.get(url)
@@ -1795,7 +2393,18 @@ class TestAdvertiserCrudViews(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.ad.name)
+        self.assertContains(response, self.ad1.name)
+
+        # Set to a CPM flight
+        self.flight.cpm = 2.0
+        self.flight.cpc = 0
+        self.flight.sold_clicks = 0
+        self.flight.sold_impressions = 10000
+        self.flight.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad1.name)
 
     def test_ad_detail_view(self):
         url = reverse(
@@ -1803,7 +2412,7 @@ class TestAdvertiserCrudViews(TestCase):
             kwargs={
                 "advertiser_slug": self.advertiser.slug,
                 "flight_slug": self.flight.slug,
-                "advertisement_slug": self.ad.slug,
+                "advertisement_slug": self.ad1.slug,
             },
         )
 
@@ -1815,7 +2424,7 @@ class TestAdvertiserCrudViews(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.ad.name)
+        self.assertContains(response, self.ad1.name)
 
     def test_ad_update_view(self):
         url = reverse(
@@ -1823,7 +2432,7 @@ class TestAdvertiserCrudViews(TestCase):
             kwargs={
                 "advertiser_slug": self.advertiser.slug,
                 "flight_slug": self.flight.slug,
-                "advertisement_slug": self.ad.slug,
+                "advertisement_slug": self.ad1.slug,
             },
         )
 
@@ -1835,7 +2444,7 @@ class TestAdvertiserCrudViews(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.ad.name)
+        self.assertContains(response, self.ad1.name)
 
         data = {
             "name": "New Name",
@@ -1848,8 +2457,36 @@ class TestAdvertiserCrudViews(TestCase):
         self.assertEqual(response.status_code, 302)
 
         # Verify the DB was updated
-        self.ad.refresh_from_db()
-        self.assertEqual(self.ad.name, data["name"])
+        self.ad1.refresh_from_db()
+        self.assertEqual(self.ad1.name, data["name"])
+
+        # Check an ad that accepts any image size
+        url2 = reverse(
+            "advertisement_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad2.slug,
+            },
+        )
+        response = self.client.get(url2)
+        self.assertContains(response, self.ad2.name)
+        self.assertContains(response, "Any image size is supported")
+
+        # Check an ad with no ad-type
+        url3 = reverse(
+            "advertisement_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad3.slug,
+            },
+        )
+
+        response = self.client.get(url3)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad3.name)
+        self.assertContains(response, "Sized according to the ad type")
 
     def test_ad_create_view(self):
         url = reverse(
@@ -1876,7 +2513,7 @@ class TestAdvertiserCrudViews(TestCase):
             "link": "http://example.com",
             "text": "Sample text",
             "image": None,
-            "ad_type": self.ad_type.pk,
+            "ad_type": self.ad_type1.pk,
         }
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 302)
@@ -1900,8 +2537,72 @@ class TestReportViews(TestCase):
         self.publisher1 = get(Publisher, slug="test-publisher")
         self.publisher2 = get(Publisher, slug="another-publisher")
 
-        self.user = get(get_user_model(), username="test-user")
+        self.campaign = get(
+            Campaign,
+            name="Test Campaign",
+            slug="test-campaign",
+            advertiser=self.advertiser1,
+            campaign_type=PAID_CAMPAIGN,
+        )
+        self.flight = get(
+            Flight,
+            name="Test Flight",
+            slug="test-flight",
+            campaign=self.campaign,
+            live=True,
+            cpc=2.0,
+            sold_clicks=2000,
+            targeting_parameters={
+                "include_countries": ["US", "CA"],
+                "exclude_countries": ["DE"],
+                "include_keywords": ["python"],
+                "include_metro_codes": [205],
+                "include_state_provinces": ["CA", "NY"],
+            },
+        )
+        self.ad_type1 = get(AdType, name="Ad Type", has_image=False)
+        self.ad1 = get(
+            Advertisement,
+            name="Test Ad 1",
+            slug="test-ad-1",
+            flight=self.flight,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        # Trigger some impressions so flights will be shown in the date range
+        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(CLICKS, self.publisher1)
+
+        self.password = "(@*#$&ASDFKJ"
+        self.user = get(
+            get_user_model(), email="test1@example.com", username="test-user"
+        )
+        self.user.set_password(self.password)
+        self.user.save()
+
         self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+
+    def test_login(self):
+        url = reverse("account_login")
+        response = self.client.post(
+            url, {"login": self.user.email, "password": "invalid-password"}
+        )
+        self.assertContains(
+            response, "The e-mail address and/or password you specified are not correct"
+        )
+
+    def test_home(self):
+        url = reverse("dashboard-home")
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertContains(response, "You do not have access to anything")
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser1.name)
+        self.assertContains(response, self.publisher1.name)
 
     def test_all_advertiser_report_access(self):
         url = reverse("all_advertisers_report")
@@ -1973,6 +2674,74 @@ class TestReportViews(TestCase):
         response = self.client.get(url2)
         self.assertEqual(response.status_code, 200)
 
+    def test_advertiser_report_contents(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("advertiser_report", args=[self.advertiser1.slug])
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser1.name)
+        self.assertContains(response, self.flight.name)
+
+        campaign1 = get(
+            Campaign,
+            name="Test Campaign 1",
+            slug="test-campaign 1",
+            advertiser=self.advertiser2,
+            campaign_type=COMMUNITY_CAMPAIGN,
+        )
+        campaign2 = get(
+            Campaign,
+            name="Test Campaign 2",
+            slug="test-campaign 2",
+            advertiser=self.advertiser2,
+            campaign_type=HOUSE_CAMPAIGN,
+        )
+        flight1 = get(
+            Flight,
+            name="Test Flight 1",
+            slug="test-flight-1",
+            campaign=campaign1,
+            live=False,
+            cpm=1.0,
+            sold_impressions=1000,
+        )
+        flight2 = get(
+            Flight,
+            name="Test Flight 2",
+            slug="test-flight-2",
+            campaign=campaign2,
+            live=False,
+        )
+        ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=flight1,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+        ad3 = get(
+            Advertisement,
+            name="Test Ad 3",
+            slug="test-ad-3",
+            flight=flight2,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        ad2.incr(VIEWS, self.publisher2)
+        ad2.incr(VIEWS, self.publisher2)
+        ad2.incr(CLICKS, self.publisher2)
+        ad3.incr(VIEWS, self.publisher2)
+        ad3.incr(VIEWS, self.publisher2)
+        ad3.incr(CLICKS, self.publisher2)
+
+        url = reverse("advertiser_report", args=[self.advertiser2.slug])
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser2.name)
+        self.assertContains(response, flight1.name)
+        self.assertContains(response, flight2.name)
+
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])
         url2 = reverse("publisher_report", args=[self.publisher2.slug])
@@ -2016,7 +2785,7 @@ class TestImporterManagementCommand(TestCase):
     def test_import_counts(self):
         self.assertEqual(Publisher.objects.count(), 2)
         self.assertEqual(Advertisement.objects.count(), 2)
-        self.assertEqual(Flight.objects.count(), 1)
+        self.assertEqual(Flight.objects.count(), 2)
         self.assertEqual(Campaign.objects.count(), 2)
 
         # House/Community ads create a single advertiser
@@ -2053,6 +2822,22 @@ class TestImporterManagementCommand(TestCase):
                 sum_views=models.Sum("views")
             )["sum_views"],
             150,
+        )
+
+    def test_flight_targeting(self):
+        flight1 = Flight.objects.filter(slug="house-flight").first()
+        self.assertIsNotNone(flight1)
+
+        # exclude programming languages was removed
+        self.assertDictEqual(flight1.targeting_parameters, {})
+
+        flight2 = Flight.objects.filter(slug="house-flight-2").first()
+        self.assertIsNotNone(flight2)
+        self.assertDictEqual(
+            flight2.targeting_parameters,
+            {
+                "include_keywords": ["python", "readthedocs-project-123"]
+            },  # Order of the list isn't relevant
         )
 
 
