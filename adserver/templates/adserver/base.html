@@ -46,7 +46,7 @@
     <div class="container-fluid">
 
       <div class="row">
-        <nav class="col-lg-2">
+        <nav class="col-lg-3">
           {% if advertiser %}
             <h6 class="text-muted">{{ advertiser }}</h6>
 
@@ -77,7 +77,7 @@
             </ul>
           {% endif %}
         </nav>
-        <main class="main col-lg-10 ml-sm-auto px-4">
+        <main class="main col-lg-9 ml-sm-auto px-4">
           {% include 'includes/messages.html' %}
 
           {% block content_container %}{% endblock content_container %}
