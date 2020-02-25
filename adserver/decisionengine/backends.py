@@ -4,6 +4,7 @@ import random
 
 from django.db import models
 
+from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
@@ -228,12 +229,15 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         flights = self.get_candidate_flights()
 
         paid_flights = []
+        affiliate_flights = []
         community_flights = []
         house_flights = []
 
         for flight in flights:
             if flight.campaign.campaign_type == PAID_CAMPAIGN:
                 paid_flights.append(flight)
+            elif flight.campaign.campaign_type == AFFILIATE_CAMPAIGN:
+                affiliate_flights.append(flight)
             elif flight.campaign.campaign_type == COMMUNITY_CAMPAIGN:
                 community_flights.append(flight)
             else:
@@ -243,7 +247,12 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             # Ignore priorities for forcing a specific ad/campaign
             return random.choice(flights)
 
-        for possible_flights in (paid_flights, community_flights, house_flights):
+        for possible_flights in (
+            paid_flights,
+            affiliate_flights,
+            community_flights,
+            house_flights,
+        ):
             # Choose a flight based on the impressions needed
             flight_range = []
             total_clicks_needed = 0

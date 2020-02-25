@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
 
+from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import CLICKS
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
@@ -380,6 +381,7 @@ class DecisionEngineTests(TestCase):
         flights = self.probabilistic_backend.get_candidate_flights()
         self.assertFalse(flights.exists())
 
+        # Paid
         paid_campaign = get(
             Campaign, campaign_type=PAID_CAMPAIGN, publishers=[self.publisher]
         )
@@ -402,6 +404,30 @@ class DecisionEngineTests(TestCase):
             flight=paid_flight,
         )
 
+        # Affiliate
+        affiliate_campaign = get(
+            Campaign, campaign_type=AFFILIATE_CAMPAIGN, publishers=[self.publisher]
+        )
+        affiliate_flight = get(
+            Flight,
+            campaign=affiliate_campaign,
+            live=True,
+            cpc=True,
+            sold_clicks=100,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+        )
+        affiliate_ad = get(
+            Advertisement,
+            name="affiliate",
+            slug="test-affiliate-ad",
+            ad_type=self.ad_type,
+            image=None,
+            live=True,
+            flight=affiliate_flight,
+        )
+
+        # Community
         community_campaign = get(
             Campaign, campaign_type=COMMUNITY_CAMPAIGN, publishers=[self.publisher]
         )
@@ -423,6 +449,7 @@ class DecisionEngineTests(TestCase):
             flight=community_flight,
         )
 
+        # House
         house_campaign = get(
             Campaign, campaign_type=HOUSE_CAMPAIGN, publishers=[self.publisher]
         )
@@ -452,6 +479,13 @@ class DecisionEngineTests(TestCase):
 
         paid_flight.live = False
         paid_flight.save()
+
+        # Affiliate before house or community
+        ad, _ = self.probabilistic_backend.get_ad_and_placement()
+        self.assertEqual(ad, affiliate_ad)
+
+        affiliate_flight.live = False
+        affiliate_flight.save()
 
         # Community before house
         ad, _ = self.probabilistic_backend.get_ad_and_placement()
