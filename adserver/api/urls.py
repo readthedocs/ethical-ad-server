@@ -7,6 +7,8 @@ from .views import AdvertiserViewSet
 from .views import PublisherViewSet
 
 
+app_name = "api"
+
 urlpatterns = [url(r"^decision/$", AdDecisionView.as_view(), name="decision")]
 
 router = routers.SimpleRouter()

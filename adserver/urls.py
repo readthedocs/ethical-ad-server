@@ -24,7 +24,7 @@ urlpatterns = [
     url(r"^\.well-known/dnt/$", do_not_track, name="dnt-status"),
     url(r"^\.well-known/dnt-policy.txt$", do_not_track_policy, name="dnt-policy"),
     # Ad API
-    url(r"^api/v1/", include("adserver.api.urls", namespace="api")),
+    url(r"^api/v1/", include("adserver.api.urls")),
     # View & Click proxies
     url(
         r"^proxy/view/(?P<advertisement_id>\d+)/(?P<nonce>\w+)/$",
