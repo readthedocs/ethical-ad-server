@@ -217,7 +217,7 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
     readonly_fields = fields
     show_change_link = True
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
 
@@ -328,7 +328,7 @@ class FlightsInline(FlightMixin, admin.TabularInline):
     readonly_fields = fields
     show_change_link = True
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False  # pragma: no cover
 
 
