@@ -114,8 +114,8 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     template_name = "adserver/advertiser/flight-list.html"
     PER_PAGE = 25
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        context = super().get_context_data(**kwargs)
 
         paginator = Paginator(self.get_queryset(), self.PER_PAGE)
 
@@ -150,7 +150,7 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
     template_name = "adserver/advertiser/flight-detail.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
         advertisement_list = self.object.advertisements.order_by("-live", "name")
         context.update(
             {"advertiser": self.advertiser, "advertisement_list": advertisement_list}
@@ -176,7 +176,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
     template_name = "adserver/advertiser/advertisement-detail.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser})
         return context
 
@@ -206,7 +206,7 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
         return result
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser})
         return context
 
@@ -253,7 +253,7 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
         return result
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser, "flight": self.flight})
         return context
 
@@ -491,7 +491,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
     template_name = "adserver/reports/advertiser.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
 
         start_date = context["start_date"]
         end_date = context["end_date"]
@@ -541,7 +541,7 @@ class AllAdvertiserReportView(BaseReportView):
     template_name = "adserver/reports/all-advertisers.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
 
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
@@ -615,7 +615,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     template_name = "adserver/reports/publisher.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
 
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
@@ -636,7 +636,7 @@ class AllPublisherReportView(BaseReportView):
     template_name = "adserver/reports/all-publishers.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data()
+        context = super().get_context_data(**kwargs)
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = AdImpression.objects.filter(date__gte=context["start_date"])
