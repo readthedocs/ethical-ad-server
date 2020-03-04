@@ -108,8 +108,7 @@ class TestReportViews(TestCase):
         # No access
         self.client.force_login(self.user)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Staff only has has access
         self.client.force_login(self.staff_user)
@@ -127,8 +126,7 @@ class TestReportViews(TestCase):
         # No access
         self.client.force_login(self.user)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Staff only has has access
         self.client.force_login(self.staff_user)
@@ -147,8 +145,7 @@ class TestReportViews(TestCase):
         # No access
         self.client.force_login(self.user)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Grant that user access
         self.user.advertisers.add(self.advertiser1)
@@ -157,8 +154,7 @@ class TestReportViews(TestCase):
 
         # No access to advertiser2
         response = self.client.get(url2)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Staff has has access
         self.client.force_login(self.staff_user)
@@ -247,8 +243,7 @@ class TestReportViews(TestCase):
         # No access
         self.client.force_login(self.user)
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Grant that user access
         self.user.publishers.add(self.publisher1)
@@ -257,8 +252,7 @@ class TestReportViews(TestCase):
 
         # No access to publisher2
         response = self.client.get(url2)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response["location"].startswith("/accounts/login/"))
+        self.assertEqual(response.status_code, 403)
 
         # Staff has has access
         self.client.force_login(self.staff_user)

@@ -9,13 +9,13 @@ from collections import OrderedDict
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
 from django.template import engines
 from django.template.loader import get_template
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
@@ -747,7 +747,11 @@ class AdType(TimeStampedModel, models.Model):
     )
 
     publisher = models.ForeignKey(
-        Publisher, blank=True, null=True, help_text=_("For publisher-specific ad types")
+        Publisher,
+        blank=True,
+        null=True,
+        help_text=_("For publisher-specific ad types"),
+        on_delete=models.CASCADE,
     )
 
     template = models.TextField(

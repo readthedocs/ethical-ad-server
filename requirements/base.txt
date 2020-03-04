@@ -1,5 +1,5 @@
 # Django itself and its requirements (pytz)
-Django==1.11.23
+Django==2.2.10
 pytz==2019.2
 
 # Asynchronous tasks
@@ -19,7 +19,7 @@ djangorestframework-jsonp==1.0.2
 django-extensions==2.2.1
 
 # Form helpers
-django-crispy-forms==1.7.2
+django-crispy-forms==1.9.0
 
 # Authentication
 django-allauth==0.39.1

@@ -187,7 +187,7 @@ class TestAdvertiserCrudViews(TestCase):
             "live": True,
             "link": "http://example.com",
             "text": "Sample text",
-            "image": None,
+            "image": "",
         }
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 302)
@@ -248,7 +248,7 @@ class TestAdvertiserCrudViews(TestCase):
             "live": True,
             "link": "http://example.com",
             "text": "Sample text",
-            "image": None,
+            "image": "",
             "ad_type": self.ad_type1.pk,
         }
         response = self.client.post(url, data=data)
