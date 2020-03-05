@@ -320,6 +320,10 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         if weighted_ad_choices:
             chosen_ad = random.choice(weighted_ad_choices)
         else:
-            log.warning("Chosen flight has no live ads! flight=%s", flight)
+            log.warning(
+                "Chosen flight has no matching live ads! flight=%s, ad_types=%s",
+                flight,
+                ad_types,
+            )
 
         return chosen_ad
