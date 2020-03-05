@@ -84,7 +84,7 @@
 
     <dl>
       {% if not flight.live %}
-         <dt>{% trans 'Inactive' %}</dt>
+         <dt>{% trans 'Disabled' %}</dt>
          <dd>{% trans 'This flight is not currently being shown' %}</dd>
       {% endif %}
       {% if flight.campaign.campaign_type == 'community' %}
@@ -156,7 +156,7 @@
         <div class="col">
           <dl>
             {% if not ad.live %}
-              <dt>{% trans 'Inactive' %}</dt>
+              <dt>{% trans 'Disabled' %}</dt>
               <dd>{% trans 'This promo is not currently being shown' %}</dd>
             {% endif %}
             {% if ad.ad_type %}

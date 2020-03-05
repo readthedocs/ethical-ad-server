@@ -21,6 +21,20 @@
 
 <h1>{% block heading %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
 
+{% if not advertisement.live or not advertisement.flight.live %}
+  <div class="messages">
+    <div class="alert alert-warning">
+      <span class="fa fa-eye-slash fa-fw" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="This ad is disabled"></span>
+      <strong>{% trans 'Disabled' %}: </strong>
+      {% if advertisement.live %}
+        <span>{% trans 'The ad flight is currently disabled' %}</span>
+      {% else %}
+        <span>{% trans 'This ad is not currently being shown' %}</span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
 <div class="row">
 
   {# Show the ad #}
@@ -35,10 +49,6 @@
     <dl>
       <dt>{% trans 'Flight' %}</dt>
       <dd>{{ advertisement.flight.name }}</dd>
-      {% if not advertisement.live %}
-        <dt>{% trans 'Inactive' %}</dt>
-        <dd>{% trans 'This promo is not currently being shown' %}</dd>
-      {% endif %}
       {% if advertisement.ad_type %}
         <dt>{% trans 'Display' %}</dt>
         <dd>{{ advertisement.ad_type.name }}</dd>

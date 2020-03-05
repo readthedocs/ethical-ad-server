@@ -20,13 +20,19 @@
 
 <h1>{% block heading %}{% trans 'Flight' %}: {{ flight.name }}{% endblock heading %}</h1>
 
+{% if not flight.live %}
+  <div class="messages">
+    <div class="alert alert-warning">
+      <span class="fa fa-eye-slash fa-fw" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="This flight is disabled"></span>
+      <strong>{% trans 'Disabled' %}: </strong>
+      <span>{% trans 'This flight is not currently being shown' %}</span>
+    </div>
+  </div>
+{% endif %}
+
 <section>
   {# Flight details #}
   <dl>
-    {% if not flight.live %}
-       <dt>{% trans 'Inactive' %}</dt>
-       <dd>{% trans 'This flight is not currently being shown' %}</dd>
-    {% endif %}
     {% if flight.campaign.campaign_type == 'community' %}
       <dt>{% trans 'Community ad' %}</dt>
       <dd>{% trans 'This ad is done for the benefit of the community' %}</dd>
@@ -113,7 +119,7 @@
               <td>
                 <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">{{ ad.name }}</a>
                 {% if not ad.live %}
-                  <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is inactive' %}"></span>
+                  <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
                 {% endif %}
               </td>
               <td>{{ ad.ad_type.name }}</td>
