@@ -503,21 +503,11 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
             start_date=start_date, end_date=end_date
         )
 
-        flights = []
-        for flight in Flight.objects.filter(
-            campaign__advertiser=advertiser
-        ).select_related("campaign"):
-            flight.report = flight.daily_reports(
-                start_date=start_date, end_date=end_date
-            )
-            if flight.report["total"]["views"]:
-                flight.ads = []
-                flights.append(flight)
-                for ad, ad_report in flight.ad_reports(
-                    start_date=start_date, end_date=end_date
-                ):
-                    ad.report = ad_report
-                    flight.ads.append(ad)
+        flights = (
+            Flight.objects.filter(campaign__advertiser=advertiser)
+            .order_by("-live", "-end_date", "name")
+            .select_related("campaign")
+        )
 
         context.update(
             {
@@ -528,6 +518,51 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
                 "total_cost": advertiser_report["total"]["cost"],
                 "total_views": advertiser_report["total"]["views"],
                 "total_ctr": advertiser_report["total"]["ctr"],
+            }
+        )
+
+        return context
+
+
+class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
+
+    """A report for one flight for an advertiser."""
+
+    template_name = "adserver/reports/advertiser-flight.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        flight_slug = kwargs.get("flight_slug", "")
+
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+        flight = get_object_or_404(
+            Flight, slug=flight_slug, campaign__advertiser=advertiser
+        )
+
+        flight_report = flight.daily_reports(start_date=start_date, end_date=end_date)
+
+        advertisements = []
+        for ad, ad_report in flight.ad_reports(
+            start_date=start_date, end_date=end_date
+        ):
+            ad.report = ad_report
+            advertisements.append(ad)
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "flight": flight,
+                "flight_report": flight_report,
+                "advertisements": advertisements,
+                "total_clicks": flight_report["total"]["clicks"],
+                "total_cost": flight_report["total"]["cost"],
+                "total_views": flight_report["total"]["views"],
+                "total_ctr": flight_report["total"]["ctr"],
             }
         )
 
