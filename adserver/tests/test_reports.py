@@ -252,7 +252,7 @@ class TestReportViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        # Staff has has access
+        # Staff has access
         self.client.force_login(self.staff_user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
