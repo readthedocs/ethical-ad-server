@@ -254,15 +254,9 @@ class Campaign(TimeStampedModel, IndestructibleModel):
 
     advertiser = models.ForeignKey(
         Advertiser,
-        blank=True,
-        null=True,
-        default=None,
         related_name="campaigns",
         on_delete=models.PROTECT,
-        help_text=_(
-            "The advertiser for this campaign. "
-            "A campaign without an advertiser is run by the ad network."
-        ),
+        help_text=_("The advertiser for this campaign."),
     )
     publishers = models.ManyToManyField(
         Publisher,

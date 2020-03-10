@@ -136,7 +136,15 @@ class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
         self.publisher2 = get(Publisher, slug="another-publisher")
-        self.campaign = get(Campaign, slug="campaign-slug", publishers=[self.publisher])
+        self.advertiser1 = get(
+            Advertiser, name="Test Advertiser", slug="test-advertiser"
+        )
+        self.campaign = get(
+            Campaign,
+            slug="campaign-slug",
+            advertiser=self.advertiser1,
+            publishers=[self.publisher],
+        )
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
         )
@@ -429,15 +437,11 @@ class AdvertiserApiTests(BaseApiTest):
     def setUp(self):
         super().setUp()
 
-        self.advertiser1 = get(
-            Advertiser, name="Test Advertiser", slug="test-advertiser"
-        )
         self.advertiser2 = get(
             Advertiser, name="Another Advertiser", slug="another-advertiser"
         )
 
         self.user.advertisers.add(self.advertiser1)
-        self.campaign.advertiser = self.advertiser1
         self.campaign.save()
 
         # Urls
