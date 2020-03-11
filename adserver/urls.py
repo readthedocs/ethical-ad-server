@@ -6,6 +6,7 @@ from .views import AdClickProxyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
 from .views import AdvertisementUpdateView
+from .views import AdvertiserFlightReportView
 from .views import AdvertiserReportView
 from .views import AdViewProxyView
 from .views import AllAdvertiserReportView
@@ -56,6 +57,11 @@ urlpatterns = [
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/$",
         FlightDetailView.as_view(),
         name="flight_detail",
+    ),
+    url(
+        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/report/$",
+        AdvertiserFlightReportView.as_view(),
+        name="flight_report",
     ),
     url(
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/advertisements/create/$",

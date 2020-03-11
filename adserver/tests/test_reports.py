@@ -37,7 +37,22 @@ class TestReportViews(TestCase):
             advertiser=self.advertiser1,
             campaign_type=PAID_CAMPAIGN,
         )
-        self.flight = get(
+        self.community_campaign = get(
+            Campaign,
+            name="Community Campaign",
+            slug="community-campaign",
+            advertiser=self.advertiser2,
+            campaign_type=COMMUNITY_CAMPAIGN,
+        )
+        self.house_campaign = get(
+            Campaign,
+            name="House Campaign",
+            slug="house-campaign",
+            advertiser=self.advertiser2,
+            campaign_type=HOUSE_CAMPAIGN,
+        )
+
+        self.flight1 = get(
             Flight,
             name="Test Flight",
             slug="test-flight",
@@ -53,12 +68,30 @@ class TestReportViews(TestCase):
                 "include_state_provinces": ["CA", "NY"],
             },
         )
+
+        self.flight2 = get(
+            Flight,
+            name="Test Flight 2",
+            slug="test-flight-2",
+            campaign=self.community_campaign,
+            live=False,
+            cpm=1.0,
+            sold_impressions=1000,
+        )
+        self.flight3 = get(
+            Flight,
+            name="Test Flight 3",
+            slug="test-flight-3",
+            campaign=self.house_campaign,
+            live=False,
+        )
+
         self.ad_type1 = get(AdType, name="Ad Type", has_image=False)
         self.ad1 = get(
             Advertisement,
             name="Test Ad 1",
             slug="test-ad-1",
-            flight=self.flight,
+            flight=self.flight1,
             ad_type=self.ad_type1,
             image=None,
         )
@@ -169,43 +202,13 @@ class TestReportViews(TestCase):
         url = reverse("advertiser_report", args=[self.advertiser1.slug])
         response = self.client.get(url)
         self.assertContains(response, self.advertiser1.name)
-        self.assertContains(response, self.flight.name)
+        self.assertContains(response, self.flight1.name)
 
-        campaign1 = get(
-            Campaign,
-            name="Test Campaign 1",
-            slug="test-campaign 1",
-            advertiser=self.advertiser2,
-            campaign_type=COMMUNITY_CAMPAIGN,
-        )
-        campaign2 = get(
-            Campaign,
-            name="Test Campaign 2",
-            slug="test-campaign 2",
-            advertiser=self.advertiser2,
-            campaign_type=HOUSE_CAMPAIGN,
-        )
-        flight1 = get(
-            Flight,
-            name="Test Flight 1",
-            slug="test-flight-1",
-            campaign=campaign1,
-            live=False,
-            cpm=1.0,
-            sold_impressions=1000,
-        )
-        flight2 = get(
-            Flight,
-            name="Test Flight 2",
-            slug="test-flight-2",
-            campaign=campaign2,
-            live=False,
-        )
         ad2 = get(
             Advertisement,
             name="Test Ad 2",
             slug="test-ad-2",
-            flight=flight1,
+            flight=self.flight2,
             ad_type=self.ad_type1,
             image=None,
         )
@@ -213,7 +216,7 @@ class TestReportViews(TestCase):
             Advertisement,
             name="Test Ad 3",
             slug="test-ad-3",
-            flight=flight2,
+            flight=self.flight3,
             ad_type=self.ad_type1,
             image=None,
         )
@@ -228,8 +231,49 @@ class TestReportViews(TestCase):
         url = reverse("advertiser_report", args=[self.advertiser2.slug])
         response = self.client.get(url)
         self.assertContains(response, self.advertiser2.name)
-        self.assertContains(response, flight1.name)
-        self.assertContains(response, flight2.name)
+        self.assertContains(response, self.flight2.name)
+        self.assertContains(response, self.flight3.name)
+
+    def test_flight_report_access(self):
+        url = reverse("flight_report", args=[self.advertiser1.slug, self.flight1.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # No access
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        # Grant that user access
+        self.user.advertisers.add(self.advertiser1)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Staff has access
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_flight_report_contents(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("flight_report", args=[self.advertiser1.slug, self.flight1.slug])
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser1.name)
+        self.assertContains(response, self.flight1.name)
+
+        url2 = reverse("flight_report", args=[self.advertiser2.slug, self.flight2.slug])
+        response = self.client.get(url2)
+        self.assertContains(response, self.advertiser2.name)
+        self.assertContains(response, self.flight2.name)
+
+        url3 = reverse("flight_report", args=[self.advertiser2.slug, self.flight3.slug])
+        response = self.client.get(url3)
+        self.assertContains(response, self.advertiser2.name)
+        self.assertContains(response, self.flight3.name)
 
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])
