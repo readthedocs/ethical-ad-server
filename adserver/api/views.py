@@ -6,8 +6,10 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_jsonp.renderers import JSONPRenderer
 
 from ..decisionengine import get_ad_decision_backend
 from ..models import Advertiser
@@ -15,7 +17,7 @@ from ..models import Flight
 from ..models import Publisher
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
-from .permissions import PublisherPermission
+from .permissions import AdDecisionPermission
 from .serializers import AdDecisionSerializer
 from .serializers import AdvertisementSerializer
 from .serializers import AdvertiserSerializer
@@ -60,9 +62,19 @@ class AdDecisionView(GeoIpMixin, APIView):
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
         :>json string display_type: The slug of type of ad (eg. sidebar)
         :>json string div_id: The <div> ID where the ad will be inserted
+
+    .. http:get:: /api/v1/decision/
+
+        Supports the same parameters as via POST with the following changes:
+
+        * The publisher must be explicitly permitted to allow unauthenticated requests
+        * Supports an optional parameter ``format=jsonp`` to signify a JSONP request
+        * Supports an optional parameter ``callback``
+          which will be used for the callback name in JSONP requests
     """
 
-    permission_classes = (PublisherPermission,)
+    permission_classes = (AdDecisionPermission,)
+    renderer_classes = (JSONRenderer, JSONPRenderer)
 
     def _prepare_response(self, ad, placement, publisher):
         """Wrap `offer_ad` with the placement for the publisher."""
@@ -72,6 +84,30 @@ class AdDecisionView(GeoIpMixin, APIView):
         data = ad.offer_ad(publisher)
         data.update({"div_id": placement["div_id"]})
         return data
+
+    def get(self, request):
+        """
+        Decision API is called via GET.
+
+        When called via GET the placements array is passed
+        as individual fields rather than a JSON dict
+        """
+        data = request.query_params.dict()
+
+        placements = []
+        div_ids = data.get("div_ids", "").split("|")
+        ad_types = data.get("ad_types", "").split("|")
+        priorities = data.get("priorities", "").split("|")
+
+        for i, (div_id, ad_type) in enumerate(zip(div_ids, ad_types)):
+            placement = {"div_id": div_id, "ad_type": ad_type}
+            if i < len(priorities) and priorities[i]:
+                placement["priority"] = priorities[i]
+
+            placements.append(placement)
+
+        data["placements"] = placements
+        return self.decision(request, data)
 
     def post(self, request):
         """

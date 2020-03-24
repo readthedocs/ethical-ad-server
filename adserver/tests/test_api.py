@@ -13,6 +13,7 @@ from django.utils import timezone
 from django_dynamic_fixture import get
 from rest_framework.authtoken.models import Token
 
+from ..api.permissions import AdDecisionPermission
 from ..api.permissions import AdvertiserPermission
 from ..api.permissions import PublisherPermission
 from ..constants import CLICKS
@@ -35,6 +36,7 @@ class ApiPermissionTest(TestCase):
         self.advertiser = get(Advertiser, slug="test-advertiser")
         self.publisher = get(Publisher, slug="test-publisher")
 
+        self.ad_decision_permission = AdDecisionPermission()
         self.publisher_permission = PublisherPermission()
         self.advertiser_permission = AdvertiserPermission()
 
@@ -85,6 +87,33 @@ class ApiPermissionTest(TestCase):
         self.request.user = self.staff_user
         self.assertTrue(
             self.publisher_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+    def test_ad_decision_permission(self):
+        # obj is not a publisher
+        self.assertFalse(
+            self.ad_decision_permission.has_object_permission(self.request, None, None)
+        )
+        self.assertFalse(
+            self.ad_decision_permission.has_object_permission(
+                self.request, None, self.advertiser
+            )
+        )
+
+        # User not authed
+        self.assertFalse(
+            self.ad_decision_permission.has_object_permission(
+                self.request, None, self.publisher
+            )
+        )
+
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        self.assertTrue(
+            self.ad_decision_permission.has_object_permission(
                 self.request, None, self.publisher
             )
         )
@@ -162,6 +191,12 @@ class BaseApiTest(TestCase):
 
         self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
         self.data = {"placements": self.placements, "publisher": self.publisher.slug}
+        self.query_params = {
+            "div_ids": "a",
+            "ad_types": self.ad_type.slug,
+            "priorities": 1,
+            "publisher": self.publisher.slug,
+        }
 
         self.user = get(get_user_model(), username="test-user")
         self.user.publishers.add(self.publisher)
@@ -181,11 +216,33 @@ class BaseApiTest(TestCase):
             HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
         )
 
+        self.unauth_client = Client()
+
 
 class AdDecisionApiTests(BaseApiTest):
     def test_get_request(self):
         resp = self.client.get(self.url)
-        self.assertEqual(resp.status_code, 405)
+
+        # No data passed
+        self.assertEqual(resp.status_code, 400)
+
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_get_unauth_permissions(self):
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 401)
+
+        # Allow this publisher to request ads without API authorization
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
     def test_post_request(self):
         resp = self.client.post(self.url)

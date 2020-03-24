@@ -97,6 +97,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
+    unauthed_ad_decisions = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Whether this publisher allows unauthenticated ad decision API requests (eg. JSONP)"
+        ),
+    )
+
     class Meta:
         ordering = ("name",)
 
