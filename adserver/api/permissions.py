@@ -47,3 +47,19 @@ class PublisherPermission(permissions.IsAuthenticated):
             request.user.is_staff
             or request.user.publishers.filter(id=publisher.id).exists()
         )
+
+
+class AdDecisionPermission(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if not isinstance(obj, Publisher):
+            return False
+
+        publisher = obj
+        return (
+            publisher.unauthed_ad_decisions
+            or request.user.is_staff
+            or (
+                not request.user.is_anonymous
+                and request.user.publishers.filter(id=publisher.id).exists()
+            )
+        )
