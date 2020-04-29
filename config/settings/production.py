@@ -16,7 +16,7 @@ from .base import env
 
 
 # Django Settings
-# https://docs.djangoproject.com/en/1.11/ref/settings/
+# https://docs.djangoproject.com/en/2.2/ref/settings/
 # --------------------------------------------------------------------------
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
@@ -29,7 +29,7 @@ INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 
 
 # Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 # --------------------------------------------------------------------------
 DATABASES = {
     "default": env.db()  # Raises ImproperlyConfigured exception if DATABASE_URL not set
@@ -39,7 +39,7 @@ DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
 
 
 # Cache
-# https://docs.djangoproject.com/en/1.11/topics/cache/
+# https://docs.djangoproject.com/en/2.2/topics/cache/
 # https://niwinz.github.io/django-redis/
 # --------------------------------------------------------------------------
 CACHES = {"default": env.cache("REDIS_URL")}
@@ -53,9 +53,9 @@ if env.bool("REDIS_SSL", default=False):
 
 
 # Security
-# https://docs.djangoproject.com/en/1.11/topics/security/
-# https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware
-# https://docs.djangoproject.com/en/1.11/ref/clickjacking/
+# https://docs.djangoproject.com/en/2.2/topics/security/
+# https://docs.djangoproject.com/en/2.2/ref/middleware/#django.middleware.security.SecurityMiddleware
+# https://docs.djangoproject.com/en/2.2/ref/clickjacking/
 # --------------------------------------------------------------------------
 if env.bool("ADSERVER_HTTPS", default=False):
     ADSERVER_HTTPS = True
@@ -82,7 +82,7 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 
 # User upload storage
-# https://docs.djangoproject.com/en/1.11/topics/files/
+# https://docs.djangoproject.com/en/2.2/topics/files/
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
 DEFAULT_FILE_STORAGE = env(
     "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"

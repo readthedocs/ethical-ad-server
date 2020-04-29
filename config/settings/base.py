@@ -2,10 +2,10 @@
 Django settings for the Ethical Ad Server project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/1.11/topics/settings/
+https://docs.djangoproject.com/en/2.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.11/ref/settings/
+https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import json
 import os
@@ -23,7 +23,7 @@ BASE_DIR = os.path.abspath(
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "Overridden in Production"  # noqa
@@ -103,7 +103,7 @@ SITE_ID = 1  # Required for allauth
 
 
 # Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 # --------------------------------------------------------------------------
 DATABASES = {
     "default": env.db(
@@ -115,7 +115,7 @@ DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 
 # Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 # --------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -130,7 +130,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Caching
 # Using a local memory cache for development and testing
 # and a more hardened cache in production
-# See: https://docs.djangoproject.com/en/1.11/topics/cache/
+# See: https://docs.djangoproject.com/en/2.2/topics/cache/
 # --------------------------------------------------------------------------
 CACHES = {
     "default": {
@@ -141,7 +141,7 @@ CACHES = {
 
 
 # Sessions
-# See: https://docs.djangoproject.com/en/1.11/topics/http/sessions/
+# See: https://docs.djangoproject.com/en/2.2/topics/http/sessions/
 # Using signed cookie sessions. No session data is stored server side,
 # but sessions are tamper proof as long as the SECRET_KEY is a secret.
 # --------------------------------------------------------------------------
@@ -149,7 +149,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
 
 # Email
-# https://docs.djangoproject.com/en/1.11/topics/email/
+# https://docs.djangoproject.com/en/2.2/topics/email/
 # In development, emails are not sent and just logged to the console
 # --------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -159,7 +159,7 @@ EMAIL_TIMEOUT = 5
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
 # --------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -169,7 +169,7 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
 # --------------------------------------------------------------------------
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
@@ -178,7 +178,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
 
 
 # User-uploaded files (ad images)
-# https://docs.djangoproject.com/en/1.11/topics/files/
+# https://docs.djangoproject.com/en/2.2/topics/files/
 # --------------------------------------------------------------------------
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Even for dev, this should be fully qualified
@@ -186,11 +186,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = env("MEDIA_URL", default="/media/")
 
 # Logging
-# See: https://docs.djangoproject.com/en/1.11/ref/settings/#logging
+# See: https://docs.djangoproject.com/en/2.2/ref/settings/#logging
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.
-# See: http://docs.djangoproject.com/en/1.11/topics/logging
+# See: http://docs.djangoproject.com/en/2.2/topics/logging
 # --------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
@@ -242,9 +242,9 @@ LOGGING = {
 }
 
 # Security settings
-# https://docs.djangoproject.com/en/1.11/topics/security/
-# https://docs.djangoproject.com/en/1.11/ref/middleware/#django.middleware.security.SecurityMiddleware
-# https://docs.djangoproject.com/en/1.11/ref/clickjacking/
+# https://docs.djangoproject.com/en/2.2/topics/security/
+# https://docs.djangoproject.com/en/2.2/ref/middleware/#django.middleware.security.SecurityMiddleware
+# https://docs.djangoproject.com/en/2.2/ref/clickjacking/
 # These are only the settings that don't matter whether the request is HTTPS or not
 # See settings/production.py for additional settings
 # --------------------------------------------------------------------------
