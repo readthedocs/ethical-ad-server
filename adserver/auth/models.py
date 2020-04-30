@@ -43,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     The custom extensible user model for the ad server.
 
-    https://docs.djangoproject.com/en/1.11/topics/auth/customizing/#specifying-a-custom-user-model
+    https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#specifying-a-custom-user-model
 
     Inherits from both the AbstractBaseUser and PermissionMixin.
     The following attributes are inherited from the superclasses::
