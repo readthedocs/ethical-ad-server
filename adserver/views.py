@@ -1,5 +1,6 @@
 """Ad server views."""
 import collections
+import csv
 import logging
 from datetime import datetime
 from datetime import timedelta
@@ -439,10 +440,33 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     """
 
     DEFAULT_REPORT_DAYS = 30
+    export = False
+    export_filename = "readthedocs-report.csv"
 
     def test_func(self):
         """By default, reports are locked down to staff."""
         return self.request.user.is_staff
+
+    def render_to_response(self, context, **response_kwargs):
+        """Handle exporting all reports to a CSV."""
+        if self.export:
+            report = context["report"]
+            filename = self.export_filename
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+            fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
+            writer = csv.DictWriter(response, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(report["days"])
+
+            # Update the Total field for display purposes only
+            report["total"]["date"] = "Total"
+            writer.writerow(report["total"])
+
+            return response
+
+        return super().render_to_response(context, **response_kwargs)
 
     def get_context_data(self, **kwargs):
         start_date = self.get_start_date()
@@ -513,6 +537,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
             {
                 "advertiser": advertiser,
                 "advertiser_report": advertiser_report,
+                "report": advertiser_report,
                 "flights": flights,
                 "total_clicks": advertiser_report["total"]["clicks"],
                 "total_cost": advertiser_report["total"]["cost"],
@@ -558,6 +583,7 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
                 "advertiser": advertiser,
                 "flight": flight,
                 "flight_report": flight_report,
+                "report": flight_report,
                 "advertisements": advertisements,
                 "total_clicks": flight_report["total"]["clicks"],
                 "total_cost": flight_report["total"]["cost"],

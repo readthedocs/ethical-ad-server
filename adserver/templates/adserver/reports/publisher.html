@@ -18,7 +18,18 @@
 {% block summary %}
   <section>
     <div>
-      <h2>{% trans 'Advertising results' %}</h2>
+      <h2></h2>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Advertising results' %}</h2>
+
+        <aside class="mb-3 col-md-4 text-right">
+          <a href="{% url 'publisher_report_export' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+            <span class="fa fa-download mr-1" aria-hidden="true"></span>
+            <span>CSV Export</span>
+          </a>
+        </aside>
+      </div>
+
       <p><strong>{% trans 'Note: ' %}</strong>{% trans 'These figures are 100% of the total revenue, actual revenue share income will be a percentage of this total.' %}</p>
       <table class="table table-hover">
         <thead>
