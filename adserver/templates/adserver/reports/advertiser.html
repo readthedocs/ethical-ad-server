@@ -52,9 +52,16 @@
 {% block summary %}
   <section>
     <div>
-      <h2>
-        {% trans 'Total results for all ads across all flights' %}
-      </h2>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Total results for all ads across all flights' %}</h2>
+
+        <aside class="mb-3 col-md-4 text-right">
+          <a href="{% url 'advertiser_report_export' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+            <span class="fa fa-download mr-1" aria-hidden="true"></span>
+            <span>CSV Export</span>
+          </a>
+        </aside>
+      </div>
 
       <table class="table table-hover">
         <thead>

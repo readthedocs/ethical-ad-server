@@ -234,6 +234,16 @@ class TestReportViews(TestCase):
         self.assertContains(response, self.flight2.name)
         self.assertContains(response, self.flight3.name)
 
+    def test_advertiser_report_export(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("advertiser_report_export", args=[self.advertiser1.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response["Content-Disposition"].startswith("attachment; filename=")
+        )
+
     def test_flight_report_access(self):
         url = reverse("flight_report", args=[self.advertiser1.slug, self.flight1.slug])
 
@@ -275,6 +285,18 @@ class TestReportViews(TestCase):
         self.assertContains(response, self.advertiser2.name)
         self.assertContains(response, self.flight3.name)
 
+    def test_publisher_report_export(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse(
+            "flight_report_export", args=[self.advertiser1.slug, self.flight1.slug]
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response["Content-Disposition"].startswith("attachment; filename=")
+        )
+
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])
         url2 = reverse("publisher_report", args=[self.publisher2.slug])
@@ -304,3 +326,13 @@ class TestReportViews(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(url2)
         self.assertEqual(response.status_code, 200)
+
+    def test_publisher_report_export(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("publisher_report_export", args=[self.publisher1.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response["Content-Disposition"].startswith("attachment; filename=")
+        )

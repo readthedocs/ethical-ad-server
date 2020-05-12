@@ -95,14 +95,18 @@
 </section>
 
 <section class="mt-5">
-  <div class="float-right mb-3">
-    <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
-      <span class="fa fa-plus mr-1" aria-hidden="true"></span>
-      <span>{% trans 'Create advertisement' %}</span>
-    </a>
+
+  <div class="row">
+    <h5 class="col-md-8">{% trans 'Advertisements' %}</h5>
+
+    <aside class="col-md-4 mb-3 text-right">
+      <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
+        <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Create advertisement' %}</span>
+      </a>
+    </aside>
   </div>
 
-  <h5>{% trans 'Advertisements' %}</h5>
 
   {% if advertisement_list %}
     <div class="table-responsive">

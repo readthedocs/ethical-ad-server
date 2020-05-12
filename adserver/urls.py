@@ -49,6 +49,11 @@ urlpatterns = [
         name="advertiser_report",
     ),
     url(
+        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+        AdvertiserReportView.as_view(export=True),
+        name="advertiser_report_export",
+    ),
+    url(
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/$",
         FlightListView.as_view(),
         name="flight_list",
@@ -62,6 +67,11 @@ urlpatterns = [
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/report/$",
         AdvertiserFlightReportView.as_view(),
         name="flight_report",
+    ),
+    url(
+        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+        AdvertiserFlightReportView.as_view(export=True),
+        name="flight_report_export",
     ),
     url(
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/advertisements/create/$",
@@ -88,5 +98,10 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report/$",
         PublisherReportView.as_view(),
         name="publisher_report",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+        PublisherReportView.as_view(export=True),
+        name="publisher_report_export",
     ),
 ]
