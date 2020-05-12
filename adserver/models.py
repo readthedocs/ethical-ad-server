@@ -762,8 +762,16 @@ class AdType(TimeStampedModel, models.Model):
         help_text=_("Override the template for rendering this ad type"),
     )
 
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=_("A short description of the ad type to guide advertisers."),
+    )
+    order = models.PositiveSmallIntegerField(default=0)
+
     class Meta:
-        ordering = ("name",)
+        ordering = ("order", "name")
 
     def __str__(self):
         """Simple override."""
