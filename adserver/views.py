@@ -37,6 +37,7 @@ from .forms import AdvertisementUpdateForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
+from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
@@ -255,7 +256,13 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"advertiser": self.advertiser, "flight": self.flight})
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flight": self.flight,
+                "ad_types": AdType.objects.exclude(description="")[:5],
+            }
+        )
         return context
 
     def get_form_kwargs(self):
