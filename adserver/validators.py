@@ -31,6 +31,7 @@ class TargetingParametersValidator(BaseValidator):
         "include_metro_codes": "_validate_metro_codes",
         "exclude_countries": "_validate_country_codes",
         "include_keywords": "_validate_strs",
+        "exclude_keywords": "_validate_strs",
     }
 
     def __init__(self, message=None):

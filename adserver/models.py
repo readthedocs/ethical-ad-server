@@ -491,6 +491,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return []
         return self.targeting_parameters.get("include_keywords", [])
 
+    @property
+    def excluded_keywords(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("exclude_keywords", [])
+
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
         countries_dict = dict(countries)
@@ -527,11 +533,18 @@ class Flight(TimeStampedModel, IndestructibleModel):
         """
         Check if a flight is valid for a given keywords.
 
-        If *any* keywords match, it is considered valid
+        If *any* keywords match the included list, it should be shown.
+        If *any* keywords are in the excluded list, it should not be shown.
         """
+        keyword_set = set(keywords)
         if self.included_keywords:
-            keyword_set = set(keywords)
+            # If no keywords from the page in the include list, don't show this flight
             if not keyword_set.intersection(self.included_keywords):
+                return False
+
+        if self.excluded_keywords:
+            # If any keyworks from the page in the exclude list, don't show this flight
+            if keyword_set.intersection(self.excluded_keywords):
                 return False
 
         return True
