@@ -8,6 +8,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.paginator import EmptyPage
 from django.core.paginator import PageNotAnInteger
@@ -19,14 +20,17 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.urls import reverse
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView
+from django.views.generic import DeleteView
 from django.views.generic import DetailView
 from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
+from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
 from .constants import CAMPAIGN_TYPES
@@ -766,3 +770,55 @@ class AllPublisherReportView(BaseReportView):
         )
 
         return context
+
+
+class ApiTokenMixin(LoginRequiredMixin):
+
+    """User token to access the ad server API."""
+
+    model = Token
+    lookup_url_kwarg = "token_pk"
+    template_name = "adserver/accounts/api-token.html"
+    success_url = reverse_lazy("api_token_list")
+
+    def get_queryset(self):
+        # NOTE: we are currently showing just one token since the DRF model has
+        # a OneToOneField relation with User.
+        return Token.objects.filter(user__in=[self.request.user])
+
+
+class ApiTokenListView(ApiTokenMixin, ListView):
+    pass
+
+
+class ApiTokenCreateView(ApiTokenMixin, CreateView):
+
+    """View to generate a Token object for the logged in User."""
+
+    http_method_names = ["post"]
+    object = None
+
+    def post(self, request, *args, **kwargs):
+        token, created = Token.objects.get_or_create(user=self.request.user)
+        self.object = token
+        if created:
+            messages.success(request, _("API token created successfully"))
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class ApiTokenDeleteView(ApiTokenMixin, DeleteView):
+
+    """View to delete/revoke the current Token of the logged in User."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        result = super().post(request, *args, **kwargs)
+        messages.info(request, _("API token revoked"))
+        return result
+
+    def get_object(self, queryset=None):  # noqa
+        token = Token.objects.filter(user=self.request.user).first()
+        if not token:
+            raise Http404
+        return token
