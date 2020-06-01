@@ -36,6 +36,7 @@ class TestValidators(TestCase):
         validator({"include_countries": ["US", "CA"]})
         validator({"exclude_countries": ["US", "CA"]})
         validator({"include_keywords": ["django", "vuejs"]})
+        validator({"exclude_keywords": ["django", "vuejs"]})
         validator({"include_state_provinces": ["CA", "ID", "OR"]})
         validator({"include_metro_codes": [1, 2]})
 

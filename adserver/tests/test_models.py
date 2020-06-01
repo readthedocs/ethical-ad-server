@@ -88,6 +88,13 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertFalse(self.flight.show_to_keywords(["rails"]))
         self.assertTrue(self.flight.show_to_keywords(["django", "rails"]))
 
+        self.flight.targeting_parameters["exclude_keywords"] = ["rails"]
+        self.flight.save()
+
+        self.assertFalse(self.flight.show_to_keywords([]))
+        self.assertTrue(self.flight.show_to_keywords(["django"]))
+        self.assertFalse(self.flight.show_to_keywords(["django", "rails"]))
+
     def test_start_date_math(self):
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=14)
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
