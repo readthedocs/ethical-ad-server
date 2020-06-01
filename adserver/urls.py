@@ -11,6 +11,9 @@ from .views import AdvertiserReportView
 from .views import AdViewProxyView
 from .views import AllAdvertiserReportView
 from .views import AllPublisherReportView
+from .views import ApiTokenCreateView
+from .views import ApiTokenDeleteView
+from .views import ApiTokenListView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
@@ -103,5 +106,17 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",
         PublisherReportView.as_view(export=True),
         name="publisher_report_export",
+    ),
+    # User account management
+    url(r"^accounts/api-token/$", ApiTokenListView.as_view(), name="api_token_list"),
+    url(
+        r"^accounts/api-token/create/$",
+        ApiTokenCreateView.as_view(),
+        name="api_token_create",
+    ),
+    url(
+        r"^accounts/api-token/delete/$",
+        ApiTokenDeleteView.as_view(),
+        name="api_token_delete",
     ),
 ]

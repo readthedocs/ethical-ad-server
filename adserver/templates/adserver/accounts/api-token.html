@@ -1,0 +1,50 @@
+{% extends "adserver/dashboard.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+
+{% block title %}{% trans "API Token Management" %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
+</li>
+<li class="breadcrumb-item active">{% trans 'API Token Management' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans "API Token Management" %}{% endblock heading %}</h1>
+
+<p>{% trans 'API tokens allow you to use the ad server API to download reports.' %}</p>
+
+{% if not object_list %}
+  <form method="post" action="{% url 'api_token_create' %}">
+    {% csrf_token %}
+    <input type="submit" class="btn btn-primary" value="{% trans "Generate API Token" %}">
+  </form>
+{% else %}
+  {% for token in object_list %}
+    {% if forloop.first %}
+      {# Currently there's only 1 API token per user so limit to 1 #}
+      <form method="post" action="{% url 'api_token_delete' %}">
+        {% csrf_token %}
+        <div class="form-group row">
+          <label for="api_token" class="col-sm-2 col-form-label">API token</label>
+          <div class="col-sm-10">
+            <input type="text" readonly class="form-control-plaintext text-monospace" id="api_token" value="{{ token.key }}">
+            <small class="form-text text-muted">{% blocktrans with token_create=token.created %}Created {{ token_create }}{% endblocktrans %}</small>
+          </div>
+        </div>
+        <input type="submit" class="btn btn-danger" value="{% trans "Revoke token" %}">
+        <small class="form-text text-muted">{% trans "After revoking, you can regenerate a new token." %}</small>
+      </form>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% endblock content_container %}
