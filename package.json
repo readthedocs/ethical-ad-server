@@ -12,7 +12,7 @@
     "url": "git+https://github.com/readthedocs/ethical-ad-server.git"
   },
   "author": "Read the Docs, Inc.",
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/readthedocs/ethical-ad-server/issues"
   },
