@@ -307,7 +307,7 @@ REST_FRAMEWORK = {
 
 
 # Ad server specific settings
-# https://read-the-docs-ethical-ad-server.readthedocs-hosted.com/en/latest/install/configuration.html
+# https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
