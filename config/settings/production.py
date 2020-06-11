@@ -116,7 +116,7 @@ if SENTRY_DSN:
 
 
 # Production ad server specific settings
-# https://read-the-docs-ethical-ad-server.readthedocs-hosted.com/en/latest/install/configuration.html
+# https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL", default="admin")
 ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
