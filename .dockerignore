@@ -15,4 +15,4 @@
 /.tox
 /.venv
 /media
-/node_modules
+node_modules

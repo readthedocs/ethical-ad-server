@@ -72,4 +72,3 @@ services:
     ports: []
     volumes:
       - .:/app
-      - /app/node_modules

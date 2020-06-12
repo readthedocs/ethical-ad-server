@@ -1,0 +1,8 @@
+#!/bin/sh
+
+npm install
+
+# Node-Sass contains architecture specific parts
+npm rebuild node-sass
+
+npm run watch
