@@ -3,7 +3,11 @@ FROM node:12
 WORKDIR /app
 
 COPY package.json /app
+COPY package-lock.json /app
 
-RUN npm install && rm -f package.json
+RUN npm install
 
-ENTRYPOINT [ "npm", "run", "watch" ]
+COPY ./docker-compose/local/frontend/entrypoint /entrypoint
+RUN chmod +x /entrypoint
+
+ENTRYPOINT [ "/entrypoint" ]
