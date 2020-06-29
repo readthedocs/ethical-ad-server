@@ -285,7 +285,7 @@ class TestReportViews(TestCase):
         self.assertContains(response, self.advertiser2.name)
         self.assertContains(response, self.flight3.name)
 
-    def test_publisher_report_export(self):
+    def test_flight_report_export(self):
         self.client.force_login(self.staff_user)
 
         url = reverse(
