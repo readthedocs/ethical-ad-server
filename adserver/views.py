@@ -453,6 +453,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     DEFAULT_REPORT_DAYS = 30
     export = False
     export_filename = "readthedocs-report.csv"
+    fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
 
     def test_func(self):
         """By default, reports are locked down to staff."""
@@ -466,8 +467,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
-            writer = csv.DictWriter(response, fieldnames=fieldnames)
+            writer = csv.DictWriter(response, fieldnames=self.fieldnames)
             writer.writeheader()
             writer.writerows(report["days"])
 
@@ -686,6 +686,8 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
     template_name = "adserver/reports/publisher.html"
 
+    fieldnames = ["date", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -733,8 +735,8 @@ class AllPublisherReportView(BaseReportView):
         total_views = sum(
             report["total"]["views"] for _, report in publishers_and_reports
         )
-        total_cost = sum(
-            report["total"]["cost"] for _, report in publishers_and_reports
+        total_revenue = sum(
+            report["total"]["revenue"] for _, report in publishers_and_reports
         )
 
         # Aggregate the different publisher reports by day
@@ -751,7 +753,7 @@ class AllPublisherReportView(BaseReportView):
                 days[day["date"]]["clicks"] += day["clicks"]
                 days[day["date"]]["views_by_publisher"][publisher.name] = day["views"]
                 days[day["date"]]["clicks_by_publisher"][publisher.name] = day["clicks"]
-                days[day["date"]]["cost"] += float(day["cost"])
+                days[day["date"]]["revenue"] += float(day["revenue"])
                 days[day["date"]]["ctr"] = calculate_ctr(
                     days[day["date"]]["clicks"], days[day["date"]]["views"]
                 )
@@ -761,10 +763,10 @@ class AllPublisherReportView(BaseReportView):
                 "publishers": [p for p, _ in publishers_and_reports],
                 "publishers_and_reports": publishers_and_reports,
                 "total_clicks": total_clicks,
-                "total_cost": total_cost,
+                "total_cost": total_revenue,
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
-                "total_ecpm": calculate_ecpm(total_cost, total_views),
+                "total_ecpm": calculate_ecpm(total_revenue, total_views),
                 "campaign_types": CAMPAIGN_TYPES,
             }
         )

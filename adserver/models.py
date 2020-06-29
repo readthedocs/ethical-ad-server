@@ -97,6 +97,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
+    revenue_share_percentage = models.FloatField(
+        default=50.0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text=_("Percentage of advertising revenue shared with this publisher"),
+    )
+
     unauthed_ad_decisions = models.BooleanField(
         default=False,
         help_text=_(
@@ -146,26 +152,32 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             days[impression.date]["date"] = impression.date
             days[impression.date]["views"] += impression.views
             days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["cost"] += (
+            days[impression.date]["revenue"] += (
                 impression.clicks * float(impression.advertisement.flight.cpc)
             ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
+            days[impression.date]["revenue_share"] = days[impression.date][
+                "revenue"
+            ] * (self.revenue_share_percentage / 100.0)
             days[impression.date]["ctr"] = calculate_ctr(
                 days[impression.date]["clicks"], days[impression.date]["views"]
             )
             days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["cost"], days[impression.date]["views"]
+                days[impression.date]["revenue"], days[impression.date]["views"]
             )
 
         report["days"] = days.values()
 
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
+        report["total"]["revenue"] = sum(day["revenue"] for day in report["days"])
+        report["total"]["revenue_share"] = sum(
+            day["revenue_share"] for day in report["days"]
+        )
         report["total"]["ctr"] = calculate_ctr(
             report["total"]["clicks"], report["total"]["views"]
         )
         report["total"]["ecpm"] = calculate_ecpm(
-            report["total"]["cost"], report["total"]["views"]
+            report["total"]["revenue"], report["total"]["views"]
         )
 
         return report
