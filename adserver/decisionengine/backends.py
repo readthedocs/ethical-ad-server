@@ -39,8 +39,12 @@ class BaseAdDecisionBackend:
         self.campaign_types = kwargs.get("campaign_types", []) or []
 
         if not self.campaign_types:
-            # Unless specified, ads from any campaign type can be shown
-            self.campaign_types = ALL_CAMPAIGN_TYPES
+            if publisher.paid_campaigns_only:
+                # This publisher only wants paid ads
+                self.campaign_types = [PAID_CAMPAIGN]
+            else:
+                # Unless specified, ads from any campaign type can be shown
+                self.campaign_types = ALL_CAMPAIGN_TYPES
 
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")

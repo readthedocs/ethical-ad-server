@@ -372,6 +372,24 @@ class DecisionEngineTests(TestCase):
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
                     self.assertEqual(ad, None)
 
+    def test_paid_ads_only(self):
+        self.campaign.campaign_type = PAID_CAMPAIGN
+        self.campaign.save()
+
+        self.publisher.paid_campaigns_only = True
+        self.publisher.save()
+
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
+
+        # After setting the only campaign to a house campaign, no flights are eligible on this publisher
+        # Because the publisher only wants paid campaigns
+        self.campaign.campaign_type = HOUSE_CAMPAIGN
+        self.campaign.save()
+        self.assertIsNone(backend.select_flight())
+
     def test_campaign_type_priority(self):
         # First disable all the flights from the test case constructor
         for flight in Flight.objects.all():
