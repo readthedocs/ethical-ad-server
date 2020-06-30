@@ -81,6 +81,13 @@
          </dd>
        {% endif %}
     </dl>
+
+    <p>
+      <a href="{% url 'flight_detail' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+        <span class="fa fa-cog mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Manage flight & ads' %}</span>
+      </a>
+    </p>
   </section>
 
   <section class="mt-5">
