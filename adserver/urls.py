@@ -7,6 +7,7 @@ from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
 from .views import AdvertisementUpdateView
 from .views import AdvertiserFlightReportView
+from .views import AdvertiserMainView
 from .views import AdvertiserReportView
 from .views import AdViewProxyView
 from .views import AllAdvertiserReportView
@@ -19,6 +20,7 @@ from .views import do_not_track
 from .views import do_not_track_policy
 from .views import FlightDetailView
 from .views import FlightListView
+from .views import PublisherMainView
 from .views import PublisherReportView
 
 
@@ -45,6 +47,11 @@ urlpatterns = [
         r"^advertiser/all/report/$",
         AllAdvertiserReportView.as_view(),
         name="all_advertisers_report",
+    ),
+    url(
+        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/$",
+        AdvertiserMainView.as_view(),
+        name="advertiser_main",
     ),
     url(
         r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/report/$",
@@ -96,6 +103,11 @@ urlpatterns = [
         r"^publisher/all/report/$",
         AllPublisherReportView.as_view(),
         name="all_publishers_report",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/$",
+        PublisherMainView.as_view(),
+        name="publisher_main",
     ),
     url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report/$",

@@ -18,6 +18,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.urls import reverse_lazy
@@ -30,6 +31,7 @@ from django.views.generic import DetailView
 from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
+from django.views.generic.base import RedirectView
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
@@ -102,14 +104,31 @@ def dashboard(request):
         publishers = Publisher.objects.all()
         advertisers = Advertiser.objects.all()
     else:
-        publishers = request.user.publishers.all()
-        advertisers = request.user.advertisers.all()
+        publishers = list(request.user.publishers.all())
+        advertisers = list(request.user.advertisers.all())
+
+        if not publishers and len(advertisers) == 1:
+            # This user has access to a single advertiser - redirect to it
+            return redirect(reverse("advertiser_main", args=[advertisers[0].slug]))
+        if not advertisers and len(publishers) == 1:
+            # This user has access to a single publisher - redirect to it
+            return redirect(reverse("publisher_main", args=[publishers[0].slug]))
 
     return render(
         request,
         "adserver/dashboard.html",
         {"advertisers": advertisers, "publishers": publishers},
     )
+
+
+class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, RedirectView):
+
+    """Should be (or redirect to) the main view for an advertiser that they see when first logging in."""
+
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse("flight_list", kwargs=kwargs)
 
 
 class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
@@ -772,6 +791,16 @@ class AllPublisherReportView(BaseReportView):
         )
 
         return context
+
+
+class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
+
+    """Should be (or redirect to) the main view for a publisher that they see when first logging in."""
+
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse("publisher_report", kwargs=kwargs)
 
 
 class ApiTokenMixin(LoginRequiredMixin):

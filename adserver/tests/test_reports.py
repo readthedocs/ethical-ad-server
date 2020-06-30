@@ -130,6 +130,45 @@ class TestReportViews(TestCase):
         self.assertContains(response, self.advertiser1.name)
         self.assertContains(response, self.publisher1.name)
 
+    def test_advertiser_redirect(self):
+        url = reverse("dashboard-home")
+        self.client.force_login(self.user)
+        self.user.advertisers.add(self.advertiser1)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # If a user has access to 2 advertisers (or a publisher and an advertiser) don't redirect
+        self.user.advertisers.add(self.advertiser2)
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser1.name)
+        self.assertContains(response, self.advertiser2.name)
+
+        self.user.advertisers.remove(self.advertiser2)
+        self.user.publishers.add(self.publisher1)
+        response = self.client.get(url)
+        self.assertContains(response, self.advertiser1.name)
+        self.assertContains(response, self.publisher1.name)
+
+    def test_publisher_redirect(self):
+        url = reverse("dashboard-home")
+        self.client.force_login(self.user)
+        self.user.publishers.add(self.publisher1)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.get(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        self.user.publishers.add(self.publisher2)
+        response = self.client.get(url)
+        self.assertContains(response, self.publisher1.name)
+        self.assertContains(response, self.publisher2.name)
+
     def test_all_advertiser_report_access(self):
         url = reverse("all_advertisers_report")
 
