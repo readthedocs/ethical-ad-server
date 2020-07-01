@@ -67,6 +67,21 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Supports the same parameters as via POST with the following changes:
 
+        :<json string div_ids: A ``|`` delimited string of on-page ids.
+            The number and order must correspond to the ``ad_types``
+        :<json string ad_types: A ``|`` delimited string of ad types.
+            The number and order must correspond to the ``div_ids``.
+        :<json string priorities: A ``|`` delimited string of ad types.
+            The number and order matter, applying to ``div_ids`` and ``ad_types``.
+
+        An example::
+
+            {
+                "ad_types": "readthedocs-fixed-footer|readthedocs-sidebar",
+                "div_ids": "text-div|image-div"
+                "priorities": "3|5"
+            }
+
         * The publisher must be explicitly permitted to allow unauthenticated requests
         * Supports an optional parameter ``format=jsonp`` to signify a JSONP request
         * Supports an optional parameter ``callback``
