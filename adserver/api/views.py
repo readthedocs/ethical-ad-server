@@ -71,7 +71,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             The number and order must correspond to the ``ad_types``
         :<json string ad_types: A ``|`` delimited string of ad types.
             The number and order must correspond to the ``div_ids``.
-        :<json string priorities: A ``|`` delimited string of ad types.
+        :<json string priorities: An optional ``|`` delimited string of priorities for different ad types.
             The number and order matter, applying to ``div_ids`` and ``ad_types``.
 
         An example::
