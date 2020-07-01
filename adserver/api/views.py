@@ -76,10 +76,17 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         An example::
 
+            # Multiple type options
             {
                 "ad_types": "readthedocs-fixed-footer|readthedocs-sidebar",
                 "div_ids": "text-div|image-div"
                 "priorities": "3|5"
+            }
+
+            # Simplest case
+            {
+                "ad_types": "readthedocs-sidebar",
+                "div_ids": "sample-div"
             }
 
         * The publisher must be explicitly permitted to allow unauthenticated requests
