@@ -104,13 +104,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     )
 
     unauthed_ad_decisions = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_(
             "Whether this publisher allows unauthenticated ad decision API requests (eg. JSONP)"
         ),
     )
     paid_campaigns_only = models.BooleanField(
-        default=False, help_text=_("Only show paid campaigns for this publisher")
+        default=True, help_text=_("Only show paid campaigns for this publisher")
     )
 
     class Meta:

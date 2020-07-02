@@ -36,7 +36,14 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for publishers."""
 
-    list_display = ("name", "report")
+    list_display = (
+        "name",
+        "report",
+        "revenue_share_percentage",
+        "unauthed_ad_decisions",
+        "paid_campaigns_only",
+    )
+    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
 
