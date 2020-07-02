@@ -8,6 +8,8 @@
 
 {% block heading %}{% blocktrans %}Publisher Embed for {{ publisher }}{% endblocktrans %}{% endblock heading %}
 
+{% block filters %}
+{% endblock %}
 
 {% block breadcrumbs %}
   {{ block.super }}
@@ -19,23 +21,21 @@
   <section>
     <div>
       <h2></h2>
-      <div class="row">
-        <h2 class="col-md-8">{% trans 'Embed code for advertising' %}</h2>
+      <div class="row col-md-8">
 
         <p>
           This code will allow you to get started with showing ads on your site.
         </p>
 
-        <code>
-          <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+        <pre>
+    &lt;script async src=&quot;https://media.ethicalads.io/media/client/ethicalads.min.js&quot;&gt;&lt;/script&gt;
 
-          <!-- Show a text ad -->
-          <div data-ea-publisher="{{ publisher.slug }}" data-ea-type="text"></div>
+    &lt;!-- Show a text ad --&gt;
+    &lt;div data-ea-publisher=&quot;{{ publisher.slug }}&quot; data-ea-type=&quot;text&quot;&gt;&lt;/div&gt;
 
-          <!-- Show an image ad -->
-          <div data-ea-publisher="{{ publisher.slug }}" data-ea-type="image"></div>
-
-        </code>
+    &lt;!-- Show an image ad --&gt;
+    &lt;div data-ea-publisher=&quot;{{ publisher.slug }}&quot; data-ea-type=&quot;image&quot;&gt;&lt;/div&gt;
+        </pre>
 
         <p>
           You can find full documentation and more information about the client in our <a href="https://github.com/readthedocs/ethical-ad-client">GitHub repo</a>.
