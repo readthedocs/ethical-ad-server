@@ -115,6 +115,11 @@ urlpatterns = [
         name="publisher_report",
     ),
     url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
+        PublisherEmbedView.as_view(),
+        name="published_embed",
+    ),
+    url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",
         PublisherReportView.as_view(export=True),
         name="publisher_report_export",

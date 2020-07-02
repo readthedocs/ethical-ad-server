@@ -1,0 +1,49 @@
+{% extends "adserver/reports/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Publisher Embed' %} - {{ publisher }}{% endblock %}
+
+
+{% block heading %}{% blocktrans %}Publisher Embed for {{ publisher }}{% endblocktrans %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{{ publisher }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block summary %}
+  <section>
+    <div>
+      <h2></h2>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Embed code for advertising' %}</h2>
+
+        <p>
+          This code will allow you to get started with showing ads on your site.
+        </p>
+
+        <code>
+          <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+          <!-- Show a text ad -->
+          <div data-ea-publisher="{{ publisher.slug }}" data-ea-type="text"></div>
+
+          <!-- Show an image ad -->
+          <div data-ea-publisher="{{ publisher.slug }}" data-ea-type="image"></div>
+
+        </code>
+
+        <p>
+          You can find full documentation and more information about the client in our <a href="https://github.com/readthedocs/ethical-ad-client">GitHub repo</a>.
+        </p>
+
+    </div>
+  </section>
+{% endblock summary %}
+
+
+{% block report %}{% endblock report %}
