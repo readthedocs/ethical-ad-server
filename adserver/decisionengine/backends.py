@@ -173,7 +173,9 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return False
 
         # Skip if we aren't meant to show to these keywords
-        if not flight.show_to_keywords(self.keywords):
+        if not flight.show_to_keywords(
+            keywords=self.keywords, publisher=self.publisher
+        ):
             return False
 
         # Skip if there are no clicks or views needed today (ad pacing)

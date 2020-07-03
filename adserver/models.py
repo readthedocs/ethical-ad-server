@@ -558,7 +558,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def show_to_keywords(self, keywords):
+    def show_to_keywords(self, keywords, publisher):
         """
         Check if a flight is valid for a given keywords.
 
@@ -567,13 +567,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         """
         keyword_set = set(keywords)
         # Add default keywords from publisher
-        if self.publisher.keywords:
+        if publisher.keywords:
             log.debug(
                 "Adding default keywords: publisher=%s keywords=%s",
-                self.publisher.slug,
-                self.publisher.keywords,
+                publisher.slug,
+                publisher.keywords,
             )
-            keyword_set.add(self.publisher.keywords)
+            keyword_set.update(publisher.keywords)
         if self.included_keywords:
             # If no keywords from the page in the include list, don't show this flight
             if not keyword_set.intersection(self.included_keywords):
