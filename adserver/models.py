@@ -103,6 +103,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         help_text=_("Percentage of advertising revenue shared with this publisher"),
     )
 
+    default_keywords = models.CharField(
+        _("Default keywords"),
+        max_length=250,
+        help_text=_("A CSV of default keywords for this property. Used for targeting."),
+    )
+
     unauthed_ad_decisions = models.BooleanField(
         default=False,
         help_text=_(
@@ -122,6 +128,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     def get_absolute_url(self):
         return reverse("publisher_report", kwargs={"publisher_slug": self.slug})
+
+    @property
+    def keywords(self):
+        if self.default_keywords:
+            return self.default_keywords.split(",")
+        return []
 
     def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """
@@ -552,6 +564,14 @@ class Flight(TimeStampedModel, IndestructibleModel):
         If *any* keywords are in the excluded list, it should not be shown.
         """
         keyword_set = set(keywords)
+        # Add default keywords from publisher
+        if self.publisher.keywords:
+            log.debug(
+                "Adding default keywords: publisher=%s keywords=%s",
+                self.publisher.slug,
+                self.publisher.keywords,
+            )
+            keyword_set.add(self.publisher.keywords)
         if self.included_keywords:
             # If no keywords from the page in the include list, don't show this flight
             if not keyword_set.intersection(self.included_keywords):
