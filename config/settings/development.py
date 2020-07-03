@@ -18,7 +18,7 @@ if env.bool("USE_DOCKER", default=False):
 # https://django-debug-toolbar.readthedocs.io
 # --------------------------------------------------------------------------
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
-INSTALLED_APPS += ["debug_toolbar"]
+INSTALLED_APPS += ["debug_toolbar", "django_extensions"]
 DEBUG_TOOLBAR_CONFIG = {
     "DISABLE_PANELS": ["debug_toolbar.panels.redirects.RedirectsPanel"],
     "SHOW_TEMPLATE_CONTEXT": True,
