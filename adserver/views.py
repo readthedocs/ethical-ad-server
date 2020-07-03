@@ -732,7 +732,9 @@ class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
         context = super().get_context_data(**kwargs)
 
         publisher_slug = kwargs.get("publisher_slug", "")
-        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+        publisher = get_object_or_404(
+            Publisher, slug=publisher_slug, unauthed_ad_decisions=True
+        )
 
         context.update({"publisher": publisher})
 
