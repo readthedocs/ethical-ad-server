@@ -510,7 +510,6 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(ad, community_ad)
 
     def test_default_keywords(self):
-        # Remove the flight without targeting for this test
         self.publisher.default_keywords = "foo,bar,baz,machine-learning"
         self.publisher.save()
 
