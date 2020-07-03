@@ -38,6 +38,15 @@ class BaseAdDecisionBackend:
         self.keywords = kwargs.get("keywords", []) or []
         self.campaign_types = kwargs.get("campaign_types", []) or []
 
+        # Add default keywords from publisher
+        if self.publisher.keywords:
+            log.debug(
+                "Adding default keywords: publisher=%s keywords=%s",
+                self.publisher.slug,
+                self.publisher.keywords,
+            )
+            self.keywords.extend(self.publisher.keywords)
+
         if not self.campaign_types:
             if publisher.paid_campaigns_only:
                 # This publisher only wants paid ads

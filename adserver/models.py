@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 from django_countries.fields import CountryField
@@ -103,6 +104,14 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         help_text=_("Percentage of advertising revenue shared with this publisher"),
     )
 
+    default_keywords = models.CharField(
+        _("Default keywords"),
+        max_length=250,
+        help_text=_("A CSV of default keywords for this property. Used for targeting."),
+        default="",
+        blank=True,
+    )
+
     unauthed_ad_decisions = models.BooleanField(
         default=True,
         help_text=_(
@@ -122,6 +131,29 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     def get_absolute_url(self):
         return reverse("publisher_report", kwargs={"publisher_slug": self.slug})
+
+    @property
+    def keywords(self):
+        """
+        Parses database keywords and ensures consistency.
+
+        - Lowercases all tags
+        - Converts underscores to hyphens
+        - Slugifies tags
+        - Removes empty tags
+
+        Similar logic to RTD ``readthedocs.projects.tag_utils.rtd_parse_tags``.
+        """
+        if self.default_keywords:
+            return_keywords = []
+            keyword_list = self.default_keywords.split(",")
+            for keyword in keyword_list:
+                keyword = keyword.lower().replace("_", "-")
+                keyword = slugify(keyword)
+                if keyword:
+                    return_keywords.append(keyword)
+            return return_keywords
+        return []
 
     def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """

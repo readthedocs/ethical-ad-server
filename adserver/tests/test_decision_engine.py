@@ -510,3 +510,15 @@ class DecisionEngineTests(TestCase):
         # Community before house
         ad, _ = self.probabilistic_backend.get_ad_and_placement()
         self.assertEqual(ad, community_ad)
+
+    def test_default_keywords(self):
+        self.publisher.default_keywords = "foo,bar,baz,machine-learning"
+        self.publisher.save()
+
+        self.backend = AdvertisingEnabledBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+
+        self.assertTrue(
+            self.backend.keywords, ["foo", "bar", "baz", "machine-learning"]
+        )
