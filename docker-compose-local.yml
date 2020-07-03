@@ -30,6 +30,10 @@ services:
     ports:
       - "5000:5000"
     command: /start
+    # Allow us to run `docker attach` and get
+    # control on STDIN and be able to debug our code with interactive pdb
+    stdin_open: true
+    tty: true
 
   postgres:
     build:
