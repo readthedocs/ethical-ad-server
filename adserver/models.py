@@ -107,6 +107,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         _("Default keywords"),
         max_length=250,
         help_text=_("A CSV of default keywords for this property. Used for targeting."),
+        default="",
+        blank=True,
     )
 
     unauthed_ad_decisions = models.BooleanField(
