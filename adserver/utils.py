@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
+from django.utils.text import slugify
 from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
@@ -220,3 +221,21 @@ def generate_client_id(ip_address, user_agent):
         hash_id.update(force_bytes(get_random_string()))
 
     return hash_id.hexdigest()
+
+
+# Copied from RTD
+def rtd_parse_tags(tag):
+    """
+    Parses a string into its tags.
+    - Lowercases all tags
+    - Converts underscores to hyphens
+    - Slugifies tags
+    - Removes empty tags
+    :see: https://django-taggit.readthedocs.io/page/custom_tagging.html
+    :param tag_string: a delimited string of tags
+    :return: a sorted list of tag strings
+    """
+    if tag:
+        tag = tag.lower().replace("_", "-")
+
+    return slugify(tag)

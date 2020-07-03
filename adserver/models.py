@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 from django_countries.fields import CountryField
@@ -133,8 +134,25 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     @property
     def keywords(self):
+        """
+        Parses database keywords and ensures consistency.
+
+        - Lowercases all tags
+        - Converts underscores to hyphens
+        - Slugifies tags
+        - Removes empty tags
+
+        Similar logic to RTD ``readthedocs.projects.tag_utils.rtd_parse_tags``.
+        """
         if self.default_keywords:
-            return self.default_keywords.split(",")
+            return_keywords = []
+            keyword_list = self.default_keywords.split(",")
+            for keyword in keyword_list:
+                keyword = keyword.lower().replace("_", "-")
+                keyword = slugify(keyword)
+                if keyword:
+                    return_keywords.append(keyword)
+            return return_keywords
         return []
 
     def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
@@ -566,14 +584,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         If *any* keywords are in the excluded list, it should not be shown.
         """
         keyword_set = set(keywords)
-        # Add default keywords from publisher
-        if publisher.keywords:
-            log.debug(
-                "Adding default keywords: publisher=%s keywords=%s",
-                publisher.slug,
-                publisher.keywords,
-            )
-            keyword_set.update(publisher.keywords)
+
         if self.included_keywords:
             # If no keywords from the page in the include list, don't show this flight
             if not keyword_set.intersection(self.included_keywords):
