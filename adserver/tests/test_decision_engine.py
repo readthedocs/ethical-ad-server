@@ -27,7 +27,9 @@ from ..utils import get_ad_day
 
 class DecisionEngineTests(TestCase):
     def setUp(self):
-        self.publisher = get(Publisher, slug="test-publisher")
+        self.publisher = get(
+            Publisher, slug="test-publisher", paid_campaigns_only=False
+        )
         self.ad_type = get(AdType, has_image=False, slug="z")
         self.campaign = get(Campaign, publishers=[self.publisher])
         self.include_flight = get(

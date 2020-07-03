@@ -34,7 +34,9 @@ from ..models import View
 class ApiPermissionTest(TestCase):
     def setUp(self):
         self.advertiser = get(Advertiser, slug="test-advertiser")
-        self.publisher = get(Publisher, slug="test-publisher")
+        self.publisher = get(
+            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+        )
 
         self.ad_decision_permission = AdDecisionPermission()
         self.publisher_permission = PublisherPermission()
@@ -163,8 +165,12 @@ class ApiPermissionTest(TestCase):
 
 class BaseApiTest(TestCase):
     def setUp(self):
-        self.publisher = self.publisher1 = get(Publisher, slug="test-publisher")
-        self.publisher2 = get(Publisher, slug="another-publisher")
+        self.publisher = self.publisher1 = get(
+            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+        )
+        self.publisher2 = get(
+            Publisher, slug="another-publisher", unauthed_ad_decisions=False
+        )
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
         )
