@@ -576,7 +576,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def show_to_keywords(self, keywords, publisher):
+    def show_to_keywords(self, keywords):
         """
         Check if a flight is valid for a given keywords.
 
@@ -584,7 +584,6 @@ class Flight(TimeStampedModel, IndestructibleModel):
         If *any* keywords are in the excluded list, it should not be shown.
         """
         keyword_set = set(keywords)
-
         if self.included_keywords:
             # If no keywords from the page in the include list, don't show this flight
             if not keyword_set.intersection(self.included_keywords):
