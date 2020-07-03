@@ -11,6 +11,12 @@ body {
     padding: 0.75rem 1rem;
   }
 
+  pre {
+    background-color: $gray-200;
+    padding: 1.5rem;
+    border: 1px solid $border-color;
+  }
+
   /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
   .advertisement-preview {
     .ethical-callout {

@@ -722,6 +722,25 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
+class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
+
+    """A report for a single publisher."""
+
+    template_name = "adserver/reports/publisher_embed.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(
+            Publisher, slug=publisher_slug, unauthed_ad_decisions=True
+        )
+
+        context.update({"publisher": publisher})
+
+        return context
+
+
 class AllPublisherReportView(BaseReportView):
 
     """A report for all publishers."""

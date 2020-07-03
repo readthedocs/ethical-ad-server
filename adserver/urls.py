@@ -20,6 +20,7 @@ from .views import do_not_track
 from .views import do_not_track_policy
 from .views import FlightDetailView
 from .views import FlightListView
+from .views import PublisherEmbedView
 from .views import PublisherMainView
 from .views import PublisherReportView
 
@@ -113,6 +114,11 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report/$",
         PublisherReportView.as_view(),
         name="publisher_report",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
+        PublisherEmbedView.as_view(),
+        name="publisher_embed",
     ),
     url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",

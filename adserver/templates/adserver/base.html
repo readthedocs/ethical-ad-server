@@ -73,12 +73,23 @@
             <h6 class="text-muted">{{ publisher }}</h6>
 
             <ul class="nav flex-column mb-2">
+
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_report' publisher.slug %}">
                   <span class="fa fa-bar-chart fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Reports' %}</span>
                 </a>
               </li>
+
+              {% if publisher.unauthed_ad_decisions %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'publisher_embed' publisher.slug %}">
+                    <span class="fa fa-code fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                    <span>{% trans 'Client Embed Code' %}</span>
+                  </a>
+                </li>
+              {% endif %}
+
             </ul>
           {% endif %}
         </nav>

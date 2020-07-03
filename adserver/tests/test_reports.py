@@ -375,3 +375,16 @@ class TestReportViews(TestCase):
         self.assertTrue(
             response["Content-Disposition"].startswith("attachment; filename=")
         )
+
+    def test_publisher_embed_code(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("publisher_embed", args=[self.publisher1.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.publisher1.unauthed_ad_decisions = False
+        self.publisher1.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
