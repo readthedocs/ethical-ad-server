@@ -9,7 +9,7 @@ from django.db import models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0018_paid_ads_only_flag'),
+        ('adserver', '0019_update_publisher_flags_for_ad_network'),
     ]
 
     operations = [
