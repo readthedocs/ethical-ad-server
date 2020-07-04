@@ -851,7 +851,8 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_ad_network(self):
-        self.publisher1.slug = "another-publisher"
+        self.publisher1.slug = "another-publisher"  # No `readthedocs`
+        self.publisher1.unauthed_ad_decisions = True  # In case we change logic
         self.publisher1.save()
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
@@ -874,7 +875,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
-        # Ensure also that a view object was NOT written due to ADSERVER_RECORD_VIEWS=False
+        # Make sure we're writing ads for ad network views
         self.assertTrue(
             View.objects.filter(
                 advertisement=self.ad, publisher=self.publisher1
