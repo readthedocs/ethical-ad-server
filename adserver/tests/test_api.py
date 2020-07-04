@@ -849,6 +849,38 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
+    @override_settings(ADSERVER_RECORD_VIEWS=False)
+    def test_record_views_ad_network(self):
+        self.publisher1.slug = "another-publisher"
+        self.publisher1.save()
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        nonce = resp.json()["nonce"]
+
+        # Simulate an ad view and verify it was viewed
+        view_url = reverse(
+            "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+
+        resp = self.proxy_client.get(view_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        # Verify an impression was written
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 1)
+
+        # Ensure also that a view object was NOT written due to ADSERVER_RECORD_VIEWS=False
+        self.assertTrue(
+            View.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).exists()
+        )
+
 
 class TestProxyViews(BaseApiTest):
     def setUp(self):
