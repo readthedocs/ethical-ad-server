@@ -1029,7 +1029,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         self.incr(VIEWS, publisher)
 
-        if settings.ADSERVER_RECORD_VIEWS:
+        # TODO: Find a better way to record explicit ad server views
+        if settings.ADSERVER_RECORD_VIEWS or "readthedocs" not in publisher.slug:
             self._record_base(request, View, publisher, url)
         else:
             log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
