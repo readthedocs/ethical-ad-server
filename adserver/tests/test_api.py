@@ -819,6 +819,8 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
+        self.publisher1.slug = "readthedocs-test"
+        self.publisher1.save()
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
