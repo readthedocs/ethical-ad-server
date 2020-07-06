@@ -81,6 +81,7 @@ ADSERVER_RECORD_VIEWS
 Whether to store metadata (a database record) each time an ad is viewed.
 This is ``False`` by default and can result in a bloated database and poor performance.
 It's ``True`` by default in development.
+This can be overridden on a per publisher basis by setting the ``Publisher.record_views`` flag.
 
 
 ALLOWED_HOSTS

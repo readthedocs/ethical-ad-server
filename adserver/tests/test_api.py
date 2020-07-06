@@ -851,9 +851,11 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_ad_network(self):
-        self.publisher1.slug = "another-publisher"  # No `readthedocs`
-        self.publisher1.unauthed_ad_decisions = True  # In case we change logic
+        # Set the publisher flag to always record views
+        # It should override the one in settings
+        self.publisher1.record_views = True
         self.publisher1.save()
+
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"

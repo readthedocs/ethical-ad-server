@@ -122,6 +122,14 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         default=True, help_text=_("Only show paid campaigns for this publisher")
     )
 
+    # This overrides settings.ADSERVER_RECORD_VIEWS for a specific publisher
+    # Details of each ad view are written to the database.
+    # Setting this can result in some performance degradation and a bloated database.
+    record_views = models.BooleanField(
+        default=False,
+        help_text=_("Record each ad view from this publisher to the database"),
+    )
+
     class Meta:
         ordering = ("name",)
 
@@ -1024,16 +1032,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Store view data in the DB.
 
         Views are only stored if ``settings.ADSERVER_RECORD_VIEWS=True``
+        Or if a publisher has the ``Publisher.record_views`` flag set.
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
         self.incr(VIEWS, publisher)
 
-        # TODO: Find a better way to record explicit ad server views
-        if settings.ADSERVER_RECORD_VIEWS or "readthedocs" not in publisher.slug:
+        if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
             self._record_base(request, View, publisher, url)
         else:
-            log.debug("Not recording ad view (settings.ADSERVER_RECORD_VIEWS=False)")
+            log.debug("Not recording ad view.")
 
     def offer_ad(self, publisher):
         """
