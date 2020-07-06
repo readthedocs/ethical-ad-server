@@ -406,6 +406,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+        self.assertEqual(resp_json["campaign_type"], PAID_CAMPAIGN)
 
         # Try community only
         data["campaign_types"] = [COMMUNITY_CAMPAIGN]
@@ -424,6 +425,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+        self.assertEqual(resp_json["campaign_type"], COMMUNITY_CAMPAIGN)
 
         # Try multiple campaign types
         data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN]
@@ -442,6 +444,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+        self.assertEqual(resp_json["campaign_type"], HOUSE_CAMPAIGN)
 
         # try an invalid campaign type
         data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN, "unknown"]

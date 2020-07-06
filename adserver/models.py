@@ -944,6 +944,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "view_url": view_url,
             "nonce": nonce,
             "display_type": self.ad_type.slug,
+            "campaign_type": self.flight.campaign.campaign_type,
         }
 
     def cache_key(self, impression_type, nonce):

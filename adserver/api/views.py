@@ -62,6 +62,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
         :>json string display_type: The slug of type of ad (eg. sidebar)
         :>json string div_id: The <div> ID where the ad will be inserted
+        :>json string campaign_type: The type of campaign this as is from (house or paid)
 
     .. http:get:: /api/v1/decision/
 
