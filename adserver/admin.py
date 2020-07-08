@@ -38,12 +38,14 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     list_display = (
         "name",
+        "slug",
         "report",
         "revenue_share_percentage",
         "unauthed_ad_decisions",
         "paid_campaigns_only",
+        "record_views",
     )
-    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only")
+    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only", "record_views")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
 
@@ -146,6 +148,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
 
     model = Advertisement
     save_as = True
+    list_per_page = 50  # make page load a bit faster
     prepopulated_fields = {"slug": ("name",)}
     list_display = (
         "ad_image",
@@ -210,6 +213,7 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
     model = Advertisement
 
     can_delete = False
+    list_per_page = 50  # make page load a bit faster
     fields = (
         "ad_image",
         "name",
@@ -476,7 +480,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_display = readonly_fields[:-3]
     list_select_related = ("advertisement", "publisher")
-    list_filter = ("is_mobile",)
+    list_filter = ("is_mobile", "publisher")
     search_fields = (
         "advertisement__name",
         "url",
