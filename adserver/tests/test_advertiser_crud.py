@@ -45,18 +45,38 @@ class TestAdvertiserCrudViews(TestCase):
                 "include_state_provinces": ["CA", "NY"],
             },
         )
-        self.ad_type1 = get(
-            AdType, name="Ad Type", has_image=False, max_text_length=100
-        )
+
         self.ad1 = get(
             Advertisement,
             name="Test Ad 1",
             slug="test-ad-1",
             flight=self.flight,
-            ad_type=self.ad_type1,
+            image=None,
+        )
+        self.ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight,
+            image=SimpleUploadedFile(
+                name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
+            ),
+        )
+        self.ad3 = get(
+            Advertisement,
+            name="Test Ad 3",
+            slug="test-ad-3",
+            flight=self.flight,
             image=None,
         )
 
+        self.ad_type1 = get(
+            AdType,
+            name="Ad Type",
+            has_image=False,
+            max_text_length=100,
+            description="test",
+        )
         self.ad_type2 = get(
             AdType,
             name="Ad Type 2",
@@ -66,25 +86,19 @@ class TestAdvertiserCrudViews(TestCase):
             max_text_length=1000,
             allowed_html_tags="",
         )
-        self.ad2 = get(
-            Advertisement,
-            name="Test Ad 2",
-            slug="test-ad-2",
-            flight=self.flight,
-            ad_type=self.ad_type2,
-            image=SimpleUploadedFile(
-                name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
-            ),
+        self.ad_type3 = get(
+            AdType,
+            name="Ad Type 3",
+            has_image=False,
+            image_height=None,
+            image_width=None,
+            max_text_length=100,
+            allowed_html_tags="",
         )
 
-        self.ad3 = get(
-            Advertisement,
-            name="Test Ad 3",
-            slug="test-ad-3",
-            flight=self.flight,
-            ad_type=None,
-            image=None,
-        )
+        self.ad1.ad_types.add(self.ad_type1)
+        self.ad2.ad_types.add(self.ad_type2)
+        self.ad3.ad_types.add(self.ad_type3)
 
         self.user = get(
             get_user_model(), username="test-user", advertisers=[self.advertiser]
@@ -188,6 +202,7 @@ class TestAdvertiserCrudViews(TestCase):
             "link": "http://example.com",
             "text": "Sample text",
             "image": "",
+            "ad_types": [self.ad_type1.pk],
         }
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 302)
@@ -195,34 +210,6 @@ class TestAdvertiserCrudViews(TestCase):
         # Verify the DB was updated
         self.ad1.refresh_from_db()
         self.assertEqual(self.ad1.name, data["name"])
-
-        # Check an ad that accepts any image size
-        url2 = reverse(
-            "advertisement_update",
-            kwargs={
-                "advertiser_slug": self.advertiser.slug,
-                "flight_slug": self.flight.slug,
-                "advertisement_slug": self.ad2.slug,
-            },
-        )
-        response = self.client.get(url2)
-        self.assertContains(response, self.ad2.name)
-        self.assertContains(response, "Any image size is supported")
-
-        # Check an ad with no ad-type
-        url3 = reverse(
-            "advertisement_update",
-            kwargs={
-                "advertiser_slug": self.advertiser.slug,
-                "flight_slug": self.flight.slug,
-                "advertisement_slug": self.ad3.slug,
-            },
-        )
-
-        response = self.client.get(url3)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.ad3.name)
-        self.assertContains(response, "Sized according to the ad type")
 
     def test_ad_create_view(self):
         url = reverse(
@@ -249,7 +236,7 @@ class TestAdvertiserCrudViews(TestCase):
             "link": "http://example.com",
             "text": "Sample text",
             "image": "",
-            "ad_type": self.ad_type1.pk,
+            "ad_types": [self.ad_type1.pk],
         }
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 302)

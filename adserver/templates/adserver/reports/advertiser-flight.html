@@ -168,10 +168,8 @@
               <dt>{% trans 'Disabled' %}</dt>
               <dd>{% trans 'This promo is not currently being shown' %}</dd>
             {% endif %}
-            {% if ad.ad_type %}
-              <dt>{% trans 'Display' %}</dt>
-              <dd>{{ ad.ad_type.name }}</dd>
-            {% endif %}
+            <dt>{% trans 'Display' %}</dt>
+            <dd>{{ ad.ad_types.all | join:", " }}</dd>
             {% if ad.link %}
               <dt>{% trans 'Click-through link' %}</dt>
               <dd><small><a href="{{ ad.link }}">{{ ad.link|truncatechars:50 }}</a></small></dd>

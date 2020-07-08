@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
+from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
 from .models import AdImpression
 from .models import AdType
@@ -84,10 +85,17 @@ class AdTypeAdmin(admin.ModelAdmin):
     model = AdType
     save_as = True
     prepopulated_fields = {"slug": ("name",)}
-    list_display = ("name", "publisher")
-    list_select_related = ("publisher",)
+    list_display = (
+        "name",
+        "max_text_length",
+        "order",
+        "default_enabled",
+        "has_image",
+        "has_text",
+    )
+    list_filter = ("has_image", "has_text", "default_enabled")
     readonly_fields = ("modified", "created")
-    search_fields = ("name", "slug", "publisher__name", "publisher__slug")
+    search_fields = ("name", "slug")
 
 
 class AdvertisementMixin:
@@ -144,6 +152,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
 
     """Django admin configuration for advertisements."""
 
+    form = AdvertisementAdminForm
     model = Advertisement
     save_as = True
     prepopulated_fields = {"slug": ("name",)}
@@ -152,7 +161,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
         "name",
         "slug",
         "flight",
-        "ad_type",
         "live",
         "num_views",
         "num_clicks",
@@ -160,15 +168,15 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
         "ecpm",
     )
     list_display_links = ("name",)
-    list_select_related = ("flight", "flight__campaign", "ad_type")
+    list_select_related = ("flight", "flight__campaign")
     list_filter = (
         "live",
         "flight__campaign__campaign_type",
-        "ad_type",
+        "ad_types",
         "flight__campaign",
     )
     list_editable = ("live",)
-    readonly_fields = ("total_views", "total_clicks", "modified", "created")
+    readonly_fields = ("ad_image", "total_views", "total_clicks", "modified", "created")
     search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
 
     # Exclude deprecated fields
@@ -213,16 +221,20 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
     fields = (
         "ad_image",
         "name",
-        "ad_type",
+        "ad_types",
         "live",
         "num_views",
         "num_clicks",
         "ctr",
         "ecpm",
     )
-    list_select_related = ("flight", "ad_type")
+    list_select_related = ("flight",)
     readonly_fields = fields
     show_change_link = True
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.prefetch_related("ad_types")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -438,7 +450,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "view_to_offer_rate",
     )
     list_display = readonly_fields
-    list_filter = ("advertisement__ad_type", "publisher")
+    list_filter = ("advertisement__ad_types", "publisher")
     list_select_related = ["advertisement", "publisher"]
     readonly_fields = ("modified", "created")
     search_fields = ["advertisement__slug", "advertisement__name"]
