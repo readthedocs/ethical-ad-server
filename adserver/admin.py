@@ -213,7 +213,6 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
     model = Advertisement
 
     can_delete = False
-    list_per_page = 50  # make page load a bit faster
     fields = (
         "ad_image",
         "name",
