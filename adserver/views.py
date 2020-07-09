@@ -719,7 +719,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            revenue_share_percentage=context["revenue_share_percentage"],
         )
 
         context.update(
@@ -764,13 +763,20 @@ class AllPublisherReportView(BaseReportView):
 
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
+        if context["revenue_share_percentage"]:
+            try:
+                publishers = publishers.filter(
+                    revenue_share_percentage=float(context["revenue_share_percentage"])
+                )
+            except ValueError:
+                pass
+
         publishers_and_reports = []
         for publisher in publishers:
             report = publisher.daily_reports(
                 start_date=context["start_date"],
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
-                revenue_share_percentage=context["revenue_share_percentage"],
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
