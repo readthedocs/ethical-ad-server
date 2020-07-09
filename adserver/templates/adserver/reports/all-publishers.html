@@ -25,6 +25,15 @@
     {% endfor %}
   </select>
 </div>
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_campaign_type">{% trans 'Revenue Share' %}</label>
+  <select class="form-control" name="revenue_share_percentage" id="id_revenue_share_percentage">
+    <option>All shares</option>
+    {% for option in revshare_options %}
+      <option value="{{ option }}"{% if revenue_share_percentage == option %} selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+</div>
 {% endblock additional_filters %}
 
 
@@ -101,7 +110,7 @@
             <td>{{ day.date }}</td>
             <td class="text-right">{{ day.views|intcomma }}</td>
             <td class="text-right">{{ day.clicks|intcomma }}</td>
-            <td class="text-right">${{ day.cost|floatformat:2|intcomma }}</td>
+            <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
             <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
             <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
           </tr>
@@ -112,7 +121,7 @@
             <td><strong>{% trans 'Total' %}</strong> </td>
             <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
             <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ report.total.cost|floatformat:2|intcomma }}</strong></td>
+            <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
             <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
             <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
           </tr>

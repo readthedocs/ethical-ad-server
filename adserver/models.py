@@ -183,6 +183,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             impressions = impressions.filter(
                 advertisement__flight__campaign__campaign_type=campaign_type
             )
+
         impressions = impressions.select_related(
             "advertisement", "advertisement__flight"
         )

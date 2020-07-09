@@ -502,6 +502,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
+        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -510,6 +511,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "start_date": start_date,
             "end_date": end_date,
             "campaign_type": campaign_type,
+            "revenue_share_percentage": revenue_share_percentage,
         }
 
     def _parse_date_string(self, date_str):
@@ -714,10 +716,14 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
         report = publisher.daily_reports(
-            start_date=context["start_date"], end_date=context["end_date"]
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
         )
 
-        context.update({"publisher": publisher, "report": report})
+        context.update(
+            {"publisher": publisher, "report": report, "campaign_types": CAMPAIGN_TYPES}
+        )
 
         return context
 
@@ -756,6 +762,14 @@ class AllPublisherReportView(BaseReportView):
             impressions = impressions.filter(date__lte=context["end_date"])
 
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
+
+        if context["revenue_share_percentage"]:
+            try:
+                publishers = publishers.filter(
+                    revenue_share_percentage=float(context["revenue_share_percentage"])
+                )
+            except ValueError:
+                pass
 
         publishers_and_reports = []
         for publisher in publishers:
@@ -796,6 +810,10 @@ class AllPublisherReportView(BaseReportView):
                     days[day["date"]]["clicks"], days[day["date"]]["views"]
                 )
 
+        # Make these strings to easily compare with GET args
+        revshare_options = set(
+            str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
+        )
         context.update(
             {
                 "publishers": [p for p, _ in publishers_and_reports],
@@ -806,6 +824,7 @@ class AllPublisherReportView(BaseReportView):
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_revenue, total_views),
                 "campaign_types": CAMPAIGN_TYPES,
+                "revshare_options": revshare_options,
             }
         )
 
