@@ -1,0 +1,220 @@
+/* Taken from https://github.com/readthedocs/ethical-ad-client/blob/master/styles.scss */
+
+
+/* Ad styles */
+
+// Sizes
+$width-image-horizontal: 320px;
+$width-image-vertical: 180px;
+
+// Colors
+$color-background: rgba(0, 0, 0, 0.03);
+$color-background-dark: rgba(255, 255, 255, 0.05);
+$color-link: rgb(80, 80, 80);
+$color-link-callout: lighten($color-link, 10%);
+$color-link-bold: #088cdb;
+$color-link-dark: rgb(220, 220, 220);
+$color-link-callout-dark: darken($color-link-dark, 10%);
+$color-link-bold-dark: lighten($color-link-bold, 20%);
+
+// Utilities, mostly to reduce file size
+@mixin links($color-primary, $color-secondary, $color-highlight) {
+  a {
+    &:link {
+      color: $color-primary;
+    }
+    &:visited {
+      color: $color-primary;
+    }
+    &:hover {
+      color: $color-secondary;
+    }
+    &:active {
+      color: $color-secondary;
+    }
+    strong,
+    b {
+      color: $color-highlight;
+    }
+  }
+}
+
+// Common styles default to most themes
+[data-ea-publisher].loaded,
+[data-ea-type].loaded {
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-weight: normal;
+  font-style: normal;
+  leter-spacing: 0px;
+  vertical-align: baseline;
+  line-height: 1.3em;
+
+  a {
+    text-decoration: none;
+  }
+
+  .ea-pixel {
+    display: none;
+  }
+
+  .ea-content {
+    margin: 1em 1em 0.5em 1em;
+    padding: 1em;
+
+    background: $color-background;
+    color: $color-link;
+
+    @include links($color-link, darken($color-link, 10%), $color-link-bold);
+  }
+  .ea-callout {
+    @include links(
+      $color-link-callout,
+      darken($color-link-callout, 10%),
+      $color-link-bold
+    );
+    a {
+      font-size: 0.8em;
+    }
+  }
+
+  &.dark {
+    .ea-content {
+      background: $color-background-dark;
+      color: $color-link-dark;
+      @include links(
+        $color-link-dark,
+        lighten($color-link-dark, 10%),
+        $color-link-bold-dark
+      );
+    }
+
+    .ea-callout {
+      @include links(
+        $color-link-callout-dark,
+        lighten($color-link-callout-dark, 10%),
+        $color-link-bold-dark
+      );
+    }
+  }
+}
+
+// Themes
+@mixin theme-flat {
+  .ea-content {
+    border: 0px;
+    border-radius: 3px;
+    box-shadow: none;
+  }
+}
+
+@mixin theme-raised {
+  .ea-content {
+    border: 0px;
+    border-radius: 3px;
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@mixin theme-bordered {
+  .ea-content {
+    border: 1px solid opacify($color-background, 0.01);
+    border-radius: 3px;
+    box-shadow: none;
+  }
+  &.dark .ea-content {
+    border: 1px solid opacify($color-background-dark, 0.02);
+  }
+}
+
+[data-ea-publisher].loaded,
+[data-ea-type].loaded {
+  @include theme-raised;
+
+  &.raised {
+    @include theme-raised;
+  }
+  &.bordered {
+    @include theme-bordered;
+  }
+  &.flat {
+    @include theme-flat;
+  }
+}
+
+// Explicit image ad type, or default image ad type not specified
+[data-ea-type="image"].loaded,
+[data-ea-publisher]:not([data-ea-type]).loaded,
+.ea-type-image {
+  display: inline-block;
+
+  .ea-content {
+    max-width: $width-image-vertical;
+    overflow: auto;
+
+    text-align: center;
+
+    > a > img {
+      width: 120px;
+      height: 90px;
+      display: inline-block;
+    }
+
+    > .ea-text {
+      margin-top: 1em;
+      font-size: 1em;
+      text-align: center;
+    }
+  }
+
+  .ea-callout {
+    max-width: $width-image-vertical;
+    margin: 0em 1em 1em 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+    font-style: italic;
+    text-align: right;
+  }
+
+  &.horizontal {
+    .ea-content {
+      max-width: $width-image-horizontal;
+
+      > a > img {
+        float: left;
+        margin-right: 1em;
+      }
+
+      .ea-text {
+        margin-top: 0em;
+        text-align: left;
+        overflow: auto;
+      }
+    }
+
+    .ea-callout {
+      max-width: $width-image-horizontal;
+      text-align: right;
+    }
+  }
+}
+
+// Text ad type
+[data-ea-type="text"].loaded,
+.ea-type-text {
+  font-size: 14px;
+
+  .ea-content {
+    text-align: left;
+  }
+
+  .ea-callout {
+    margin: 0.5em 1em 1em 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+    text-align: right;
+    font-style: italic;
+  }
+}

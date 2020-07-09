@@ -156,9 +156,9 @@
 
         {# Show the ad #}
         <div class="col">
-          <div class="advertisement-preview">
-            <div class="mx-auto">{{ ad.render_ad | safe }}</div>
-          </div>
+          {% with ad as advertisement %}
+            {% include "adserver/includes/ad-preview.html" %}
+          {% endwith %}
         </div>
 
         {# Ad metadata #}
