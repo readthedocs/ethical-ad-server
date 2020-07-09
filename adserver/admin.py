@@ -505,7 +505,7 @@ class ClickAdmin(AdBaseAdmin):
 
     # Browser Family and OS Family are not in the ``ViewAdmin.list_filter``
     # because they require a ``SELECT DISTINCT`` across the whole table
-    list_filter = ("is_mobile", "is_bot", "browser_family", "os_family")
+    list_filter = ("is_mobile", "publisher", "browser_family", "os_family")
 
 
 class ViewAdmin(AdBaseAdmin):
