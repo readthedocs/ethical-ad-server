@@ -163,13 +163,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return return_keywords
         return []
 
-    def daily_reports(
-        self,
-        start_date=None,
-        end_date=None,
-        campaign_type=None,
-        revenue_share_percentage=None,
-    ):
+    def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
@@ -188,14 +182,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         if campaign_type and campaign_type in ALL_CAMPAIGN_TYPES:
             impressions = impressions.filter(
                 advertisement__flight__campaign__campaign_type=campaign_type
-            )
-
-        revshare_options = set(
-            str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
-        )
-        if revenue_share_percentage and revenue_share_percentage in revshare_options:
-            impressions = impressions.filter(
-                publisher__revenue_share_percentage=revenue_share_percentage
             )
 
         impressions = impressions.select_related(
