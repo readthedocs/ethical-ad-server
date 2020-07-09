@@ -38,12 +38,14 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     list_display = (
         "name",
+        "slug",
         "report",
         "revenue_share_percentage",
         "unauthed_ad_decisions",
         "paid_campaigns_only",
+        "record_views",
     )
-    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only")
+    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only", "record_views")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
 
@@ -146,6 +148,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
 
     model = Advertisement
     save_as = True
+    list_per_page = 50  # make page load a bit faster
     prepopulated_fields = {"slug": ("name",)}
     list_display = (
         "ad_image",
@@ -476,7 +479,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_display = readonly_fields[:-3]
     list_select_related = ("advertisement", "publisher")
-    list_filter = ("is_mobile",)
+    list_filter = ("is_mobile", "publisher")
     search_fields = (
         "advertisement__name",
         "url",
@@ -502,7 +505,7 @@ class ClickAdmin(AdBaseAdmin):
 
     # Browser Family and OS Family are not in the ``ViewAdmin.list_filter``
     # because they require a ``SELECT DISTINCT`` across the whole table
-    list_filter = ("is_mobile", "is_bot", "browser_family", "os_family")
+    list_filter = ("is_mobile", "publisher", "browser_family", "os_family")
 
 
 class ViewAdmin(AdBaseAdmin):
