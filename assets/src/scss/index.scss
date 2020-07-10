@@ -4,5 +4,7 @@
 $fa-font-path: "~font-awesome/fonts";
 @import "~font-awesome/scss/font-awesome.scss";
 
+// Import ad styles from the ad client
+@import "~ethical-ad-client/styles.scss";
+
 @import "theme.scss";
-@import "ad-styles.scss";

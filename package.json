@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "css-loader": "^3.5.3",
+    "ethical-ad-client": "git+https://github.com/readthedocs/ethical-ad-client.git",
     "file-loader": "^2.0.0",
     "mini-css-extract-plugin": "^0.8.2",
     "node-sass": "^4.14.1",
