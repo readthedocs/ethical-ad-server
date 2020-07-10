@@ -353,7 +353,7 @@ class Command(BaseCommand):
         session = requests.Session()
         session.mount("https://assets.readthedocs.org", HTTPAdapter(max_retries=3))
 
-        advertisements = []
+        advertisements = 0
         for data in advertisements_data:
             image = None
             url = data["fields"]["image"]
@@ -365,23 +365,22 @@ class Command(BaseCommand):
                 image = File(BytesIO(response.content), name=url[url.rfind("/") + 1 :])
                 image_cache[url] = image
 
-            advertisements.append(
-                Advertisement(
-                    pk=data["pk"],
-                    name=data["fields"]["name"],
-                    slug=data["fields"]["analytics_id"],
-                    live=data["fields"]["live"],
-                    text=data["fields"]["text"],
-                    link=data["fields"]["link"],
-                    image=image,
-                    ad_type=ad_type_mapping[data["fields"]["display_type"]],
-                    flight_id=data["fields"]["flight"],
-                )
+            ad = Advertisement(
+                pk=data["pk"],
+                name=data["fields"]["name"],
+                slug=data["fields"]["analytics_id"],
+                live=data["fields"]["live"],
+                text=data["fields"]["text"],
+                link=data["fields"]["link"],
+                image=image,
+                flight_id=data["fields"]["flight"],
             )
+            ad.save()
+            advertisements += 1
+            ad.ad_types.add(ad_type_mapping[data["fields"]["display_type"]])
 
-        Advertisement.objects.bulk_create(advertisements, batch_size=self.BATCH_SIZE)
         self.stdout.write(
-            self.style.SUCCESS(f"- Imported {len(advertisements)} advertisements")
+            self.style.SUCCESS(f"- Imported {advertisements} advertisements")
         )
 
     def import_clicks(self, clicks_data, publisher_mapping, readthedocs_publisher):

@@ -121,7 +121,7 @@ class FlightSerializer(serializers.ModelSerializer):
 
 
 class AdvertisementSerializer(serializers.ModelSerializer):
-    ad_type_short = serializers.SerializerMethodField()
+    ad_types = serializers.SerializerMethodField()
 
     class Meta:
         model = Advertisement
@@ -131,11 +131,11 @@ class AdvertisementSerializer(serializers.ModelSerializer):
             "text",
             "image",
             "link",
-            "ad_type_short",
+            "ad_types",
             "live",
             "created",
             "modified",
         )
 
-    def get_ad_type_short(self, obj):
-        return obj.ad_type.name if obj.ad_type else None
+    def get_ad_types(self, obj):
+        return [t.name for t in obj.ad_types.all()]

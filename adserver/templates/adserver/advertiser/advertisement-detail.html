@@ -39,7 +39,9 @@
 
   {# Show the ad #}
   <div class="col">
-    {% include "adserver/includes/ad-preview.html" %}
+    {% for ad_type in advertisement.ad_types.all %}
+      {% include "adserver/includes/ad-preview.html" %}
+    {% endfor %}
   </div>
 
   {# Ad metadata #}
@@ -47,10 +49,8 @@
     <dl>
       <dt>{% trans 'Flight' %}</dt>
       <dd>{{ advertisement.flight.name }}</dd>
-      {% if advertisement.ad_type %}
-        <dt>{% trans 'Display' %}</dt>
-        <dd>{{ advertisement.ad_type.name }}</dd>
-      {% endif %}
+      <dt>{% trans 'Display' %}</dt>
+      <dd>{{ advertisement.ad_types.all | join:", " }}</dd>
       {% if advertisement.link %}
         <dt>{% trans 'Click-through link' %}</dt>
         <dd><small><a href="{{ advertisement.link }}">{{ advertisement.link|truncatechars:50 }}</a></small></dd>

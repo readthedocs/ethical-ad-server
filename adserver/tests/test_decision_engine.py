@@ -63,9 +63,9 @@ class DecisionEngineTests(TestCase):
             link="http://example.com",
             live=True,
             image=None,
-            ad_type=self.ad_type,
             flight=self.include_flight,
         )
+        self.advertisement1.ad_types.add(self.ad_type)
 
         self.exclude_flight = get(
             Flight,
@@ -84,9 +84,9 @@ class DecisionEngineTests(TestCase):
             link="http://example.com",
             live=True,
             image=None,
-            ad_type=self.ad_type,
             flight=self.exclude_flight,
         )
+        self.advertisement2.ad_types.add(self.ad_type)
 
         # No filters
         self.basic_flight = get(
@@ -98,9 +98,9 @@ class DecisionEngineTests(TestCase):
             link="http://example.com",
             live=True,
             image=None,
-            ad_type=self.ad_type,
             flight=self.basic_flight,
         )
+        self.advertisement3.ad_types.add(self.ad_type)
 
         self.possible_ads = [
             self.advertisement1,
@@ -302,13 +302,17 @@ class DecisionEngineTests(TestCase):
             # This should just be the same query from `get_candidate_flights` above
             flight = self.probabilistic_backend.select_flight()
 
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             # One query to get the specific ad for the chosen flight
+            # One to prefetch all the ad types
             ad = self.probabilistic_backend.select_ad_for_flight(flight)
             self.assertTrue(ad in self.possible_ads, ad)
 
-        with self.assertNumQueries(2):
-            # Two total queries to get an ad placement
+        with self.assertNumQueries(3):
+            # Three total queries to get an ad placement
+            # 1. Get all the candidate flights
+            # 2. Choose the specific ad for the chosen flight
+            # 3. Prefetch the ad types for all the ads in the chosen flight
             ad, _ = self.probabilistic_backend.get_ad_and_placement()
             self.assertTrue(ad in self.possible_ads, ad)
 
@@ -418,11 +422,11 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="paid",
             slug="test-paid-ad",
-            ad_type=self.ad_type,
             image=None,
             live=True,
             flight=paid_flight,
         )
+        paid_ad.ad_types.add(self.ad_type)
 
         # Affiliate
         affiliate_campaign = get(
@@ -441,11 +445,11 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="affiliate",
             slug="test-affiliate-ad",
-            ad_type=self.ad_type,
             image=None,
             live=True,
             flight=affiliate_flight,
         )
+        affiliate_ad.ad_types.add(self.ad_type)
 
         # Community
         community_campaign = get(
@@ -463,11 +467,11 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="community",
             slug="test-community-ad",
-            ad_type=self.ad_type,
             image=None,
             live=True,
             flight=community_flight,
         )
+        community_ad.ad_types.add(self.ad_type)
 
         # House
         house_campaign = get(
@@ -487,11 +491,11 @@ class DecisionEngineTests(TestCase):
             Advertisement,
             name="house",
             slug="test-house-ad",
-            ad_type=self.ad_type,
             image=None,
             live=True,
             flight=house_flight,
         )
+        house_ad.ad_types.add(self.ad_type)
 
         # Paid before community
         ad, _ = self.probabilistic_backend.get_ad_and_placement()

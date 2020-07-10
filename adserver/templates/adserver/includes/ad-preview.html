@@ -1,3 +1,6 @@
+{% load ad_extras %}
+
+
 <div class="advertisement-preview loaded" data-ea-publisher="unknown" data-ea-type="unknown">
-  <div class="mx-auto">{{ advertisement.render_ad | safe }}</div>
+  <div class="mx-auto">{% advertisement_preview advertisement ad_type %}</div>
 </div>

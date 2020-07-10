@@ -128,26 +128,7 @@ class TestAdModels(BaseAdModelsTestCase):
         # 16/31% through the flight, 0% through the views
         self.assertEqual(self.flight.views_needed_today(), 5162)
 
-    def test_ad_broken_html(self):
-        # Ensures the ad validator is called from the save method
-        text = "<a>noendtag"
-        self.ad1.text = text
-        self.ad1.save()
-        self.assertEqual(self.ad1.text, text + "</a>")
-
-    def test_ad_malicious_html(self):
-        self.ad1.text = '<script>alert("foo")</script>'
-        self.ad1.save()
-        self.assertEqual(self.ad1.text, 'alert("foo")')
-
-    def test_ad_remove_inline_style(self):
-        self.ad1.text = '<b style="color: red">text</b>'
-        self.ad1.save()
-        self.assertEqual(self.ad1.text, "<b>text</b>")
-
     def test_render_ad(self):
-        self.assertIn("<b>Test</b>", self.ad1.render_ad())
-
         ad_type1 = get(
             AdType,
             template=None,
@@ -157,32 +138,37 @@ class TestAdModels(BaseAdModelsTestCase):
             image_width=None,
         )
 
-        self.ad2.ad_type = ad_type1
-        self.ad2.save()
+        self.ad1.ad_types.add(ad_type1.pk)
+        self.assertIn("<b>Test</b>", self.ad1.render_ad(ad_type1))
 
-        self.assertIn("ethical-ad", self.ad2.render_ad())
-        self.assertIn("<img", self.ad2.render_ad())
-        self.assertIn("<b>Test</b>", self.ad2.render_ad())
+        self.ad2.ad_types.add(ad_type1.pk)
+        self.assertIn("ethical-ad", self.ad2.render_ad(ad_type1))
+        self.assertIn("<img", self.ad2.render_ad(ad_type1))
+        self.assertIn("<b>Test</b>", self.ad2.render_ad(ad_type1))
 
         ad_type2 = get(
             AdType, template="Nothing here", has_image=False, max_text_length=100
         )
+        self.ad1.ad_types.remove(ad_type1.pk)
+        self.ad1.ad_types.add(ad_type2.pk)
         self.ad1.image = None
-        self.ad1.ad_type = ad_type2
         self.ad1.save()
 
-        self.assertIn("Nothing here", self.ad1.render_ad())
-        self.assertNotIn("Test", self.ad1.render_ad())
+        self.assertIn("Nothing here", self.ad1.render_ad(ad_type2))
+        self.assertNotIn("Test", self.ad1.render_ad(ad_type2))
 
     def test_click_view_links_in_render(self):
         self.ad1.text = "<a>Call to Action!</a>"
         self.ad1.save()
+        self.ad1.ad_types.add(self.text_ad_type)
 
-        self.assertIn(self.ad1.link, self.ad1.render_ad())
+        self.assertIn(self.ad1.link, self.ad1.render_ad(self.text_ad_type))
 
         view_url = "http://view.link"
         click_url = "http://view.link"
-        output = self.ad1.render_ad(click_url=click_url, view_url=view_url)
+        output = self.ad1.render_ad(
+            self.text_ad_type, click_url=click_url, view_url=view_url
+        )
         self.assertIn(view_url, output)
         self.assertIn(click_url, output)
 

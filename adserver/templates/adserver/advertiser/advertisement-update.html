@@ -4,6 +4,7 @@
 {% load static %}
 {% load humanize %}
 {% load crispy_forms_tags %}
+{% load ad_extras %}
 
 
 {% block title %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock %}
@@ -28,10 +29,13 @@
     {% crispy form form.helper %}
   </div>
 
-  {# Preview the ad #}
+  {# Preview the ad in all its ad types #}
   <div class="col-md ml-md-5">
     <h5>{% trans 'Preview' %}</h5>
-    {% include "adserver/includes/ad-preview.html" %}
+
+    {% for ad_type in advertisement.ad_types.all %}
+      {% include "adserver/includes/ad-preview.html" %}
+    {% endfor %}
   </div>
 
 </div>

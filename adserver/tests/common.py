@@ -48,7 +48,6 @@ class BaseAdModelsTestCase(TestCase):
             link="http://example.com",
             live=True,
             image=None,
-            ad_type=None,
             text="<b>Test</b>",
             flight=self.flight,
         )
@@ -61,16 +60,20 @@ class BaseAdModelsTestCase(TestCase):
             image=SimpleUploadedFile(
                 name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
             ),
-            ad_type=None,
             text="<b>Test</b>",
             flight=self.flight,
         )
 
         self.text_ad_type = get(
-            AdType, has_text=True, max_text_length=100, has_image=False
+            AdType, has_text=True, max_text_length=100, has_image=False, template=None
         )
         self.image_ad_type = get(
-            AdType, has_text=True, has_image=True, image_height=None, image_width=None
+            AdType,
+            has_text=True,
+            has_image=True,
+            image_height=None,
+            image_width=None,
+            template=None,
         )
 
         self.staff_user = get(

@@ -42,7 +42,6 @@ from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
-from .validators import AdvertisementValidator
 from .validators import TargetingParametersValidator
 
 
@@ -775,7 +774,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         """
         ad_reports = []
 
-        for ad in self.advertisements.select_related("ad_type"):
+        for ad in self.advertisements.prefetch_related("ad_types"):
             report = ad.daily_reports(start_date=start_date, end_date=end_date)
             if report["total"]["views"]:
                 ad_reports.append((ad, report))
@@ -816,12 +815,11 @@ class AdType(TimeStampedModel, models.Model):
         help_text=_("Space separated list of allowed HTML tag names"),
     )
 
-    publisher = models.ForeignKey(
-        Publisher,
-        blank=True,
-        null=True,
-        help_text=_("For publisher-specific ad types"),
-        on_delete=models.CASCADE,
+    default_enabled = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Whether this ad type should default to checked when advertisers are creating ads"
+        ),
     )
 
     template = models.TextField(
@@ -888,10 +886,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Flight, related_name="advertisements", on_delete=models.PROTECT
     )
 
-    # If this is null, no validation on the image or text is done
-    # And the ad has primitive styling
+    # Deprecated - this will be removed
     ad_type = models.ForeignKey(
         AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
+    )
+
+    ad_types = models.ManyToManyField(
+        AdType,
+        related_name="advertisements",
+        blank=True,
+        help_text=_("Possible ways this ad will be displayed"),
     )
 
     class Meta:
@@ -900,53 +904,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def __str__(self):
         """Simple override."""
         return self.name
-
-    def save(self, *args, **kwargs):  # pylint: disable=arguments-differ
-        # Ensure that the model is fully validated before saving
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
-    def clean(self):
-        super().clean()
-        AdvertisementValidator()(self)
-
-    def as_dict(self):
-        """A dict respresentation of this for JSON encoding."""
-        nonce = get_random_string(16)
-
-        site = get_current_site(None)
-        domain = site.domain
-        scheme = "http"
-        if settings.ADSERVER_HTTPS:
-            scheme = "https"
-
-        view_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
-        )
-
-        click_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
-        )
-
-        return {
-            "id": self.slug,
-            "text": self.text,
-            "html": self.render_ad(click_url=click_url, view_url=view_url),
-            "image": self.image.url if self.image else None,
-            "link": click_url,
-            "view_url": view_url,
-            "nonce": nonce,
-            "display_type": self.ad_type.slug,
-            "campaign_type": self.flight.campaign.campaign_type,
-        }
 
     def cache_key(self, impression_type, nonce):
         assert impression_type in IMPRESSION_TYPES + ("publisher",)
@@ -1045,17 +1002,41 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         else:
             log.debug("Not recording ad view.")
 
-    def offer_ad(self, publisher):
+    def offer_ad(self, publisher, ad_type_slug):
         """
-        Offer to display this ad on a specific publisher.
+        Offer to display this ad on a specific publisher and a specific display (ad type).
 
         Tracks an offer in the database and sets various cache variables
         """
+        ad_type = AdType.objects.filter(slug=ad_type_slug).first()
+
         # The time after an ad has been offered where impressions (clicks) won't count
         offer_time_limit = 60 * 60 * 4  # 4 hours
 
-        data = self.as_dict()
-        nonce = data["nonce"]
+        nonce = get_random_string(16)
+
+        site = get_current_site(None)
+        domain = site.domain
+        scheme = "http"
+        if settings.ADSERVER_HTTPS:
+            scheme = "https"
+
+        view_url = "{scheme}://{domain}{url}".format(
+            scheme=scheme,
+            domain=domain,
+            url=reverse(
+                "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            ),
+        )
+
+        click_url = "{scheme}://{domain}{url}".format(
+            scheme=scheme,
+            domain=domain,
+            url=reverse(
+                "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            ),
+        )
+
         self.incr(OFFERS, publisher)
         # Set validation cache
         for impression_type in [VIEWS, CLICKS]:
@@ -1073,7 +1054,17 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             offer_time_limit,
         )
 
-        return data
+        return {
+            "id": self.slug,
+            "text": self.text,
+            "html": self.render_ad(ad_type, click_url=click_url, view_url=view_url),
+            "image": self.image.url if self.image else None,
+            "link": click_url,
+            "view_url": view_url,
+            "nonce": nonce,
+            "display_type": ad_type_slug,
+            "campaign_type": self.flight.campaign.campaign_type,
+        }
 
     def get_publisher(self, nonce):
         publisher = None
@@ -1223,13 +1214,19 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self, click_url=None, view_url=None):
+    def render_ad(self, ad_type, click_url=None, view_url=None):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
-        if self.ad_type and self.ad_type.template:
+        if not ad_type:
+            # Render by the first ad type for this ad
+            # This is only used to preview the ad
+            ad_type = self.ad_types.all().first()
+
+        if ad_type and ad_type.template:
             # Check if the ad type has a specific template
-            template = engines["django"].from_string(self.ad_type.template)
+            template = engines["django"].from_string(ad_type.template)
         else:
             # Otherwise get the default template
+            # Don't do this by default as searching for a template is expensive
             template = get_template("adserver/advertisement.html")
 
         return template.render(

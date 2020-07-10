@@ -49,6 +49,7 @@ Advertisements
 Ad types
     These are different ad types (and custom types) that the ad server supports.
     Ad types specify the parameters for an ad like whether it has an image or how long the text can be.
+    Ad types can also control how an ad gets rendered and an ad can have one or more ad type.
 
 Ad Impressions
     Ad impressions store quantity of views and clicks for each ad on each publisher each day.

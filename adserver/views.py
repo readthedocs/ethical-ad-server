@@ -38,8 +38,7 @@ from user_agents import parse as parse_user_agent
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
-from .forms import AdvertisementCreateForm
-from .forms import AdvertisementUpdateForm
+from .forms import AdvertisementForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
@@ -220,7 +219,7 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
 
     """Update view for advertisements."""
 
-    form_class = AdvertisementUpdateForm
+    form_class = AdvertisementForm
     model = Advertisement
     template_name = "adserver/advertiser/advertisement-update.html"
 
@@ -234,6 +233,12 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
         context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser})
         return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        ad = self.get_object()
+        kwargs["flight"] = ad.flight
+        return kwargs
 
     def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
@@ -260,7 +265,7 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
 
     """Create view for advertisements."""
 
-    form_class = AdvertisementCreateForm
+    form_class = AdvertisementForm
     model = Advertisement
     template_name = "adserver/advertiser/advertisement-create.html"
 
@@ -291,6 +296,7 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["flight"] = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
+        kwargs["initial"] = {"ad_types": AdType.objects.filter(default_enabled=True)}
         return kwargs
 
     def get_success_url(self):

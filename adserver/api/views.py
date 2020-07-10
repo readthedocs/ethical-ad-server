@@ -104,8 +104,12 @@ class AdDecisionView(GeoIpMixin, APIView):
         if not ad or not placement:
             return {}
 
-        data = ad.offer_ad(publisher)
-        data.update({"div_id": placement["div_id"]})
+        ad_type_slug = placement["ad_type"]
+        div_id = placement["div_id"]
+        data = ad.offer_ad(publisher, ad_type_slug)
+
+        # The div where the ad is chosen to go is echoed back to the client
+        data.update({"div_id": div_id})
         return data
 
     def get(self, request):
