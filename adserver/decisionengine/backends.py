@@ -30,6 +30,8 @@ class BaseAdDecisionBackend:
         self.placements = placements
         self.publisher = publisher
 
+        self.ad_types = [p["ad_type"] for p in self.placements]
+
         self.country_code = request.geo.country_code
         self.region_code = request.geo.region_code
         self.metro_code = request.geo.metro_code
@@ -83,14 +85,14 @@ class BaseAdDecisionBackend:
 
     def get_placement(self, advertisement):
         """Gets the first matching placement for a given ad."""
-        if not advertisement or not advertisement.ad_type:
+        if not advertisement:
             return None
 
         for placement in self.placements:
             # A placement "matches" if the ad type matches
             # If the ad or campaign is specified, they must also match
             if (
-                placement["ad_type"] == advertisement.ad_type.slug
+                placement["ad_type"] in [t.slug for t in advertisement.ad_types.all()]
                 and (not self.ad_slug or advertisement.slug == self.ad_slug)
                 and (
                     not self.campaign_slug
@@ -130,10 +132,8 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not self.should_display_ads():
             return Flight.objects.none()
 
-        ad_types = [p["ad_type"] for p in self.placements]
-
         flights = Flight.objects.filter(
-            advertisements__ad_type__slug__in=ad_types,
+            advertisements__ad_types__slug__in=self.ad_types,
             campaign__campaign_type__in=self.campaign_types,
             campaign__publishers=self.publisher,
         )
@@ -208,10 +208,8 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight:
             return None
 
-        ad_types = [p["ad_type"] for p in self.placements]
-
         return (
-            flight.advertisements.filter(live=True, ad_type__slug__in=ad_types)
+            flight.advertisements.filter(live=True, ad_types__slug__in=self.ad_types)
             .order_by("?")
             .first()
         )
@@ -312,17 +310,18 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         chosen_ad = None
         max_priority = 10
         weighted_ad_choices = []
-        ad_types = [p["ad_type"] for p in self.placements]
 
         if self.ad_slug:
             # Ignore live and adtype checks when forcing a specific ad
             candidate_ads = flight.advertisements.filter(slug=self.ad_slug)
         else:
             candidate_ads = flight.advertisements.filter(
-                live=True, ad_type__slug__in=ad_types
+                live=True, ad_types__slug__in=self.ad_types
             )
 
-        candidate_ads = candidate_ads.select_related("flight", "ad_type")
+        candidate_ads = candidate_ads.select_related("flight").prefetch_related(
+            "ad_types"
+        )
 
         for advertisement in candidate_ads:
             placement = self.get_placement(advertisement)
@@ -336,7 +335,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             log.warning(
                 "Chosen flight has no matching live ads! flight=%s, ad_types=%s",
                 flight,
-                ad_types,
+                self.ad_types,
             )
 
         return chosen_ad

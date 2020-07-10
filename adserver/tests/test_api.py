@@ -189,11 +189,11 @@ class BaseApiTest(TestCase):
             slug="ad-slug",
             name="ad",
             link="http://example.com",
-            ad_type=self.ad_type,
             image=None,
             live=True,
             flight=self.flight,
         )
+        self.ad.ad_types.add(self.ad_type)
 
         self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
         self.data = {"placements": self.placements, "publisher": self.publisher.slug}
@@ -896,7 +896,7 @@ class TestProxyViews(BaseApiTest):
 
         self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
 
-        self.offer = self.ad.offer_ad(self.publisher)
+        self.offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
         self.nonce = self.offer["nonce"]
 
         self.client = Client(
@@ -984,7 +984,7 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
 
         # Click the ad again with a new nonce
-        offer = self.ad.offer_ad(self.publisher)
+        offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
         nonce = offer["nonce"]
         click_url = reverse(
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}

@@ -115,7 +115,7 @@
           <tr>
             <th><strong>{% trans 'Advertisement' %}</strong></th>
             <th><strong>{% trans 'Name' %}</strong></th>
-            <th><strong>{% trans 'Ad type' %}</strong></th>
+            <th><strong>{% trans 'Ad types' %}</strong></th>
           </tr>
         </thead>
         <tbody>
@@ -134,7 +134,7 @@
                   <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
                 {% endif %}
               </td>
-              <td>{{ ad.ad_type.name }}</td>
+              <td>{{ ad.ad_types.all | join:", " }}</td>
             </tr>
           {% endfor %}
         </tbody>

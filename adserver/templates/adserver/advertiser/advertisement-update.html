@@ -28,12 +28,15 @@
     {% crispy form form.helper %}
   </div>
 
-  {# Preview the ad #}
+  {# Preview the ad in all its ad types #}
   <div class="col-md ml-md-5">
-    <h5>{% trans 'Preview' %}</h5>
-    <div class="advertisement-preview">
-      <div class="mx-auto">{{ advertisement.render_ad | safe }}</div>
-    </div>
+    <h5>{% trans 'Previews' %}</h5>
+
+    {% for preview in previews %}
+      <div class="advertisement-preview">
+        <div class="mx-auto">{{ preview | safe }}</div>
+      </div>
+    {% endfor %}
   </div>
 
 </div>
