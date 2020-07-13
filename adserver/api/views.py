@@ -68,7 +68,8 @@ class AdDecisionView(GeoIpMixin, APIView):
         :<json string force_campaign: Limit results to ads from a specific campaign
 
         :>json string id: The advertisement slug of the chosen ad
-        :>json string text: The text of the ad
+        :>json string text: **Deprecated**:The HTML text of only the ad.
+        :>json string body: The text of the ad, stripped of any HTML.
         :>json string html: An HTML rendering of the ad
         :>json string link: A click URL for the ad
         :>json string view_url: A view URL to count an ad view
