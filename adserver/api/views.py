@@ -74,6 +74,8 @@ class AdDecisionView(GeoIpMixin, APIView):
             The number and order must correspond to the ``div_ids``.
         :<json string priorities: An optional ``|`` delimited string of priorities for different ad types.
             The number and order matter, applying to ``div_ids`` and ``ad_types``.
+        :<json array keywords: An optional ``|`` delimited string of keywords.
+        :<json array campaign_types: An optional ``|`` delimited string of campaign types.
 
         An example::
 
@@ -117,7 +119,9 @@ class AdDecisionView(GeoIpMixin, APIView):
         Decision API is called via GET.
 
         When called via GET the placements array is passed
-        as individual fields rather than a JSON dict
+        as individual fields rather than a JSON dict.
+
+        List fields are passed as pipe (|) separated.
         """
         data = request.query_params.dict()
 
@@ -125,6 +129,11 @@ class AdDecisionView(GeoIpMixin, APIView):
         div_ids = data.get("div_ids", "").split("|")
         ad_types = data.get("ad_types", "").split("|")
         priorities = data.get("priorities", "").split("|")
+
+        data["keywords"] = [k for k in data.get("keywords", "").split("|") if k]
+        data["campaign_types"] = [
+            ct for ct in data.get("campaign_types", "").split("|") if ct
+        ]
 
         for i, (div_id, ad_type) in enumerate(zip(div_ids, ad_types)):
             placement = {"div_id": div_id, "ad_type": ad_type}
