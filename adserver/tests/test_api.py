@@ -294,10 +294,21 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json, {})
 
     def test_force_ad(self):
+        # Force ad on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
         self.data["force_ad"] = "unknown-slug"
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Ensure the unauthed/JSONP client supports forcing an ad
+        self.query_params["force_ad"] = "unknown-slug"
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
@@ -316,11 +327,30 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+        # Force the same ad with the unauth/JSONP client
+        self.query_params["force_ad"] = "ad-slug"
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
     def test_force_campaign(self):
+        # Force ad on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
         self.data["force_campaign"] = "unknown-campaign"
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Ensure the unauthed/JSONP client supports forcing an ad
+        self.query_params["force_campaign"] = "unknown-campaign"
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
@@ -330,6 +360,14 @@ class AdDecisionApiTests(BaseApiTest):
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Force the same ad with the unauth/JSONP client
+        self.query_params["force_campaign"] = self.campaign.slug
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
@@ -460,6 +498,18 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
+        # Check keywords on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        # Ensure the JSONP client handles campaign type restrictions as well
+        self.query_params["campaign_types"] = "{}|{}".format(
+            PAID_CAMPAIGN, COMMUNITY_CAMPAIGN
+        )
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {})
+
     def test_keywords(self):
         data = {
             "placements": self.placements,
@@ -497,6 +547,39 @@ class AdDecisionApiTests(BaseApiTest):
             self.url, json.dumps(data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 400, resp.content)
+
+        # Ensure keywords are taken into account in ad targeting
+        self.flight.targeting_parameters = {"include_keywords": ["django"]}
+        self.flight.save()
+
+        # No keywords -> flight isn't chosen
+        data["keywords"] = []
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {}, resp_json)
+
+        # Correct keyword included, flight is shown
+        data["keywords"] = ["django", "python"]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Check keywords on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        # Ensure the JSONP client handles keywords as well
+        self.query_params["keywords"] = "python|django"
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
 
 class AdvertiserApiTests(BaseApiTest):
