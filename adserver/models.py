@@ -1,11 +1,13 @@
 """Core models for the ad server."""
 import datetime
+import html
 import logging
 import math
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 
+import bleach
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
@@ -1037,6 +1039,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ),
         )
 
+        # This required unescaping HTML entities that bleach escapes,
+        # allowing it to be used outside of HTML contexts.
+        # https://github.com/mozilla/bleach/issues/192
+        body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
+
         self.incr(OFFERS, publisher)
         # Set validation cache
         for impression_type in [VIEWS, CLICKS]:
@@ -1057,6 +1064,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return {
             "id": self.slug,
             "text": self.text,
+            "body": body,
             "html": self.render_ad(ad_type, click_url=click_url, view_url=view_url),
             "image": self.image.url if self.image else None,
             "link": click_url,

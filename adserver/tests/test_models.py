@@ -172,6 +172,16 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertIn(view_url, output)
         self.assertIn(click_url, output)
 
+    def test_body_escaping_ad(self):
+        self.ad1.text = "<a>Call to Action & such!</a>"
+        self.ad1.save()
+        self.ad1.ad_types.add(self.text_ad_type)
+
+        view_url = "http://view.link"
+        click_url = "http://click.link"
+        output = self.ad1.offer_ad(self.publisher, self.text_ad_type)
+        self.assertEqual(output["body"], "Call to Action & such!")
+
     def test_ad_country_click_breakdown(self):
         dt = timezone.now() - datetime.timedelta(days=30)
         report = self.ad1.country_click_breakdown(dt, timezone.now())
