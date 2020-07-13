@@ -41,16 +41,29 @@ class AdDecisionView(GeoIpMixin, APIView):
     * geography (based on IP)
     * keywords
 
-    .. http:post:: /api/v1/decision/
+    .. http:get:: /api/v1/decision/
 
-        :<json string publisher: **Required**. The slug of the publisher
-        :<json array placements: **Required**. Various possible ad placements where an ad could go
-        :<json array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
-        :<json array campaign_types: Limit the ad results to certain campaign types
-        :<json string user_ip: User's IP address used for targeting
-            (the requestor's IP will be used if not present)
-        :<json string user_ua: User's user agent used for targeting
-            (the requestor's UA will be used if not present)
+        Request an advertisement for a specific publisher.
+
+        The publisher must be explicitly permitted to allow unauthenticated requests.
+        This is typically used as a JSONP call.
+
+        :<json string publisher: **Required**. The slug of the publisher.
+            If using the ethical-ad-client, this comes from ``data-ea-publisher``.
+        :<json string div_ids: A ``|`` delimited string of on-page ids.
+            The number and order must correspond to the ``ad_types``
+        :<json string ad_types: A ``|`` delimited string of ad types.
+            The number and order must correspond to the ``div_ids``.
+        :<json string priorities: An optional ``|`` delimited string of priorities for different ad types.
+            The number and order matter, applying to ``div_ids`` and ``ad_types``.
+        :<json array keywords: An optional ``|`` delimited string of case-insensitive keywords
+            that describe content on the page where the ad is requested (eg. ``python|docker|kubernetes``).
+            Used for ad targeting and is additive with any publisher settings.
+        :<json array campaign_types: An optional ``|`` delimited string of campaign types (eg. ``paid|community|house``)
+            which can be used to limit to just certain types of ads.
+            Overrides any publisher settings.
+        :<json string format: Format can optionally be specified as ``jsonp`` to allow a callback.
+        :<json string callback: The name of the callback for a JSONP request (default is ``callback``)
         :<json string force_ad: Limit results to a specific ad
         :<json string force_campaign: Limit results to ads from a specific campaign
 
@@ -62,20 +75,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
         :>json string display_type: The slug of type of ad (eg. sidebar)
         :>json string div_id: The <div> ID where the ad will be inserted
-        :>json string campaign_type: The type of campaign this as is from (house or paid)
-
-    .. http:get:: /api/v1/decision/
-
-        Supports the same parameters as via POST with the following changes:
-
-        :<json string div_ids: A ``|`` delimited string of on-page ids.
-            The number and order must correspond to the ``ad_types``
-        :<json string ad_types: A ``|`` delimited string of ad types.
-            The number and order must correspond to the ``div_ids``.
-        :<json string priorities: An optional ``|`` delimited string of priorities for different ad types.
-            The number and order matter, applying to ``div_ids`` and ``ad_types``.
-        :<json array keywords: An optional ``|`` delimited string of keywords.
-        :<json array campaign_types: An optional ``|`` delimited string of campaign types.
+        :>json string campaign_type: The type of campaign this as is from (eg. house, community, paid)
 
         An example::
 
@@ -92,10 +92,41 @@ class AdDecisionView(GeoIpMixin, APIView):
                 "div_ids": "sample-div"
             }
 
-        * The publisher must be explicitly permitted to allow unauthenticated requests
-        * Supports an optional parameter ``format=jsonp`` to signify a JSONP request
-        * Supports an optional parameter ``callback``
-          which will be used for the callback name in JSONP requests
+    .. http:post:: /api/v1/decision/
+
+        The POST version of the API is similar to the GET version with only a few changes:
+
+        :<json string publisher: **Required**. The slug of the publisher.
+        :<json array placements: **Required**. Various possible ad placements where an ad could go.
+            This is a combination of ``div_ids``, ``ad_types``, and ``priorities`` in the GET API.
+            Only one ad will be returned but you can prioritize one type of ad over another.
+        :<json array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
+        :<json array campaign_types: Limit the ad results to certain campaign types
+        :<json string user_ip: User's IP address used for targeting
+            (the requestor's IP will be used if not present)
+        :<json string user_ua: User's user agent used for targeting
+            (the requestor's UA will be used if not present)
+
+        The response is the same as the GET request above.
+
+        An example::
+
+            {
+                "publisher": "your-publisher",
+                "placements": [
+                    {
+                        "div_id": "ad-div-1",
+                        "ad_type": "image-v1",
+                        "priority": 10,
+                    }
+                ],
+                "campaign_types": ["paid"],  # request PAID ads only
+                "keywords": [
+                    "python",
+                    "docker",
+                    "kubernetes",
+                ],
+            }
     """
 
     permission_classes = (AdDecisionPermission,)
