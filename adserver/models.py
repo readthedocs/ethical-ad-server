@@ -1214,7 +1214,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self, ad_type=None, click_url=None, view_url=None):
+    def render_ad(self, ad_type, click_url=None, view_url=None):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
             # Render by the first ad type for this ad

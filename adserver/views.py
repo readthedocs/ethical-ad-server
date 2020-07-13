@@ -231,13 +231,7 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        advertisement = context["advertisement"]
-        previews = []
-        for ad_type in advertisement.ad_types.all():
-            previews.append(advertisement.render_ad(ad_type))
-
-        context.update({"advertiser": self.advertiser, "previews": previews})
+        context.update({"advertiser": self.advertiser})
         return context
 
     def get_form_kwargs(self):
