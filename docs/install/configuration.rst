@@ -97,6 +97,8 @@ DATABASE_URL
 This will set the address of the database used by the ad server.
 While any database supported by Django will work, PostgreSQL is preferred
 (eg. ``psql://username:password@127.0.0.1:5432/database``)
+See Django's :doc:`database documentation <django:ref/databases>`
+and the :ref:`DATABASES setting <django:ref/settings:database>` for details.
 
 
 DEBUG
@@ -113,6 +115,7 @@ DEFAULT_FILE_STORAGE
 Adjusts Django's ``DEFAULT_FILE_STORAGE`` setting.
 Defaults to ``storages.backends.azure_storage.AzureStorage`` which
 can be used to storage uploaded ad images in Azure.
+See Django's :doc:`storage documentation <django:ref/files/storage>` for details.
 
 
 ENFORCE_HOST
