@@ -1,8 +1,16 @@
 """Django admin configuration for the ad server."""
+from datetime import timedelta
+
+import stripe
+from django.conf import settings
 from django.contrib import admin
+from django.contrib import messages
 from django.db import models
+from django.utils import timezone
 from django.utils.html import escape
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 
 from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
@@ -65,9 +73,74 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisers."""
 
-    list_display = ("name", "report")
+    actions = ["action_create_draft_invoice"]
+    list_display = ("name", "report", "stripe_customer")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("modified", "created")
+    readonly_fields = ("modified", "created", "stripe_customer")
+
+    def action_create_draft_invoice(self, request, queryset):
+        """Create a draft invoice for this customer with metadata attached."""
+        if not settings.STRIPE_SECRET_KEY:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+            )
+            return
+
+        flight_start = timezone.now()
+        flight_end = flight_start + timedelta(days=30)
+
+        for advertiser in queryset:
+            if advertiser.stripe_customer_id:
+                # Amounts, prices, and description can be customized before sending
+                stripe.InvoiceItem.create(
+                    customer=advertiser.stripe_customer_id,
+                    description="Advertising - per 1k impressions",
+                    quantity=200,
+                    unit_amount=300,  # in US cents
+                    currency="USD",
+                )
+
+                # https://stripe.com/docs/api/invoices/create
+                invoice = stripe.Invoice.create(
+                    customer=advertiser.stripe_customer_id,
+                    auto_advance=False,  # Draft invoice
+                    collection_method="send_invoice",
+                    custom_fields=[
+                        {"name": "Advertiser", "value": advertiser.slug},
+                        {
+                            "name": "Est Flight Start",
+                            "value": flight_start.strftime("%Y-%m-%d"),
+                        },
+                        {
+                            "name": "Est Flight End",
+                            "value": flight_end.strftime("%Y-%m-%d"),
+                        },
+                    ],
+                    days_until_due=30,
+                )
+
+                url = "https://dashboard.stripe.com/"
+                if settings.DEBUG:
+                    url += "test/"  # pragma: no cover
+                url += f"invoices/{invoice.id}"
+
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    _("New Stripe invoice for {}: {}".format(advertiser, url)),
+                )
+            else:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("No Stripe customer ID for {}".format(advertiser)),
+                )
+
+    action_create_draft_invoice.short_description = _(
+        "Create a draft invoice for this customer"
+    )
 
     def report(self, instance):
         if not instance.pk:
@@ -78,6 +151,20 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
                 name=escape(instance.name) + " Report", url=instance.get_absolute_url()
             )
         )
+
+    def stripe_customer(self, obj):
+        if obj.stripe_customer_id:
+            url = "https://dashboard.stripe.com/"
+            if settings.DEBUG:
+                url += "test/"  # pragma: no cover
+            url += f"customers/{obj.stripe_customer_id}"
+
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
+                url,
+                obj.stripe_customer_id,
+            )
+        return None
 
 
 class AdTypeAdmin(admin.ModelAdmin):

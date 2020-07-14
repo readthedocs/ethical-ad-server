@@ -1,3 +1,7 @@
+from unittest import mock
+
+import stripe
+from django.test import override_settings
 from django.urls import reverse
 
 from ..constants import CLICKS
@@ -43,6 +47,38 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         for url in (list_url, detail_url):
             response = self.client.get(url)
             self.assertTrue(response.status_code, 200)
+
+        # Ensure the Stripe customer link is present
+        self.advertiser.stripe_customer_id = "cus_1234567890"
+        self.advertiser.save()
+
+        response = self.client.get(list_url)
+        self.assertTrue(response.status_code, 200)
+        self.assertContains(response, self.advertiser.stripe_customer_id)
+
+    def test_advertiser_invoice_create(self):
+        url = reverse("admin:adserver_advertiser_changelist")
+        data = {
+            "action": "action_create_draft_invoice",
+            "_selected_action": [str(self.advertiser.pk)],
+        }
+        resp = self.client.post(url, data, follow=True)
+        self.assertContains(resp, "Stripe is not configured")
+
+        with override_settings(STRIPE_SECRET_KEY="test-12345"):
+            with mock.patch("stripe.InvoiceItem.create") as _:
+                with mock.patch("stripe.Invoice.create") as invoice_create:
+                    # No Stripe ID for this advertiser
+                    resp = self.client.post(url, data, follow=True)
+                    self.assertContains(resp, "No Stripe customer ID")
+
+                    self.advertiser.stripe_customer_id = "cus_1234567890"
+                    self.advertiser.save()
+
+                    invoice_create.return_value = stripe.Invoice(id="inv_98765")
+
+                    resp = self.client.post(url, data, follow=True)
+                    self.assertContains(resp, "New Stripe invoice")
 
     def test_advertisement_admin(self):
         list_url = reverse("admin:adserver_advertisement_changelist")
