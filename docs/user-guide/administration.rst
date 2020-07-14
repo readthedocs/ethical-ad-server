@@ -11,6 +11,7 @@ The URL is ``/admin`` by default but this can be customized by setting :ref:`ins
 
     The admin interface
 
+
 Deleting data
 -------------
 
@@ -20,3 +21,13 @@ This is by design so that billing data is never deleted in the system.
 Ads and flights can be deactivated so they aren't used, but advertiser data is not deleted.
 
 If you absolutely must delete data, you'll have to go to the database directly.
+
+
+Invoicing advertisers
+---------------------
+
+Assuming an advertiser has a connected Stripe Customer ID,
+invoices can be created for an advertiser directly from the ad server.
+In the advertiser admin, select "Create draft invoice for customer" from the actions dropdown,
+select an advertiser, and click Go.
+This will create a draft invoice for the advertiser in Stripe which can customized and sent.
