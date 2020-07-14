@@ -81,7 +81,7 @@
                 </a>
               </li>
 
-              {% if publisher.unauthed_ad_decisions %}
+              {% if publisher.revenue_share_percentage != 50.0 %}
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'publisher_embed' publisher.slug %}">
                     <span class="fa fa-code fa-fw mr-2 text-muted" aria-hidden="true"></span>
