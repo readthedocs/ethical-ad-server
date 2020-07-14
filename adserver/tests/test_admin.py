@@ -3,10 +3,14 @@ from unittest import mock
 import stripe
 from django.test import override_settings
 from django.urls import reverse
+from django_dynamic_fixture import get
 
 from ..constants import CLICKS
 from ..constants import VIEWS
+from ..models import Advertiser
+from ..models import Campaign
 from ..models import Click
+from ..models import Flight
 from ..models import Publisher
 from .common import BaseAdModelsTestCase
 
@@ -95,6 +99,61 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         for url in (list_url, detail_url):
             response = self.client.get(url)
             self.assertTrue(response.status_code, 200)
+
+    def test_flight_invoice_create(self):
+        advertiser2 = get(Advertiser)
+        campaign2 = get(Campaign, advertiser=advertiser2)
+        flight2 = get(
+            Flight,
+            live=True,
+            campaign=campaign2,
+            sold_impressions=10000,
+            cpm=2.2,
+            start_date=self.flight.start_date,
+            end_date=self.flight.end_date,
+            targeting_parameters={},
+        )
+        flight3 = get(
+            Flight,
+            live=True,
+            campaign=campaign2,
+            sold_impressions=0,
+            cpm=0,
+            start_date=self.flight.start_date,
+            end_date=self.flight.end_date,
+            targeting_parameters={},
+        )
+
+        url = reverse("admin:adserver_flight_changelist")
+        data = {
+            "action": "action_create_draft_invoice",
+            "_selected_action": [self.flight.pk, flight2.pk, flight3.pk],
+        }
+        resp = self.client.post(url, data, follow=True)
+        self.assertContains(resp, "Stripe is not configured")
+
+        with override_settings(STRIPE_SECRET_KEY="test-12345"):
+            with mock.patch("stripe.InvoiceItem.create") as _:
+                with mock.patch("stripe.Invoice.create") as invoice_create:
+                    resp = self.client.post(url, data, follow=True)
+                    self.assertContains(
+                        resp, "All selected flights must be from a single advertiser"
+                    )
+
+                    campaign2.advertiser = self.advertiser
+                    campaign2.save()
+
+                    # No Stripe ID for this advertiser
+                    resp = self.client.post(url, data, follow=True)
+                    self.assertContains(resp, "No Stripe customer ID")
+
+                    self.advertiser.stripe_customer_id = "cus_1234567890"
+                    self.advertiser.save()
+
+                    invoice_create.return_value = stripe.Invoice(id="inv_98765")
+
+                    resp = self.client.post(url, data, follow=True)
+                    self.assertContains(resp, "New Stripe invoice")
 
     def test_campaign_admin(self):
         list_url = reverse("admin:adserver_campaign_changelist")
