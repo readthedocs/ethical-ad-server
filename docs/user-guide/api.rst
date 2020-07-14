@@ -20,8 +20,8 @@ Authentication works in one of two ways:
 
 .. note::
 
-    Creating a token for a user can be done in the :doc:`administration interface </user-guide/administration>`
-    section under :guilabel:`Username Dropdown > API Token`.
+    Creating an API token can be done under :guilabel:`Username Dropdown > API Token`.
+
 
 Ad decision
 -----------
