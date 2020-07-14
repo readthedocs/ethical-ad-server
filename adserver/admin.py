@@ -112,11 +112,11 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
                     custom_fields=[
                         {"name": "Advertiser", "value": advertiser.slug},
                         {
-                            "name": "Est Flight Start",
+                            "name": "Estimated Start",
                             "value": flight_start.strftime("%Y-%m-%d"),
                         },
                         {
-                            "name": "Est Flight End",
+                            "name": "Estimated End",
                             "value": flight_end.strftime("%Y-%m-%d"),
                         },
                     ],
