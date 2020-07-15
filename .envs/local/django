@@ -11,3 +11,7 @@ REDIS_URL=redis://redis:6379/0
 # Postgres
 # ------------------------------------------------------------------------------
 DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
+
+# Stripe
+# ------------------------------------------------------------------------------
+#STRIPE_SECRET_KEY=

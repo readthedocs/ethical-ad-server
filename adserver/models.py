@@ -235,6 +235,10 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200)
 
+    stripe_customer_id = models.CharField(
+        _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
+    )
+
     class Meta:
         ordering = ("name",)
 

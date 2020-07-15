@@ -160,6 +160,14 @@ SENDGRID_API_KEY
 Set this to your Sendgrid API key to enable sending email through Sendgrid.
 
 
+STRIPE_SECRET_KEY
+~~~~~~~~~~~~~~~~~
+
+Sets up the Stripe API where advertisers can be connected to a Stripe customer
+and invoices created directly through the ad server.
+Invoices are created in the :doc:`admin interface </user-guide/administration>`.
+
+
 Overriding settings entirely
 ----------------------------
 

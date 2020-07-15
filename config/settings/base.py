@@ -11,6 +11,7 @@ import json
 import os
 
 import environ
+import stripe
 
 
 env = environ.Env()
@@ -304,6 +305,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "PAGE_SIZE": 100,
 }
+
+
+# Stripe
+# Handle payments and invoice creation with Stripe
+# https://stripe.com/docs
+# --------------------------------------------------------------------------
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
+stripe.api_key = STRIPE_SECRET_KEY
+stripe.api_version = "2020-03-02"
 
 
 # Ad server specific settings

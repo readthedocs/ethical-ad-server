@@ -47,3 +47,6 @@ bleach==3.1.4
 
 # Security features
 django-enforce-host==1.0.1
+
+# Stripe for payments
+stripe>=2.48.0,<3.0

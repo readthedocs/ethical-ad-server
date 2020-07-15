@@ -1,8 +1,16 @@
 """Django admin configuration for the ad server."""
+from datetime import timedelta
+
+import stripe
+from django.conf import settings
 from django.contrib import admin
+from django.contrib import messages
 from django.db import models
+from django.utils import timezone
 from django.utils.html import escape
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext_lazy as _
 
 from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
@@ -15,6 +23,8 @@ from .models import Click
 from .models import Flight
 from .models import Publisher
 from .models import View
+from .stripe_utils import get_customer_url
+from .stripe_utils import get_invoice_url
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 
@@ -65,9 +75,73 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for advertisers."""
 
-    list_display = ("name", "report")
+    actions = ["action_create_draft_invoice"]
+    list_display = ("name", "report", "stripe_customer")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("modified", "created")
+    readonly_fields = ("modified", "created", "stripe_customer")
+
+    def action_create_draft_invoice(self, request, queryset):
+        """Create a draft invoice for this customer with metadata attached."""
+        if not settings.STRIPE_SECRET_KEY:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+            )
+            return
+
+        flight_start = timezone.now()
+        flight_end = flight_start + timedelta(days=30)
+
+        for advertiser in queryset:
+            if advertiser.stripe_customer_id:
+                # Amounts, prices, and description can be customized before sending
+                stripe.InvoiceItem.create(
+                    customer=advertiser.stripe_customer_id,
+                    description="Advertising - per 1k impressions",
+                    quantity=200,
+                    unit_amount=300,  # in US cents
+                    currency="USD",
+                )
+
+                # https://stripe.com/docs/api/invoices/create
+                invoice = stripe.Invoice.create(
+                    customer=advertiser.stripe_customer_id,
+                    auto_advance=False,  # Draft invoice
+                    collection_method="send_invoice",
+                    custom_fields=[
+                        {"name": "Advertiser", "value": advertiser.slug},
+                        {
+                            "name": "Estimated Start",
+                            "value": flight_start.strftime("%Y-%m-%d"),
+                        },
+                        {
+                            "name": "Estimated End",
+                            "value": flight_end.strftime("%Y-%m-%d"),
+                        },
+                    ],
+                    days_until_due=30,
+                )
+
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    _(
+                        "New Stripe invoice for {}: {}".format(
+                            advertiser, get_invoice_url(invoice.id)
+                        )
+                    ),
+                )
+            else:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    _("No Stripe customer ID for {}".format(advertiser)),
+                )
+
+    action_create_draft_invoice.short_description = _(
+        "Create a draft invoice for this customer"
+    )
 
     def report(self, instance):
         if not instance.pk:
@@ -78,6 +152,15 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
                 name=escape(instance.name) + " Report", url=instance.get_absolute_url()
             )
         )
+
+    def stripe_customer(self, obj):
+        if obj.stripe_customer_id:
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
+                get_customer_url(obj.stripe_customer_id),
+                obj.stripe_customer_id,
+            )
+        return None
 
 
 class AdTypeAdmin(admin.ModelAdmin):
@@ -276,6 +359,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
     form = FlightAdminForm
     save_as = True
 
+    actions = ["action_create_draft_invoice"]
     inlines = (AdvertisementsInline,)
     list_display = (
         "name",
@@ -316,6 +400,107 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
     )
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
+
+    def action_create_draft_invoice(self, request, queryset):
+        """
+        Create a draft invoice for selected flights with metadata attached.
+
+        This fails with a message if the flights aren't all from the same advertiser.
+        """
+        if not settings.STRIPE_SECRET_KEY:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+            )
+            return
+
+        flights = list(queryset.select_related("campaign", "campaign__advertiser"))
+
+        if not flights:
+            # Django actually doesn't take this path and instead shows its own error message
+            return  # pragma: no cover
+        if len({f.campaign.advertiser_id for f in flights}) > 1:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("All selected flights must be from a single advertiser."),
+            )
+            return
+
+        earliest_start_date = min([f.start_date for f in flights])
+        latest_end_date = max([f.end_date for f in flights])
+        advertiser = [f.campaign.advertiser for f in flights][0]
+
+        if not advertiser.stripe_customer_id:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("No Stripe customer ID for {}".format(advertiser)),
+            )
+            return
+
+        for flight in flights:
+            message_components = ["Advertising", flight.name]
+            unit_amount = 0
+            quantity = 1
+
+            if flight.cpc:
+                message_components.append("per click")
+                unit_amount = int(flight.cpc * 100)  # Convert to US cents
+                quantity = flight.sold_clicks
+            elif flight.cpm:
+                message_components.append("per 1k impressions")
+                unit_amount = int(flight.cpm * 100)  # Convert to US cents
+                quantity = flight.sold_impressions // 1000
+
+            # Amounts, prices, and description can be customized before sending
+            stripe.InvoiceItem.create(
+                customer=advertiser.stripe_customer_id,
+                description=" - ".join(message_components),
+                quantity=quantity,
+                unit_amount=unit_amount,  # in US cents
+                currency="USD",
+                metadata={
+                    "Advertiser": advertiser.slug,
+                    "Flight": flight.slug,
+                    "Flight Start": flight.start_date.strftime("%Y-%m-%d"),
+                    "Flight End": flight.end_date.strftime("%Y-%m-%d"),
+                },
+            )
+
+        # https://stripe.com/docs/api/invoices/create
+        invoice = stripe.Invoice.create(
+            customer=advertiser.stripe_customer_id,
+            auto_advance=False,  # Draft invoice
+            collection_method="send_invoice",
+            custom_fields=[
+                {"name": "Advertiser", "value": advertiser.slug},
+                {
+                    "name": "Estimated Start",
+                    "value": earliest_start_date.strftime("%Y-%m-%d"),
+                },
+                {
+                    "name": "Estimated End",
+                    "value": latest_end_date.strftime("%Y-%m-%d"),
+                },
+            ],
+            days_until_due=30,
+        )
+
+        messages.add_message(
+            request,
+            messages.SUCCESS,
+            _(
+                "New Stripe invoice for {}: {}".format(
+                    advertiser, get_invoice_url(invoice.id)
+                )
+            ),
+        )
+
+    action_create_draft_invoice.short_description = _(
+        "Create a draft invoice for selected flights"
+    )
 
     def get_queryset(self, request):
         queryset = super(FlightAdmin, self).get_queryset(request)
