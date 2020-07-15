@@ -68,6 +68,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
+    ordering = ("-created",)
 
     def report(self, instance):
         if not instance.pk:
