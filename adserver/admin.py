@@ -68,7 +68,6 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_display = ("name", "report")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
-    ordering = ("-created",)
 
     def report(self, instance):
         if not instance.pk:
@@ -182,6 +181,7 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
     list_editable = ("live",)
     readonly_fields = ("ad_image", "total_views", "total_clicks", "modified", "created")
     search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
+    ordering = ("-created",)
 
     # Exclude deprecated fields
     exclude = (
