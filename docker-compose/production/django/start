@@ -20,4 +20,4 @@ python /app/manage.py collectstatic --noinput
 #python /app/manage.py migrate
 
 # Start the app listening on port 5000
-newrelic-admin run-program /usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --max-requests=10000 --timeout=120 --log-level debug --log-file -
+newrelic-admin run-program /usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --max-requests=10000 --timeout=120 --log-file -
