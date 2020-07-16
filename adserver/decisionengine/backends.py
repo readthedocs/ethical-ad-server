@@ -3,6 +3,7 @@ import logging
 import random
 
 from django.db import models
+from user_agents import parse
 
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
@@ -10,6 +11,7 @@ from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..models import Flight
 from ..utils import get_ad_day
+from ..utils import get_client_user_agent
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ class BaseAdDecisionBackend:
         :param kwargs: Any additional possible arguments for the backend
         """
         self.request = request
+        self.user_agent = parse(get_client_user_agent(request))
         self.placements = placements
         self.publisher = publisher
 
@@ -183,6 +186,10 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
         # Skip if we aren't meant to show to these keywords
         if not flight.show_to_keywords(self.keywords):
+            return False
+
+        # Skip if we aren't meant to show to this traffic because it is mobile or non-mobile
+        if not flight.show_to_mobile(self.user_agent.is_mobile):
             return False
 
         # Skip if there are no clicks or views needed today (ad pacing)

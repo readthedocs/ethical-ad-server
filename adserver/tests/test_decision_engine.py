@@ -5,6 +5,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
+from user_agents import parse
 
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import CLICKS
@@ -248,6 +249,53 @@ class DecisionEngineTests(TestCase):
         self.backend.country_code = "RANDOM"
         ad, _ = self.backend.get_ad_and_placement()
         self.assertEqual(ad, self.advertisement2)
+
+    def test_flight_mobile_targeting(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        # Setup a new flight and ad
+        flight = get(
+            Flight,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=100,
+            targeting_parameters={"mobile_traffic": "exclude"},
+        )
+        self.advertisement1.flight = flight
+        self.advertisement1.save()
+
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertEqual(ad, self.advertisement1)
+
+        # Setup a mobile user agent
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) "
+            "AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+        )
+
+        # Ad is excluded since the the flight excludes mobile
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNone(ad)
+
+        # Set flight to mobile only
+        flight.targeting_parameters = {"mobile_traffic": "only"}
+        flight.save()
+
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertEqual(ad, self.advertisement1)
+
+        # Set a non-mobile UA
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+        )
+
+        # With a non-mobile UA, the flight should not be chosen
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNone(ad)
 
     def test_clicks_needed(self):
         self.assertEqual(self.include_flight.clicks_needed_today(), 33)

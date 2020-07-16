@@ -610,6 +610,19 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
+    def show_to_mobile(self, is_mobile):
+        """Check if a flight is valid for this traffic based on mobile/non-mobile."""
+        if not self.targeting_parameters:
+            return True
+
+        mobile_traffic_targeting = self.targeting_parameters.get("mobile_traffic")
+        if mobile_traffic_targeting == "exclude" and is_mobile:
+            return False
+        if mobile_traffic_targeting == "only" and not is_mobile:
+            return False
+
+        return True
+
     def sold_days(self):
         # Add one to count both the start and end day
         return max(0, (self.end_date - self.start_date).days) + 1

@@ -15,12 +15,15 @@ class TargetingParametersValidator(BaseValidator):
     code = "targeting-validator"
     limit_value = None  # required for classes extending BaseValidator
 
+    mobile_traffic_values = ("exclude", "only")
+
     messages = {
         "invalid_type": _("Value must be a dict, not %(type)s"),
         "unknown_key": _("%(key)s is not a valid targeting parameter"),
         "country_code": _("%(code)s is not a valid country code"),
         "state_province_code": _("%(code)s is not a valid state/province code"),
         "metro_code": _("%(code)s is not a valid metro code"),
+        "mobile": _(f"%(value)s must be one of {mobile_traffic_values}"),
         "str": _("%(word)s must be a string"),
     }
 
@@ -31,6 +34,7 @@ class TargetingParametersValidator(BaseValidator):
         "exclude_countries": "_validate_country_codes",
         "include_keywords": "_validate_strs",
         "exclude_keywords": "_validate_strs",
+        "mobile_traffic": "_validate_mobile",
     }
 
     def __init__(self, message=None):
@@ -76,6 +80,10 @@ class TargetingParametersValidator(BaseValidator):
                 raise ValidationError(
                     self.messages["metro_code"], params={"code": code}
                 )
+
+    def _validate_mobile(self, value):
+        if value not in self.mobile_traffic_values:
+            raise ValidationError(self.messages["mobile"], params={"value": value})
 
     def _validate_strs(self, words):
         for word in words:
