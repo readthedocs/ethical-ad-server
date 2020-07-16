@@ -31,6 +31,8 @@ class TestValidators(TestCase):
         validator({"exclude_keywords": ["django", "vuejs"]})
         validator({"include_state_provinces": ["CA", "ID", "OR"]})
         validator({"include_metro_codes": [1, 2]})
+        validator({"mobile_traffic": "exclude"})
+        validator({"mobile_traffic": "only"})
 
         # Unknown (old) parameters - these raise an error
         self.assertRaises(
@@ -58,3 +60,4 @@ class TestValidators(TestCase):
             ValidationError, validator, {"include_state_provinces": ["USA"]}
         )
         self.assertRaises(ValidationError, validator, {"include_metro_codes": ["USA"]})
+        self.assertRaises(ValidationError, validator, {"mobile_traffic": "unknown"})
