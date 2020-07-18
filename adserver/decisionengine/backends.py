@@ -8,6 +8,7 @@ from user_agents import parse
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
+from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..models import Flight
 from ..utils import get_ad_day
@@ -53,12 +54,14 @@ class BaseAdDecisionBackend:
             self.keywords.extend(self.publisher.keywords)
 
         if not self.campaign_types:
-            if publisher.paid_campaigns_only:
-                # This publisher only wants paid ads
-                self.campaign_types = [PAID_CAMPAIGN]
-            else:
-                # Unless specified, ads from any campaign type can be shown
-                self.campaign_types = ALL_CAMPAIGN_TYPES
+            if self.publisher.allow_paid_campaigns:
+                self.campaign_types.append(PAID_CAMPAIGN)
+            if self.publisher.allow_affiliate_campaigns:
+                self.campaign_types.append(AFFILIATE_CAMPAIGN)
+            if self.publisher.allow_community_campaigns:
+                self.campaign_types.append(COMMUNITY_CAMPAIGN)
+            if self.publisher.allow_house_campaigns:
+                self.campaign_types.append(HOUSE_CAMPAIGN)
 
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")

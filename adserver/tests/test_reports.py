@@ -377,14 +377,48 @@ class TestReportViews(TestCase):
         )
 
     def test_publisher_embed_code(self):
-        self.client.force_login(self.staff_user)
-
         url = reverse("publisher_embed", args=[self.publisher1.slug])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
 
         self.publisher1.unauthed_ad_decisions = False
         self.publisher1.save()
 
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_publisher_settings(self):
+        url = reverse("publisher_settings", args=[self.publisher1.slug])
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        # Save the settings and verify them
+        resp = self.client.post(
+            url,
+            {"allow_affiliate_campaigns": "on", "allow_community_campaigns": "on"},
+            follow=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Successfully saved")
+
+        self.publisher1.refresh_from_db()
+
+        self.assertTrue(self.publisher1.allow_affiliate_campaigns)
+        self.assertTrue(self.publisher1.allow_community_campaigns)
+        self.assertFalse(self.publisher1.allow_paid_campaigns)
+        self.assertFalse(self.publisher1.allow_house_campaigns)

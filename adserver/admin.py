@@ -53,10 +53,20 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "report",
         "revenue_share_percentage",
         "unauthed_ad_decisions",
-        "paid_campaigns_only",
+        "allow_paid_campaigns",
+        "allow_affiliate_campaigns",
+        "allow_community_campaigns",
+        "allow_house_campaigns",
         "record_views",
     )
-    list_filter = ("unauthed_ad_decisions", "paid_campaigns_only", "record_views")
+    list_filter = (
+        "unauthed_ad_decisions",
+        "allow_paid_campaigns",
+        "allow_affiliate_campaigns",
+        "allow_community_campaigns",
+        "allow_house_campaigns",
+        "record_views",
+    )
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
 

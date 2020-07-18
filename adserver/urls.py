@@ -23,6 +23,7 @@ from .views import FlightListView
 from .views import PublisherEmbedView
 from .views import PublisherMainView
 from .views import PublisherReportView
+from .views import PublisherSettingsView
 
 
 urlpatterns = [
@@ -119,6 +120,11 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
         PublisherEmbedView.as_view(),
         name="publisher_embed",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/settings/$",
+        PublisherSettingsView.as_view(),
+        name="publisher_settings",
     ),
     url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",

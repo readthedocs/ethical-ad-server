@@ -103,7 +103,8 @@ class AdDecisionView(GeoIpMixin, APIView):
             This is a combination of ``div_ids``, ``ad_types``, and ``priorities`` in the GET API.
             Only one ad will be returned but you can prioritize one type of ad over another.
         :<json array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
-        :<json array campaign_types: Limit the ad results to certain campaign types
+        :<json array campaign_types: Limit the ad results to certain campaign types.
+            Overrides any publisher settings.
         :<json string user_ip: User's IP address used for targeting
             (the requestor's IP will be used if not present)
         :<json string user_ua: User's user agent used for targeting

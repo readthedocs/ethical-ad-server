@@ -39,6 +39,7 @@ from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
@@ -734,11 +735,11 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
+class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView):
 
-    """A report for a single publisher."""
+    """Advertising embed code for a publisher."""
 
-    template_name = "adserver/reports/publisher_embed.html"
+    template_name = "adserver/publisher/embed.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -751,6 +752,37 @@ class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
         context.update({"publisher": publisher})
 
         return context
+
+
+class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):
+
+    """Settings configuration for a publisher."""
+
+    form_class = PublisherSettingsForm
+    model = Publisher
+    template_name = "adserver/publisher/settings.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        messages.success(
+            self.request,
+            _("Successfully saved %(publisher)s settings")
+            % {"publisher": self.object.name},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.object})
+        return context
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_settings", kwargs={"publisher_slug": self.object.slug}
+        )
 
 
 class AllPublisherReportView(BaseReportView):

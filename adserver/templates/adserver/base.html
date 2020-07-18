@@ -90,6 +90,13 @@
                 </li>
               {% endif %}
 
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_settings' publisher.slug %}">
+                  <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Settings' %}</span>
+                </a>
+              </li>
+
             </ul>
           {% endif %}
         </nav>
