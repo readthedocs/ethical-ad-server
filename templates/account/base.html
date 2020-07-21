@@ -19,7 +19,18 @@
             {% block content %}{% endblock content %}
           </div>
 
-        </div>
+        </div> <!-- /card -->
+
+        <ul class="list-inline">
+          <li class="list-inline-item small">
+            <span class="text-muted">© {% now "Y" %} Read the Docs, Inc.</span>
+          </li>
+          {% if adserver_privacy_policy %}
+            <li class="list-inline-item small">
+              <a href="{{ adserver_privacy_policy }}" target="_blank">{% trans 'Privacy Policy' %}</a>
+            </li>
+          {% endif %}
+        </ul>
       </div>
     </div>
 

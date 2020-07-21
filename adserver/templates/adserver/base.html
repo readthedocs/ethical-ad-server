@@ -105,13 +105,21 @@
   <footer>
     <hr>
     <div class="d-flex">
-      <div class="p-2 flex-fill">
-        <p class="text-muted"><small>© {% now "Y" %} Read the Docs, Inc.</small></p>
-      </div>
-      <div class="p-2 flex-fill">
-        {# Relies on the custom context processor #}
-        <p class="text-muted text-right"><small>v{{ adserver_version }}</small></p>
-      </div>
+      <ul class="list-inline mr-auto">
+        <li class="list-inline-item small">
+          <span class="text-muted">© {% now "Y" %} Read the Docs, Inc.</span>
+        </li>
+        {% if adserver_privacy_policy %}
+          <li class="list-inline-item small">
+            <a href="{{ adserver_privacy_policy }}" target="_blank">{% trans 'Privacy Policy' %}</a>
+          </li>
+        {% endif %}
+      </ul>
+      <ul class="list-inline justify-content-end">
+        <li class="list-inline-item small ml-auto">
+          <a href="https://github.com/readthedocs/ethical-ad-server" class="text-muted" target="_blank">v{{ adserver_version }}</a>
+        </li>
+      </ul>
     </div>
   </footer>
 {% endblock body_content %}
