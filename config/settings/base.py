@@ -333,8 +333,8 @@ ADSERVER_DECISION_BACKEND = env(
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 
-ADSERVER_ANALYTICS_ID = None
-ADSERVER_PRIVACY_POLICY_URL = None
+ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
+ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_BLACKLISTED_USER_AGENTS = []
 # Recording views is highly discouraged in production but useful in development
