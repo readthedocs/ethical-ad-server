@@ -1090,3 +1090,44 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        # Set the ad to target a specific state and metro
+        self.ad.flight.targeting_parameters = {
+            "include_countries": ["US"],
+            "include_state_provinces": ["CA"],
+            "include_metro_codes": [825, 803],  # San Diego, LA
+        }
+        self.ad.flight.save()
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "ID",
+                "dma_code": 757,  # Boise
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "CA",
+                "dma_code": 807,  # Bay Area
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "CA",
+                "dma_code": 825,  # San Diego
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
