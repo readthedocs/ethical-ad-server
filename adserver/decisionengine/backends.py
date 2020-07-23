@@ -157,13 +157,16 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         else:
             flights = flights.filter(live=True, start_date__lte=get_ad_day().date())
 
-            # TODO: ensure there's a live ad for each flight
-            # Unfortunately, filtering in annotations was added in Django 2.x
-            # For now, we'll just ensure there's "an ad" for the flight
-            # https://docs.djangoproject.com/en/2.0/topics/db/aggregation/#filtering-on-annotations
-            flights = flights.annotate(num_ads=models.Count("advertisements")).filter(
-                num_ads__gt=0
-            )
+            # Ensure there's a live ad of the chosen types for each flight
+            flights = flights.annotate(
+                num_ads=models.Count(
+                    "advertisements",
+                    filter=models.Q(
+                        advertisements__ad_types__slug__in=self.ad_types,
+                        advertisements__live=True,
+                    ),
+                )
+            ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
         return flights.select_related("campaign")
