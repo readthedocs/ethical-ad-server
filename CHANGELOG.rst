@@ -11,6 +11,9 @@ Version v0.3.1
 
 :Date: July 23, 2020
 
+This is mostly a bugfix release and contains some slight operations tweaks.
+The biggest change is to allow mobile targeting or excluding mobile traffic.
+
  * @davidfischer: Fix a secondary check on geo-targeting (#199)
  * @davidfischer: Optimization to choose a flight with live ads (#198)
  * @davidfischer: Add a link to the privacy policy (#197)
