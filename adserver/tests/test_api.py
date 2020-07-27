@@ -1046,6 +1046,27 @@ class TestProxyViews(BaseApiTest):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 404)
 
+    def test_click_tracking_variable_expansion(self):
+        self.ad.link = "http://example.com?utm_source=${publisher}"
+        self.ad.save()
+
+        resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            resp["Location"], "http://example.com?utm_source=test-publisher"
+        )
+
+        # invalid string replacement template
+        self.ad.link = "http://example.com?utm_source=$%7Btest%7Bpublisher&t=1"
+        self.ad.save()
+
+        resp = self.client.get(self.click_url)
+
+        # Even with an invalid template, this should "work" without failing
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], self.ad.link)
+
     def test_click_tracking_valid(self):
         resp = self.client.get(self.click_url)
 
