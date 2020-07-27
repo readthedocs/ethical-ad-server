@@ -891,6 +891,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         blank=True,
         help_text=_("Different ad types have different text requirements"),
     )
+    # Supports simple variables like ${publisher} and ${advertisement}
+    # using string.Template syntax
     link = models.URLField(_("Link URL"), max_length=255)
     image = models.ImageField(
         _("Image"),

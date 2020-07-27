@@ -2,6 +2,7 @@
 import collections
 import csv
 import logging
+import string
 from datetime import datetime
 from datetime import timedelta
 
@@ -416,7 +417,7 @@ class BaseProxyView(View):
             )
 
         message = ignore_reason or self.success_message
-        response = self.get_response(request, advertisement)
+        response = self.get_response(request, advertisement, publisher)
 
         self.send_to_analytics(request, advertisement, message)
 
@@ -427,7 +428,7 @@ class BaseProxyView(View):
 
         return response
 
-    def get_response(self, request, advertisement):
+    def get_response(self, request, advertisement, publisher):
         """Subclasses *must* override this method."""
         raise NotImplementedError
 
@@ -439,7 +440,7 @@ class AdViewProxyView(BaseProxyView):
     impression_type = VIEWS
     success_message = "Billed view"
 
-    def get_response(self, request, advertisement):
+    def get_response(self, request, advertisement, publisher):
         return HttpResponse(
             "<svg><!-- View Proxy --></svg>", content_type="image/svg+xml"
         )
@@ -473,8 +474,13 @@ class AdClickProxyView(BaseProxyView):
             uip=ip_address,  # will be anonymized
         )
 
-    def get_response(self, request, advertisement):
-        return HttpResponseRedirect(advertisement.link)
+    def get_response(self, request, advertisement, publisher):
+        # Allows using variables in links such as `?utm_source=${publisher}`
+        template = string.Template(advertisement.link)
+        url = template.safe_substitute(
+            publisher=publisher.slug, advertisement=advertisement.slug
+        )
+        return HttpResponseRedirect(url)
 
 
 class BaseReportView(UserPassesTestMixin, TemplateView):
