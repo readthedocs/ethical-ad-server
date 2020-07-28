@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.4.0
+--------------
+
+:Date: July 28, 2020
+
+There's two main changes in this release related to blocking referrers and UAs:
+Firstly, the setting ``ADSERVER_BLACKLISTED_USER_AGENTS`` became ``ADSERVER_BLOCKLISTED_USER_AGENTS``.
+Also, we added a setting ``ADSERVER_BLOCKLISTED_REFERRERS``.
+
+ * @davidfischer: Send warnings to Sentry (#206)
+ * @davidfischer: Allow blocking referrers for ad impressions with a setting (#205)
+
+
 Version v0.3.2
 --------------
 
