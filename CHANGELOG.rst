@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.4.1
+--------------
+
+:Date: July 28, 2020
+
+This was purely a bugfix release.
+
+ * @davidfischer: Fix a bug around clicking an add after 4 hours (#208)
+
+
 Version v0.4.0
 --------------
 
