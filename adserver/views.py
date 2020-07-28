@@ -488,8 +488,13 @@ class AdClickProxyView(BaseProxyView):
     def get_response(self, request, advertisement, publisher):
         # Allows using variables in links such as `?utm_source=${publisher}`
         template = string.Template(advertisement.link)
+
+        publisher_slug = "unknown"
+        if publisher:
+            publisher_slug = publisher.slug
+
         url = template.safe_substitute(
-            publisher=publisher.slug, advertisement=advertisement.slug
+            publisher=publisher_slug, advertisement=advertisement.slug
         )
         return HttpResponseRedirect(url)
 
