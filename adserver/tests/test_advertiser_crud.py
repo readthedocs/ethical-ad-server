@@ -112,15 +112,6 @@ class TestAdvertiserCrudViews(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
-        # Trigger pagination of flights
-        for i in range(FlightListView.PER_PAGE * 2):
-            get(
-                Flight,
-                name=f"Test Flight {i}",
-                slug=f"test-flight-{i}",
-                campaign=self.campaign,
-            )
-
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
