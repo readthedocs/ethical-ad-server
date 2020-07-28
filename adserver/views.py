@@ -55,7 +55,8 @@ from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
-from .utils import is_blacklisted_user_agent
+from .utils import is_blocklisted_referrer
+from .utils import is_blocklisted_user_agent
 from .utils import is_click_ratelimited
 
 
@@ -327,6 +328,7 @@ class BaseProxyView(View):
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
         parsed_ua = parse_user_agent(user_agent)
+        referrer = request.META.get("HTTP_REFERER")
 
         country_code = None
         region_code = None
@@ -339,9 +341,7 @@ class BaseProxyView(View):
             region_code = geo_data["region"]
             metro_code = geo_data["dma_code"]
 
-        valid_nonce = advertisement.is_valid_nonce(self.impression_type, nonce)
-
-        if not valid_nonce:
+        if not advertisement.is_valid_nonce(self.impression_type, nonce):
             log.log(self.log_level, "Old or nonexistent impression nonce")
             reason = "Old/Nonexistent nonce"
         elif parsed_ua.is_bot:
@@ -360,11 +360,21 @@ class BaseProxyView(View):
         elif request.user.is_staff:
             log.log(self.log_level, "Ignored staff user ad impression")
             reason = "Staff impression"
-        elif is_blacklisted_user_agent(user_agent):
+        elif is_blocklisted_user_agent(user_agent):
+            log.log(self.log_level, "Blocked user agent impression [%s]", user_agent)
+            reason = "Blocked UA impression"
+        elif is_blocklisted_referrer(referrer):
+            # Note: Normally logging IPs is frowned upon for DNT
+            # but this is a security/billing violation
             log.log(
-                self.log_level, "Blacklisted user agent impression [%s]", user_agent
+                self.log_security_level,
+                "Blocklisted referrer [%s], Publisher: [%s], IP: [%s], UA: [%s]",
+                referrer,
+                publisher,
+                ip_address,
+                user_agent,
             )
-            reason = "Blacklisted impression"
+            reason = "Blocked referrer impression"
         elif not publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
@@ -376,11 +386,12 @@ class BaseProxyView(View):
             # Then they turn off their VPN and click on the ad
             log.log(
                 self.log_security_level,
-                "Invalid geo targeting for ad [%s]. Country: [%s], Regions: [%s], Metro: [%s]",
+                "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s], UA: [%s]",
                 advertisement,
                 country_code,
                 region_code,
                 metro_code,
+                user_agent,
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
@@ -388,7 +399,7 @@ class BaseProxyView(View):
             # but this is a security/billing violation
             log.log(
                 self.log_security_level,
-                "User has clicked too many ads recently, IP = [%s], User Agent = [%s]",
+                "User has clicked too many ads recently, IP: [%s], UA: [%s]",
                 ip_address,
                 user_agent,
             )

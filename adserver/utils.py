@@ -22,8 +22,11 @@ from user_agents import parse
 log = logging.getLogger(__name__)  # noqa
 
 # Compile these regular expressions at startup time for performance purposes
-BLACKLISTED_UA_REGEXES = [
-    re.compile(s) for s in settings.ADSERVER_BLACKLISTED_USER_AGENTS
+BLOCKLISTED_UA_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
+]
+BLOCKLISTED_REFERRERS_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
 ]
 
 try:
@@ -169,11 +172,28 @@ def is_click_ratelimited(request, ratelimits=None):
     return False
 
 
-def is_blacklisted_user_agent(user_agent, blacklist_regexes=BLACKLISTED_UA_REGEXES):
-    """Returns ``True`` if the UA is blacklisted and ``False`` otherwise."""
-    for regex in blacklist_regexes:
-        if regex.search(user_agent):
-            return True
+def is_blocklisted_user_agent(user_agent, blocklist_regexes=None):
+    """Returns ``True`` if the UA is blocklisted and ``False`` otherwise."""
+    if blocklist_regexes is None:
+        blocklist_regexes = BLOCKLISTED_UA_REGEXES
+
+    if user_agent:
+        for regex in blocklist_regexes:
+            if regex.search(user_agent):
+                return True
+
+    return False
+
+
+def is_blocklisted_referrer(referrer, blocklist_regexes=None):
+    """Returns ``True`` if the Referrer is blocklisted and ``False`` otherwise."""
+    if blocklist_regexes is None:
+        blocklist_regexes = BLOCKLISTED_REFERRERS_REGEXES
+
+    if referrer:
+        for regex in blocklist_regexes:
+            if regex.search(referrer):
+                return True
 
     return False
 

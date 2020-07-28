@@ -34,11 +34,18 @@ then the admin interface will be available at the URL ``http://adserver.example.
 By default, this set to ``/admin``.
 
 
-ADSERVER_BLACKLISTED_USER_AGENTS
+ADSERVER_BLOCKLISTED_USER_AGENTS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set this to a comma separated list of strings that are looked for anywhere in the User Agent of an ad request.
 Any user agents matching any of these will be completely ignored for counting clicks and views for billing purposes.
+
+
+ADSERVER_BLOCKLISTED_REFERRERS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set this to a comma separated list of strings that are looked for anywhere in the Referrer of an ad request.
+Any referrer matching any of these will be completely ignored for counting clicks and views for billing purposes.
 
 
 ADSERVER_CLICK_RATELIMITS
