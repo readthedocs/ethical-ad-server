@@ -1,7 +1,9 @@
 import datetime
 import json
+import re
 from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client
@@ -13,6 +15,7 @@ from django.utils import timezone
 from django_dynamic_fixture import get
 from rest_framework.authtoken.models import Token
 
+from .. import utils as adserver_utils
 from ..api.permissions import AdDecisionPermission
 from ..api.permissions import AdvertiserPermission
 from ..api.permissions import PublisherPermission
@@ -807,7 +810,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         self.page_url = "http://example.com"
 
-        # To be counted, the UA and IP must be valid, non-blacklisted/non-bots
+        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
         self.proxy_client = Client(
             HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
         )
@@ -1038,6 +1041,43 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Unrecognized user agent")
+
+    @override_settings(ADSERVER_BLOCKLISTED_USER_AGENTS=["Safari"])
+    def test_view_tracking_blocked_ua(self):
+        # Override the settings for the blocklist
+        # This can't be done with ``override_settings`` because the setting is already processed
+        adserver_utils.BLOCKLISTED_UA_REGEXES = [
+            re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
+        ]
+
+        ua = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/69.0.3497.100 Safari/537.36"
+        )
+        resp = self.client.get(self.url, HTTP_USER_AGENT=ua)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked UA impression")
+
+        # Reset the UA blocklist
+        adserver_utils.BLOCKLISTED_UA_REGEXES = []
+
+    @override_settings(ADSERVER_BLOCKLISTED_REFERRERS=["http://invalid.referrer"])
+    def test_view_tracking_blocked_referrer(self):
+        # Override the settings for the blocklist
+        # This can't be done with ``override_settings`` because the setting is already processed
+        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = [
+            re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
+        ]
+
+        resp = self.client.get(self.url, HTTP_REFERER="http://invalid.referrer")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked referrer impression")
+
+        # Reset the referrer blocklist
+        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = []
 
     def test_view_tracking_invalid_ad(self):
         url = reverse(

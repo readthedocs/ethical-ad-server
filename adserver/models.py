@@ -1275,7 +1275,7 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     # Offers include cases where the server returned an ad
     # but the client didn't load it
-    # or the client didn't qualify as a view (staff, blacklisted, etc.)
+    # or the client didn't qualify as a view (staff, blocklisted, etc.)
     offers = models.PositiveIntegerField(
         _("Offers"),
         default=0,
@@ -1285,7 +1285,7 @@ class BaseImpression(TimeStampedModel, models.Model):
         ),
     )
 
-    # Views & Clicks don't count actions that are blacklisted, done by staff, bots, etc.
+    # Views & Clicks don't count actions that are blocklisted, done by staff, bots, etc.
     views = models.PositiveIntegerField(
         _("Views"),
         default=0,

@@ -338,7 +338,10 @@ ADSERVER_DO_NOT_TRACK = False
 ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_CLICK_RATELIMITS = []
-ADSERVER_BLACKLISTED_USER_AGENTS = []
+ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
+    "ADSERVER_BLOCKLISTED_USER_AGENTS", default=[]
+)
+ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", default=[])
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups

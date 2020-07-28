@@ -20,7 +20,8 @@ from ..utils import get_ad_day
 from ..utils import get_client_id
 from ..utils import get_client_user_agent
 from ..utils import get_geolocation
-from ..utils import is_blacklisted_user_agent
+from ..utils import is_blocklisted_referrer
+from ..utils import is_blocklisted_user_agent
 from ..utils import is_click_ratelimited
 from ..utils import parse_date_string
 
@@ -64,18 +65,27 @@ class UtilsTest(TestCase):
         self.assertAlmostEqual(calculate_ctr(1, 10), 10)
         self.assertAlmostEqual(calculate_ctr(5, 25), 20)
 
-    def test_blacklisted_user_agent(self):
+    def test_blocklisted_user_agent(self):
         ua = (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/69.0.3497.100 Safari/537.36"
         )
-        self.assertFalse(is_blacklisted_user_agent(ua))
+        self.assertFalse(is_blocklisted_user_agent(ua))
         regexes = [re.compile("Chrome")]
-        self.assertTrue(is_blacklisted_user_agent(ua, regexes))
+        self.assertTrue(is_blocklisted_user_agent(ua, regexes))
 
         regexes = [re.compile("this isn't found"), re.compile("neither is this")]
-        self.assertFalse(is_blacklisted_user_agent(ua, regexes))
+        self.assertFalse(is_blocklisted_user_agent(ua, regexes))
+
+    def test_blocklisted_referrer(self):
+        referrer = "http://google.com"
+        self.assertFalse(is_blocklisted_referrer(referrer))
+        regexes = [re.compile("google.com")]
+        self.assertTrue(is_blocklisted_referrer(referrer, regexes))
+
+        regexes = [re.compile("this isn't found"), re.compile("neither is this")]
+        self.assertFalse(is_blocklisted_referrer(referrer, regexes))
 
     def test_ratelimited(self):
         factory = RequestFactory()
