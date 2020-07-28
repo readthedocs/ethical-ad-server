@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.3.2
+--------------
+
+:Date: July 28, 2020
+
+This is a minor release that just changes some cookie settings
+to have shorter CSRF cookies and send them in fewer contexts.
+It also allows the link for an advertiser's ad to contain variables.
+
+ * @davidfischer: Allow simple variables in Advertisement.link (#201)
+ * @davidfischer: CSRF Cookie tweaks (#196)
+
+
 Version v0.3.1
 --------------
 
