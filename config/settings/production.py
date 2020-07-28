@@ -11,6 +11,8 @@ Only a few environment variables are required:
 - DATABASE_URL
 - SENDGRID_API_KEY
 """
+import logging
+
 from .base import *  # noqa
 from .base import env
 
@@ -111,8 +113,13 @@ if SENTRY_DSN:
     # pylint: disable=import-error
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
 
-    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
+    sentry_logging = LoggingIntegration(
+        event_level=logging.WARNING  # Send warnings as events
+    )
+
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
 
 
 # Production ad server specific settings
