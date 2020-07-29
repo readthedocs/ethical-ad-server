@@ -8,6 +8,7 @@ from collections import namedtuple
 from datetime import datetime
 
 import analytical
+import IP2Proxy
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
@@ -21,13 +22,6 @@ from user_agents import parse
 
 
 log = logging.getLogger(__name__)  # noqa
-
-
-try:
-    geoip = GeoIP2()
-except GeoIP2Exception:
-    log.exception("IP Geolocation is unavailable")
-    geoip = None
 
 
 GeolocationTuple = namedtuple(
@@ -203,6 +197,15 @@ def is_blocklisted_ip(ip, blocked_ips=None):
 
     if ip and ip in blocked_ips:
         return True
+    if ip and is_proxy_ip(ip):
+        return True
+
+    return False
+
+
+def is_proxy_ip(ip):
+    if ipproxy_db and ipproxy_db.is_proxy(ip) > 0:
+        return True
 
     return False
 
@@ -223,6 +226,16 @@ def get_geolocation(ip_address):
             log.warning("Geolocation configuration error")
 
     return None
+
+
+def get_ipproxy_db():
+    db = None
+
+    filepath = os.path.join(settings.GEOIP_PATH, "IP2Proxy.BIN")
+    if os.path.exists(filepath):
+        db = IP2Proxy.IP2Proxy(filepath)
+
+    return db
 
 
 def build_blocked_ip_set():
@@ -274,3 +287,11 @@ BLOCKLISTED_REFERRERS_REGEXES = [
     re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
 ]
 BLOCKLISTED_IPS = build_blocked_ip_set()
+
+try:
+    geoip = GeoIP2()
+except GeoIP2Exception:
+    log.exception("IP Geolocation is unavailable")
+    geoip = None
+
+ipproxy_db = get_ipproxy_db()

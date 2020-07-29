@@ -15,3 +15,8 @@ LOGGING["loggers"]["adserver"]["level"] = "ERROR"
 # Which may not be there in testing
 # unless you run `collectstatic` before running tests
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
+# Set the GeoIP path to something that doesn't exist
+# This will ensure that the test suite matches what's run in CI
+# There will be no IP geolocation done in testing
+GEOIP_PATH = os.path.join(BASE_DIR, "geoip-noexists")
