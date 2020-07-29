@@ -1098,6 +1098,19 @@ class TestProxyViews(BaseApiTest):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 404)
 
+    @override_settings(ADSERVER_VIEW_RATELIMITS=["1/m"])
+    def test_view_tracking_ratelimit(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        # View the ad again with a new nonce
+        offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
+        view_url = offer["view_url"]
+        resp = self.client.get(view_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited view impression")
+
     def test_click_tracking_variable_expansion(self):
         self.ad.link = "http://example.com?utm_source=${publisher}"
         self.ad.save()
@@ -1147,7 +1160,7 @@ class TestProxyViews(BaseApiTest):
         )
         resp = self.client.get(click_url)
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited impression")
+        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited click impression")
 
     def test_click_tracking_invalid_targeting(self):
         self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}

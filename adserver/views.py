@@ -59,6 +59,7 @@ from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
 from .utils import is_click_ratelimited
+from .utils import is_view_ratelimited
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -411,7 +412,15 @@ class BaseProxyView(View):
                 ip_address,
                 user_agent,
             )
-            reason = "Ratelimited impression"
+            reason = "Ratelimited click impression"
+        elif self.impression_type == VIEWS and is_view_ratelimited(request):
+            log.log(
+                self.log_security_level,
+                "User has viewed too many ads recently, Publisher: [%s], UA: [%s]",
+                publisher,
+                user_agent,
+            )
+            reason = "Ratelimited view impression"
 
         return reason
 

@@ -61,6 +61,17 @@ By default, this is set to ``"1/m,3/10m,10/h,25/d"`` which is:
 * 25 clicks per day
 
 
+ADSERVER_VIEW_RATELIMITS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set this to a comma separated list of formats to specify how quickly a single IP can view ads.
+Views that happen faster than any of these rates will still allow viewing the ad or clicking through,
+but won't count toward billed impressions.
+By default, this is set to ``"3/5m"`` which is:
+
+* 3 views per 5 minutes
+
+
 ADSERVER_DECISION_BACKEND
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

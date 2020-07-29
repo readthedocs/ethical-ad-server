@@ -24,6 +24,7 @@ from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
 from ..utils import is_blocklisted_user_agent
 from ..utils import is_click_ratelimited
+from ..utils import is_view_ratelimited
 from ..utils import parse_date_string
 
 
@@ -95,7 +96,7 @@ class UtilsTest(TestCase):
         self.assertTrue(is_blocklisted_ip(ip, ["1.1.1.1", "2.2.2.2"]))
         self.assertFalse(is_blocklisted_ip(ip, ["2.2.2.2"]))
 
-    def test_ratelimited(self):
+    def test_click_ratelimited(self):
         factory = RequestFactory()
         request = factory.get("/")
 
@@ -105,6 +106,19 @@ class UtilsTest(TestCase):
         ratelimits = ["1/s", "1/m"]
         self.assertFalse(is_click_ratelimited(request, ratelimits))
         self.assertTrue(is_click_ratelimited(request, ratelimits))
+
+    def test_view_ratelimited(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        self.assertFalse(is_view_ratelimited(request))
+
+        # The first 3 requests are "not" ratelimited; the 4th is
+        ratelimits = ["3/5m"]
+        self.assertFalse(is_view_ratelimited(request, ratelimits))
+        self.assertFalse(is_view_ratelimited(request, ratelimits))
+        self.assertFalse(is_view_ratelimited(request, ratelimits))
+        self.assertTrue(is_view_ratelimited(request, ratelimits))
 
     def test_generate_client_id(self):
         hexdigest1 = generate_client_id("8.8.8.8", "Mac OS, Safari, 10.x.x")
