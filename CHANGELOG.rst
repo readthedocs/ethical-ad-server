@@ -6,6 +6,14 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.4.2
+--------------
+
+:Date: July 29, 2020
+
+ * @davidfischer: IP Geolocation and Proxy detection improvements (#210)
+
+
 Version v0.4.1
 --------------
 
