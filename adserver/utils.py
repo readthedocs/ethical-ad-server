@@ -2,6 +2,7 @@
 import hashlib
 import ipaddress
 import logging
+import os
 import re
 from collections import namedtuple
 from datetime import datetime
@@ -21,13 +22,6 @@ from user_agents import parse
 
 log = logging.getLogger(__name__)  # noqa
 
-# Compile these regular expressions at startup time for performance purposes
-BLOCKLISTED_UA_REGEXES = [
-    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
-]
-BLOCKLISTED_REFERRERS_REGEXES = [
-    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
-]
 
 try:
     geoip = GeoIP2()
@@ -198,6 +192,21 @@ def is_blocklisted_referrer(referrer, blocklist_regexes=None):
     return False
 
 
+def is_blocklisted_ip(ip, blocked_ips=None):
+    """
+    Returns ``True`` if the IP is blocklisted and ``False`` otherwise.
+
+    IPs can be blocked because they are anonymous proxies or other reasons.
+    """
+    if blocked_ips is None:
+        blocked_ips = BLOCKLISTED_IPS
+
+    if ip and ip in blocked_ips:
+        return True
+
+    return False
+
+
 def get_geolocation(ip_address):
     try:
         ipaddress.ip_address(force_text(ip_address))
@@ -214,6 +223,21 @@ def get_geolocation(ip_address):
             log.warning("Geolocation configuration error")
 
     return None
+
+
+def build_blocked_ip_set():
+    """Build a set of blocked IPs for preventing bogus ad impressions."""
+    blocked_ips = set()
+
+    filepath = os.path.join(settings.GEOIP_PATH, "torbulkexitlist.txt")
+    if os.path.exists(filepath):
+        with open(filepath) as fd:
+            for line in fd.readlines():
+                line = line.strip()
+                if line:
+                    blocked_ips.add(line)
+
+    return blocked_ips
 
 
 def generate_client_id(ip_address, user_agent):
@@ -240,3 +264,13 @@ def generate_client_id(ip_address, user_agent):
         hash_id.update(force_bytes(get_random_string()))
 
     return hash_id.hexdigest()
+
+
+# Compile these regular expressions at startup time for performance purposes
+BLOCKLISTED_UA_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
+]
+BLOCKLISTED_REFERRERS_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
+]
+BLOCKLISTED_IPS = build_blocked_ip_set()

@@ -995,6 +995,16 @@ class TestProxyViews(BaseApiTest):
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": self.nonce}
         )
 
+    def tearDown(self):
+        # Reset the UA blocklist
+        adserver_utils.BLOCKLISTED_UA_REGEXES = []
+
+        # Reset the referrer blocklist
+        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = []
+
+        # Reset the IP blocklist
+        adserver_utils.BLOCKLISTED_IPS = []
+
     def test_view_tracking_valid(self):
         resp = self.client.get(self.url)
 
@@ -1060,9 +1070,6 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked UA impression")
 
-        # Reset the UA blocklist
-        adserver_utils.BLOCKLISTED_UA_REGEXES = []
-
     @override_settings(ADSERVER_BLOCKLISTED_REFERRERS=["http://invalid.referrer"])
     def test_view_tracking_blocked_referrer(self):
         # Override the settings for the blocklist
@@ -1076,8 +1083,13 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked referrer impression")
 
-        # Reset the referrer blocklist
-        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = []
+    def test_view_tracking_blocked_ip(self):
+        adserver_utils.BLOCKLISTED_IPS = set([self.ip_address])
+
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked IP impression")
 
     def test_view_tracking_invalid_ad(self):
         url = reverse(

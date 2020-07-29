@@ -20,6 +20,7 @@ from ..utils import get_ad_day
 from ..utils import get_client_id
 from ..utils import get_client_user_agent
 from ..utils import get_geolocation
+from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
 from ..utils import is_blocklisted_user_agent
 from ..utils import is_click_ratelimited
@@ -86,6 +87,13 @@ class UtilsTest(TestCase):
 
         regexes = [re.compile("this isn't found"), re.compile("neither is this")]
         self.assertFalse(is_blocklisted_referrer(referrer, regexes))
+
+    def test_blocklisted_ip(self):
+        ip = "1.1.1.1"
+        self.assertFalse(is_blocklisted_ip(ip))
+
+        self.assertTrue(is_blocklisted_ip(ip, ["1.1.1.1", "2.2.2.2"]))
+        self.assertFalse(is_blocklisted_ip(ip, ["2.2.2.2"]))
 
     def test_ratelimited(self):
         factory = RequestFactory()
