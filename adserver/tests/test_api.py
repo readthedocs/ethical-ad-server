@@ -1079,6 +1079,17 @@ class TestProxyViews(BaseApiTest):
         # Reset the referrer blocklist
         adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = []
 
+    def test_view_tracking_blocked_ip(self):
+        adserver_utils.BLOCKLISTED_IPS = set([self.ip_address])
+
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked IP impression")
+
+        # Reset the IP blocklist
+        adserver_utils.BLOCKLISTED_IPS = []
+
     def test_view_tracking_invalid_ad(self):
         url = reverse(
             "view-proxy", kwargs={"advertisement_id": 99999, "nonce": "invalidnonce"}

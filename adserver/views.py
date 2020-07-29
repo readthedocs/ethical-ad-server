@@ -55,6 +55,7 @@ from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
+from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
 from .utils import is_click_ratelimited
@@ -375,6 +376,13 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Blocked referrer impression"
+        elif is_blocklisted_ip(ip_address):
+            log.log(
+                self.log_security_level,
+                "Blocked IP impression, Publisher: [%s]",
+                publisher,
+            )
+            reason = "Blocked IP impression"
         elif not publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"

@@ -83,5 +83,4 @@ db.sqlite3
 _build
 
 # GeoIP data files
-geoip/*.mmdb
-geoip/*.lock
+geoip/*

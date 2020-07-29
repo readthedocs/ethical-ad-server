@@ -31,7 +31,8 @@ Features
   - mobile, tablet, or desktop targeting
   - extensible custom targeting options
 
-The Ethical Ad Server uses GeoLite2 data created by MaxMind.
+The Ethical Ad Server uses GeoLite2 data created by MaxMind
+or IP Geolocation by DB-IP.
 
 
 Documentation
