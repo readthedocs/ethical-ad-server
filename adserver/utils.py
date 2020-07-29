@@ -229,7 +229,7 @@ def build_blocked_ip_set():
     """Build a set of blocked IPs for preventing bogus ad impressions."""
     blocked_ips = set()
 
-    filepath = os.path.join(settings.GEOIP_PATH, "torbulkexitlist")
+    filepath = os.path.join(settings.GEOIP_PATH, "torbulkexitlist.txt")
     if os.path.exists(filepath):
         with open(filepath) as fd:
             for line in fd.readlines():

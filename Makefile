@@ -2,12 +2,12 @@
 
 
 GEOIP_DIR = geoip
-GEOIP_CITY_FILE = dbip-city-lite-2020-07.mmdb.gz
-GEOIP_COUNTRY_FILE = dbip-country-lite-2020-07.mmdb.gz
+GEOIP_CITY_FILE = dbip-city-lite.mmdb.gz
+GEOIP_COUNTRY_FILE = dbip-country-lite.mmdb.gz
 GEOIP_CITY_DB_URL = https://download.db-ip.com/free/dbip-city-lite-2020-07.mmdb.gz
 GEOIP_COUNTRY_DB_URL = https://download.db-ip.com/free/dbip-country-lite-2020-07.mmdb.gz
 
-TOR_EXIT_LIST_FILE = torbulkexitlist
+TOR_EXIT_LIST_FILE = torbulkexitlist.txt
 TOR_EXIT_LIST_URL = https://check.torproject.org/torbulkexitlist
 
 DOCKER_CONFIG=docker-compose-local.yml
