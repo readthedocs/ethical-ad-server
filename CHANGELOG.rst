@@ -6,6 +6,14 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.5.0
+--------------
+
+:Date: July 29, 2020
+
+ * @davidfischer: Evaluate IP based proxy detection solution (#213)
+
+
 Version v0.4.2
 --------------
 
