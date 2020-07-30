@@ -420,5 +420,24 @@ class TestReportViews(TestCase):
 
         self.assertTrue(self.publisher1.allow_affiliate_campaigns)
         self.assertTrue(self.publisher1.allow_community_campaigns)
-        self.assertFalse(self.publisher1.allow_paid_campaigns)
         self.assertFalse(self.publisher1.allow_house_campaigns)
+
+    def test_publisher_nopaid_notice(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("publisher_settings", args=[self.publisher1.slug])
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(
+            resp, "Your publisher account is not approved for paid campaigns"
+        )
+
+        self.publisher1.allow_paid_campaigns = False
+        self.publisher1.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp, "Your publisher account is not approved for paid campaigns"
+        )

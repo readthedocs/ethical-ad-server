@@ -5,8 +5,6 @@
 {% block title %}{% trans 'Publisher Embed' %} - {{ publisher }}{% endblock %}
 
 
-
-
 {% block breadcrumbs %}
   {{ block.super }}
   <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
@@ -17,6 +15,8 @@
 {% block content_container %}
   <section>
     <h1>{% blocktrans %}Publisher Embed for {{ publisher }}{% endblocktrans %}</h1>
+
+    {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
 
     <p>
       This code will allow you to get started with showing ads on your site.

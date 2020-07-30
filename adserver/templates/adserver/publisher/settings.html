@@ -16,6 +16,9 @@
 {% block content_container %}
   <section>
     <h1>{% blocktrans %}Publisher settings for {{ publisher }}{% endblocktrans %}</h1>
+
+    {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
+
     <div class="row">
 
       <div class="col-md">

@@ -232,7 +232,6 @@ class PublisherSettingsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Fieldset(
                 _("Control advertiser campaign types"),
-                "allow_paid_campaigns",
                 "allow_affiliate_campaigns",
                 "allow_community_campaigns",
                 "allow_house_campaigns",
@@ -255,7 +254,6 @@ class PublisherSettingsForm(forms.ModelForm):
     class Meta:
         model = Publisher
         fields = [
-            "allow_paid_campaigns",
             "allow_affiliate_campaigns",
             "allow_community_campaigns",
             "allow_house_campaigns",

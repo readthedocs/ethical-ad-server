@@ -61,7 +61,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             Used for ad targeting and is additive with any publisher settings.
         :<json array campaign_types: An optional ``|`` delimited string of campaign types (eg. ``paid|community|house``)
             which can be used to limit to just certain types of ads.
-            Overrides any publisher settings.
+            Can only further reduce campaign types, not allow ones prohibited for the publisher.
         :<json string format: Format can optionally be specified as ``jsonp`` to allow a callback.
         :<json string callback: The name of the callback for a JSONP request (default is ``callback``)
         :<json string force_ad: Limit results to a specific ad
@@ -104,7 +104,6 @@ class AdDecisionView(GeoIpMixin, APIView):
             Only one ad will be returned but you can prioritize one type of ad over another.
         :<json array keywords: Case-insensitive strings that describe the page where the ad will go for targeting
         :<json array campaign_types: Limit the ad results to certain campaign types.
-            Overrides any publisher settings.
         :<json string user_ip: User's IP address used for targeting
             (the requestor's IP will be used if not present)
         :<json string user_ua: User's user agent used for targeting
