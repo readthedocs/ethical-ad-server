@@ -11,9 +11,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.core.paginator import EmptyPage
-from django.core.paginator import PageNotAnInteger
-from django.core.paginator import Paginator
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -139,24 +136,11 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
 
     model = Flight
     template_name = "adserver/advertiser/flight-list.html"
-    PER_PAGE = 25
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
         context = super().get_context_data(**kwargs)
 
-        paginator = Paginator(self.get_queryset(), self.PER_PAGE)
-
-        # Note: Pagination has been greatly simplified in Django 2.x
-        try:
-            flight_list = paginator.page(self.request.GET.get("page"))
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            flight_list = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            flight_list = paginator.page(paginator.num_pages)
-
-        context.update({"advertiser": self.advertiser, "flight_list": flight_list})
+        context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
 
         return context
 

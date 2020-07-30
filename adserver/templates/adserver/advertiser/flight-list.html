@@ -20,44 +20,37 @@
 <h1>{% block heading %}{% trans "Manage advertising flights" %}{% endblock heading %}</h1>
 
 
-{% if flight_list %}
-  <div class="table-responsive">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th><strong>{% trans 'Name' %}</strong></th>
-          <th><strong>{% trans 'Start date' %}</strong></th>
-          <th><strong>{% trans 'End date' %}</strong></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for flight in flight_list %}
-          <tr>
-            <td>
-              <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
-              {% if not flight.live %}
-                <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This flight is disabled' %}"></span>
-              {% endif %}
-            </td>
-            <td>{{ flight.start_date }}</td>
-            <td>{{ flight.end_date }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if flight_list.paginator.num_pages > 1 %}
-    <nav aria-label="{% trans 'Flight pagination' %}">
-      <ul class="pagination justify-content-center">
-        {% for page_number in flight_list.paginator.page_range %}
-          <li class="page-item {% if page_number == flight_list.number %}active{% endif %}">
-            <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
-          </li>
-        {% endfor %}
-      </ul>
-    </nav>
-  {% endif %}
+{% if flights %}
+  {% regroup flights by state as flight_groups %}
+  {% for state, flight_list in flight_groups %}
+    {% if flight_list %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th><strong>{% blocktrans %}{{ state }} flights{% endblocktrans %}</strong></th>
+              <th><strong>{% trans 'Start date' %}</strong></th>
+              <th><strong>{% trans 'End date' %}</strong></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for flight in flight_list %}
+              <tr>
+                <td>
+                  <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
+                  {% if not flight.live %}
+                    <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This flight is disabled' %}"></span>
+                  {% endif %}
+                </td>
+                <td>{{ flight.start_date }}</td>
+                <td>{{ flight.end_date }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  {% endfor %}
 {% else %}
   <p>{% trans 'You have no flights' %}</p>
 {% endif %}

@@ -558,6 +558,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return []
         return self.targeting_parameters.get("exclude_keywords", [])
 
+    @property
+    def state(self):
+        today = get_ad_day().date()
+        if self.live and self.start_date <= today:
+            return _("Current")
+        if self.end_date > today:
+            return _("Upcoming")
+        return _("Past")
+
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
         countries_dict = dict(countries)
