@@ -564,7 +564,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_filter = ("campaign_type", "advertiser")
     list_select_related = ("advertiser",)
-    raw_id_fields = ("advertiser", "publishers")
+    raw_id_fields = ("advertiser",)
     readonly_fields = ("campaign_report", "total_value", "modified", "created")
     search_fields = ("name", "slug")
 
