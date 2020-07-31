@@ -1028,12 +1028,18 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Internal IP")
 
-    def test_view_tracking_staff(self):
+    def test_view_tracking_known_user(self):
         self.client.force_login(self.staff_user)
         resp = self.client.get(self.url)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp["X-Adserver-Reason"], "Staff impression")
+        self.assertEqual(resp["X-Adserver-Reason"], "Known user impression")
+
+        self.client.force_login(self.user)
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Known user impression")
 
     def test_view_tracking_bot(self):
         bot_ua = (
