@@ -28,9 +28,7 @@ from ..utils import get_ad_day
 
 class DecisionEngineTests(TestCase):
     def setUp(self):
-        self.publisher = get(
-            Publisher, slug="test-publisher", paid_campaigns_only=False
-        )
+        self.publisher = get(Publisher, slug="test-publisher")
         self.ad_type = get(AdType, has_image=False, slug="z")
         self.campaign = get(Campaign, publishers=[self.publisher])
         self.include_flight = get(
@@ -426,11 +424,14 @@ class DecisionEngineTests(TestCase):
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
                     self.assertEqual(ad, None)
 
-    def test_paid_ads_only(self):
+    def test_publisher_campaign_type_restrictions(self):
         self.campaign.campaign_type = PAID_CAMPAIGN
         self.campaign.save()
 
-        self.publisher.paid_campaigns_only = True
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.allow_affiliate_campaigns = False
+        self.publisher.allow_community_campaigns = False
+        self.publisher.allow_house_campaigns = False
         self.publisher.save()
 
         backend = ProbabilisticFlightBackend(
@@ -438,11 +439,42 @@ class DecisionEngineTests(TestCase):
         )
         self.assertIsNotNone(backend.select_flight())
 
-        # After setting the only campaign to a house campaign, no flights are eligible on this publisher
+        # After setting the only campaign to a affiliate campaign, no flights are eligible on this publisher
         # Because the publisher only wants paid campaigns
+        self.campaign.campaign_type = AFFILIATE_CAMPAIGN
+        self.campaign.save()
+        self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_affiliate_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
+
+        # Same check for community campaigns
+        self.campaign.campaign_type = COMMUNITY_CAMPAIGN
+        self.campaign.save()
+        self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_community_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
+
+        # Same check for house campaigns
         self.campaign.campaign_type = HOUSE_CAMPAIGN
         self.campaign.save()
         self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_house_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
 
     def test_campaign_type_priority(self):
         # First disable all the flights from the test case constructor
@@ -452,6 +484,14 @@ class DecisionEngineTests(TestCase):
 
         flights = self.probabilistic_backend.get_candidate_flights()
         self.assertFalse(flights.exists())
+
+        self.publisher.allow_affiliate_campaigns = True
+        self.publisher.save()
+
+        # Have to recreate the backend after changing publisher allow types
+        self.probabilistic_backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
 
         # Paid
         paid_campaign = get(

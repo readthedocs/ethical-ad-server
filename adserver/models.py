@@ -119,6 +119,19 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "Whether this publisher allows unauthenticated ad decision API requests (eg. JSONP)"
         ),
     )
+
+    allow_paid_campaigns = models.BooleanField(_("Allow paid campaigns"), default=True)
+    allow_affiliate_campaigns = models.BooleanField(
+        _("Allow affiliate campaigns"), default=False
+    )
+    allow_community_campaigns = models.BooleanField(
+        _("Allow community campaigns"), default=True
+    )
+    allow_house_campaigns = models.BooleanField(
+        _("Allow house campaigns"), default=True
+    )
+
+    # DEPRECATED - this has no effect and will be removed in a future update
     paid_campaigns_only = models.BooleanField(
         default=True, help_text=_("Only show paid campaigns for this publisher")
     )
