@@ -116,7 +116,7 @@ if SENTRY_DSN:
     from sentry_sdk.integrations.logging import LoggingIntegration
 
     sentry_logging = LoggingIntegration(
-        event_level=logging.WARNING  # Send warnings as events
+        event_level=logging.ERROR  # Send warnings as events
     )
 
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
