@@ -264,30 +264,25 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin
         "ecpm",
     )
     list_display_links = ("name",)
-    list_select_related = ("flight", "flight__campaign")
+    list_select_related = ("flight", "flight__campaign__advertiser")
     list_filter = (
         "live",
         "flight__campaign__campaign_type",
         "ad_types",
-        "flight__campaign",
+        "flight__campaign__advertiser",
     )
     list_editable = ("live",)
+    raw_id_fields = ("flight",)
     readonly_fields = ("ad_image", "total_views", "total_clicks", "modified", "created")
-    search_fields = ("name", "flight__name", "flight__campaign__name", "text", "slug")
-    ordering = ("-created",)
-
-    # Exclude deprecated fields
-    exclude = (
-        "start_date",
-        "sold_impressions",
-        "sold_days",
-        "sold_clicks",
-        "cpc",
-        "theme",
-        "house",
-        "community",
-        "campaign",
+    search_fields = (
+        "name",
+        "flight__name",
+        "flight__campaign__name",
+        "flight__campaign__advertiser__name",
+        "text",
+        "slug",
     )
+    ordering = ("-created",)
 
 
 class CPCCPMFilter(admin.SimpleListFilter):
@@ -394,8 +389,14 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
         "ecpm",
     )
     list_editable = ("live",)
-    list_filter = ("live", "campaign__campaign_type", CPCCPMFilter, "campaign")
-    list_select_related = ("campaign",)
+    list_filter = (
+        "live",
+        "campaign__campaign_type",
+        CPCCPMFilter,
+        "campaign__advertiser",
+    )
+    list_select_related = ("campaign", "campaign__advertiser")
+    raw_id_fields = ("campaign",)
     readonly_fields = (
         "value_remaining",
         "projected_total_value",
@@ -573,6 +574,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_filter = ("campaign_type", "advertiser")
     list_select_related = ("advertiser",)
+    raw_id_fields = ("advertiser",)
     readonly_fields = ("campaign_report", "total_value", "modified", "created")
     search_fields = ("name", "slug")
 
@@ -647,11 +649,16 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "offers",
         "click_to_offer_rate",
         "view_to_offer_rate",
+        "modified",
+        "created",
     )
     list_display = readonly_fields
-    list_filter = ("advertisement__ad_types", "publisher")
+    list_filter = (
+        "advertisement__ad_types",
+        "publisher",
+        "advertisement__flight__campaign__advertiser",
+    )
     list_select_related = ["advertisement", "publisher"]
-    readonly_fields = ("modified", "created")
     search_fields = ["advertisement__slug", "advertisement__name"]
 
     def has_add_permission(self, request):
@@ -687,7 +694,11 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     list_display = readonly_fields[:-3]
     list_select_related = ("advertisement", "publisher")
-    list_filter = ("is_mobile", "publisher")
+    list_filter = (
+        "is_mobile",
+        "publisher",
+        "advertisement__flight__campaign__advertiser",
+    )
     search_fields = (
         "advertisement__name",
         "url",
@@ -698,7 +709,11 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
 
     def page_url(self, instance):
-        return mark_safe('<a href="{url}">{url}</a>'.format(url=escape(instance.url)))
+        if instance.url:
+            return mark_safe(
+                '<a href="{url}">{url}</a>'.format(url=escape(instance.url))
+            )
+        return None
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
@@ -710,10 +725,6 @@ class ClickAdmin(AdBaseAdmin):
     """Django admin configuration for ad clicks."""
 
     model = Click
-
-    # Browser Family and OS Family are not in the ``ViewAdmin.list_filter``
-    # because they require a ``SELECT DISTINCT`` across the whole table
-    list_filter = ("is_mobile", "publisher", "browser_family", "os_family")
 
 
 class ViewAdmin(AdBaseAdmin):
