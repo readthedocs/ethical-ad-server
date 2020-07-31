@@ -516,7 +516,9 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            writer = csv.DictWriter(response, fieldnames=self.fieldnames)
+            writer = csv.DictWriter(
+                response, fieldnames=self.fieldnames, extrasaction="ignore"
+            )
             writer.writeheader()
             writer.writerows(report["days"])
 
@@ -820,6 +822,9 @@ class AllPublisherReportView(BaseReportView):
         total_revenue = sum(
             report["total"]["revenue"] for _, report in publishers_and_reports
         )
+        our_total_revenue = total_revenue - sum(
+            report["total"]["revenue_share"] for _, report in publishers_and_reports
+        )
 
         # Aggregate the different publisher reports by day
         days = {}
@@ -836,25 +841,26 @@ class AllPublisherReportView(BaseReportView):
                 days[day["date"]]["views_by_publisher"][publisher.name] = day["views"]
                 days[day["date"]]["clicks_by_publisher"][publisher.name] = day["clicks"]
                 days[day["date"]]["revenue"] += float(day["revenue"])
+                days[day["date"]]["our_revenue"] += float(day["our_revenue"])
                 days[day["date"]]["ctr"] = calculate_ctr(
                     days[day["date"]]["clicks"], days[day["date"]]["views"]
                 )
 
-        # Make these strings to easily compare with GET args
-        revshare_options = set(
-            str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
-        )
         context.update(
             {
                 "publishers": [p for p, _ in publishers_and_reports],
                 "publishers_and_reports": publishers_and_reports,
                 "total_clicks": total_clicks,
-                "total_cost": total_revenue,
+                "total_revenue": total_revenue,
+                "our_total_revenue": our_total_revenue,
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_revenue, total_views),
                 "campaign_types": CAMPAIGN_TYPES,
-                "revshare_options": revshare_options,
+                # Make these strings to easily compare with GET args
+                "revshare_options": set(
+                    str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
+                ),
             }
         )
 

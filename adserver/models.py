@@ -203,6 +203,10 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             days[impression.date]["revenue_share"] = days[impression.date][
                 "revenue"
             ] * (self.revenue_share_percentage / 100.0)
+            days[impression.date]["our_revenue"] = (
+                days[impression.date]["revenue"]
+                - days[impression.date]["revenue_share"]
+            )
             days[impression.date]["ctr"] = calculate_ctr(
                 days[impression.date]["clicks"], days[impression.date]["views"]
             )
@@ -217,6 +221,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         report["total"]["revenue"] = sum(day["revenue"] for day in report["days"])
         report["total"]["revenue_share"] = sum(
             day["revenue_share"] for day in report["days"]
+        )
+        report["total"]["our_revenue"] = (
+            report["total"]["revenue"] - report["total"]["revenue_share"]
         )
         report["total"]["ctr"] = calculate_ctr(
             report["total"]["clicks"], report["total"]["views"]
