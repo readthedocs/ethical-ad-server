@@ -15,6 +15,7 @@ from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
+from django.db import transaction
 from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
@@ -1027,7 +1028,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def track_click(self, request, publisher, url):
         """Store click data in the DB."""
         self.incr(CLICKS, publisher)
-        self._record_base(request, Click, publisher, url)
+        return self._record_base(request, Click, publisher, url)
 
     def track_view(self, request, publisher, url):
         """
@@ -1041,9 +1042,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         self.incr(VIEWS, publisher)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
-            self._record_base(request, View, publisher, url)
-        else:
-            log.debug("Not recording ad view.")
+            return self._record_base(request, View, publisher, url)
+
+        log.debug("Not recording ad view.")
+        return None
 
     def offer_ad(self, publisher, ad_type_slug):
         """
@@ -1370,6 +1372,14 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         Publisher, null=True, blank=True, on_delete=models.PROTECT
     )
 
+    # This field is overridden in subclasses
+    advertisement = models.ForeignKey(
+        Advertisement,
+        max_length=255,
+        related_name="clicks_or_views",
+        on_delete=models.PROTECT,
+    )
+
     # Click Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
     user_agent = models.CharField(
@@ -1390,8 +1400,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         null=True,
         default=None,
     )
+
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
+    is_refunded = models.BooleanField(default=False)
+
+    impression_type = None
 
     class Meta:
         abstract = True
@@ -1403,6 +1417,36 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     def get_absolute_url(self):
         return self.url
 
+    @transaction.atomic
+    def refund(self):
+        """Refund this view or click."""
+        if self.is_refunded:
+            # Prevent double refunding
+            return False
+
+        # Update the denormalized aggregate impression object
+        impression = self.advertisement.impressions.get(
+            publisher=self.publisher, date=self.date.date()
+        )
+        AdImpression.objects.filter(pk=impression.pk).update(
+            **{self.impression_type: models.F(self.impression_type) - 1}
+        )
+
+        # Update the denormalized impressions on the Flight
+        if self.impression_type == VIEWS:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_views=models.F("total_views") - 1
+            )
+        elif self.impression_type == CLICKS:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_clicks=models.F("total_clicks") - 1
+            )
+
+        self.is_refunded = True
+        self.save()
+
+        return True
+
 
 class Click(AdBase):
 
@@ -1411,6 +1455,7 @@ class Click(AdBase):
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="clicks", on_delete=models.PROTECT
     )
+    impression_type = CLICKS
 
 
 class View(AdBase):
@@ -1420,3 +1465,4 @@ class View(AdBase):
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="views", on_delete=models.PROTECT
     )
+    impression_type = VIEWS
