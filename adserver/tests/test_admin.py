@@ -201,6 +201,13 @@ class AdModelAdminTests(BaseAdModelsTestCase):
             "action": "refund_impressions",
             "_selected_action": [view1.pk, view2.pk],
         }
+
+        # Verify confirmation page
+        resp = self.client.post(url, data)
+        self.assertContains(resp, "Are you sure you want to refund")
+
+        # Bypass the confirmation page
+        data["confirm"] = "yes"
         resp = self.client.post(url, data, follow=True)
         self.assertContains(resp, "2 views refunded")
 
@@ -217,6 +224,13 @@ class AdModelAdminTests(BaseAdModelsTestCase):
 
         url = reverse("admin:adserver_click_changelist")
         data = {"action": "refund_impressions", "_selected_action": [click.pk]}
+
+        # Verify confirmation page
+        resp = self.client.post(url, data)
+        self.assertContains(resp, "Are you sure you want to refund")
+
+        # Bypass the confirmation page
+        data["confirm"] = "yes"
         resp = self.client.post(url, data, follow=True)
         self.assertContains(resp, "1 clicks refunded")
 

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib import messages
 from django.db import models
+from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.utils.html import escape
 from django.utils.html import format_html
@@ -723,6 +724,21 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return False
 
     def refund_impressions(self, request, queryset):
+        """Process a refund for the selected impressions."""
+        if not request.POST.get("confirm"):
+            response = TemplateResponse(
+                request,
+                "admin/confirm_refund.html",
+                {
+                    "queryset": queryset,
+                    "action": "refund_impressions",
+                    "model": self.model,
+                    "opts": self.model._meta,
+                    "title": _("Refund impressions"),
+                },
+            )
+            return response
+
         queryset = queryset.select_related(
             "publisher", "advertisement", "advertisement__flight"
         )
@@ -740,6 +756,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
                 % {"cnt": count, "type": self.model._meta.verbose_name_plural}
             ),
         )
+
+        return None
 
 
 class ClickAdmin(AdBaseAdmin):
