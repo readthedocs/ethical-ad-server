@@ -285,7 +285,10 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["flight"] = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
-        kwargs["initial"] = {"ad_types": AdType.objects.filter(default_enabled=True)}
+        kwargs["initial"] = {
+            "live": True,
+            "ad_types": AdType.objects.filter(default_enabled=True),
+        }
         return kwargs
 
     def get_success_url(self):
