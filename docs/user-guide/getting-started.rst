@@ -63,10 +63,12 @@ Clicks
 
     * This isn't a duplicate click
     * The user isn't rate limited
-    * The user agent isn't banned or a known "bot"
+    * The user agent is a browser, not a known "bot",
+      and not one of the :ref:`install/configuration:ADSERVER_BLOCKLISTED_USER_AGENTS`
     * The flight targeting (which is rechecked) matches
-    * The user is not logged in as a staff account
-    * The IP doesn't come from an :ref:`install/configuration:INTERNAL_IPS`
+    * The user is not logged in as an advertiser, publisher, or staff
+    * The IP isn't one of the :ref:`install/configuration:INTERNAL_IPS` or a known proxy
+    * The referrer is valid and isn't one of the :ref:`install/configuration:ADSERVER_BLOCKLISTED_REFERRERS`
 
 Views
     Just like clicks are stored each time an ad is clicked, it is possible to do the same each time an ad is viewed.

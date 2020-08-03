@@ -347,9 +347,9 @@ class BaseProxyView(View):
             # This is probably a bot/proxy server/prefetcher/etc.
             log.log(self.log_level, "Unknown user agent impression [%s]", user_agent)
             reason = "Unrecognized user agent"
-        elif request.user.is_staff:
-            log.log(self.log_level, "Ignored staff user ad impression")
-            reason = "Staff impression"
+        elif not request.user.is_anonymous:
+            log.log(self.log_level, "Ignored known user ad impression")
+            reason = "Known user impression"
         elif is_blocklisted_user_agent(user_agent):
             log.log(self.log_level, "Blocked user agent impression [%s]", user_agent)
             reason = "Blocked UA impression"
