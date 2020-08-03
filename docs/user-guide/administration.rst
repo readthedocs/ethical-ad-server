@@ -32,3 +32,14 @@ In the advertiser admin section or in flight administration (for admins, not adv
 select "Create draft invoice" from the actions dropdown,
 select an advertiser or the flights to invoice for, and click Go.
 This will create a draft invoice for the advertiser in Stripe which can customized further and sent.
+
+
+Processing refunds
+------------------
+
+For billed clicks and views that need to be refunded or credited back to the advertiser,
+there is an administration action which will correctly update all the relevant models
+and mark the impression as refunded so it can't be refunded again.
+
+Go to :guilabel:`Ad Server Core` > :guilabel:`Views` or :guilabel:`Clicks`,
+select the impressions to refund, choose the refund action from the dropdown, and hit "Go".
