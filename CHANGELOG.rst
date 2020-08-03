@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.6.0
+--------------
+
+:Date: August 3, 2020
+
+This release had a few minor changes but the larger changes involved
+adding the ability to rate limit ad views
+and an admin action for processing advertiser refunds/credits.
+
+ * @davidfischer: Admin action for processing refunds (#220)
+ * @davidfischer: Default ad creation to live (#218)
+ * @davidfischer: Ignore all known users (#217)
+ * @davidfischer: Update the all publishers report to show our revenue (#216)
+ * @davidfischer: Rate limit ad viewing (#212)
+
+
 Version v0.5.0
 --------------
 
