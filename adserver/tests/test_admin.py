@@ -187,3 +187,56 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         for url in (list_url, detail_url):
             response = self.client.get(url)
             self.assertTrue(response.status_code, 200)
+
+    def test_view_refund_action(self):
+        request = self.factory.get("/")
+
+        view1 = self.ad1.track_view(request, self.publisher, "http://example.com")
+        view2 = self.ad1.track_view(request, self.publisher, "http://example.com")
+        self.assertTrue(view1)
+        self.assertTrue(view2)
+
+        url = reverse("admin:adserver_view_changelist")
+        data = {
+            "action": "refund_impressions",
+            "_selected_action": [view1.pk, view2.pk],
+        }
+
+        # Verify confirmation page
+        resp = self.client.post(url, data)
+        self.assertContains(resp, "Are you sure you want to refund")
+
+        # Bypass the confirmation page
+        data["confirm"] = "yes"
+        resp = self.client.post(url, data, follow=True)
+        self.assertContains(resp, "2 views refunded")
+
+        view1.refresh_from_db()
+        view2.refresh_from_db()
+        self.assertTrue(view1.is_refunded)
+        self.assertTrue(view2.is_refunded)
+
+    def test_click_refund_action(self):
+        request = self.factory.get("/")
+
+        click = self.ad1.track_click(request, self.publisher, "http://example.com")
+        self.assertTrue(click)
+
+        url = reverse("admin:adserver_click_changelist")
+        data = {"action": "refund_impressions", "_selected_action": [click.pk]}
+
+        # Verify confirmation page
+        resp = self.client.post(url, data)
+        self.assertContains(resp, "Are you sure you want to refund")
+
+        # Bypass the confirmation page
+        data["confirm"] = "yes"
+        resp = self.client.post(url, data, follow=True)
+        self.assertContains(resp, "1 clicks refunded")
+
+        click.refresh_from_db()
+        self.assertTrue(click.is_refunded)
+
+        # Can't double refund
+        resp = self.client.post(url, data, follow=True)
+        self.assertContains(resp, "0 clicks refunded")

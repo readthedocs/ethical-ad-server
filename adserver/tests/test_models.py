@@ -177,8 +177,6 @@ class TestAdModels(BaseAdModelsTestCase):
         self.ad1.save()
         self.ad1.ad_types.add(self.text_ad_type)
 
-        view_url = "http://view.link"
-        click_url = "http://click.link"
         output = self.ad1.offer_ad(self.publisher, self.text_ad_type)
         self.assertEqual(output["body"], "Call to Action & such!")
 
@@ -308,3 +306,107 @@ class TestAdModels(BaseAdModelsTestCase):
         self.flight.save()
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
+
+    def test_view_refund(self):
+        request = self.factory.get("/")
+
+        request.ip_address = "127.0.0.1"
+        request.user_agent = "test user agent"
+
+        self.flight.cpm = 50.0
+        self.flight.cpc = 0
+        self.flight.sold_clicks = 0
+        self.flight.sold_impressions = 100
+        self.flight.save()
+
+        # Each view is $0.05
+        view1 = self.ad1.track_view(request, self.publisher, None)
+        view2 = self.ad1.track_view(request, self.publisher, None)
+        view3 = self.ad1.track_view(request, self.publisher, None)
+
+        for view in (view1, view2, view3):
+            self.assertIsNotNone(view)
+
+        self.flight.refresh_from_db()
+
+        self.assertEqual(self.flight.total_views, 3)
+
+        impression = self.ad1.impressions.get(
+            publisher=self.publisher, date=view1.date.date()
+        )
+        self.assertEqual(impression.views, 3)
+
+        report = self.flight.daily_reports()
+        self.assertAlmostEqual(report["total"]["views"], 3)
+        self.assertAlmostEqual(report["total"]["cost"], 0.15)
+
+        # Refund 2 of the 3 views
+        self.assertTrue(view1.refund())
+        self.assertTrue(view2.refund())
+
+        # Ensure you can't double refund
+        self.assertFalse(view1.refund())
+
+        self.assertTrue(view1.is_refunded)
+        self.assertTrue(view2.is_refunded)
+        self.assertFalse(view3.is_refunded)
+
+        # Reload data from the DB
+        self.flight.refresh_from_db()
+        impression.refresh_from_db()
+
+        self.assertEqual(self.flight.total_views, 1)
+        self.assertEqual(impression.views, 1)
+
+        report = self.flight.daily_reports()
+        self.assertAlmostEqual(report["total"]["views"], 1)
+        self.assertAlmostEqual(report["total"]["cost"], 0.05)
+
+    def test_click_refund(self):
+        request = self.factory.get("/")
+
+        request.ip_address = "127.0.0.1"
+        request.user_agent = "test user agent"
+
+        # Each click is $2.00 (cpc)
+        click1 = self.ad1.track_click(request, self.publisher, None)
+        click2 = self.ad1.track_click(request, self.publisher, None)
+        click3 = self.ad1.track_click(request, self.publisher, None)
+
+        for click in (click1, click2, click3):
+            self.assertIsNotNone(click)
+
+        self.flight.refresh_from_db()
+
+        self.assertEqual(self.flight.total_clicks, 3)
+
+        impression = self.ad1.impressions.get(
+            publisher=self.publisher, date=click1.date.date()
+        )
+        self.assertEqual(impression.clicks, 3)
+
+        report = self.flight.daily_reports()
+        self.assertAlmostEqual(report["total"]["clicks"], 3)
+        self.assertAlmostEqual(report["total"]["cost"], 6.0)
+
+        # Refund 2 of the 3 clicks
+        self.assertTrue(click1.refund())
+        self.assertTrue(click2.refund())
+
+        # Ensure you can't double refund
+        self.assertFalse(click1.refund())
+
+        self.assertTrue(click1.is_refunded)
+        self.assertTrue(click2.is_refunded)
+        self.assertFalse(click3.is_refunded)
+
+        # Reload data from the DB
+        self.flight.refresh_from_db()
+        impression.refresh_from_db()
+
+        self.assertEqual(self.flight.total_clicks, 1)
+        self.assertEqual(impression.clicks, 1)
+
+        report = self.flight.daily_reports()
+        self.assertAlmostEqual(report["total"]["clicks"], 1)
+        self.assertAlmostEqual(report["total"]["cost"], 2.0)

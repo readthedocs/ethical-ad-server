@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib import messages
 from django.db import models
+from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.utils.html import escape
 from django.utils.html import format_html
@@ -676,6 +677,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the base class of ad views and clicks."""
 
+    actions = ["refund_impressions"]
     readonly_fields = (
         "date",
         "advertisement",
@@ -686,6 +688,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "os_family",
         "is_mobile",
         "is_bot",
+        "is_refunded",
         "user_agent",
         "ip",
         "client_id",
@@ -696,6 +699,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_select_related = ("advertisement", "publisher")
     list_filter = (
         "is_mobile",
+        "is_refunded",
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
@@ -718,6 +722,42 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
         return False
+
+    def refund_impressions(self, request, queryset):
+        """Process a refund for the selected impressions."""
+        if not request.POST.get("confirm"):
+            response = TemplateResponse(
+                request,
+                "admin/confirm_refund.html",
+                {
+                    "queryset": queryset,
+                    "action": "refund_impressions",
+                    "model": self.model,
+                    "opts": self.model._meta,
+                    "title": _("Refund impressions"),
+                },
+            )
+            return response
+
+        queryset = queryset.select_related(
+            "publisher", "advertisement", "advertisement__flight"
+        )
+
+        count = 0
+        for impression in queryset:
+            if impression.refund():
+                count += 1
+
+        messages.add_message(
+            request,
+            messages.SUCCESS,
+            _(
+                "%(cnt)s %(type)s refunded"
+                % {"cnt": count, "type": self.model._meta.verbose_name_plural}
+            ),
+        )
+
+        return None
 
 
 class ClickAdmin(AdBaseAdmin):
