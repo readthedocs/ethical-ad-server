@@ -776,7 +776,7 @@ class ViewAdmin(AdBaseAdmin):
 
 
 class PublisherPayoutAdmin(admin.ModelAdmin):
-    list_display = ("amount", "publisher", "date", "modified", "created")
+    list_display = ("pk", "amount", "publisher", "date", "modified", "created")
     list_filter = ("publisher",)
     list_select_related = ("publisher",)
     model = PublisherPayout

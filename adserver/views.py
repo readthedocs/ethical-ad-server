@@ -830,14 +830,14 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
     """List of publisher payouts."""
 
     model = PublisherPayout
-    template_name = "adserver/publisher/payouts.html"
+    template_name = "adserver/publisher/payout-list.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()
         total = payouts.aggregate(
-            total=models.Sum("amount", output_field=models.FloatField())
+            total=models.Sum("amount", output_field=models.DecimalField())
         )["total"]
 
         context.update(
