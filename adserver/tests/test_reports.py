@@ -14,6 +14,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
+from ..models import PublisherPayout
 
 
 class TestReportViews(TestCase):
@@ -441,3 +442,64 @@ class TestReportViews(TestCase):
         self.assertContains(
             resp, "Your publisher account is not approved for paid campaigns"
         )
+
+    def test_publisher_payouts_list(self):
+        url = reverse("publisher_payouts", args=[self.publisher1.slug])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher1)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "You have not received any payouts yet")
+
+        get(PublisherPayout, amount=2.5, publisher=self.publisher1)
+        get(PublisherPayout, amount=2.0, publisher=self.publisher1)
+
+        # separate publisher
+        get(PublisherPayout, amount=5.2, publisher=self.publisher2)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "$2.50")
+        self.assertContains(resp, "$2.0")
+        self.assertContains(resp, "$4.50")  # total
+        self.assertNotContains(resp, "5.20")
+
+    def test_publisher_payout_detail(self):
+        payout = get(
+            PublisherPayout,
+            amount=2.5,
+            publisher=self.publisher1,
+            note="this is a test",
+        )
+
+        url = reverse("publisher_payout", args=[self.publisher1.slug, payout.pk])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher1)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "this is a test")
+        self.assertContains(resp, "$2.50")

@@ -23,6 +23,7 @@ from .models import Campaign
 from .models import Click
 from .models import Flight
 from .models import Publisher
+from .models import PublisherPayout
 from .models import View
 from .stripe_utils import get_customer_url
 from .stripe_utils import get_invoice_url
@@ -774,7 +775,17 @@ class ViewAdmin(AdBaseAdmin):
     model = View
 
 
+class PublisherPayoutAdmin(admin.ModelAdmin):
+    list_display = ("amount", "publisher", "date", "modified", "created")
+    list_filter = ("publisher",)
+    list_select_related = ("publisher",)
+    model = PublisherPayout
+    readonly_fields = ("modified", "created")
+    search_fields = ("publisher__name",)
+
+
 admin.site.register(Publisher, PublisherAdmin)
+admin.site.register(PublisherPayout, PublisherPayoutAdmin)
 admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
