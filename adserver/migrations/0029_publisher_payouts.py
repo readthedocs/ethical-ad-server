@@ -10,7 +10,7 @@ from django.db import models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0027_refunded_impressions_field'),
+        ('adserver', '0028_ad_network_defaults'),
     ]
 
     operations = [
