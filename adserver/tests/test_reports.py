@@ -27,8 +27,12 @@ class TestReportViews(TestCase):
         self.advertiser2 = get(
             Advertiser, name="Another Advertiser", slug="another-advertiser"
         )
-        self.publisher1 = get(Publisher, slug="test-publisher")
-        self.publisher2 = get(Publisher, slug="another-publisher")
+        self.publisher1 = get(
+            Publisher, slug="test-publisher", allow_paid_campaigns=True
+        )
+        self.publisher2 = get(
+            Publisher, slug="another-publisher", allow_paid_campaigns=True
+        )
 
         self.campaign = get(
             Campaign,

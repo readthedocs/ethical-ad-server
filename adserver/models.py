@@ -101,7 +101,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
     revenue_share_percentage = models.FloatField(
-        default=50.0,
+        default=70.0,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text=_("Percentage of advertising revenue shared with this publisher"),
     )
@@ -121,7 +121,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         ),
     )
 
-    allow_paid_campaigns = models.BooleanField(_("Allow paid campaigns"), default=True)
+    # Default to False so that we can use this as an "approved" flag for publishers
+    allow_paid_campaigns = models.BooleanField(_("Allow paid campaigns"), default=False)
     allow_affiliate_campaigns = models.BooleanField(
         _("Allow affiliate campaigns"), default=False
     )
@@ -141,7 +142,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     # Details of each ad view are written to the database.
     # Setting this can result in some performance degradation and a bloated database.
     record_views = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_("Record each ad view from this publisher to the database"),
     )
 

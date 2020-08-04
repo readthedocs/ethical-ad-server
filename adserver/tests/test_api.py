@@ -38,7 +38,10 @@ class ApiPermissionTest(TestCase):
     def setUp(self):
         self.advertiser = get(Advertiser, slug="test-advertiser")
         self.publisher = get(
-            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="test-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
 
         self.ad_decision_permission = AdDecisionPermission()
@@ -169,10 +172,16 @@ class ApiPermissionTest(TestCase):
 class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(
-            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="test-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
         self.publisher2 = get(
-            Publisher, slug="another-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="another-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
@@ -908,6 +917,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
+        self.publisher1.record_views = False
         self.publisher1.slug = "readthedocs-test"
         self.publisher1.save()
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
