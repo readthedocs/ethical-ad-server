@@ -1,0 +1,52 @@
+{% extends "adserver/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Publisher payouts' %} - {{ publisher }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Payouts' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans "Publisher payouts" %}{% endblock heading %}</h1>
+
+
+{% if payouts %}
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th><strong>{% trans 'Date' %}</strong></th>
+          <th><strong>{% trans 'Amount' %}</strong></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payout in payouts %}
+          <tr>
+            <td>
+              <a href="{% url 'publisher_payout' publisher.slug payout.pk %}">{{ payout.date|date:"M j, Y" }}</a>
+            </td>
+            <td>${{ payout.amount|floatformat:2|intcomma }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td><strong>{% trans 'Total' %}</strong> </td>
+          <td><strong>${{ total|floatformat:2|intcomma }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+{% else %}
+  <p>{% trans 'You have not received any payouts yet.' %}</p>
+{% endif %}
+
+{% endblock content_container %}

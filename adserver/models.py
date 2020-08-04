@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import uuid
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
@@ -1474,3 +1475,43 @@ class View(AdBase):
         Advertisement, max_length=255, related_name="views", on_delete=models.PROTECT
     )
     impression_type = VIEWS
+
+
+class PublisherPayout(TimeStampedModel):
+
+    """Details on historical publisher payouts."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publisher = models.ForeignKey(
+        Publisher, related_name="payouts", on_delete=models.PROTECT
+    )
+    amount = models.DecimalField(_("Amount"), max_digits=8, decimal_places=2, default=0)
+    date = models.DateTimeField(_("Payout date"))
+    note = models.TextField(
+        _("Note"),
+        blank=True,
+        null=True,
+        help_text=_("A publisher-visible note about the payout"),
+    )
+    attachment = models.FileField(
+        _("Attachment"),
+        max_length=255,
+        upload_to="payouts/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_("A publisher-visible attachment such as a receipt"),
+    )
+
+    class Meta:
+        ordering = ("-date",)
+
+    def __str__(self):
+        """Simple override."""
+        return "%s to %s" % (self.amount, self.publisher)
+
+    @property
+    def attachment_filename(self):
+        if self.attachment and self.attachment.name:
+            return self.attachment.name.split("/")[-1]
+
+        return None

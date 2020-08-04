@@ -11,6 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -46,6 +47,7 @@ from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
 from .models import Publisher
+from .models import PublisherPayout
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -821,6 +823,55 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         return reverse(
             "publisher_settings", kwargs={"publisher_slug": self.object.slug}
         )
+
+
+class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListView):
+
+    """List of publisher payouts."""
+
+    model = PublisherPayout
+    template_name = "adserver/publisher/payout-list.html"
+
+    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        context = super().get_context_data(**kwargs)
+
+        payouts = self.get_queryset()
+        total = payouts.aggregate(
+            total=models.Sum("amount", output_field=models.DecimalField())
+        )["total"]
+
+        context.update(
+            {"publisher": self.publisher, "payouts": payouts, "total": total}
+        )
+
+        return context
+
+    def get_queryset(self):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return self.publisher.payouts.all()
+
+
+class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
+
+    """Details of a specific publisher payout."""
+
+    template_name = "adserver/publisher/payout.html"
+
+    def get_object(self, queryset=None):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return get_object_or_404(
+            PublisherPayout, publisher=self.publisher, pk=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher, "payout": self.get_object()})
+
+        return context
 
 
 class AllPublisherReportView(BaseReportView):
