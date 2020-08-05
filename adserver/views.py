@@ -356,23 +356,16 @@ class BaseProxyView(View):
             log.log(self.log_level, "Blocked user agent impression [%s]", user_agent)
             reason = "Blocked UA impression"
         elif is_blocklisted_referrer(referrer):
-            # Note: Normally logging IPs is frowned upon for DNT
-            # but this is a security/billing violation
             log.log(
-                self.log_security_level,
-                "Blocklisted referrer [%s], Publisher: [%s], IP: [%s], UA: [%s]",
+                self.log_level,
+                "Blocklisted referrer [%s], Publisher: [%s], UA: [%s]",
                 referrer,
                 publisher,
-                ip_address,
                 user_agent,
             )
             reason = "Blocked referrer impression"
         elif is_blocklisted_ip(ip_address):
-            log.log(
-                self.log_security_level,
-                "Blocked IP impression, Publisher: [%s]",
-                publisher,
-            )
+            log.log(self.log_level, "Blocked IP impression, Publisher: [%s]", publisher)
             reason = "Blocked IP impression"
         elif not publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
@@ -385,12 +378,11 @@ class BaseProxyView(View):
             # Then they turn off their VPN and click on the ad
             log.log(
                 self.log_security_level,
-                "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s], UA: [%s]",
+                "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s]",
                 advertisement,
                 country_code,
                 region_code,
                 metro_code,
-                user_agent,
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
@@ -398,7 +390,8 @@ class BaseProxyView(View):
             # but this is a security/billing violation
             log.log(
                 self.log_security_level,
-                "User has clicked too many ads recently, IP: [%s], UA: [%s]",
+                "User has clicked too many ads recently, Publisher: [%s], IP: [%s], UA: [%s]",
+                publisher,
                 ip_address,
                 user_agent,
             )
