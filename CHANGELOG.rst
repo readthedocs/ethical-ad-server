@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.7.0
+--------------
+
+:Date: August 5, 2020
+
+The main change in this version is to add a database model for storing publisher payouts
+and making that data visible to publishers.
+
+ * @davidfischer: Change some log levels around impressions blocking (#224)
+ * @davidfischer: Save publisher payouts (#223)
+ * @ericholscher: Make Publisher defaults line up with Ad Network defaults (#222)
+
+
 Version v0.6.0
 --------------
 
