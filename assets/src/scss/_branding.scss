@@ -1,0 +1,31 @@
+// Anyone may use the ad server under the terms of the license.
+// However, permission to use the EthicalAds brand, logo, and trademarks,
+// are not conferred with the permission to use the code.
+//
+// This works by setting a class on the body element in `templates/base.html`
+// based on an environment variable set at deploy time.
+// Branding is only applied with this class.
+body.ethicalads-branding {
+  .navbar-brand {
+    .text-brand {
+      display: none;
+    }
+    .logo-brand {
+      background-image: url("../img/ethicalads-logo-white.svg");
+      background-repeat: no-repeat;
+      background-size: auto 100%;
+      display: inline-block;
+      min-height: 2rem;
+      min-width: 9rem;
+    }
+  }
+
+  // Applies on the account login/signup/password reset pages
+  &.account-authentication {
+    .navbar-brand {
+      .logo-brand {
+        background-image: url("../img/ethicalads-logo-blue.svg");
+      }
+    }
+  }
+}

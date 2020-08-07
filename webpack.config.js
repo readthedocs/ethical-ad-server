@@ -24,12 +24,12 @@ module.exports = {
         ]
     }, {
       // the file-loader emits files directly to OUTPUT_DIR/fonts
-      test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+      test: /\.(woff(2)?|ttf|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
       loader: 'file-loader?name=./fonts/[name].[ext]',
     }, {
       // Image loader
       // the file-loader emits files directly to OUTPUT_DIR/img
-      test: /\.(png|gif|jpg|jpeg)$/,
+      test: /\.(png|gif|jpg|jpeg|svg)$/,
       loaders: ['file-loader?name=./img/[name].[ext]']
     }]
   },

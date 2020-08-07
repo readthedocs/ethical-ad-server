@@ -321,6 +321,12 @@ stripe.api_version = "2020-03-02"
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
+
+# Anyone may use the ad server under the terms of the license.
+# However, permission to use the EthicalAds brand, logo, and trademarks,
+# are not conferred with the permission to use the code.
+ADSERVER_ETHICALADS_BRANDING = env.bool("ADSERVER_ETHICALADS_BRANDING", default=False)
+
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
 
