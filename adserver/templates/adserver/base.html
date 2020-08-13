@@ -7,36 +7,45 @@
 
 {% block body_content %}
   <nav class="navbar navbar-expand-sm navbar-dark bg-primary p-4">
-    <a class="navbar-brand mr-0" href="{% url 'dashboard-home' %}">EthicalAds</a>
+    <a class="navbar-brand mr-0" href="{% url 'dashboard-home' %}">
+      <span class="text-brand">{% trans 'Ethical Ad Server' %}</span>
+      <span class="logo-brand"></span>
+    </a>
 
-    <ul class="navbar-nav ml-auto d-none d-md-block">
-      <li class="nav-item dropdown">
-        <a class="nav-item nav-link dropdown-toggle mr-md-2" id="bd-versions" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ request.user.email }}</a>
-        <div class="dropdown-menu" aria-labelledby="bd-versions">
-          {% if request.user.is_staff %}
-            <a class="dropdown-item" href="{% url 'admin:index' %}">
-              <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span>
-              <span>{% trans 'Administration' %}</span>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-toggle" aria-controls="navbar-toggle" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbar-toggle">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-item nav-link dropdown-toggle mr-md-2" id="bd-versions" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ request.user.email }}</a>
+          <div class="dropdown-menu" aria-labelledby="bd-versions">
+            {% if request.user.is_staff %}
+              <a class="dropdown-item" href="{% url 'admin:index' %}">
+                <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                <span>{% trans 'Administration' %}</span>
+              </a>
+              <div class="dropdown-divider"></div>
+            {% endif %}
+            <a class="dropdown-item" href="{% url 'api_token_list' %}">
+              <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'API token' %}</span>
             </a>
             <div class="dropdown-divider"></div>
-          {% endif %}
-          <a class="dropdown-item" href="{% url 'api_token_list' %}">
-            <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
-            <span>{% trans 'API token' %}</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="{% url 'account_change_password' %}">
-            <span class="fa fa-key fa-fw mr-2 text-muted" aria-hidden="true"></span>
-            <span>{% trans 'Change password' %}</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="{% url 'account_logout' %}">
-            <span class="fa fa-sign-out fa-fw mr-2 text-muted" aria-hidden="true"></span>
-            <span>{% trans 'Sign Out' %}</span>
-          </a>
-        </div>
-      </li>
-    </ul>
+            <a class="dropdown-item" href="{% url 'account_change_password' %}">
+              <span class="fa fa-key fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'Change password' %}</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{% url 'account_logout' %}">
+              <span class="fa fa-sign-out fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'Sign Out' %}</span>
+            </a>
+          </div>
+        </li>
+      </ul>
+    </div>
   </nav>
 
   <ol class="breadcrumb border-bottom rounded-0">

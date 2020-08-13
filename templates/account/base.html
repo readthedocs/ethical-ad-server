@@ -6,6 +6,14 @@
 {% block body_classes %}account-authentication{% endblock body_classes %}
 
 {% block body_content %}
+<nav class="navbar p-4">
+  <a class="navbar-brand mx-auto" href="{% url 'dashboard-home' %}">
+    <span class="text-brand">{% trans 'Ethical Ad Server' %}</span>
+    <span class="logo-brand"></span>
+  </a>
+</nav>
+
+
 <main role="main">
   <div class="container mt-4">
 

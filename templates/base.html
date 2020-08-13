@@ -10,7 +10,7 @@
 
     <title>{% block title %}{% endblock title %} &middot; {% trans 'Ethical Ad Server' %}</title>
   </head>
-  <body class="{% block body_classes %}{% endblock body_classes %}">
+  <body class="{% if adserver_ethicalads_branding %}ethicalads-branding{% endif %} {% block body_classes %}{% endblock body_classes %}">
 
     {% block body_content %}{% endblock body_content %}
 
