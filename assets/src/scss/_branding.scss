@@ -11,7 +11,7 @@ body.ethicalads-branding {
       display: none;
     }
     .logo-brand {
-      background-image: url("../img/ethicalads-logo-white.svg");
+      background-image: url($adserver-logo-light);
       background-repeat: no-repeat;
       background-size: auto 100%;
       display: inline-block;
@@ -24,7 +24,7 @@ body.ethicalads-branding {
   &.account-authentication {
     .navbar-brand {
       .logo-brand {
-        background-image: url("../img/ethicalads-logo-blue.svg");
+        background-image: url($adserver-logo-dark);
       }
     }
   }
