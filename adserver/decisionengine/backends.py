@@ -157,7 +157,13 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         flights = Flight.objects.filter(
             advertisements__ad_types__slug__in=self.ad_types,
             campaign__campaign_type__in=self.campaign_types,
-            campaign__publishers=self.publisher,
+        ).filter(
+            # Deprecated: remove after publisher groups are rolled out and configured in production
+            # At that point, only filter by publisher groups
+            models.Q(campaign__publishers=self.publisher)
+            | models.Q(
+                campaign__publisher_groups__in=self.publisher.publisher_groups.all()
+            )
         )
 
         if self.campaign_types != ALL_CAMPAIGN_TYPES:

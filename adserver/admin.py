@@ -23,6 +23,7 @@ from .models import Campaign
 from .models import Click
 from .models import Flight
 from .models import Publisher
+from .models import PublisherGroup
 from .models import PublisherPayout
 from .models import View
 from .stripe_utils import get_customer_url
@@ -70,7 +71,13 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "record_views",
     )
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("modified", "created")
+    readonly_fields = ("publisher_group_list", "modified", "created")
+
+    def publisher_group_list(self, instance):
+        if not instance.pk:
+            return ""  # pragma: no cover
+
+        return ", ".join([pg.name for pg in instance.publisher_groups.all()])
 
     def report(self, instance):
         if not instance.pk:
@@ -784,8 +791,17 @@ class PublisherPayoutAdmin(admin.ModelAdmin):
     search_fields = ("publisher__name",)
 
 
+class PublisherGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "modified", "created")
+    list_filter = ("publishers",)
+    model = PublisherGroup
+    prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("modified", "created")
+
+
 admin.site.register(Publisher, PublisherAdmin)
 admin.site.register(PublisherPayout, PublisherPayoutAdmin)
+admin.site.register(PublisherGroup, PublisherGroupAdmin)
 admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
