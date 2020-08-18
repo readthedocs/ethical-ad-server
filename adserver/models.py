@@ -251,6 +251,30 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return report
 
 
+class PublisherGroup(TimeStampedModel):
+
+    """Group of publishers that can be targeted by advertiser's campaigns."""
+
+    name = models.CharField(
+        _("Name"), max_length=200, help_text=_("Visible to advertisers")
+    )
+    slug = models.SlugField(_("Publisher group slug"), max_length=200)
+
+    publishers = models.ManyToManyField(
+        Publisher,
+        related_name="publisher_groups",
+        blank=True,
+        help_text=_("A group of publishers that can be targeted by advertisers"),
+    )
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        """Simple override."""
+        return self.name
+
+
 class Advertiser(TimeStampedModel, IndestructibleModel):
 
     """An advertiser who buys advertising from the ad server."""
@@ -349,12 +373,12 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
         help_text=_("The advertiser for this campaign."),
     )
-    publishers = models.ManyToManyField(
-        Publisher,
-        related_name="campaigns",
+
+    publisher_groups = models.ManyToManyField(
+        PublisherGroup,
         blank=True,
         help_text=_(
-            "Ads for this campaign are eligible for display on these publishers"
+            "Ads for this campaign are eligible for display on publishers in any of these groups"
         ),
     )
 
@@ -365,6 +389,16 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         default=PAID_CAMPAIGN,
         help_text=_(
             "Most campaigns are paid but ad server admins can configure other lower priority campaign types."
+        ),
+    )
+
+    # Deprecated and scheduled for removal
+    publishers = models.ManyToManyField(
+        Publisher,
+        related_name="campaigns",
+        blank=True,
+        help_text=_(
+            "Ads for this campaign are eligible for display on these publishers"
         ),
     )
 

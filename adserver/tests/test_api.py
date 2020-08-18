@@ -31,6 +31,7 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import Publisher
+from ..models import PublisherGroup
 from ..models import View
 
 
@@ -183,6 +184,8 @@ class BaseApiTest(TestCase):
             unauthed_ad_decisions=False,
             allow_paid_campaigns=True,
         )
+        self.publisher_group = get(PublisherGroup, name="ad network group")
+        self.publisher_group.publishers.add(self.publisher)
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
         )
@@ -190,6 +193,8 @@ class BaseApiTest(TestCase):
             Campaign,
             slug="campaign-slug",
             advertiser=self.advertiser1,
+            publisher_groups=[self.publisher_group],
+            # Deprecated - will be removed
             publishers=[self.publisher],
         )
         self.flight = get(
@@ -435,6 +440,48 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_publisher_groups(self):
+        # Get an ad for the first publisher
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Get an ad for this publisher except there are no eligible ads
+        data["publisher"] = self.publisher2.slug
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {})
+
+        # Add publisher 2 to the targeted publisher group
+        self.publisher_group.publishers.add(self.publisher2)
+
+        # Now there's an ad for publisher2
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Remove pub2 from the main targeted group
+        # but create a second group with all publishers
+        self.publisher_group.publishers.remove(self.publisher2)
+        publisher_group_all = get(PublisherGroup, name="all pubs")
+        publisher_group_all.publishers.add(self.publisher1)
+        publisher_group_all.publishers.add(self.publisher2)
+        self.campaign.publisher_groups.add(publisher_group_all)
+
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
     def test_campaign_types(self):
