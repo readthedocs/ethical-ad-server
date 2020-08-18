@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.8.0
+--------------
+
+:Date: August 18, 2020
+
+The two changes in this release were to add branding to the ad server
+which is only enabled in production and shouldn't be used by third-parties
+and to add the ability to group publishers into groups for targeting purposes.
+
+ * @davidfischer: Group publishers (#227)
+ * @davidfischer: Add EthicalAds branding to the adserver (#226)
+
+
 Version v0.7.0
 --------------
 
