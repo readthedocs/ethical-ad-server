@@ -3,6 +3,10 @@
 {% load i18n %}
 
 
+{# Required for the Knockout view to take effect #}
+{% block body_classes %}{{ block.super }} publisher-settings{% endblock body_classes %}
+
+
 {% block title %}{% trans 'Publisher Settings' %} - {{ publisher }}{% endblock %}
 
 
@@ -21,7 +25,7 @@
 
     <div class="row">
 
-      <div class="col-md">
+      <div class="col-md-8 col">
         {% crispy form form.helper %}
       </div>
 

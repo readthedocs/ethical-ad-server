@@ -21,12 +21,14 @@ from .views import do_not_track
 from .views import do_not_track_policy
 from .views import FlightDetailView
 from .views import FlightListView
+from .views import publisher_stripe_oauth_return
 from .views import PublisherEmbedView
 from .views import PublisherMainView
 from .views import PublisherPayoutDetailView
 from .views import PublisherPayoutListView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
+from .views import PublisherStripeOauthConnectView
 
 
 urlpatterns = [
@@ -123,6 +125,16 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
         PublisherEmbedView.as_view(),
         name="publisher_embed",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/oauth/stripe/connect/",
+        PublisherStripeOauthConnectView.as_view(),
+        name="publisher_stripe_oauth_connect",
+    ),
+    path(
+        r"publisher/oauth/stripe/return/",
+        publisher_stripe_oauth_return,
+        name="publisher_stripe_oauth_return",
     ),
     url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/settings/$",

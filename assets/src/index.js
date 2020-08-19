@@ -2,6 +2,10 @@
 import * as jquery from 'jquery';
 import * as bootstrap from 'bootstrap';
 
+// Import Knockout Views
+import * as views from './views';
+
+
 // CSS includes
 import './scss/index.scss';
 

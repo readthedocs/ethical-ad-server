@@ -37,6 +37,7 @@ from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
+from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
@@ -132,6 +133,28 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     )
     allow_house_campaigns = models.BooleanField(
         _("Allow house campaigns"), default=True
+    )
+
+    # Payout information
+    payout_method = models.CharField(
+        max_length=100,
+        choices=PUBLISHER_PAYOUT_METHODS,
+        blank=True,
+        null=True,
+        default=None,
+    )
+    stripe_connected_account_id = models.CharField(
+        _("Stripe connected account ID"),
+        max_length=200,
+        blank=True,
+        null=True,
+        default=None,
+    )
+    open_collective_name = models.CharField(
+        _("Open Collective name"), max_length=200, blank=True, null=True, default=None
+    )
+    paypal_email = models.EmailField(
+        _("PayPal email address"), blank=True, null=True, default=None
     )
 
     # DEPRECATED - this has no effect and will be removed in a future update
@@ -1521,6 +1544,13 @@ class PublisherPayout(TimeStampedModel):
     )
     amount = models.DecimalField(_("Amount"), max_digits=8, decimal_places=2, default=0)
     date = models.DateTimeField(_("Payout date"))
+    method = models.CharField(
+        max_length=100,
+        choices=PUBLISHER_PAYOUT_METHODS,
+        blank=True,
+        null=True,
+        default=None,
+    )
     note = models.TextField(
         _("Note"),
         blank=True,
@@ -1549,3 +1579,9 @@ class PublisherPayout(TimeStampedModel):
             return self.attachment.name.split("/")[-1]
 
         return None
+
+    def get_absolute_url(self):
+        return reverse(
+            "publisher_payout",
+            kwargs={"publisher_slug": self.publisher.slug, "pk": self.pk},
+        )

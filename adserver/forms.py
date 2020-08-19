@@ -2,15 +2,23 @@
 import logging
 
 import bleach
+import stripe
+from crispy_forms.bootstrap import PrependedText
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Div
+from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
 from crispy_forms.layout import HTML
 from crispy_forms.layout import Layout
 from crispy_forms.layout import Submit
 from django import forms
+from django.conf import settings
 from django.core.files.images import get_image_dimensions
+from django.urls import reverse
 from django.utils.crypto import get_random_string
+from django.utils.html import format_html
 from django.utils.text import slugify
+from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 
 from .models import Advertisement
@@ -228,8 +236,53 @@ class PublisherSettingsForm(forms.ModelForm):
         """Add the form helper and customize the look of the form."""
         super().__init__(*args, **kwargs)
 
+        if self.instance.stripe_connected_account_id:
+            link_obj = stripe.Account.create_login_link(
+                self.instance.stripe_connected_account_id
+            )
+            stripe_block = HTML(
+                format_html(
+                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info'>"
+                    "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
+                    "</a>",
+                    link_obj.url,
+                    ugettext("Manage Stripe account"),
+                )
+            )
+        elif settings.STRIPE_CONNECT_CLIENT_ID:
+            connect_url = reverse(
+                "publisher_stripe_oauth_connect", args=[self.instance.slug]
+            )
+            stripe_block = HTML(
+                format_html(
+                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info'>"
+                    "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
+                    "</a>",
+                    connect_url,
+                    ugettext("Connect via Stripe"),
+                )
+            )
+        else:
+            stripe_block = HTML("<!-- Stripe is not configured -->")
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
+            Fieldset(
+                _("Payout settings"),
+                Field("payout_method", data_bind="value: payoutMethod"),
+                Div(stripe_block, data_bind="visible: (payoutMethod() == 'stripe')"),
+                Div(
+                    PrependedText(
+                        "open_collective_name", "https://opencollective.com/"
+                    ),
+                    data_bind="visible: (payoutMethod() == 'opencollective')",
+                ),
+                Div(
+                    Field("paypal_email", placeholder="you@yourdomain.com"),
+                    data_bind="visible: (payoutMethod() == 'paypal')",
+                ),
+                css_class="my-3",
+            ),
             Fieldset(
                 _("Control advertiser campaign types"),
                 "allow_affiliate_campaigns",
@@ -254,6 +307,9 @@ class PublisherSettingsForm(forms.ModelForm):
     class Meta:
         model = Publisher
         fields = [
+            "payout_method",
+            "open_collective_name",
+            "paypal_email",
             "allow_affiliate_campaigns",
             "allow_community_campaigns",
             "allow_house_campaigns",

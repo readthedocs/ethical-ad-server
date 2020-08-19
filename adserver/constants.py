@@ -24,3 +24,14 @@ CAMPAIGN_TYPES = (
     (COMMUNITY_CAMPAIGN, _("Community")),
     (HOUSE_CAMPAIGN, _("House")),
 )
+
+PAYOUT_STRIPE = "stripe"
+PAYOUT_PAYPAL = "paypal"
+PAYOUT_OPENCOLLECTIVE = "opencollective"
+PAYOUT_OTHER = "other"
+PUBLISHER_PAYOUT_METHODS = (
+    (PAYOUT_STRIPE, _("Stripe (Bank transfer, debit card)")),
+    (PAYOUT_PAYPAL, _("PayPal")),
+    (PAYOUT_OPENCOLLECTIVE, _("Open Collective")),
+    (PAYOUT_OTHER, _("Other")),
+)
