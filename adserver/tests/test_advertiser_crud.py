@@ -10,7 +10,6 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
-from ..models import Publisher
 from .common import ONE_PIXEL_PNG_BYTES
 
 
