@@ -3,13 +3,16 @@ import logging
 import random
 
 from django.db import models
+from user_agents import parse
 
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
+from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..models import Flight
 from ..utils import get_ad_day
+from ..utils import get_client_user_agent
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class BaseAdDecisionBackend:
         :param kwargs: Any additional possible arguments for the backend
         """
         self.request = request
+        self.user_agent = parse(get_client_user_agent(request))
         self.placements = placements
         self.publisher = publisher
 
@@ -38,7 +42,9 @@ class BaseAdDecisionBackend:
 
         # Optional parameters
         self.keywords = kwargs.get("keywords", []) or []
-        self.campaign_types = kwargs.get("campaign_types", []) or []
+        requested_campaign_types = kwargs.get("campaign_types", []) or []
+        if not requested_campaign_types:
+            requested_campaign_types = ALL_CAMPAIGN_TYPES
 
         # Add default keywords from publisher
         if self.publisher.keywords:
@@ -49,13 +55,29 @@ class BaseAdDecisionBackend:
             )
             self.keywords.extend(self.publisher.keywords)
 
-        if not self.campaign_types:
-            if publisher.paid_campaigns_only:
-                # This publisher only wants paid ads
-                self.campaign_types = [PAID_CAMPAIGN]
-            else:
-                # Unless specified, ads from any campaign type can be shown
-                self.campaign_types = ALL_CAMPAIGN_TYPES
+        # Publishers can request certain campaign types
+        # But only if those types are allowed by database settings
+        self.campaign_types = []
+        if (
+            self.publisher.allow_paid_campaigns
+            and PAID_CAMPAIGN in requested_campaign_types
+        ):
+            self.campaign_types.append(PAID_CAMPAIGN)
+        if (
+            self.publisher.allow_affiliate_campaigns
+            and AFFILIATE_CAMPAIGN in requested_campaign_types
+        ):
+            self.campaign_types.append(AFFILIATE_CAMPAIGN)
+        if (
+            self.publisher.allow_community_campaigns
+            and COMMUNITY_CAMPAIGN in requested_campaign_types
+        ):
+            self.campaign_types.append(COMMUNITY_CAMPAIGN)
+        if (
+            self.publisher.allow_house_campaigns
+            and HOUSE_CAMPAIGN in requested_campaign_types
+        ):
+            self.campaign_types.append(HOUSE_CAMPAIGN)
 
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")
@@ -135,7 +157,13 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         flights = Flight.objects.filter(
             advertisements__ad_types__slug__in=self.ad_types,
             campaign__campaign_type__in=self.campaign_types,
-            campaign__publishers=self.publisher,
+        ).filter(
+            # Deprecated: remove after publisher groups are rolled out and configured in production
+            # At that point, only filter by publisher groups
+            models.Q(campaign__publishers=self.publisher)
+            | models.Q(
+                campaign__publisher_groups__in=self.publisher.publisher_groups.all()
+            )
         )
 
         if self.campaign_types != ALL_CAMPAIGN_TYPES:
@@ -154,13 +182,16 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         else:
             flights = flights.filter(live=True, start_date__lte=get_ad_day().date())
 
-            # TODO: ensure there's a live ad for each flight
-            # Unfortunately, filtering in annotations was added in Django 2.x
-            # For now, we'll just ensure there's "an ad" for the flight
-            # https://docs.djangoproject.com/en/2.0/topics/db/aggregation/#filtering-on-annotations
-            flights = flights.annotate(num_ads=models.Count("advertisements")).filter(
-                num_ads__gt=0
-            )
+            # Ensure there's a live ad of the chosen types for each flight
+            flights = flights.annotate(
+                num_ads=models.Count(
+                    "advertisements",
+                    filter=models.Q(
+                        advertisements__ad_types__slug__in=self.ad_types,
+                        advertisements__live=True,
+                    ),
+                )
+            ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
         return flights.select_related("campaign")
@@ -183,6 +214,10 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
         # Skip if we aren't meant to show to these keywords
         if not flight.show_to_keywords(self.keywords):
+            return False
+
+        # Skip if we aren't meant to show to this traffic because it is mobile or non-mobile
+        if not flight.show_to_mobile(self.user_agent.is_mobile):
             return False
 
         # Skip if there are no clicks or views needed today (ad pacing)

@@ -143,8 +143,8 @@ html_context = {"css_files": ["_static/css/custom.css"]}
 
 intersphinx_mapping = {
     "django": (
-        "https://docs.djangoproject.com/en/1.11/",
-        "https://docs.djangoproject.com/en/1.11/_objects/",
+        "https://docs.djangoproject.com/en/dev/",
+        "https://docs.djangoproject.com/en/dev/_objects/",
     ),
     "python": ("https://docs.python.org/3.6/", None),
 }

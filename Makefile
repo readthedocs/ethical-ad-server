@@ -1,8 +1,14 @@
-.PHONY: help test clean dockerbuild dockerserve dockershell dockerprod geoip
+.PHONY: help test clean dockerbuild dockerserve dockershell dockerprod geoip ipproxy
 
-GEOIP_UPDATE = geoipupdate
+
 GEOIP_DIR = geoip
-GEOIP_CONF_FILE = $(GEOIP_DIR)/GeoIP.conf
+GEOIP_CITY_FILE = dbip-city-lite.mmdb.gz
+GEOIP_COUNTRY_FILE = dbip-country-lite.mmdb.gz
+GEOIP_CITY_DB_URL = https://download.db-ip.com/free/dbip-city-lite-2020-07.mmdb.gz
+GEOIP_COUNTRY_DB_URL = https://download.db-ip.com/free/dbip-country-lite-2020-07.mmdb.gz
+
+TOR_EXIT_LIST_FILE = torbulkexitlist.txt
+TOR_EXIT_LIST_URL = https://check.torproject.org/torbulkexitlist
 
 DOCKER_CONFIG=docker-compose-local.yml
 DOCKER_IMAGE_NAME=ethicaladserver
@@ -17,7 +23,8 @@ help:
 	@echo "  dockershell    Connect to a shell on the Django docker container"
 	@echo "  dockerstart    Start all services in the background"
 	@echo "  dockerstop     Stop all services started by dockerstart"
-	@echo "  geoip          Download the GeoIP database from MaxMind"
+	@echo "  geoip          Download the GeoIP databases"
+	@echo "  ipproxy        Download proxy databases"
 
 test:
 	tox
@@ -54,7 +61,12 @@ dockerstop:
 dockershell:
 	docker-compose -f $(DOCKER_CONFIG) run --rm django /bin/ash
 
-# Get the GeoIP database from MaxMind
-# This command will probably fail unless you have "geoipupdate" installed
+# Get the GeoIP databases from DB-IP
 geoip:
-	$(GEOIP_UPDATE) -f $(GEOIP_CONF_FILE) -d $(GEOIP_DIR) --verbose
+	curl -o $(GEOIP_DIR)/$(GEOIP_CITY_FILE) "$(GEOIP_CITY_DB_URL)"
+	curl -o $(GEOIP_DIR)/$(GEOIP_COUNTRY_FILE) "$(GEOIP_COUNTRY_DB_URL)"
+	gunzip $(GEOIP_DIR)/$(GEOIP_CITY_FILE)
+	gunzip $(GEOIP_DIR)/$(GEOIP_COUNTRY_FILE)
+
+ipproxy:
+	curl -o $(GEOIP_DIR)/$(TOR_EXIT_LIST_FILE) "$(TOR_EXIT_LIST_URL)"

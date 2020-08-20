@@ -11,7 +11,6 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
-from ..views import FlightListView
 from .common import ONE_PIXEL_PNG_BYTES
 
 
@@ -113,15 +112,6 @@ class TestAdvertiserCrudViews(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
-        # Trigger pagination of flights
-        for i in range(FlightListView.PER_PAGE * 2):
-            get(
-                Flight,
-                name=f"Test Flight {i}",
-                slug=f"test-flight-{i}",
-                campaign=self.campaign,
-            )
-
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -156,30 +146,6 @@ class TestAdvertiserCrudViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
-
-    def test_flight_detail_publisher_display(self):
-        url = reverse(
-            "flight_detail",
-            kwargs={
-                "advertiser_slug": self.advertiser.slug,
-                "flight_slug": self.flight.slug,
-            },
-        )
-        self.client.force_login(self.user)
-
-        # Add 10 publishers to the campaign
-        for counter in range(10):
-            publisher = Publisher(
-                name=f"Publisher {counter}", slug=f"publisher-{counter}"
-            )
-            publisher.save()
-            self.campaign.publishers.add(publisher)
-
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-
-        # The template shows the first 5 publishers and this message for the other 5
-        self.assertContains(response, "5 other publishers")
 
     def test_ad_detail_view(self):
         url = reverse(

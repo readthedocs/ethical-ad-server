@@ -34,7 +34,7 @@
   {% include "adserver/includes/flight-metadata.html" %}
 
   <p>
-    <a href="{% url 'flight_report' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+    <a href="{% url 'flight_report' advertiser.slug flight.slug %}?start_date={{ flight.start_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
       <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
       <span>{% trans 'See full report' %}</span>
     </a>
@@ -89,7 +89,8 @@
       </table>
     </div>
   {% else %}
-    <p>{% trans 'There are no ads in this flight' %}</p>
+    {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
+    <p class="text-center">{% blocktrans %}There are no ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
   {% endif %}
 </section>
 

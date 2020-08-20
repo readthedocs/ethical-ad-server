@@ -11,6 +11,7 @@ import json
 import os
 
 import environ
+import stripe
 
 
 env = environ.Env()
@@ -253,6 +254,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+CSRF_COOKIE_SAMESITE = "Strict"
 
 GEOIP_PATH = os.path.join(BASE_DIR, "geoip")
 
@@ -306,9 +309,24 @@ REST_FRAMEWORK = {
 }
 
 
+# Stripe
+# Handle payments and invoice creation with Stripe
+# https://stripe.com/docs
+# --------------------------------------------------------------------------
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
+stripe.api_key = STRIPE_SECRET_KEY
+stripe.api_version = "2020-03-02"
+
+
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
+
+# Anyone may use the ad server under the terms of the license.
+# However, permission to use the EthicalAds brand, logo, and trademarks,
+# are not conferred with the permission to use the code.
+ADSERVER_ETHICALADS_BRANDING = env.bool("ADSERVER_ETHICALADS_BRANDING", default=False)
+
 # The URL where the Django admin is served
 ADSERVER_ADMIN_URL = "admin"
 
@@ -323,10 +341,14 @@ ADSERVER_DECISION_BACKEND = env(
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 
-ADSERVER_ANALYTICS_ID = None
-ADSERVER_PRIVACY_POLICY_URL = None
+ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
+ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_CLICK_RATELIMITS = []
-ADSERVER_BLACKLISTED_USER_AGENTS = []
+ADSERVER_VIEW_RATELIMITS = []
+ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
+    "ADSERVER_BLOCKLISTED_USER_AGENTS", default=[]
+)
+ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", default=[])
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups

@@ -5,6 +5,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
+from user_agents import parse
 
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import CLICKS
@@ -28,7 +29,7 @@ from ..utils import get_ad_day
 class DecisionEngineTests(TestCase):
     def setUp(self):
         self.publisher = get(
-            Publisher, slug="test-publisher", paid_campaigns_only=False
+            Publisher, slug="test-publisher", allow_paid_campaigns=True
         )
         self.ad_type = get(AdType, has_image=False, slug="z")
         self.campaign = get(Campaign, publishers=[self.publisher])
@@ -249,6 +250,53 @@ class DecisionEngineTests(TestCase):
         ad, _ = self.backend.get_ad_and_placement()
         self.assertEqual(ad, self.advertisement2)
 
+    def test_flight_mobile_targeting(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        # Setup a new flight and ad
+        flight = get(
+            Flight,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=100,
+            targeting_parameters={"mobile_traffic": "exclude"},
+        )
+        self.advertisement1.flight = flight
+        self.advertisement1.save()
+
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertEqual(ad, self.advertisement1)
+
+        # Setup a mobile user agent
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) "
+            "AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+        )
+
+        # Ad is excluded since the the flight excludes mobile
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNone(ad)
+
+        # Set flight to mobile only
+        flight.targeting_parameters = {"mobile_traffic": "only"}
+        flight.save()
+
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertEqual(ad, self.advertisement1)
+
+        # Set a non-mobile UA
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+        )
+
+        # With a non-mobile UA, the flight should not be chosen
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNone(ad)
+
     def test_clicks_needed(self):
         self.assertEqual(self.include_flight.clicks_needed_today(), 33)
 
@@ -378,11 +426,14 @@ class DecisionEngineTests(TestCase):
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
                     self.assertEqual(ad, None)
 
-    def test_paid_ads_only(self):
+    def test_publisher_campaign_type_restrictions(self):
         self.campaign.campaign_type = PAID_CAMPAIGN
         self.campaign.save()
 
-        self.publisher.paid_campaigns_only = True
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.allow_affiliate_campaigns = False
+        self.publisher.allow_community_campaigns = False
+        self.publisher.allow_house_campaigns = False
         self.publisher.save()
 
         backend = ProbabilisticFlightBackend(
@@ -390,11 +441,42 @@ class DecisionEngineTests(TestCase):
         )
         self.assertIsNotNone(backend.select_flight())
 
-        # After setting the only campaign to a house campaign, no flights are eligible on this publisher
+        # After setting the only campaign to a affiliate campaign, no flights are eligible on this publisher
         # Because the publisher only wants paid campaigns
+        self.campaign.campaign_type = AFFILIATE_CAMPAIGN
+        self.campaign.save()
+        self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_affiliate_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
+
+        # Same check for community campaigns
+        self.campaign.campaign_type = COMMUNITY_CAMPAIGN
+        self.campaign.save()
+        self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_community_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
+
+        # Same check for house campaigns
         self.campaign.campaign_type = HOUSE_CAMPAIGN
         self.campaign.save()
         self.assertIsNone(backend.select_flight())
+
+        self.publisher.allow_house_campaigns = True
+        self.publisher.save()
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
+        self.assertIsNotNone(backend.select_flight())
 
     def test_campaign_type_priority(self):
         # First disable all the flights from the test case constructor
@@ -404,6 +486,14 @@ class DecisionEngineTests(TestCase):
 
         flights = self.probabilistic_backend.get_candidate_flights()
         self.assertFalse(flights.exists())
+
+        self.publisher.allow_affiliate_campaigns = True
+        self.publisher.save()
+
+        # Have to recreate the backend after changing publisher allow types
+        self.probabilistic_backend = ProbabilisticFlightBackend(
+            request=self.request, placements=self.placements, publisher=self.publisher
+        )
 
         # Paid
         paid_campaign = get(

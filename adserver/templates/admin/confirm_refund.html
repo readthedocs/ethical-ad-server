@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+{% load i18n %}
+
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div id="content" class="colM delete-confirmation">
+  <form method="post">
+    {% csrf_token %}
+
+    <input type="hidden" name="confirm" value="yes">
+    <input type="hidden" name="action" value="{{ action }}">
+    {% for obj in queryset %}
+      <input type="hidden" name="_selected_action" value="{{ obj.pk }}">
+    {% endfor %}
+
+    <p>{% blocktrans with count=queryset.count type_plural=opts.verbose_name_plural %}Are you sure you want to refund {{ count }} {{ type_plural }}?{% endblocktrans %}</p>
+    <input type="submit" value="{% trans "Yes, I'm sure" %}">
+    <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">{% trans 'No, take me back' %}</a>
+  </form>
+</div>
+{% endblock %}

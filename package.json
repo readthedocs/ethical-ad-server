@@ -1,11 +1,12 @@
 {
   "name": "ethical-ad-server",
-  "version": "0.1.12",
+  "version": "0.8.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode=production --progress --colors",
-    "watch": "webpack --config webpack.config.js --mode=development --watch"
+    "watch": "webpack --config webpack.config.js --mode=development --watch",
+    "changelog": "gh-changelog -o readthedocs -r ethical-ad-server -e '' -f CHANGELOG.rst"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,9 @@
   },
   "devDependencies": {
     "css-loader": "^3.5.3",
+    "ethical-ad-client": "git+https://github.com/readthedocs/ethical-ad-client.git",
     "file-loader": "^2.0.0",
+    "github-changelog": "git+https://github.com/agjohnson/github-changelog.git",
     "mini-css-extract-plugin": "^0.8.2",
     "node-sass": "^4.14.1",
     "optimize-css-assets-webpack-plugin": "^5.0.3",

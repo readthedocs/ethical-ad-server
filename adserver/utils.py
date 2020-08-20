@@ -2,11 +2,13 @@
 import hashlib
 import ipaddress
 import logging
+import os
 import re
 from collections import namedtuple
 from datetime import datetime
 
 import analytical
+import IP2Proxy
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
@@ -20,17 +22,6 @@ from user_agents import parse
 
 
 log = logging.getLogger(__name__)  # noqa
-
-# Compile these regular expressions at startup time for performance purposes
-BLACKLISTED_UA_REGEXES = [
-    re.compile(s) for s in settings.ADSERVER_BLACKLISTED_USER_AGENTS
-]
-
-try:
-    geoip = GeoIP2()
-except GeoIP2Exception:
-    log.exception("IP Geolocation is unavailable")
-    geoip = None
 
 
 GeolocationTuple = namedtuple(
@@ -149,6 +140,26 @@ def anonymize_user_agent(user_agent):
     return user_agent
 
 
+def is_view_ratelimited(request, ratelimits=None):
+    """Returns ``True`` if this user is rate limited from viewing ads and ``False`` otherwise."""
+    if ratelimits is None:
+        # Explicitly set the rate limits ONLY if the parameter is `None`
+        # If it is an empty list, there's simply no rate limiting
+        ratelimits = settings.ADSERVER_VIEW_RATELIMITS
+
+    for rate in ratelimits:
+        if is_ratelimited(
+            request,
+            group="ad.view",
+            key=lambda _, req: get_client_ip(req),
+            rate=rate,
+            increment=True,
+        ):
+            return True
+
+    return False
+
+
 def is_click_ratelimited(request, ratelimits=None):
     """Returns ``True`` if this user is rate limited from clicking ads and ``False`` otherwise."""
     if ratelimits is None:
@@ -169,11 +180,52 @@ def is_click_ratelimited(request, ratelimits=None):
     return False
 
 
-def is_blacklisted_user_agent(user_agent, blacklist_regexes=BLACKLISTED_UA_REGEXES):
-    """Returns ``True`` if the UA is blacklisted and ``False`` otherwise."""
-    for regex in blacklist_regexes:
-        if regex.search(user_agent):
-            return True
+def is_blocklisted_user_agent(user_agent, blocklist_regexes=None):
+    """Returns ``True`` if the UA is blocklisted and ``False`` otherwise."""
+    if blocklist_regexes is None:
+        blocklist_regexes = BLOCKLISTED_UA_REGEXES
+
+    if user_agent:
+        for regex in blocklist_regexes:
+            if regex.search(user_agent):
+                return True
+
+    return False
+
+
+def is_blocklisted_referrer(referrer, blocklist_regexes=None):
+    """Returns ``True`` if the Referrer is blocklisted and ``False`` otherwise."""
+    if blocklist_regexes is None:
+        blocklist_regexes = BLOCKLISTED_REFERRERS_REGEXES
+
+    if referrer:
+        for regex in blocklist_regexes:
+            if regex.search(referrer):
+                return True
+
+    return False
+
+
+def is_blocklisted_ip(ip, blocked_ips=None):
+    """
+    Returns ``True`` if the IP is blocklisted and ``False`` otherwise.
+
+    IPs can be blocked because they are anonymous proxies or other reasons.
+    """
+    if blocked_ips is None:
+        blocked_ips = BLOCKLISTED_IPS
+
+    if ip and ip in blocked_ips:
+        return True
+    if ip and is_proxy_ip(ip):
+        return True
+
+    return False
+
+
+def is_proxy_ip(ip):
+    if ipproxy_db and ipproxy_db.is_proxy(ip) > 0:
+        return True
 
     return False
 
@@ -194,6 +246,31 @@ def get_geolocation(ip_address):
             log.warning("Geolocation configuration error")
 
     return None
+
+
+def get_ipproxy_db():
+    db = None
+
+    filepath = os.path.join(settings.GEOIP_PATH, "IP2Proxy.BIN")
+    if os.path.exists(filepath):
+        db = IP2Proxy.IP2Proxy(filepath)
+
+    return db
+
+
+def build_blocked_ip_set():
+    """Build a set of blocked IPs for preventing bogus ad impressions."""
+    blocked_ips = set()
+
+    filepath = os.path.join(settings.GEOIP_PATH, "torbulkexitlist.txt")
+    if os.path.exists(filepath):
+        with open(filepath) as fd:
+            for line in fd.readlines():
+                line = line.strip()
+                if line:
+                    blocked_ips.add(line)
+
+    return blocked_ips
 
 
 def generate_client_id(ip_address, user_agent):
@@ -220,3 +297,21 @@ def generate_client_id(ip_address, user_agent):
         hash_id.update(force_bytes(get_random_string()))
 
     return hash_id.hexdigest()
+
+
+# Compile these regular expressions at startup time for performance purposes
+BLOCKLISTED_UA_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
+]
+BLOCKLISTED_REFERRERS_REGEXES = [
+    re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
+]
+BLOCKLISTED_IPS = build_blocked_ip_set()
+
+try:
+    geoip = GeoIP2()
+except GeoIP2Exception:
+    log.exception("IP Geolocation is unavailable")
+    geoip = None
+
+ipproxy_db = get_ipproxy_db()

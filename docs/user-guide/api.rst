@@ -5,7 +5,8 @@ API
 Authentication
 --------------
 
-All API requests require a user to authenticate.
+We require authentication on some requests,
+but JSONP requests don't require them.
 Authentication works in one of two ways:
 
  * For requests made in your web browser,
@@ -19,8 +20,8 @@ Authentication works in one of two ways:
 
 .. note::
 
-    Creating a token for a user can be done in the :doc:`administration interface </user-guide/administration>`
-    section under :guilabel:`Auth Token`.
+    Creating an API token can be done under :guilabel:`Username Dropdown > API Token`.
+
 
 Ad decision
 -----------

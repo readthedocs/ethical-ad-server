@@ -14,6 +14,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
+from ..models import PublisherPayout
 
 
 class TestReportViews(TestCase):
@@ -27,8 +28,12 @@ class TestReportViews(TestCase):
         self.advertiser2 = get(
             Advertiser, name="Another Advertiser", slug="another-advertiser"
         )
-        self.publisher1 = get(Publisher, slug="test-publisher")
-        self.publisher2 = get(Publisher, slug="another-publisher")
+        self.publisher1 = get(
+            Publisher, slug="test-publisher", allow_paid_campaigns=True
+        )
+        self.publisher2 = get(
+            Publisher, slug="another-publisher", allow_paid_campaigns=True
+        )
 
         self.campaign = get(
             Campaign,
@@ -377,14 +382,128 @@ class TestReportViews(TestCase):
         )
 
     def test_publisher_embed_code(self):
-        self.client.force_login(self.staff_user)
-
         url = reverse("publisher_embed", args=[self.publisher1.slug])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
 
         self.publisher1.unauthed_ad_decisions = False
         self.publisher1.save()
 
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_publisher_settings(self):
+        url = reverse("publisher_settings", args=[self.publisher1.slug])
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        # Save the settings and verify them
+        resp = self.client.post(
+            url,
+            {"allow_affiliate_campaigns": "on", "allow_community_campaigns": "on"},
+            follow=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Successfully saved")
+
+        self.publisher1.refresh_from_db()
+
+        self.assertTrue(self.publisher1.allow_affiliate_campaigns)
+        self.assertTrue(self.publisher1.allow_community_campaigns)
+        self.assertFalse(self.publisher1.allow_house_campaigns)
+
+    def test_publisher_nopaid_notice(self):
+        self.client.force_login(self.staff_user)
+
+        url = reverse("publisher_settings", args=[self.publisher1.slug])
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(
+            resp, "Your publisher account is not approved for paid campaigns"
+        )
+
+        self.publisher1.allow_paid_campaigns = False
+        self.publisher1.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp, "Your publisher account is not approved for paid campaigns"
+        )
+
+    def test_publisher_payouts_list(self):
+        url = reverse("publisher_payouts", args=[self.publisher1.slug])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher1)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "You have not received any payouts yet")
+
+        get(PublisherPayout, amount=2.5, publisher=self.publisher1)
+        get(PublisherPayout, amount=2.0, publisher=self.publisher1)
+
+        # separate publisher
+        get(PublisherPayout, amount=5.2, publisher=self.publisher2)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "$2.50")
+        self.assertContains(resp, "$2.0")
+        self.assertContains(resp, "$4.50")  # total
+        self.assertNotContains(resp, "5.20")
+
+    def test_publisher_payout_detail(self):
+        payout = get(
+            PublisherPayout,
+            amount=2.5,
+            publisher=self.publisher1,
+            note="this is a test",
+        )
+
+        url = reverse("publisher_payout", args=[self.publisher1.slug, payout.pk])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher1)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "this is a test")
+        self.assertContains(resp, "$2.50")

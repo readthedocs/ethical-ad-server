@@ -11,6 +11,8 @@ Only a few environment variables are required:
 - DATABASE_URL
 - SENDGRID_API_KEY
 """
+import logging
+
 from .base import *  # noqa
 from .base import env
 
@@ -111,24 +113,25 @@ if SENTRY_DSN:
     # pylint: disable=import-error
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
 
-    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
+    sentry_logging = LoggingIntegration(
+        event_level=logging.WARNING  # Send warnings as events
+    )
+
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
 
 
 # Production ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
 ADSERVER_ADMIN_URL = env("ADSERVER_ADMIN_URL", default="admin")
-ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
 ADSERVER_DO_NOT_TRACK = env.bool("ADSERVER_DO_NOT_TRACK", default=False)
-ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_RECORD_VIEWS = env.bool("ADSERVER_RECORD_VIEWS", default=False)
-ADSERVER_BLACKLISTED_USER_AGENTS = env.list(
-    "ADSERVER_BLACKLISTED_USER_AGENTS", default=[]
-)
 ADSERVER_CLICK_RATELIMITS = env.list(
     "ADSERVER_CLICK_RATELIMITS", default=["1/m", "3/10m", "10/h", "25/d"]
 )
+ADSERVER_VIEW_RATELIMITS = env.list("ADSERVER_VIEW_RATELIMITS", default=["5/5m"])
 
 # GeoIP settings
 # This directory should be the path to GeoLite2-City.mmdb and GeoLite2-Country.mmdb

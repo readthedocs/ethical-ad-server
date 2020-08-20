@@ -34,11 +34,18 @@ then the admin interface will be available at the URL ``http://adserver.example.
 By default, this set to ``/admin``.
 
 
-ADSERVER_BLACKLISTED_USER_AGENTS
+ADSERVER_BLOCKLISTED_USER_AGENTS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set this to a comma separated list of strings that are looked for anywhere in the User Agent of an ad request.
 Any user agents matching any of these will be completely ignored for counting clicks and views for billing purposes.
+
+
+ADSERVER_BLOCKLISTED_REFERRERS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set this to a comma separated list of strings that are looked for anywhere in the Referrer of an ad request.
+Any referrer matching any of these will be completely ignored for counting clicks and views for billing purposes.
 
 
 ADSERVER_CLICK_RATELIMITS
@@ -52,6 +59,17 @@ By default, this is set to ``"1/m,3/10m,10/h,25/d"`` which is:
 * 3 click per 10 minutes
 * 10 clicks per hour
 * 25 clicks per day
+
+
+ADSERVER_VIEW_RATELIMITS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set this to a comma separated list of formats to specify how quickly a single IP can view ads.
+Views that happen faster than any of these rates will still allow viewing the ad or clicking through,
+but won't count toward billed impressions.
+By default, this is set to ``"3/5m"`` which is:
+
+* 3 views per 5 minutes
 
 
 ADSERVER_DECISION_BACKEND
@@ -97,6 +115,8 @@ DATABASE_URL
 This will set the address of the database used by the ad server.
 While any database supported by Django will work, PostgreSQL is preferred
 (eg. ``psql://username:password@127.0.0.1:5432/database``)
+See Django's :doc:`database documentation <django:ref/databases>`
+and the :ref:`DATABASES setting <django:ref/settings:database>` for details.
 
 
 DEBUG
@@ -113,6 +133,7 @@ DEFAULT_FILE_STORAGE
 Adjusts Django's ``DEFAULT_FILE_STORAGE`` setting.
 Defaults to ``storages.backends.azure_storage.AzureStorage`` which
 can be used to storage uploaded ad images in Azure.
+See Django's :doc:`storage documentation <django:ref/files/storage>` for details.
 
 
 ENFORCE_HOST
@@ -155,6 +176,14 @@ SENDGRID_API_KEY
 ~~~~~~~~~~~~~~~~
 
 Set this to your Sendgrid API key to enable sending email through Sendgrid.
+
+
+STRIPE_SECRET_KEY
+~~~~~~~~~~~~~~~~~
+
+Sets up the Stripe API where advertisers can be connected to a Stripe customer
+and invoices created directly through the ad server.
+Invoices are created in the :doc:`admin interface </user-guide/administration>`.
 
 
 Overriding settings entirely

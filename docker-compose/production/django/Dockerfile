@@ -16,7 +16,9 @@ RUN apk update \
   # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
   && apk add postgresql-client \
   # Add Node dependencies for building static files
-  && apk add nodejs npm
+  && apk add nodejs npm \
+  # Ensure git is on the system - some dependencies may rely on it
+  && apk add git
 
 RUN addgroup -S django \
     && adduser -S -G django django

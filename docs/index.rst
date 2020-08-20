@@ -41,6 +41,7 @@ If you are developing the Ethical Ad Server, then these are the docs for you.
     :maxdepth: 2
 
     developer/quickstart
+    developer/changelog
 
 
 .. .......................................................................

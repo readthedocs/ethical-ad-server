@@ -19,32 +19,38 @@
 <section class="mb-5">
   {% if flights %}
     <h2>{% trans 'Flight report details' %}</h2>
-    <div class="table-responsive">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th><strong>{% trans 'Flight Name' %}</strong></th>
-            <th><strong>{% trans 'Start date' %}</strong></th>
-            <th><strong>{% trans 'End date' %}</strong></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for flight in flights %}
-            <tr>
-              <td>
-                <a href="{% url 'flight_report' advertiser.slug flight.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}">{{ flight.name }}</a>
-                {% if not flight.live %}
-                  <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This flight is disabled' %}"></span>
-                {% endif %}
-              </td>
-              <td>{{ flight.start_date }}</td>
-              <td>{{ flight.end_date }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% endif %}
+
+    {% regroup flights by state as flight_groups %}
+    {% for state, flight_list in flight_groups %}
+      {% if flight_list %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th><strong>{% blocktrans %}{{ state }} flights{% endblocktrans %}</strong></th>
+                <th><strong>{% trans 'Start date' %}</strong></th>
+                <th><strong>{% trans 'End date' %}</strong></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for flight in flight_list %}
+                <tr>
+                  <td>
+                    <a href="{% url 'flight_report' advertiser.slug flight.slug %}?start_date={{ flight.start_date|date:'Y-m-d' }}">{{ flight.name }}</a>
+                    {% if not flight.live %}
+                      <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This flight is disabled' %}"></span>
+                    {% endif %}
+                  </td>
+                  <td>{{ flight.start_date }}</td>
+                  <td>{{ flight.end_date }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}{# /if flights #}
 </section>
 {% endblock toc %}
 

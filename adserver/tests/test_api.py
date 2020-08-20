@@ -1,7 +1,9 @@
 import datetime
 import json
+import re
 from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client
@@ -13,6 +15,7 @@ from django.utils import timezone
 from django_dynamic_fixture import get
 from rest_framework.authtoken.models import Token
 
+from .. import utils as adserver_utils
 from ..api.permissions import AdDecisionPermission
 from ..api.permissions import AdvertiserPermission
 from ..api.permissions import PublisherPermission
@@ -28,6 +31,7 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import Publisher
+from ..models import PublisherGroup
 from ..models import View
 
 
@@ -35,7 +39,10 @@ class ApiPermissionTest(TestCase):
     def setUp(self):
         self.advertiser = get(Advertiser, slug="test-advertiser")
         self.publisher = get(
-            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="test-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
 
         self.ad_decision_permission = AdDecisionPermission()
@@ -166,11 +173,19 @@ class ApiPermissionTest(TestCase):
 class BaseApiTest(TestCase):
     def setUp(self):
         self.publisher = self.publisher1 = get(
-            Publisher, slug="test-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="test-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
         self.publisher2 = get(
-            Publisher, slug="another-publisher", unauthed_ad_decisions=False
+            Publisher,
+            slug="another-publisher",
+            unauthed_ad_decisions=False,
+            allow_paid_campaigns=True,
         )
+        self.publisher_group = get(PublisherGroup, name="ad network group")
+        self.publisher_group.publishers.add(self.publisher)
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
         )
@@ -178,6 +193,8 @@ class BaseApiTest(TestCase):
             Campaign,
             slug="campaign-slug",
             advertiser=self.advertiser1,
+            publisher_groups=[self.publisher_group],
+            # Deprecated - will be removed
             publishers=[self.publisher],
         )
         self.flight = get(
@@ -294,10 +311,21 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json, {})
 
     def test_force_ad(self):
+        # Force ad on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
         self.data["force_ad"] = "unknown-slug"
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Ensure the unauthed/JSONP client supports forcing an ad
+        self.query_params["force_ad"] = "unknown-slug"
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
@@ -316,11 +344,30 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+        # Force the same ad with the unauth/JSONP client
+        self.query_params["force_ad"] = "ad-slug"
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
     def test_force_campaign(self):
+        # Force ad on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
         self.data["force_campaign"] = "unknown-campaign"
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {})
+
+        # Ensure the unauthed/JSONP client supports forcing an ad
+        self.query_params["force_campaign"] = "unknown-campaign"
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
@@ -330,6 +377,14 @@ class AdDecisionApiTests(BaseApiTest):
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Force the same ad with the unauth/JSONP client
+        self.query_params["force_campaign"] = self.campaign.slug
+        resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
@@ -385,6 +440,48 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_publisher_groups(self):
+        # Get an ad for the first publisher
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Get an ad for this publisher except there are no eligible ads
+        data["publisher"] = self.publisher2.slug
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {})
+
+        # Add publisher 2 to the targeted publisher group
+        self.publisher_group.publishers.add(self.publisher2)
+
+        # Now there's an ad for publisher2
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Remove pub2 from the main targeted group
+        # but create a second group with all publishers
+        self.publisher_group.publishers.remove(self.publisher2)
+        publisher_group_all = get(PublisherGroup, name="all pubs")
+        publisher_group_all.publishers.add(self.publisher1)
+        publisher_group_all.publishers.add(self.publisher2)
+        self.campaign.publisher_groups.add(publisher_group_all)
+
+        resp = self.staff_client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
     def test_campaign_types(self):
@@ -460,6 +557,18 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
+        # Check keywords on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        # Ensure the JSONP client handles campaign type restrictions as well
+        self.query_params["campaign_types"] = "{}|{}".format(
+            PAID_CAMPAIGN, COMMUNITY_CAMPAIGN
+        )
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json(), {})
+
     def test_keywords(self):
         data = {
             "placements": self.placements,
@@ -497,6 +606,39 @@ class AdDecisionApiTests(BaseApiTest):
             self.url, json.dumps(data), content_type="application/json"
         )
         self.assertEqual(resp.status_code, 400, resp.content)
+
+        # Ensure keywords are taken into account in ad targeting
+        self.flight.targeting_parameters = {"include_keywords": ["django"]}
+        self.flight.save()
+
+        # No keywords -> flight isn't chosen
+        data["keywords"] = []
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {}, resp_json)
+
+        # Correct keyword included, flight is shown
+        data["keywords"] = ["django", "python"]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+        # Check keywords on the unauthed client
+        self.publisher.unauthed_ad_decisions = True
+        self.publisher.save()
+
+        # Ensure the JSONP client handles keywords as well
+        self.query_params["keywords"] = "python|django"
+        resp = self.unauth_client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
 
 class AdvertiserApiTests(BaseApiTest):
@@ -724,7 +866,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         self.page_url = "http://example.com"
 
-        # To be counted, the UA and IP must be valid, non-blacklisted/non-bots
+        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
         self.proxy_client = Client(
             HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
         )
@@ -822,6 +964,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
+        self.publisher1.record_views = False
         self.publisher1.slug = "readthedocs-test"
         self.publisher1.save()
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
@@ -909,6 +1052,16 @@ class TestProxyViews(BaseApiTest):
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": self.nonce}
         )
 
+    def tearDown(self):
+        # Reset the UA blocklist
+        adserver_utils.BLOCKLISTED_UA_REGEXES = []
+
+        # Reset the referrer blocklist
+        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = []
+
+        # Reset the IP blocklist
+        adserver_utils.BLOCKLISTED_IPS = []
+
     def test_view_tracking_valid(self):
         resp = self.client.get(self.url)
 
@@ -932,12 +1085,18 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Internal IP")
 
-    def test_view_tracking_staff(self):
+    def test_view_tracking_known_user(self):
         self.client.force_login(self.staff_user)
         resp = self.client.get(self.url)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp["X-Adserver-Reason"], "Staff impression")
+        self.assertEqual(resp["X-Adserver-Reason"], "Known user impression")
+
+        self.client.force_login(self.user)
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Known user impression")
 
     def test_view_tracking_bot(self):
         bot_ua = (
@@ -956,12 +1115,85 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Unrecognized user agent")
 
+    @override_settings(ADSERVER_BLOCKLISTED_USER_AGENTS=["Safari"])
+    def test_view_tracking_blocked_ua(self):
+        # Override the settings for the blocklist
+        # This can't be done with ``override_settings`` because the setting is already processed
+        adserver_utils.BLOCKLISTED_UA_REGEXES = [
+            re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS
+        ]
+
+        ua = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/69.0.3497.100 Safari/537.36"
+        )
+        resp = self.client.get(self.url, HTTP_USER_AGENT=ua)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked UA impression")
+
+    @override_settings(ADSERVER_BLOCKLISTED_REFERRERS=["http://invalid.referrer"])
+    def test_view_tracking_blocked_referrer(self):
+        # Override the settings for the blocklist
+        # This can't be done with ``override_settings`` because the setting is already processed
+        adserver_utils.BLOCKLISTED_REFERRERS_REGEXES = [
+            re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
+        ]
+
+        resp = self.client.get(self.url, HTTP_REFERER="http://invalid.referrer")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked referrer impression")
+
+    def test_view_tracking_blocked_ip(self):
+        adserver_utils.BLOCKLISTED_IPS = set([self.ip_address])
+
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Blocked IP impression")
+
     def test_view_tracking_invalid_ad(self):
         url = reverse(
             "view-proxy", kwargs={"advertisement_id": 99999, "nonce": "invalidnonce"}
         )
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 404)
+
+    @override_settings(ADSERVER_VIEW_RATELIMITS=["1/m"])
+    def test_view_tracking_ratelimit(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        # View the ad again with a new nonce
+        offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
+        view_url = offer["view_url"]
+        resp = self.client.get(view_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited view impression")
+
+    def test_click_tracking_variable_expansion(self):
+        self.ad.link = "http://example.com?utm_source=${publisher}"
+        self.ad.save()
+
+        resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            resp["Location"], "http://example.com?utm_source=test-publisher"
+        )
+
+        # invalid string replacement template
+        self.ad.link = "http://example.com?utm_source=$%7Btest%7Bpublisher&t=1"
+        self.ad.save()
+
+        resp = self.client.get(self.click_url)
+
+        # Even with an invalid template, this should "work" without failing
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["Location"], self.ad.link)
 
     def test_click_tracking_valid(self):
         resp = self.client.get(self.click_url)
@@ -991,7 +1223,7 @@ class TestProxyViews(BaseApiTest):
         )
         resp = self.client.get(click_url)
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited impression")
+        self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited click impression")
 
     def test_click_tracking_invalid_targeting(self):
         self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
@@ -1007,3 +1239,44 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        # Set the ad to target a specific state and metro
+        self.ad.flight.targeting_parameters = {
+            "include_countries": ["US"],
+            "include_state_provinces": ["CA"],
+            "include_metro_codes": [825, 803],  # San Diego, LA
+        }
+        self.ad.flight.save()
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "ID",
+                "dma_code": 757,  # Boise
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "CA",
+                "dma_code": 807,  # Bay Area
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
+
+        with mock.patch("adserver.views.get_geolocation") as get_geo:
+            get_geo.return_value = {
+                "country_code": "US",
+                "region": "CA",
+                "dma_code": 825,  # San Diego
+            }
+            resp = self.client.get(self.click_url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed click")

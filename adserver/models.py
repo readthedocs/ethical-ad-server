@@ -1,11 +1,14 @@
 """Core models for the ad server."""
 import datetime
+import html
 import logging
 import math
+import uuid
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 
+import bleach
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
@@ -13,6 +16,7 @@ from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
+from django.db import transaction
 from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
@@ -98,7 +102,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     slug = models.SlugField(_("Publisher Slug"), max_length=200)
 
     revenue_share_percentage = models.FloatField(
-        default=50.0,
+        default=70.0,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text=_("Percentage of advertising revenue shared with this publisher"),
     )
@@ -117,6 +121,20 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "Whether this publisher allows unauthenticated ad decision API requests (eg. JSONP)"
         ),
     )
+
+    # Default to False so that we can use this as an "approved" flag for publishers
+    allow_paid_campaigns = models.BooleanField(_("Allow paid campaigns"), default=False)
+    allow_affiliate_campaigns = models.BooleanField(
+        _("Allow affiliate campaigns"), default=False
+    )
+    allow_community_campaigns = models.BooleanField(
+        _("Allow community campaigns"), default=True
+    )
+    allow_house_campaigns = models.BooleanField(
+        _("Allow house campaigns"), default=True
+    )
+
+    # DEPRECATED - this has no effect and will be removed in a future update
     paid_campaigns_only = models.BooleanField(
         default=True, help_text=_("Only show paid campaigns for this publisher")
     )
@@ -125,7 +143,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     # Details of each ad view are written to the database.
     # Setting this can result in some performance degradation and a bloated database.
     record_views = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_("Record each ad view from this publisher to the database"),
     )
 
@@ -201,6 +219,10 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             days[impression.date]["revenue_share"] = days[impression.date][
                 "revenue"
             ] * (self.revenue_share_percentage / 100.0)
+            days[impression.date]["our_revenue"] = (
+                days[impression.date]["revenue"]
+                - days[impression.date]["revenue_share"]
+            )
             days[impression.date]["ctr"] = calculate_ctr(
                 days[impression.date]["clicks"], days[impression.date]["views"]
             )
@@ -216,6 +238,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         report["total"]["revenue_share"] = sum(
             day["revenue_share"] for day in report["days"]
         )
+        report["total"]["our_revenue"] = (
+            report["total"]["revenue"] - report["total"]["revenue_share"]
+        )
         report["total"]["ctr"] = calculate_ctr(
             report["total"]["clicks"], report["total"]["views"]
         )
@@ -226,12 +251,40 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return report
 
 
+class PublisherGroup(TimeStampedModel):
+
+    """Group of publishers that can be targeted by advertiser's campaigns."""
+
+    name = models.CharField(
+        _("Name"), max_length=200, help_text=_("Visible to advertisers")
+    )
+    slug = models.SlugField(_("Publisher group slug"), max_length=200)
+
+    publishers = models.ManyToManyField(
+        Publisher,
+        related_name="publisher_groups",
+        blank=True,
+        help_text=_("A group of publishers that can be targeted by advertisers"),
+    )
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        """Simple override."""
+        return self.name
+
+
 class Advertiser(TimeStampedModel, IndestructibleModel):
 
     """An advertiser who buys advertising from the ad server."""
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200)
+
+    stripe_customer_id = models.CharField(
+        _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
+    )
 
     class Meta:
         ordering = ("name",)
@@ -320,12 +373,12 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
         help_text=_("The advertiser for this campaign."),
     )
-    publishers = models.ManyToManyField(
-        Publisher,
-        related_name="campaigns",
+
+    publisher_groups = models.ManyToManyField(
+        PublisherGroup,
         blank=True,
         help_text=_(
-            "Ads for this campaign are eligible for display on these publishers"
+            "Ads for this campaign are eligible for display on publishers in any of these groups"
         ),
     )
 
@@ -336,6 +389,16 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         default=PAID_CAMPAIGN,
         help_text=_(
             "Most campaigns are paid but ad server admins can configure other lower priority campaign types."
+        ),
+    )
+
+    # Deprecated and scheduled for removal
+    publishers = models.ManyToManyField(
+        Publisher,
+        related_name="campaigns",
+        blank=True,
+        help_text=_(
+            "Ads for this campaign are eligible for display on these publishers"
         ),
     )
 
@@ -552,6 +615,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return []
         return self.targeting_parameters.get("exclude_keywords", [])
 
+    @property
+    def state(self):
+        today = get_ad_day().date()
+        if self.live and self.start_date <= today:
+            return _("Current")
+        if self.end_date > today:
+            return _("Upcoming")
+        return _("Past")
+
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
         countries_dict = dict(countries)
@@ -601,6 +673,19 @@ class Flight(TimeStampedModel, IndestructibleModel):
             # If any keyworks from the page in the exclude list, don't show this flight
             if keyword_set.intersection(self.excluded_keywords):
                 return False
+
+        return True
+
+    def show_to_mobile(self, is_mobile):
+        """Check if a flight is valid for this traffic based on mobile/non-mobile."""
+        if not self.targeting_parameters:
+            return True
+
+        mobile_traffic_targeting = self.targeting_parameters.get("mobile_traffic")
+        if mobile_traffic_targeting == "exclude" and is_mobile:
+            return False
+        if mobile_traffic_targeting == "only" and not is_mobile:
+            return False
 
         return True
 
@@ -872,6 +957,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         blank=True,
         help_text=_("Different ad types have different text requirements"),
     )
+    # Supports simple variables like ${publisher} and ${advertisement}
+    # using string.Template syntax
     link = models.URLField(_("Link URL"), max_length=255)
     image = models.ImageField(
         _("Image"),
@@ -984,7 +1071,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def track_click(self, request, publisher, url):
         """Store click data in the DB."""
         self.incr(CLICKS, publisher)
-        self._record_base(request, Click, publisher, url)
+        return self._record_base(request, Click, publisher, url)
 
     def track_view(self, request, publisher, url):
         """
@@ -998,9 +1085,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         self.incr(VIEWS, publisher)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
-            self._record_base(request, View, publisher, url)
-        else:
-            log.debug("Not recording ad view.")
+            return self._record_base(request, View, publisher, url)
+
+        log.debug("Not recording ad view.")
+        return None
 
     def offer_ad(self, publisher, ad_type_slug):
         """
@@ -1037,6 +1125,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ),
         )
 
+        # This required unescaping HTML entities that bleach escapes,
+        # allowing it to be used outside of HTML contexts.
+        # https://github.com/mozilla/bleach/issues/192
+        body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
+
         self.incr(OFFERS, publisher)
         # Set validation cache
         for impression_type in [VIEWS, CLICKS]:
@@ -1057,6 +1150,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return {
             "id": self.slug,
             "text": self.text,
+            "body": body,
             "html": self.render_ad(ad_type, click_url=click_url, view_url=view_url),
             "image": self.image.url if self.image else None,
             "link": click_url,
@@ -1214,7 +1308,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self, ad_type=None, click_url=None, view_url=None):
+    def render_ad(self, ad_type, click_url=None, view_url=None):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
             # Render by the first ad type for this ad
@@ -1248,7 +1342,7 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     # Offers include cases where the server returned an ad
     # but the client didn't load it
-    # or the client didn't qualify as a view (staff, blacklisted, etc.)
+    # or the client didn't qualify as a view (staff, blocklisted, etc.)
     offers = models.PositiveIntegerField(
         _("Offers"),
         default=0,
@@ -1258,7 +1352,7 @@ class BaseImpression(TimeStampedModel, models.Model):
         ),
     )
 
-    # Views & Clicks don't count actions that are blacklisted, done by staff, bots, etc.
+    # Views & Clicks don't count actions that are blocklisted, done by staff, bots, etc.
     views = models.PositiveIntegerField(
         _("Views"),
         default=0,
@@ -1321,6 +1415,14 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         Publisher, null=True, blank=True, on_delete=models.PROTECT
     )
 
+    # This field is overridden in subclasses
+    advertisement = models.ForeignKey(
+        Advertisement,
+        max_length=255,
+        related_name="clicks_or_views",
+        on_delete=models.PROTECT,
+    )
+
     # Click Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
     user_agent = models.CharField(
@@ -1341,8 +1443,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         null=True,
         default=None,
     )
+
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
+    is_refunded = models.BooleanField(default=False)
+
+    impression_type = None
 
     class Meta:
         abstract = True
@@ -1354,6 +1460,36 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     def get_absolute_url(self):
         return self.url
 
+    @transaction.atomic
+    def refund(self):
+        """Refund this view or click."""
+        if self.is_refunded:
+            # Prevent double refunding
+            return False
+
+        # Update the denormalized aggregate impression object
+        impression = self.advertisement.impressions.get(
+            publisher=self.publisher, date=self.date.date()
+        )
+        AdImpression.objects.filter(pk=impression.pk).update(
+            **{self.impression_type: models.F(self.impression_type) - 1}
+        )
+
+        # Update the denormalized impressions on the Flight
+        if self.impression_type == VIEWS:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_views=models.F("total_views") - 1
+            )
+        elif self.impression_type == CLICKS:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_clicks=models.F("total_clicks") - 1
+            )
+
+        self.is_refunded = True
+        self.save()
+
+        return True
+
 
 class Click(AdBase):
 
@@ -1362,6 +1498,7 @@ class Click(AdBase):
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="clicks", on_delete=models.PROTECT
     )
+    impression_type = CLICKS
 
 
 class View(AdBase):
@@ -1371,3 +1508,44 @@ class View(AdBase):
     advertisement = models.ForeignKey(
         Advertisement, max_length=255, related_name="views", on_delete=models.PROTECT
     )
+    impression_type = VIEWS
+
+
+class PublisherPayout(TimeStampedModel):
+
+    """Details on historical publisher payouts."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publisher = models.ForeignKey(
+        Publisher, related_name="payouts", on_delete=models.PROTECT
+    )
+    amount = models.DecimalField(_("Amount"), max_digits=8, decimal_places=2, default=0)
+    date = models.DateTimeField(_("Payout date"))
+    note = models.TextField(
+        _("Note"),
+        blank=True,
+        null=True,
+        help_text=_("A publisher-visible note about the payout"),
+    )
+    attachment = models.FileField(
+        _("Attachment"),
+        max_length=255,
+        upload_to="payouts/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_("A publisher-visible attachment such as a receipt"),
+    )
+
+    class Meta:
+        ordering = ("-date",)
+
+    def __str__(self):
+        """Simple override."""
+        return "%s to %s" % (self.amount, self.publisher)
+
+    @property
+    def attachment_filename(self):
+        if self.attachment and self.attachment.name:
+            return self.attachment.name.split("/")[-1]
+
+        return None

@@ -1,6 +1,7 @@
 """Ad server URLs."""
 from django.conf.urls import include
 from django.conf.urls import url
+from django.urls import path
 
 from .views import AdClickProxyView
 from .views import AdvertisementCreateView
@@ -22,7 +23,10 @@ from .views import FlightDetailView
 from .views import FlightListView
 from .views import PublisherEmbedView
 from .views import PublisherMainView
+from .views import PublisherPayoutDetailView
+from .views import PublisherPayoutListView
 from .views import PublisherReportView
+from .views import PublisherSettingsView
 
 
 urlpatterns = [
@@ -119,6 +123,21 @@ urlpatterns = [
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
         PublisherEmbedView.as_view(),
         name="publisher_embed",
+    ),
+    url(
+        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/settings/$",
+        PublisherSettingsView.as_view(),
+        name="publisher_settings",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/payouts/",
+        PublisherPayoutListView.as_view(),
+        name="publisher_payouts",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/payouts/<uuid:pk>/",
+        PublisherPayoutDetailView.as_view(),
+        name="publisher_payout",
     ),
     url(
         r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",

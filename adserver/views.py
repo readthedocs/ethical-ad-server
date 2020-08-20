@@ -2,6 +2,7 @@
 import collections
 import csv
 import logging
+import string
 from datetime import datetime
 from datetime import timedelta
 
@@ -10,9 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.core.paginator import EmptyPage
-from django.core.paginator import PageNotAnInteger
-from django.core.paginator import Paginator
+from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -39,6 +38,7 @@ from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
@@ -47,6 +47,7 @@ from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
 from .models import Publisher
+from .models import PublisherPayout
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -54,8 +55,11 @@ from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
-from .utils import is_blacklisted_user_agent
+from .utils import is_blocklisted_ip
+from .utils import is_blocklisted_referrer
+from .utils import is_blocklisted_user_agent
 from .utils import is_click_ratelimited
+from .utils import is_view_ratelimited
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -136,24 +140,11 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
 
     model = Flight
     template_name = "adserver/advertiser/flight-list.html"
-    PER_PAGE = 25
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
         context = super().get_context_data(**kwargs)
 
-        paginator = Paginator(self.get_queryset(), self.PER_PAGE)
-
-        # Note: Pagination has been greatly simplified in Django 2.x
-        try:
-            flight_list = paginator.page(self.request.GET.get("page"))
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            flight_list = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            flight_list = paginator.page(paginator.num_pages)
-
-        context.update({"advertiser": self.advertiser, "flight_list": flight_list})
+        context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
 
         return context
 
@@ -231,13 +222,7 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        advertisement = context["advertisement"]
-        previews = []
-        for ad_type in advertisement.ad_types.all():
-            previews.append(advertisement.render_ad(ad_type))
-
-        context.update({"advertiser": self.advertiser, "previews": previews})
+        context.update({"advertiser": self.advertiser})
         return context
 
     def get_form_kwargs(self):
@@ -302,7 +287,10 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["flight"] = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
-        kwargs["initial"] = {"ad_types": AdType.objects.filter(default_enabled=True)}
+        kwargs["initial"] = {
+            "live": True,
+            "ad_types": AdType.objects.filter(default_enabled=True),
+        }
         return kwargs
 
     def get_success_url(self):
@@ -332,15 +320,20 @@ class BaseProxyView(View):
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
         parsed_ua = parse_user_agent(user_agent)
+        referrer = request.META.get("HTTP_REFERER")
 
         country_code = None
+        region_code = None
+        metro_code = None
         geo_data = get_geolocation(ip_address)
         if geo_data:
+            # One or more of these may be None which is OK
+            # Ads targeting countries/regions/metros won't be counted
             country_code = geo_data["country_code"]
+            region_code = geo_data["region"]
+            metro_code = geo_data["dma_code"]
 
-        valid_nonce = advertisement.is_valid_nonce(self.impression_type, nonce)
-
-        if not valid_nonce:
+        if not advertisement.is_valid_nonce(self.impression_type, nonce):
             log.log(self.log_level, "Old or nonexistent impression nonce")
             reason = "Old/Nonexistent nonce"
         elif parsed_ua.is_bot:
@@ -356,26 +349,40 @@ class BaseProxyView(View):
             # This is probably a bot/proxy server/prefetcher/etc.
             log.log(self.log_level, "Unknown user agent impression [%s]", user_agent)
             reason = "Unrecognized user agent"
-        elif request.user.is_staff:
-            log.log(self.log_level, "Ignored staff user ad impression")
-            reason = "Staff impression"
-        elif is_blacklisted_user_agent(user_agent):
+        elif not request.user.is_anonymous:
+            log.log(self.log_level, "Ignored known user ad impression")
+            reason = "Known user impression"
+        elif is_blocklisted_user_agent(user_agent):
+            log.log(self.log_level, "Blocked user agent impression [%s]", user_agent)
+            reason = "Blocked UA impression"
+        elif is_blocklisted_referrer(referrer):
             log.log(
-                self.log_level, "Blacklisted user agent impression [%s]", user_agent
+                self.log_level,
+                "Blocklisted referrer [%s], Publisher: [%s], UA: [%s]",
+                referrer,
+                publisher,
+                user_agent,
             )
-            reason = "Blacklisted impression"
+            reason = "Blocked referrer impression"
+        elif is_blocklisted_ip(ip_address):
+            log.log(self.log_level, "Blocked IP impression, Publisher: [%s]", publisher)
+            reason = "Blocked IP impression"
         elif not publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
-        elif not advertisement.flight.show_to_geo(country_code):
+        elif not advertisement.flight.show_to_geo(
+            country_code, region_code, metro_code
+        ):
             # This is very rare but it is visible in ad reports
             # I believe the most common cause for this is somebody uses a VPN and is served an ad
             # Then they turn off their VPN and click on the ad
             log.log(
                 self.log_security_level,
-                "Invalid geo targeting for ad [%s]. Country: [%s]",
+                "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s]",
                 advertisement,
                 country_code,
+                region_code,
+                metro_code,
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
@@ -383,11 +390,20 @@ class BaseProxyView(View):
             # but this is a security/billing violation
             log.log(
                 self.log_security_level,
-                "User has clicked too many ads recently, IP = [%s], User Agent = [%s]",
+                "User has clicked too many ads recently, Publisher: [%s], IP: [%s], UA: [%s]",
+                publisher,
                 ip_address,
                 user_agent,
             )
-            reason = "Ratelimited impression"
+            reason = "Ratelimited click impression"
+        elif self.impression_type == VIEWS and is_view_ratelimited(request):
+            log.log(
+                self.log_security_level,
+                "User has viewed too many ads recently, Publisher: [%s], UA: [%s]",
+                publisher,
+                user_agent,
+            )
+            reason = "Ratelimited view impression"
 
         return reason
 
@@ -412,7 +428,7 @@ class BaseProxyView(View):
             )
 
         message = ignore_reason or self.success_message
-        response = self.get_response(request, advertisement)
+        response = self.get_response(request, advertisement, publisher)
 
         self.send_to_analytics(request, advertisement, message)
 
@@ -423,7 +439,7 @@ class BaseProxyView(View):
 
         return response
 
-    def get_response(self, request, advertisement):
+    def get_response(self, request, advertisement, publisher):
         """Subclasses *must* override this method."""
         raise NotImplementedError
 
@@ -435,7 +451,7 @@ class AdViewProxyView(BaseProxyView):
     impression_type = VIEWS
     success_message = "Billed view"
 
-    def get_response(self, request, advertisement):
+    def get_response(self, request, advertisement, publisher):
         return HttpResponse(
             "<svg><!-- View Proxy --></svg>", content_type="image/svg+xml"
         )
@@ -469,8 +485,18 @@ class AdClickProxyView(BaseProxyView):
             uip=ip_address,  # will be anonymized
         )
 
-    def get_response(self, request, advertisement):
-        return HttpResponseRedirect(advertisement.link)
+    def get_response(self, request, advertisement, publisher):
+        # Allows using variables in links such as `?utm_source=${publisher}`
+        template = string.Template(advertisement.link)
+
+        publisher_slug = "unknown"
+        if publisher:
+            publisher_slug = publisher.slug
+
+        url = template.safe_substitute(
+            publisher=publisher_slug, advertisement=advertisement.slug
+        )
+        return HttpResponseRedirect(url)
 
 
 class BaseReportView(UserPassesTestMixin, TemplateView):
@@ -498,7 +524,9 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            writer = csv.DictWriter(response, fieldnames=self.fieldnames)
+            writer = csv.DictWriter(
+                response, fieldnames=self.fieldnames, extrasaction="ignore"
+            )
             writer.writeheader()
             writer.writerows(report["days"])
 
@@ -740,11 +768,11 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
+class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView):
 
-    """A report for a single publisher."""
+    """Advertising embed code for a publisher."""
 
-    template_name = "adserver/reports/publisher_embed.html"
+    template_name = "adserver/publisher/embed.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -755,6 +783,86 @@ class PublisherEmbedView(PublisherAccessMixin, BaseReportView):
         )
 
         context.update({"publisher": publisher})
+
+        return context
+
+
+class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):
+
+    """Settings configuration for a publisher."""
+
+    form_class = PublisherSettingsForm
+    model = Publisher
+    template_name = "adserver/publisher/settings.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        messages.success(
+            self.request,
+            _("Successfully saved %(publisher)s settings")
+            % {"publisher": self.object.name},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.object})
+        return context
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_settings", kwargs={"publisher_slug": self.object.slug}
+        )
+
+
+class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListView):
+
+    """List of publisher payouts."""
+
+    model = PublisherPayout
+    template_name = "adserver/publisher/payout-list.html"
+
+    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        context = super().get_context_data(**kwargs)
+
+        payouts = self.get_queryset()
+        total = payouts.aggregate(
+            total=models.Sum("amount", output_field=models.DecimalField())
+        )["total"]
+
+        context.update(
+            {"publisher": self.publisher, "payouts": payouts, "total": total}
+        )
+
+        return context
+
+    def get_queryset(self):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return self.publisher.payouts.all()
+
+
+class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
+
+    """Details of a specific publisher payout."""
+
+    template_name = "adserver/publisher/payout.html"
+
+    def get_object(self, queryset=None):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return get_object_or_404(
+            PublisherPayout, publisher=self.publisher, pk=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher, "payout": self.get_object()})
 
         return context
 
@@ -802,6 +910,9 @@ class AllPublisherReportView(BaseReportView):
         total_revenue = sum(
             report["total"]["revenue"] for _, report in publishers_and_reports
         )
+        our_total_revenue = total_revenue - sum(
+            report["total"]["revenue_share"] for _, report in publishers_and_reports
+        )
 
         # Aggregate the different publisher reports by day
         days = {}
@@ -818,25 +929,26 @@ class AllPublisherReportView(BaseReportView):
                 days[day["date"]]["views_by_publisher"][publisher.name] = day["views"]
                 days[day["date"]]["clicks_by_publisher"][publisher.name] = day["clicks"]
                 days[day["date"]]["revenue"] += float(day["revenue"])
+                days[day["date"]]["our_revenue"] += float(day["our_revenue"])
                 days[day["date"]]["ctr"] = calculate_ctr(
                     days[day["date"]]["clicks"], days[day["date"]]["views"]
                 )
 
-        # Make these strings to easily compare with GET args
-        revshare_options = set(
-            str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
-        )
         context.update(
             {
                 "publishers": [p for p, _ in publishers_and_reports],
                 "publishers_and_reports": publishers_and_reports,
                 "total_clicks": total_clicks,
-                "total_cost": total_revenue,
+                "total_revenue": total_revenue,
+                "our_total_revenue": our_total_revenue,
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_revenue, total_views),
                 "campaign_types": CAMPAIGN_TYPES,
-                "revshare_options": revshare_options,
+                # Make these strings to easily compare with GET args
+                "revshare_options": set(
+                    str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
+                ),
             }
         )
 

@@ -3,6 +3,7 @@
 USE_DOCKER=true
 IPYTHONDIR=/app/.ipython
 MEDIA_URL=http://localhost:5000/media/
+#ADSERVER_ETHICALADS_BRANDING=True
 
 # Redis
 # ------------------------------------------------------------------------------
@@ -11,3 +12,7 @@ REDIS_URL=redis://redis:6379/0
 # Postgres
 # ------------------------------------------------------------------------------
 DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
+
+# Stripe
+# ------------------------------------------------------------------------------
+#STRIPE_SECRET_KEY=

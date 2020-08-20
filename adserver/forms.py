@@ -3,6 +3,9 @@ import logging
 
 import bleach
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Fieldset
+from crispy_forms.layout import HTML
+from crispy_forms.layout import Layout
 from crispy_forms.layout import Submit
 from django import forms
 from django.core.files.images import get_image_dimensions
@@ -12,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from .models import Advertisement
 from .models import Flight
+from .models import Publisher
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -214,3 +218,43 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             "image": forms.FileInput(),
             "ad_types": forms.CheckboxSelectMultiple(),
         }
+
+
+class PublisherSettingsForm(forms.ModelForm):
+
+    """Form for letting publishers control publisher specific settings."""
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                _("Control advertiser campaign types"),
+                "allow_affiliate_campaigns",
+                "allow_community_campaigns",
+                "allow_house_campaigns",
+                HTML(
+                    "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "Use these checkboxes to control the types of advertiser campaigns "
+                            "that are allowed on your site. "
+                            "House and community campaigns can be especially useful when settings things up."
+                        )
+                    )
+                    + "</p>"
+                ),
+                css_class="my-3",
+            ),
+            Submit("submit", "Save settings"),
+        )
+
+    class Meta:
+        model = Publisher
+        fields = [
+            "allow_affiliate_campaigns",
+            "allow_community_campaigns",
+            "allow_house_campaigns",
+        ]

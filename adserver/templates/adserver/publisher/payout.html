@@ -1,0 +1,42 @@
+{% extends "adserver/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Publisher payout' %} - {{ publisher }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'publisher_payouts' publisher.slug %}">{% trans 'Payouts' %}</a></li>
+  <li class="breadcrumb-item active">{{ payout.date|date:"M j, Y" }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% blocktrans with date=payout.date|date:"M j, Y" %}Publisher payout on {{ date }}{% endblocktrans %}{% endblock heading %}</h1>
+
+<dl>
+  <dt>{% trans 'Payout ID' %}</dt>
+  <dd>{{ payout.pk }}</dd>
+
+  <dt>{% trans 'Date' %}</dt>
+  <dd>{{ payout.date|date:"M j, Y" }}</dd>
+
+  <dt>{% trans 'Amount' %}</dt>
+  <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+
+  {% if payout.attachment %}
+    <dt>{% trans 'Attachment' %}</dt>
+    <dd><a href="{{ payout.attachment.url }}" target="_blank">{{ payout.attachment_filename }}</a></dd>
+  {% endif %}
+
+  {% if payout.note %}
+    <dt>{% trans 'Note' %}</dt>
+    <dd>{{ payout.note }}</dd>
+  {% endif %}
+</dl>
+
+{% endblock content_container %}

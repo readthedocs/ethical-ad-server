@@ -33,8 +33,9 @@ django-ratelimit==2.0.0
 # Parsing browser user agents
 user-agents==2.0
 
-# GeoIP database libraries
+# IP database libraries
 geoip2==2.9.0
+IP2Proxy==3.0.0
 
 # Countries helper used in ad targeting
 django-countries==5.4
@@ -47,3 +48,6 @@ bleach==3.1.4
 
 # Security features
 django-enforce-host==1.0.1
+
+# Stripe for payments
+stripe>=2.48.0,<3.0

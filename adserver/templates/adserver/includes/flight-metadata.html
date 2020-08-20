@@ -33,41 +33,29 @@
     <dt>{% trans 'Estimated end date' %}</dt>
     <dd>{{ flight.end_date }}</dd>
   {% endif %}
-  {% with flight.campaign.publishers.count as publishers_count %}
-    {% if publishers_count %}
-      <dt>{% trans 'Publishers' %}</dt>
-      <dd>
-        <ul>
-          {% for publisher in flight.campaign.publishers.all|slice:":5" %}
-            <li>{{ publisher.name }}</li>
-          {% endfor %}
-          {% if publishers_count > 5 %}
-            <li>{% blocktrans with publishers_count|add:"-5" as other_publishers_count %}{{ other_publishers_count }} other publishers{% endblocktrans %}</li>
-          {% endif %}
-        </ul>
-      </dd>
-    {% endif %}
-  {% endwith %}
   {% if flight.targeting_parameters %}
-     <dt>{% trans 'Targeting parameters' %}</dt>
-     <dd>
-       <ul>
-         {% if flight.targeting_parameters.include_countries %}
-           <li>{% blocktrans with value=flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
-         {% endif %}
-         {% if flight.targeting_parameters.exclude_countries %}
-           <li>{% blocktrans with value=flight.get_exclude_countries_display|join:', ' %}Exclude countries: {{ value }}{% endblocktrans %}</li>
-         {% endif %}
-         {% if flight.targeting_parameters.include_state_provinces %}
-           <li>{% blocktrans with value=flight.targeting_parameters.include_state_provinces|join:", " %}Include States/Provinces: {{ value }}{% endblocktrans %}</li>
-         {% endif %}
-         {% if flight.targeting_parameters.include_metro_codes %}
-           <li>{% blocktrans with value=flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
-         {% endif %}
-         {% if flight.targeting_parameters.include_keywords %}
-           <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
-         {% endif %}
-       </ul>
-     </dd>
-   {% endif %}
+    <dt>{% trans 'Targeting parameters' %}</dt>
+    <dd>
+      <ul>
+        {% if flight.targeting_parameters.include_countries %}
+         <li>{% blocktrans with value=flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.exclude_countries %}
+         <li>{% blocktrans with value=flight.get_exclude_countries_display|join:', ' %}Exclude countries: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_state_provinces %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_state_provinces|join:", " %}Include States/Provinces: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_metro_codes %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_keywords %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.mobile_traffic %}
+         <li>{% blocktrans with value=flight.targeting_parameters.mobile_traffic %}Mobile traffic: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+      </ul>
+    </dd>
+  {% endif %}
 </dl>
