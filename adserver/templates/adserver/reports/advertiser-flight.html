@@ -25,65 +25,7 @@
       {% if not flight.live %}<span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="{% trans 'This flight is disabled' %}"></span>{% endif %}
     </h3>
 
-    <dl>
-      {% if not flight.live %}
-         <dt>{% trans 'Disabled' %}</dt>
-         <dd>{% trans 'This flight is not currently being shown' %}</dd>
-      {% endif %}
-      {% if flight.campaign.campaign_type == 'community' %}
-        <dt>{% trans 'Community ad' %}</dt>
-        <dd>{% trans 'This ad is done for the benefit of the community' %}</dd>
-      {% endif %}
-      {% if flight.campaign.campaign_type == 'house' %}
-        <dt>{% trans 'House ad' %}</dt>
-        <dd>{% trans 'This is a house advertisement' %}</dd>
-      {% endif %}
-      {% if flight.campaign.campaign_type == 'paid' and flight.live %}
-        <dt>{% trans 'Value remaining' %}</dt>
-        <dd>${{ flight.value_remaining|floatformat:2 }} / ${{ flight.projected_total_value|floatformat:2 }}</dd>
-      {% endif %}
-      {% if flight.cpc %}
-        <dt>{% trans 'Cost per click (CPC)' %}</dt>
-        <dd>${{ flight.cpc|floatformat:2 }}</dd>
-      {% endif %}
-      {% if flight.cpm %}
-        <dt>{% trans 'Cost per 1,000 impressions (CPM)' %}</dt>
-        <dd>${{ flight.cpm|floatformat:2 }}</dd>
-      {% endif %}
-      {% if flight.start_date %}
-        <dt>{% trans 'Estimated start date' %}</dt>
-        <dd>{{ flight.start_date }}</dd>
-      {% endif %}
-      {% if flight.end_date %}
-        <dt>{% trans 'Estimated end date' %}</dt>
-        <dd>{{ flight.end_date }}</dd>
-      {% endif %}
-      {% if flight.targeting_parameters %}
-         <dt>{% trans 'Targeting parameters' %}</dt>
-         <dd>
-           <ul>
-             {% if flight.targeting_parameters.include_countries %}
-               <li>{% blocktrans with value=flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-             {% if flight.targeting_parameters.exclude_countries %}
-               <li>{% blocktrans with value=flight.get_exclude_countries_display|join:', ' %}Exclude countries: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-             {% if flight.targeting_parameters.include_state_provinces %}
-               <li>{% blocktrans with value=flight.targeting_parameters.include_state_provinces|join:", " %}Include States/Provinces: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-             {% if flight.targeting_parameters.include_metro_codes %}
-               <li>{% blocktrans with value=flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-             {% if flight.targeting_parameters.include_keywords %}
-               <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-             {% if flight.targeting_parameters.mobile_traffic %}
-               <li>{% blocktrans with value=flight.targeting_parameters.mobile_traffic %}Mobile traffic: {{ value }}{% endblocktrans %}</li>
-             {% endif %}
-           </ul>
-         </dd>
-       {% endif %}
-    </dl>
+    {% include "adserver/includes/flight-metadata.html" %}
 
     <p>
       <a href="{% url 'flight_detail' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
