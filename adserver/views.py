@@ -837,9 +837,11 @@ class PublisherStripeOauthConnectView(
 
         publisher = self.get_object()
 
+        # Save a state nonce to verify that the Stripe oauth flow can't be replayed or forged
         stripe_state = get_random_string(30)
         self.request.session["stripe_state"] = stripe_state
         self.request.session["stripe_connect_publisher"] = publisher.slug
+
         params = {
             "client_id": settings.STRIPE_CONNECT_CLIENT_ID,
             "suggested_capabilities[]": "transfers",
