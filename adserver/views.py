@@ -389,19 +389,16 @@ class BaseProxyView(View):
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
-            # Note: Normally logging IPs is frowned upon for DNT
-            # but this is a security/billing violation
             log.log(
-                self.log_security_level,
-                "User has clicked too many ads recently, Publisher: [%s], IP: [%s], UA: [%s]",
+                self.log_level,
+                "User has clicked too many ads recently, Publisher: [%s], UA: [%s]",
                 publisher,
-                ip_address,
                 user_agent,
             )
             reason = "Ratelimited click impression"
         elif self.impression_type == VIEWS and is_view_ratelimited(request):
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "User has viewed too many ads recently, Publisher: [%s], UA: [%s]",
                 publisher,
                 user_agent,
