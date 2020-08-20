@@ -1,5 +1,5 @@
 """API Urls for the ad server."""
-from django.conf.urls import url
+from django.urls import path
 from rest_framework import routers
 
 from .views import AdDecisionView
@@ -9,7 +9,7 @@ from .views import PublisherViewSet
 
 app_name = "api"
 
-urlpatterns = [url(r"^decision/$", AdDecisionView.as_view(), name="decision")]
+urlpatterns = [path(r"decision/", AdDecisionView.as_view(), name="decision")]
 
 router = routers.SimpleRouter()
 router.register(r"advertisers", AdvertiserViewSet, base_name="advertisers")

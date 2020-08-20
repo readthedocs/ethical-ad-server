@@ -1,6 +1,5 @@
 """Ad server URLs."""
-from django.conf.urls import include
-from django.conf.urls import url
+from django.urls import include
 from django.urls import path
 
 from .views import AdClickProxyView
@@ -32,97 +31,97 @@ from .views import PublisherStripeOauthConnectView
 
 
 urlpatterns = [
-    url("^$", dashboard, name="dashboard-home"),
+    path("", dashboard, name="dashboard-home"),
     # Do not Track
-    url(r"^\.well-known/dnt/$", do_not_track, name="dnt-status"),
-    url(r"^\.well-known/dnt-policy.txt$", do_not_track_policy, name="dnt-policy"),
+    path(r".well-known/dnt/", do_not_track, name="dnt-status"),
+    path(r".well-known/dnt-policy.txt", do_not_track_policy, name="dnt-policy"),
     # Ad API
-    url(r"^api/v1/", include("adserver.api.urls")),
+    path(r"api/v1/", include("adserver.api.urls")),
     # View & Click proxies
-    url(
-        r"^proxy/view/(?P<advertisement_id>\d+)/(?P<nonce>\w+)/$",
+    path(
+        r"proxy/view/<int:advertisement_id>/<str:nonce>/",
         AdViewProxyView.as_view(),
         name="view-proxy",
     ),
-    url(
-        r"^proxy/click/(?P<advertisement_id>\d+)/(?P<nonce>\w+)/$",
+    path(
+        r"proxy/click/<int:advertisement_id>/<str:nonce>/",
         AdClickProxyView.as_view(),
         name="click-proxy",
     ),
     # Advertiser management and reporting
-    url(
-        r"^advertiser/all/report/$",
+    path(
+        r"advertiser/all/report/",
         AllAdvertiserReportView.as_view(),
         name="all_advertisers_report",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/",
         AdvertiserMainView.as_view(),
         name="advertiser_main",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/report/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/report/",
         AdvertiserReportView.as_view(),
         name="advertiser_report",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/report.csv",
         AdvertiserReportView.as_view(export=True),
         name="advertiser_report_export",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/",
         FlightListView.as_view(),
         name="flight_list",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/",
         FlightDetailView.as_view(),
         name="flight_detail",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/report/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/report/",
         AdvertiserFlightReportView.as_view(),
         name="flight_report",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/report.csv",
         AdvertiserFlightReportView.as_view(export=True),
         name="flight_report_export",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/advertisements/create/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/create/",
         AdvertisementCreateView.as_view(),
         name="advertisement_create",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/advertisements/(?P<advertisement_slug>[-a-zA-Z0-9_]+)/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/",
         AdvertisementDetailView.as_view(),
         name="advertisement_detail",
     ),
-    url(
-        r"^advertiser/(?P<advertiser_slug>[-a-zA-Z0-9_]+)/flights/(?P<flight_slug>[-a-zA-Z0-9_]+)/advertisements/(?P<advertisement_slug>[-a-zA-Z0-9_]+)/update/$",
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/update/",
         AdvertisementUpdateView.as_view(),
         name="advertisement_update",
     ),
     # Publisher management and reporting
-    url(
-        r"^publisher/all/report/$",
+    path(
+        r"publisher/all/report/",
         AllPublisherReportView.as_view(),
         name="all_publishers_report",
     ),
-    url(
-        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/$",
+    path(
+        r"publisher/<slug:publisher_slug>/",
         PublisherMainView.as_view(),
         name="publisher_main",
     ),
-    url(
-        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report/$",
+    path(
+        r"publisher/<slug:publisher_slug>/report/",
         PublisherReportView.as_view(),
         name="publisher_report",
     ),
-    url(
-        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/embed/$",
+    path(
+        r"publisher/<slug:publisher_slug>/embed/",
         PublisherEmbedView.as_view(),
         name="publisher_embed",
     ),
@@ -136,8 +135,8 @@ urlpatterns = [
         publisher_stripe_oauth_return,
         name="publisher_stripe_oauth_return",
     ),
-    url(
-        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/settings/$",
+    path(
+        r"publisher/<slug:publisher_slug>/settings/",
         PublisherSettingsView.as_view(),
         name="publisher_settings",
     ),
@@ -151,20 +150,20 @@ urlpatterns = [
         PublisherPayoutDetailView.as_view(),
         name="publisher_payout",
     ),
-    url(
-        r"^publisher/(?P<publisher_slug>[-a-zA-Z0-9_]+)/report\.csv$",
+    path(
+        r"publisher/<slug:publisher_slug>/report.csv",
         PublisherReportView.as_view(export=True),
         name="publisher_report_export",
     ),
     # User account management
-    url(r"^accounts/api-token/$", ApiTokenListView.as_view(), name="api_token_list"),
-    url(
-        r"^accounts/api-token/create/$",
+    path(r"accounts/api-token/", ApiTokenListView.as_view(), name="api_token_list"),
+    path(
+        r"accounts/api-token/create/",
         ApiTokenCreateView.as_view(),
         name="api_token_create",
     ),
-    url(
-        r"^accounts/api-token/delete/$",
+    path(
+        r"accounts/api-token/delete/",
         ApiTokenDeleteView.as_view(),
         name="api_token_delete",
     ),
