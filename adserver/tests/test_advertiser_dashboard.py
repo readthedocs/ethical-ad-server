@@ -13,9 +13,9 @@ from ..models import Flight
 from .common import ONE_PIXEL_PNG_BYTES
 
 
-class TestAdvertiserCrudViews(TestCase):
+class TestAdvertiserDashboardViews(TestCase):
 
-    """Test the advertiser CRUD interface for creating and updating ads."""
+    """Test the advertiser dashboard interface for creating and updating ads."""
 
     def setUp(self):
         self.advertiser = get(
