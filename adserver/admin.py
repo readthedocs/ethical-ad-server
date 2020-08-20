@@ -55,6 +55,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "slug",
         "report",
         "revenue_share_percentage",
+        "payout_method",
         "unauthed_ad_decisions",
         "allow_paid_campaigns",
         "allow_affiliate_campaigns",
@@ -63,6 +64,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "record_views",
     )
     list_filter = (
+        "payout_method",
         "unauthed_ad_decisions",
         "allow_paid_campaigns",
         "allow_affiliate_campaigns",
@@ -783,8 +785,16 @@ class ViewAdmin(AdBaseAdmin):
 
 
 class PublisherPayoutAdmin(admin.ModelAdmin):
-    list_display = ("pk", "amount", "publisher", "date", "modified", "created")
-    list_filter = ("publisher",)
+    list_display = (
+        "pk",
+        "amount",
+        "publisher",
+        "date",
+        "method",
+        "modified",
+        "created",
+    )
+    list_filter = ("method", "publisher")
     list_select_related = ("publisher",)
     model = PublisherPayout
     readonly_fields = ("modified", "created")

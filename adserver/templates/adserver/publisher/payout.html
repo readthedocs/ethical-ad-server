@@ -28,6 +28,11 @@
   <dt>{% trans 'Amount' %}</dt>
   <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
 
+  {% if payout.method %}
+    <dt>{% trans 'Method' %}</dt>
+    <dd>{{ payout.get_method_display }}</dd>
+  {% endif %}
+
   {% if payout.attachment %}
     <dt>{% trans 'Attachment' %}</dt>
     <dd><a href="{{ payout.attachment.url }}" target="_blank">{{ payout.attachment_filename }}</a></dd>

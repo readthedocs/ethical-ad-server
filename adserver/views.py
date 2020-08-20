@@ -3,9 +3,11 @@ import collections
 import csv
 import logging
 import string
+import urllib
 from datetime import datetime
 from datetime import timedelta
 
+import stripe
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -22,6 +24,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView
@@ -816,6 +819,96 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         return reverse(
             "publisher_settings", kwargs={"publisher_slug": self.object.slug}
         )
+
+
+class PublisherStripeOauthConnectView(
+    PublisherAccessMixin, UserPassesTestMixin, RedirectView
+):
+
+    """Redirect the user to the correct Stripe connect URL for the publisher."""
+
+    model = Publisher
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        if not settings.STRIPE_CONNECT_CLIENT_ID:
+            messages.error(self.request, _("Stripe is not configured"))
+            return reverse("dashboard-home")
+
+        publisher = self.get_object()
+
+        # Save a state nonce to verify that the Stripe oauth flow can't be replayed or forged
+        stripe_state = get_random_string(30)
+        self.request.session["stripe_state"] = stripe_state
+        self.request.session["stripe_connect_publisher"] = publisher.slug
+
+        params = {
+            "client_id": settings.STRIPE_CONNECT_CLIENT_ID,
+            "suggested_capabilities[]": "transfers",
+            "stripe_user[email]": self.request.user.email,
+            "state": stripe_state,
+            "redirect_uri": self.request.build_absolute_uri(
+                reverse("publisher_stripe_oauth_return")
+            ),
+        }
+        return f"https://connect.stripe.com/express/oauth/authorize?{urllib.parse.urlencode(params)}"
+
+    def get_object(self, queryset=None):  # noqa
+        return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
+
+
+@login_required
+def publisher_stripe_oauth_return(request):
+    """Handle the oauth return flow from Stripe - save the account on the publisher."""
+    # A stripe token we passed when setup started - needs to be double checked
+    state = request.GET.get("state", "")
+    oauth_code = request.GET.get("code", "")
+
+    if request.user.is_staff:
+        publishers = Publisher.objects.all()
+    else:
+        publishers = request.user.publishers.all()
+
+    publisher = publishers.filter(
+        slug=request.session.get("stripe_connect_publisher", "")
+    ).first()
+
+    if state == request.session.get("stripe_state") and publisher:
+        response = None
+        log.debug(
+            "Using stripe auth code to connect publisher account. Publisher = [%s]",
+            publisher,
+        )
+        try:
+            response = stripe.OAuth.token(
+                grant_type="authorization_code", code=oauth_code
+            )
+        except stripe.oauth_error.OAuthError:
+            log.error("Invalid Stripe authorization code: %s", oauth_code)
+        except Exception:
+            log.error("An unknown Stripe error occurred.")
+
+        if response:
+            connected_account_id = response["stripe_user_id"]
+            publisher.stripe_connected_account_id = connected_account_id
+            publisher.save()
+            messages.success(request, _("Successfully connected your Stripe account"))
+
+            # Delete saved stripe state
+            del request.session["stripe_state"]
+            del request.session["stripe_connect_publisher"]
+
+            return redirect(reverse("publisher_main", args=[publisher.slug]))
+    else:
+        log.warning(
+            "Stripe state or publisher do not check out. State = [%s], Publisher = [%s]",
+            state,
+            publisher,
+        )
+
+    messages.error(request, _("There was a problem connecting your Stripe account"))
+    log.error("There was a problem connecting a Stripe account.")
+    return redirect(reverse("dashboard-home"))
 
 
 class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListView):

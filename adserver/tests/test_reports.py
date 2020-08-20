@@ -1,4 +1,7 @@
+from unittest import mock
+
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 from django_dynamic_fixture import get
@@ -427,6 +430,35 @@ class TestReportViews(TestCase):
         self.assertTrue(self.publisher1.allow_community_campaigns)
         self.assertFalse(self.publisher1.allow_house_campaigns)
 
+    def test_publisher_settings_stripe_block(self):
+        url = reverse("publisher_settings", args=[self.publisher1.slug])
+        self.client.force_login(self.staff_user)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Stripe is not configured")
+
+        # Test that the "connect" link shows if the publisher isn't already connected
+        with override_settings(STRIPE_CONNECT_CLIENT_ID="ca_XXXXXXXXXXX"):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Connect via Stripe")
+
+        self.publisher1.payout_method = "stripe"
+        self.publisher1.stripe_connected_account_id = "acct_XXXXXXX"
+        self.publisher1.save()
+
+        # Test the "manage" link if the account is already connected
+        with mock.patch("stripe.Account.create_login_link") as create_login_link:
+            stripe_url = "http://manage.stripe.com/"
+            create_login_link.return_value = mock.MagicMock()
+            create_login_link.return_value.url = stripe_url
+
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Manage Stripe account")
+            self.assertContains(resp, stripe_url)
+
     def test_publisher_nopaid_notice(self):
         self.client.force_login(self.staff_user)
 
@@ -486,9 +518,10 @@ class TestReportViews(TestCase):
             amount=2.5,
             publisher=self.publisher1,
             note="this is a test",
+            method="paypal",
         )
 
-        url = reverse("publisher_payout", args=[self.publisher1.slug, payout.pk])
+        url = payout.get_absolute_url()
 
         # Anonymous - redirect to login
         resp = self.client.get(url)
@@ -507,3 +540,74 @@ class TestReportViews(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "this is a test")
         self.assertContains(resp, "$2.50")
+
+    def test_publisher_stripe_connect(self):
+        url = reverse("publisher_stripe_oauth_connect", args=[self.publisher1.slug])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.user.publishers.add(self.publisher1)
+        self.client.force_login(self.user)
+
+        resp = self.client.get(url, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Stripe is not configured")
+
+        with override_settings(STRIPE_CONNECT_CLIENT_ID="ca_XXXXXXXXXXX"):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 302)
+            self.assertTrue(
+                resp["location"].startswith(
+                    "https://connect.stripe.com/express/oauth/authorize"
+                )
+            )
+
+            self.assertTrue("stripe_state" in self.client.session)
+            self.assertTrue("stripe_connect_publisher" in self.client.session)
+            self.assertEqual(
+                self.client.session["stripe_connect_publisher"], self.publisher1.slug
+            )
+
+    def test_publisher_stripe_return(self):
+        connect_url = reverse(
+            "publisher_stripe_oauth_connect", args=[self.publisher1.slug]
+        )
+        url = reverse("publisher_stripe_oauth_return")
+
+        self.user.publishers.add(self.publisher1)
+        self.client.force_login(self.user)
+
+        # Didn't setup state beforehand
+        resp = self.client.get(url, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "There was a problem connecting your Stripe account")
+
+        # Do Stripe connect - which sets up session state
+        with override_settings(STRIPE_CONNECT_CLIENT_ID="ca_XXXXXXXXXXX"):
+            self.client.get(connect_url)
+
+            self.assertTrue("stripe_state" in self.client.session)
+            self.assertTrue("stripe_connect_publisher" in self.client.session)
+            self.assertEqual(
+                self.client.session["stripe_connect_publisher"], self.publisher1.slug
+            )
+
+        with mock.patch("stripe.OAuth.token") as oauth_token_create:
+            account_id = "uid_XXXXX"
+            oauth_token_create.return_value = {"stripe_user_id": account_id}
+
+            url += "?code=XXXXX&state={}".format(self.client.session["stripe_state"])
+
+            resp = self.client.get(url, follow=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Successfully connected your Stripe account")
+
+            # These get deleted
+            self.assertFalse("stripe_state" in self.client.session)
+            self.assertFalse("stripe_connect_publisher" in self.client.session)
+
+            self.publisher1.refresh_from_db()
+            self.assertEqual(self.publisher1.stripe_connected_account_id, account_id)

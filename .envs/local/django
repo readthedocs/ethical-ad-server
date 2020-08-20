@@ -16,3 +16,4 @@ DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
 # Stripe
 # ------------------------------------------------------------------------------
 #STRIPE_SECRET_KEY=
+#STRIPE_CONNECT_CLIENT_ID=

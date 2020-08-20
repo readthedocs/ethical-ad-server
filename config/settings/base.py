@@ -314,6 +314,7 @@ REST_FRAMEWORK = {
 # https://stripe.com/docs
 # --------------------------------------------------------------------------
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
+STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
 stripe.api_key = STRIPE_SECRET_KEY
 stripe.api_version = "2020-03-02"
 
