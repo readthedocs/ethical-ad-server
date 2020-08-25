@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.9.0
+--------------
+
+:Date: August 25, 2020
+
+The largest change in this release was to store publisher payout settings
+and allow publishers to connect via Stripe to attach a bank account for payouts.
+
+ * @davidfischer: Turn down the rate limiting logging (#232)
+ * @davidfischer: Use Django2 style URLs everywhere (#231)
+ * @davidfischer: Refactor publisher tests (#230)
+ * @davidfischer: Store publisher payout settings (#229)
+ * @davidfischer: Refactor flight metadata view (#180)
+ * @davidfischer: Store publisher payout settings (#177)
+
+
 Version v0.8.0
 --------------
 
