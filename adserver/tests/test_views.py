@@ -6,6 +6,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 
+class RobotsTxtTest(TestCase):
+    def test_robots_text(self):
+        url = "/robots.txt"  # This should always be at this URL
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "text/plain")
+
+
 class DoNotTrackTest(TestCase):
     def setUp(self):
         self.dnt_status_url = reverse("dnt-status")

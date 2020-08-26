@@ -1,6 +1,7 @@
 """Ad server URLs."""
 from django.urls import include
 from django.urls import path
+from django.views.generic import TemplateView
 
 from .views import AdClickProxyView
 from .views import AdvertisementCreateView
@@ -32,6 +33,14 @@ from .views import PublisherStripeOauthConnectView
 
 urlpatterns = [
     path("", dashboard, name="dashboard-home"),
+    # Robots.txt
+    path(
+        r"robots.txt",
+        TemplateView.as_view(
+            template_name="adserver/robots.txt", content_type="text/plain"
+        ),
+        name="robots_text",
+    ),
     # Do not Track
     path(r".well-known/dnt/", do_not_track, name="dnt-status"),
     path(r".well-known/dnt-policy.txt", do_not_track_policy, name="dnt-policy"),
