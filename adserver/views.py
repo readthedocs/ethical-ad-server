@@ -963,7 +963,7 @@ class AllPublisherReportView(BaseReportView):
 
     template_name = "adserver/reports/all-publishers.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
         context = super().get_context_data(**kwargs)
         sort = self.request.GET.get("sort", "")
 
