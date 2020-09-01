@@ -965,6 +965,7 @@ class AllPublisherReportView(BaseReportView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        sort = self.request.GET.get("sort", "")
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = AdImpression.objects.filter(date__gte=context["start_date"])
@@ -990,6 +991,14 @@ class AllPublisherReportView(BaseReportView):
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
+
+        # Sort reports by revenue
+        if sort == "revenue":
+            publishers_and_reports = sorted(
+                publishers_and_reports,
+                key=lambda obj: obj[1]["total"]["revenue"],
+                reverse=True,
+            )
 
         total_clicks = sum(
             report["total"]["clicks"] for _, report in publishers_and_reports
@@ -1039,6 +1048,7 @@ class AllPublisherReportView(BaseReportView):
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
+                "sort": sort,
             }
         )
 
