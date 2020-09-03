@@ -1,6 +1,7 @@
 import io
 import os
 
+from django.contrib.auth import get_user_model
 from django.core import management
 from django.db import models
 from django.test import TestCase
@@ -12,6 +13,9 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import Publisher
+
+
+User = get_user_model()
 
 
 class TestImporterManagementCommand(TestCase):
@@ -78,3 +82,31 @@ class TestImporterManagementCommand(TestCase):
                 "include_keywords": ["python", "readthedocs-project-123"]
             },  # Order of the list isn't relevant
         )
+
+
+class TestAddPublisher(TestCase):
+    def setUp(self):
+        self.out = io.StringIO()
+
+    def test_publisher_plus_user(self):
+        email = "testuser@example-pub.com"
+        publisher_name = "example-pub.com"
+        keywords = "Python, Django"
+        management.call_command(
+            "add_publisher",
+            "-e",
+            email,
+            "-s",
+            publisher_name,
+            "-k",
+            keywords,
+            stdout=self.out,
+        )
+
+        user = User.objects.filter(email=email).first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.publishers.count(), 1)
+
+        publisher = user.publishers.all().first()
+        self.assertEqual(publisher.name, publisher_name)
+        self.assertEqual(publisher.keywords, ["python", "django"])

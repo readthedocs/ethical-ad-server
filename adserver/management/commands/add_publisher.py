@@ -1,21 +1,22 @@
 """
-Add a publisher to the DB
+Add a publisher to the DB and setup appropriate publisher groups.
 
 Example::
 
    ./manage.py add_publisher -e foo@gmail.com -s docs.example.com -k foo,bar -g test
 """
 from django.core.management.base import BaseCommand
-from django.test.client import RequestFactory
 from django.utils.text import slugify
 
 from ...models import Publisher
 from ...models import PublisherGroup
 from adserver.auth.models import User
-from adserver.auth.utils import invite_user
 
 
 class Command(BaseCommand):
+
+    """Add a publisher from the command line."""
+
     help = "Add a publisher"
 
     def add_arguments(self, parser):
@@ -41,18 +42,15 @@ class Command(BaseCommand):
         try:
             user_obj = User.objects.create_user(email=email, password="")
         except Exception as e:
-            print("User creation failed: %s" % e)
+            self.stdout.write("User creation failed: %s" % e)
             user_obj = User.objects.get(email=email)
 
-        request = RequestFactory().get("/", HTTP_HOST="ethicalads.io", secure=True)
-        success = invite_user(
-            User.objects.filter(pk=user_obj.pk), request=request, message=False
-        )
+        success = user_obj.invite_user()
         if success:
-            print("User creation: %s" % success)
+            self.stdout.write("User creation: %s" % success)
 
         publisher_obj = Publisher.objects.create(name=site, slug=pub_slug)
-        publisher_obj.default_keywords = keywords
+        publisher_obj.default_keywords = keywords or ""
         publisher_obj.save()
 
         user_obj.publishers.add(publisher_obj)
@@ -61,4 +59,4 @@ class Command(BaseCommand):
         if group_obj:
             group_obj.publishers.add(publisher_obj)
         else:
-            print("No Publisher Group Found")
+            self.stdout.write("No Publisher Group Found")
