@@ -18,7 +18,10 @@ class UserAdminTest(TestCase):
 
         self.client.force_login(self.staff_user)
         self.change_url = reverse("admin:adserver_auth_user_changelist")
-        self.data = {"action": "invite_user", "_selected_action": [str(self.user.pk)]}
+        self.data = {
+            "action": "invite_user_action",
+            "_selected_action": [str(self.user.pk)],
+        }
 
     def test_admin_invite_user_success(self):
         self.user.last_login = None

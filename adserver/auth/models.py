@@ -1,8 +1,15 @@
 """Custom user model for the ad server."""
+from allauth.account.forms import default_token_generator
+from allauth.account.utils import user_pk_to_url_str
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
 from django.db import models
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.translation import ugettext as _
 
 from ..models import Advertiser
@@ -93,3 +100,35 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.get_full_name()
+
+    def get_password_reset_url(self):
+        temp_key = default_token_generator.make_token(self)
+        path = reverse(
+            "account_reset_password_from_key",
+            kwargs=dict(uidb36=user_pk_to_url_str(self), key=temp_key),
+        )
+        site = get_current_site(request=None)
+        domain = site.domain
+        scheme = "http"
+        if settings.ADSERVER_HTTPS:
+            scheme = "https"
+
+        return "{scheme}://{domain}{path}".format(
+            scheme=scheme, domain=domain, path=path
+        )
+
+    def invite_user(self):
+        site = get_current_site(request=None)
+
+        if self.last_login:
+            return False
+
+        activate_url = self.get_password_reset_url()
+        context = {"user": self, "site": site, "activate_url": activate_url}
+        send_mail(
+            _("You've been invited to %(name)s") % {"name": site.name},
+            render_to_string("auth/email/account_invite.txt", context),
+            settings.DEFAULT_FROM_EMAIL,
+            [self.email],
+        )
+        return True
