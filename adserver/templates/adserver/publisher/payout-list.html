@@ -18,7 +18,6 @@
 <h1>{% block heading %}{% trans "Publisher payouts" %}{% endblock heading %}</h1>
 
 
-{% if payouts %}
   <div class="table-responsive">
     <table class="table table-hover">
       <thead>
@@ -36,17 +35,30 @@
             <td>${{ payout.amount|floatformat:2|intcomma }}</td>
           </tr>
         {% endfor %}
+
+        {% if last_payout.last_paid_month.month != last_month.month %}
+          <tr>
+            <td>
+              <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ last_payout.date|date:"Y-m-01" }}&end_date={{ last_month|date:"Y-m-d" }}">Balance until end of {{ last_month|date:"M" }}</a>
+            </td>
+            <td>${{ due_balance|floatformat:2|intcomma }}</td>
+          </tr>
+        {% endif %}
+
+          <tr>
+            <td>
+              <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ today|date:"Y-m-01" }}&end_date={{ today|date:"Y-m-d" }}">Balance this month</a>
+            </td>
+            <td>${{ this_month_balance|floatformat:2|intcomma }}</td>
+          </tr>
       </tbody>
       <tfoot>
         <tr>
           <td><strong>{% trans 'Total' %}</strong> </td>
-          <td><strong>${{ total|floatformat:2|intcomma }}</strong></td>
+          <td><strong>${{ total_balance|floatformat:2|intcomma }}</strong></td>
         </tr>
       </tfoot>
     </table>
   </div>
-{% else %}
-  <p>{% trans 'You have not received any payouts yet.' %}</p>
-{% endif %}
 
 {% endblock content_container %}

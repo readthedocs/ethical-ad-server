@@ -273,6 +273,38 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
         return report
 
+    def total_payout_sum(self):
+        """
+        The total amount ever paid out to this publisher
+        """
+
+        return self.payouts.all().aggregate(
+            total=models.Sum("amount", output_field=models.DecimalField())
+        )["total"]
+
+    def total_revshare_sum(self, start_date=None, end_date=None):
+        """
+        Total revshare of all ads the publisher has ever shown
+        """
+
+        total = 0
+
+        impressions = AdImpression.objects.filter(publisher=self)
+        if start_date:
+            impressions = impressions.filter(date__gte=start_date)
+        if end_date:
+            impressions = impressions.filter(date__lte=end_date)
+        impressions = impressions.select_related(
+            "advertisement", "advertisement__flight"
+        )
+        for impression in impressions:
+            revenue = (
+                impression.clicks * float(impression.advertisement.flight.cpc)
+            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
+            total += revenue * (self.revenue_share_percentage / 100.0)
+
+        return total
+
 
 class PublisherGroup(TimeStampedModel):
 
@@ -321,7 +353,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for the Publisher.
+        Generates a report of clicks, views, & cost for a given time period for the Advertiser.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -1567,7 +1599,8 @@ class PublisherPayout(TimeStampedModel):
     )
 
     class Meta:
-        ordering = ("-date",)
+        # This is 'date' instead of '-date' to make `first()` and `last()` work properly
+        ordering = ("date",)
 
     def __str__(self):
         """Simple override."""
@@ -1579,6 +1612,18 @@ class PublisherPayout(TimeStampedModel):
             return self.attachment.name.split("/")[-1]
 
         return None
+
+    @property
+    def last_paid_month(self):
+        """
+        The month that this payout was up until.
+
+        This could include payments from multiple months,
+        if we had to wait for a publisher to get to the minimum.
+        """
+        # TODO: Make this a proper model method,
+        # so that we don't have to guess what month the payout is from
+        return self.date.replace(day=1) - datetime.timedelta(days=1)
 
     def get_absolute_url(self):
         return reverse(
