@@ -34,6 +34,14 @@
     {% endfor %}
   </select>
 </div>
+
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_campaign_type">{% trans 'Sort' %}</label>
+  <select class="form-control" name="sort" id="id_sort">
+    <option value="name">Name</option>
+    <option value="revenue" {% if sort == "revenue" %}selected{% endif %}>Revenue</option>
+  </select>
+</div>
 {% endblock additional_filters %}
 
 
