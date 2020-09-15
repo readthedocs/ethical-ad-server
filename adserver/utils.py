@@ -12,6 +12,8 @@ import IP2Proxy
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
@@ -297,6 +299,24 @@ def generate_client_id(ip_address, user_agent):
         hash_id.update(force_bytes(get_random_string()))
 
     return hash_id.hexdigest()
+
+
+def generate_absolute_url(view, kwargs):
+    """
+    Generate a fully qualified URL for a view on our site.
+
+    This will look like ``https://server.ethicalads.io/foo/``.
+    """
+    site = get_current_site(None)
+    domain = site.domain
+    scheme = "http"
+    if settings.ADSERVER_HTTPS:
+        scheme = "https"
+
+    url = "{scheme}://{domain}{url}".format(
+        scheme=scheme, domain=domain, url=reverse(view, kwargs=kwargs)
+    )
+    return url
 
 
 # Compile these regular expressions at startup time for performance purposes
