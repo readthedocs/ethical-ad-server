@@ -278,9 +278,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         The total amount ever paid out to this publisher
         """
 
-        return self.payouts.all().aggregate(
+        total = self.payouts.all().aggregate(
             total=models.Sum("amount", output_field=models.DecimalField())
         )["total"]
+        if total:
+            return total
+        return 0
 
     def total_revshare_sum(self, start_date=None, end_date=None):
         """
