@@ -46,7 +46,7 @@ but for now the primary thing is making sure your ads are displayed in a promine
 
 We are now processing payments for **{{ month }} {{ year }}**,
 and you made a total of **{{ total }}**.
-You can find the full report for this billing cycle on our [dashboard]({{ report_url }}).
+You can find the full report for this billing cycle on our [reports page]({{ report_url }}).
 
 {% if first %}
 We need a few pieces of information from you in order to process a payment:
