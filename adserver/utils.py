@@ -334,7 +334,7 @@ def generate_publisher_payout_data(publisher):
         last_payout_date = last_payout.date.replace(day=1)
     else:
         first = True
-        # Fake a payout from 2020-07-01 to make the logic work.
+        # Fake a payout to make the logic work.
         last_payout_date = publisher.created
 
     report_url = generate_absolute_url(
