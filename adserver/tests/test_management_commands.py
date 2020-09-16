@@ -6,6 +6,8 @@ from django.core import management
 from django.db import models
 from django.test import TestCase
 
+from ..constants import CLICKS
+from ..constants import VIEWS
 from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
@@ -13,6 +15,7 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import Publisher
+from .test_publisher_dashboard import TestPublisherDashboardViews
 
 
 User = get_user_model()
@@ -110,3 +113,21 @@ class TestAddPublisher(TestCase):
         publisher = user.publishers.all().first()
         self.assertEqual(publisher.name, publisher_name)
         self.assertEqual(publisher.keywords, ["python", "django"])
+
+
+class TestPayouts(TestCase):
+    def setUp(self):
+        self.out = io.StringIO()
+        TestPublisherDashboardViews.setUp(self)
+
+    def test_publisher_plus_user(self):
+        for x in range(50):
+            self.ad1.incr(VIEWS, self.publisher1)
+            self.ad1.incr(CLICKS, self.publisher1)
+
+        management.call_command("payouts", "--email", "--all", stdout=self.out)
+
+        output = self.out.getvalue()
+
+        self.assertIn("total=70.00", output)
+        self.assertIn("first=True", output)

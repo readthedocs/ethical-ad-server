@@ -9,8 +9,6 @@ Example::
     # List all active payouts and show the email
     ./manage.py payouts --email
 """
-import sys
-
 from django.core.management.base import BaseCommand
 from django.template import Context
 from django.template import Template
@@ -25,11 +23,11 @@ Thanks for being one of the first publishers on our EthicalAds network. We aim t
 
 {% if ctr < .06 %}
 
-As noted in our publisher policy, we expect all our publishers to maintain a CTR (click though rate) around or above .1%. Your CTR is currently {{ due_report.total.ctr|floatformat:3 }}%, which is below our current minimum. We're working on documenting some recommendations for improving CTR, but for now the primary thing is making sure your ads are displayed in a prominent place, and appropriate for each screen size.
+As noted in our publisher policy, we expect all our publishers to maintain a CTR (click though rate) around or above .1%. Your CTR is currently {{ report.total.ctr|floatformat:3 }}%, which is below our current minimum. We're working on documenting some recommendations for improving CTR, but for now the primary thing is making sure your ads are displayed in a prominent place, and appropriate for each screen size.
 
 {% endif %}
 
-We are now processing payments for **{{ today|date:"B" }} {{ year|date:"Y" }}**, and you made a total of **${{ due_report.total.revenue_share|floatformat:2 }}** for ads displayed in {{ start_date|date:"F j" }}-{{ end_date|date:"F j" }}. You can find the full report for this billing cycle on our [reports page]({{ due_report_url }}).
+We are now processing payments for **{{ today|date:"F" }} {{ today|date:"Y" }}**, and you made a total of **${{ report.total.revenue_share|floatformat:2 }}** for ads displayed in {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}. You can find the full report for this billing cycle on our [reports page]({{ url }}).
 
 {% if first %}
 We need a few pieces of information from you in order to process a payment:
@@ -61,30 +59,43 @@ class Command(BaseCommand):
         parser.add_argument(
             "-e", "--email", help="Generate email", required=False, action="store_true"
         )
+        parser.add_argument(
+            "-a",
+            "--all",
+            help="Output payouts for all publishers",
+            required=False,
+            action="store_true",
+        )
 
     def handle(self, *args, **kwargs):
         email = kwargs.get("email")
+        all_publishers = kwargs.get("all")
+        self.stdout.write("Processing payouts. \n")
         for publisher in Publisher.objects.all():
             data = generate_publisher_payout_data(publisher)
             report = data.get("due_report")
+            url = data.get("due_report_url")
             if not report:
-                # Skip publishers without due money
-                continue
+                if not all_publishers:
+                    # Skip publishers without due money
+                    continue
+                report = data.get("current_report")
+                url = data.get("current_report_url")
 
             due_balance = report["total"]["revenue_share"]
             ctr = report["total"]["ctr"]
 
             if due_balance > float(50):
-                sys.stdout.write("###########" + "\n")
-                sys.stdout.write(str(publisher) + "\n")
-                sys.stdout.write(
+                self.stdout.write("###########" + "\n")
+                self.stdout.write(str(publisher) + "\n")
+                self.stdout.write(
                     "total={:.2f}".format(due_balance)
                     + " ctr={:.3f}".format(ctr)
                     + " first={}".format(data.get("first"))
                     + "\n"
                 )
-                sys.stdout.write(data.get("due_report_url") + "\n")
-                sys.stdout.write("###########" + "\n" + "\n")
+                self.stdout.write(url + "\n")
+                self.stdout.write("###########" + "\n" + "\n")
                 if email:
                     payouts_url = generate_absolute_url(
                         "publisher_payouts", kwargs={"publisher_slug": publisher.slug}
@@ -92,13 +103,16 @@ class Command(BaseCommand):
                     settings_url = generate_absolute_url(
                         "publisher_settings", kwargs={"publisher_slug": publisher.slug}
                     )
-                    sys.stdout.write(
+                    self.stdout.write(
                         Template(email_template).render(
                             Context(
-                                report=report,
-                                payouts_url=payouts_url,
-                                settings_url=settings_url,
-                                **data
+                                dict(
+                                    report=report,
+                                    url=url,
+                                    payouts_url=payouts_url,
+                                    settings_url=settings_url,
+                                    **data
+                                )
                             )
                         )
                     )
