@@ -1590,18 +1590,6 @@ class PublisherPayout(TimeStampedModel):
 
         return None
 
-    @property
-    def last_paid_month(self):
-        """
-        The month that this payout was up until.
-
-        This could include payments from multiple months,
-        if we had to wait for a publisher to get to the minimum.
-        """
-        # TODO: Make this a proper model method,
-        # so that we don't have to guess what month the payout is from
-        return self.date.replace(day=1) - datetime.timedelta(days=1)
-
     def get_absolute_url(self):
         return reverse(
             "publisher_payout",
