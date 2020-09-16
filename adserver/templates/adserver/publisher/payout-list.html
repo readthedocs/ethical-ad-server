@@ -17,6 +17,13 @@
 
 <h1>{% block heading %}{% trans "Publisher payouts" %}{% endblock heading %}</h1>
 
+<p>
+  This page shows the history and upcoming status of payouts for your account.
+  {% if adserver_publisher_policy %}
+  Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for the terms of payouts.
+  {% endif %}
+</p>
+
 
   <div class="table-responsive">
     <table class="table table-hover">
@@ -36,20 +43,20 @@
           </tr>
         {% endfor %}
 
-        {% if last_payout.last_paid_month.month != last_month.month %}
+        {% if due_report %}
           <tr>
             <td>
-              <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ last_payout.date|date:"Y-m-01" }}&end_date={{ last_month|date:"Y-m-d" }}">Balance until end of {{ last_month|date:"M" }}</a>
+              <a href="{{ due_report_url }}">Balance from {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}</a>
             </td>
-            <td>${{ due_balance|floatformat:2|intcomma }}</td>
+            <td>${{ due_report.total.revenue_share|floatformat:2|intcomma }}</td>
           </tr>
         {% endif %}
 
           <tr>
             <td>
-              <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ today|date:"Y-m-01" }}&end_date={{ today|date:"Y-m-d" }}">Balance this month</a>
+              <a href="{{ current_report_url }}">Balance for this month</a>
             </td>
-            <td>${{ this_month_balance|floatformat:2|intcomma }}</td>
+            <td>${{ current_report.total.revenue_share|floatformat:2|intcomma }}</td>
           </tr>
       </tbody>
       <tfoot>
@@ -61,4 +68,15 @@
     </table>
   </div>
 
+  <h3> Payout status</h3>
+  {% if due_report.total.revenue_share > 50 %}
+  <p>
+    You are eligable for a payout because your previous month balance is over $50.
+    We will contact you soon to process the payout on this account.
+  </p>
+  {% else %}
+  <p>
+    You are <strong>not currently eligable</strong> for a payout because your previous month's balance is below $50.
+  </p>
+  {% endif %}
 {% endblock content_container %}

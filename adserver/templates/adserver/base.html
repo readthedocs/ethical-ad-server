@@ -137,6 +137,11 @@
             <a href="{{ adserver_privacy_policy }}" target="_blank">{% trans 'Privacy Policy' %}</a>
           </li>
         {% endif %}
+        {% if adserver_publisher_policy %}
+          <li class="list-inline-item small">
+            <a href="{{ adserver_publisher_policy }}" target="_blank">{% trans 'Publisher Policy' %}</a>
+          </li>
+        {% endif %}
       </ul>
       <ul class="list-inline justify-content-end">
         <li class="list-inline-item small ml-auto">

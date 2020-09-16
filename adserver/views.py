@@ -54,6 +54,7 @@ from .models import PublisherPayout
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_publisher_payout_data
 from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
@@ -922,41 +923,21 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()
-        total = self.publisher.total_payout_sum()
-        last_payout = payouts.last()
+        data = generate_publisher_payout_data(self.publisher)
 
-        if not last_payout:
-            # Fake a payout from 2020-01-01 to make the logic work.
-            fake_date = datetime(year=2020, month=1, day=1)
-            last_payout = PublisherPayout(date=fake_date, amount=0)
-
-        today = datetime.utcnow()
-        last_month = today.replace(day=1) - timedelta(days=1)
-
-        due_balance = float(
-            self.publisher.total_revshare_sum(
-                start_date=last_payout.date.replace(day=1), end_date=last_month
-            )
-        )
-        this_month_balance = float(
-            self.publisher.total_revshare_sum(
-                start_date=today.replace(day=1), end_date=today
-            )
-        )
         total_balance = (
-            float(self.publisher.total_payout_sum()) + due_balance + this_month_balance
+            float(self.publisher.total_payout_sum())
+            + data["current_report"]["total"]["revenue_share"]
         )
 
+        if data.get("due_report"):
+            total_balance += data["due_report"]["total"]["revenue_share"]
+
+        context.update(data)
         context.update(
             {
                 "publisher": self.publisher,
                 "payouts": payouts,
-                "total": total,
-                "last_payout": last_payout,
-                "today": today,
-                "last_month": last_month,
-                "due_balance": due_balance,
-                "this_month_balance": this_month_balance,
                 "total_balance": total_balance,
             }
         )

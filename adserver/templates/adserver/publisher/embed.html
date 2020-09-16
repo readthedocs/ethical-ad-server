@@ -35,5 +35,11 @@
     <p>
       You can find full documentation and more information about the client in our <a href="https://github.com/readthedocs/ethical-ad-client">GitHub repo</a>.
     </p>
+
+    {% if adserver_publisher_policy %}
+    <p>
+    Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for full terms around ad placements.
+    </p>
+    {% endif %}
   </section>
 {% endblock content_container %}
