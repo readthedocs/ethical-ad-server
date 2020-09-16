@@ -946,7 +946,7 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        return self.publisher.payouts.all()
+        return self.publisher.payouts.order_by("-date")
 
 
 class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
