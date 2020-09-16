@@ -111,7 +111,7 @@ class Command(BaseCommand):
                                     url=url,
                                     payouts_url=payouts_url,
                                     settings_url=settings_url,
-                                    **data
+                                    **data,
                                 )
                             )
                         )
