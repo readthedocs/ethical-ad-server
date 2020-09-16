@@ -19,9 +19,6 @@
 
 <p>
   This page shows the history and upcoming status of payouts for your account.
-  {% if adserver_publisher_policy %}
-  Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for the terms of payouts.
-  {% endif %}
 </p>
 
 
@@ -69,14 +66,15 @@
   </div>
 
   <h3> Payout status</h3>
-  {% if due_report.total.revenue_share > 50 %}
   <p>
+  {% if due_report.total.revenue_share > 50 %}
     You are eligable for a payout because your previous month balance is over $50.
     We will contact you soon to process the payout on this account.
-  </p>
   {% else %}
-  <p>
     You are <strong>not currently eligable</strong> for a payout because your previous month's balance is below $50.
-  </p>
   {% endif %}
+  {% if adserver_publisher_policy %}
+  Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for the terms of payouts.
+  {% endif %}
+  </p>
 {% endblock content_container %}

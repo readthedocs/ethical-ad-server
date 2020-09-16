@@ -88,6 +88,7 @@ class Command(BaseCommand):
                 sys.stdout.write(
                     "total={:.2f}".format(due_balance)
                     + " ctr={:.3f}".format(ctr)
+                    + " first={}".format(data.get("first"))
                     + "\n"
                 )
                 sys.stdout.write(data.get("due_report_url") + "\n")
