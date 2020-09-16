@@ -10,21 +10,13 @@ Example::
     ./manage.py payouts --email
 """
 import sys
-from datetime import datetime
-from datetime import timedelta
-from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from django.template import Context
 from django.template import Template
-from django.urls import reverse
-from django.utils.text import slugify
 
 from ...models import Publisher
-from ...models import PublisherGroup
-from ...models import PublisherPayout
 from ...utils import generate_publisher_payout_data
-from adserver.auth.models import User
 from adserver.utils import generate_absolute_url
 
 email_template = """
