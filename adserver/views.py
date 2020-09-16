@@ -917,9 +917,7 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
     template_name = "adserver/publisher/payout-list.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
-        """
-        Get the past payouts, along with the current balance and future balance.
-        """
+        """Get the past payouts, along with the current balance and future balance."""
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()

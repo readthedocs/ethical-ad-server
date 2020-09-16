@@ -322,9 +322,7 @@ def generate_absolute_url(view, kwargs):
 
 
 def generate_publisher_payout_data(publisher):
-    """
-    Generate the amount due at next payout and current month payout data
-    """
+    """Generate the amount due at next payout and current month payout data."""
     today = timezone.now()
     last_day_last_month = today.replace(day=1) - timedelta(days=1)
     last_payout = publisher.payouts.last()
