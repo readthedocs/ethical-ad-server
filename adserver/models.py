@@ -282,26 +282,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return total
         return 0
 
-    def total_revshare_sum(self, start_date=None, end_date=None):
-        """Total revshare of all ads the publisher has ever shown."""
-        total = 0
-
-        impressions = AdImpression.objects.filter(publisher=self)
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-        if end_date:
-            impressions = impressions.filter(date__lte=end_date)
-        impressions = impressions.select_related(
-            "advertisement", "advertisement__flight"
-        )
-        for impression in impressions:
-            revenue = (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            total += revenue * (self.revenue_share_percentage / 100.0)
-
-        return total
-
 
 class PublisherGroup(TimeStampedModel):
 
