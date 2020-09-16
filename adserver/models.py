@@ -273,6 +273,15 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
         return report
 
+    def total_payout_sum(self):
+        """The total amount ever paid out to this publisher."""
+        total = self.payouts.all().aggregate(
+            total=models.Sum("amount", output_field=models.DecimalField())
+        )["total"]
+        if total:
+            return total
+        return 0
+
 
 class PublisherGroup(TimeStampedModel):
 
@@ -321,7 +330,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for the Publisher.
+        Generates a report of clicks, views, & cost for a given time period for the Advertiser.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -1567,7 +1576,8 @@ class PublisherPayout(TimeStampedModel):
     )
 
     class Meta:
-        ordering = ("-date",)
+        # This is 'date' instead of '-date' to make `first()` and `last()` work properly
+        ordering = ("date",)
 
     def __str__(self):
         """Simple override."""

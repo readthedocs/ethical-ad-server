@@ -6,7 +6,14 @@ from django.test import TestCase
 from django.urls import reverse
 from django_dynamic_fixture import get
 
+from ..constants import CLICKS
+from ..constants import PAID_CAMPAIGN
+from ..constants import VIEWS
+from ..models import AdType
+from ..models import Advertisement
 from ..models import Advertiser
+from ..models import Campaign
+from ..models import Flight
 from ..models import Publisher
 from ..models import PublisherPayout
 
@@ -34,6 +41,44 @@ class TestPublisherDashboardViews(TestCase):
         self.user.save()
 
         self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+
+        # Copied from test_reports.py
+        # TODO: Extract into a base class?
+
+        self.campaign = get(
+            Campaign,
+            name="Test Campaign",
+            slug="test-campaign",
+            advertiser=self.advertiser1,
+            campaign_type=PAID_CAMPAIGN,
+        )
+
+        self.flight1 = get(
+            Flight,
+            name="Test Flight",
+            slug="test-flight",
+            campaign=self.campaign,
+            live=True,
+            cpc=2.0,
+            sold_clicks=2000,
+            targeting_parameters={
+                "include_countries": ["US", "CA"],
+                "exclude_countries": ["DE"],
+                "include_keywords": ["python"],
+                "include_metro_codes": [205],
+                "include_state_provinces": ["CA", "NY"],
+            },
+        )
+
+        self.ad_type1 = get(AdType, name="Ad Type", has_image=False)
+        self.ad1 = get(
+            Advertisement,
+            name="Test Ad 1",
+            slug="test-ad-1",
+            flight=self.flight1,
+            ad_type=self.ad_type1,
+            image=None,
+        )
 
     def test_publisher_embed_code(self):
         url = reverse("publisher_embed", args=[self.publisher1.slug])
@@ -146,9 +191,19 @@ class TestPublisherDashboardViews(TestCase):
 
         self.user.publishers.add(self.publisher1)
 
+        # No payments or views
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "You have not received any payouts yet")
+        self.assertContains(resp, "Balance for this month")
+
+        # Only this months balance
+        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(CLICKS, self.publisher1)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Balance for this month")
+        self.assertContains(resp, "1.40")
 
         get(PublisherPayout, amount=2.5, publisher=self.publisher1)
         get(PublisherPayout, amount=2.0, publisher=self.publisher1)
@@ -156,12 +211,14 @@ class TestPublisherDashboardViews(TestCase):
         # separate publisher
         get(PublisherPayout, amount=5.2, publisher=self.publisher2)
 
+        # Test payout display
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "$2.50")
         self.assertContains(resp, "$2.0")
-        self.assertContains(resp, "$4.50")  # total
-        self.assertNotContains(resp, "5.20")
+        self.assertContains(resp, "1.40")  # This month
+        self.assertContains(resp, "$5.90")  # total
+        self.assertNotContains(resp, "5.20")  # other publisher
 
     def test_publisher_payout_detail(self):
         payout = get(

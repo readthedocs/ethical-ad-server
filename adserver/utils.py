@@ -6,16 +6,20 @@ import os
 import re
 from collections import namedtuple
 from datetime import datetime
+from datetime import timedelta
 
 import analytical
 import IP2Proxy
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
+from django.utils.http import urlencode
 from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
@@ -297,6 +301,89 @@ def generate_client_id(ip_address, user_agent):
         hash_id.update(force_bytes(get_random_string()))
 
     return hash_id.hexdigest()
+
+
+def generate_absolute_url(view, kwargs):
+    """
+    Generate a fully qualified URL for a view on our site.
+
+    This will look like ``https://server.ethicalads.io/foo/``.
+    """
+    site = get_current_site(None)
+    domain = site.domain
+    scheme = "http"
+    if settings.ADSERVER_HTTPS:
+        scheme = "https"
+
+    url = "{scheme}://{domain}{url}".format(
+        scheme=scheme, domain=domain, url=reverse(view, kwargs=kwargs)
+    )
+    return url
+
+
+def generate_publisher_payout_data(publisher):
+    """Generate the amount due at next payout and current month payout data."""
+    today = timezone.now()
+    last_day_last_month = today.replace(day=1) - timedelta(days=1)
+    last_payout = publisher.payouts.last()
+
+    if last_payout:
+        first = False
+        # First of the month of the month the payout was for.
+        # TODO: Store this data on the model, instead of hacking it.
+        last_payout_date = last_payout.date.replace(day=1)
+    else:
+        first = True
+        # Fake a payout to make the logic work.
+        last_payout_date = publisher.created
+
+    report_url = generate_absolute_url(
+        "publisher_report", kwargs={"publisher_slug": publisher.slug}
+    )
+
+    current_report = publisher.daily_reports(
+        start_date=today.replace(day=1), end_date=today
+    )
+    current_report_url = (
+        report_url
+        + "?"
+        + urlencode(
+            {
+                "start_date": today.strftime("%Y-%m-01"),
+                "end_date": today.strftime("%Y-%m-%d"),
+            }
+        )
+    )
+
+    due_report = None
+    due_report_url = None
+
+    # Handle cases where a publisher has just joined this month
+    if last_payout_date.month != today.month:
+        due_report = publisher.daily_reports(
+            start_date=last_payout_date, end_date=last_day_last_month
+        )
+        due_report_url = (
+            report_url
+            + "?"
+            + urlencode(
+                {
+                    "start_date": last_payout_date.strftime("%Y-%m-%d"),
+                    "end_date": last_day_last_month.strftime("%Y-%m-%d"),
+                }
+            )
+        )
+
+    return dict(
+        first=first,
+        last_payout_date=last_payout_date,
+        last_day_last_month=last_day_last_month,
+        today=today,
+        due_report=due_report,
+        due_report_url=due_report_url,
+        current_report=current_report,
+        current_report_url=current_report_url,
+    )
 
 
 # Compile these regular expressions at startup time for performance purposes

@@ -13,7 +13,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -54,6 +53,7 @@ from .models import PublisherPayout
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_publisher_payout_data
 from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
@@ -916,15 +916,27 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
     template_name = "adserver/publisher/payout-list.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        """Get the past payouts, along with the current balance and future balance."""
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()
-        total = payouts.aggregate(
-            total=models.Sum("amount", output_field=models.DecimalField())
-        )["total"]
+        data = generate_publisher_payout_data(self.publisher)
 
+        total_balance = (
+            float(self.publisher.total_payout_sum())
+            + data["current_report"]["total"]["revenue_share"]
+        )
+
+        if data.get("due_report"):
+            total_balance += data["due_report"]["total"]["revenue_share"]
+
+        context.update(data)
         context.update(
-            {"publisher": self.publisher, "payouts": payouts, "total": total}
+            {
+                "publisher": self.publisher,
+                "payouts": payouts,
+                "total_balance": total_balance,
+            }
         )
 
         return context
@@ -933,7 +945,7 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        return self.publisher.payouts.all()
+        return self.publisher.payouts.order_by("-date")
 
 
 class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
