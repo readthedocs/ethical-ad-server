@@ -134,14 +134,18 @@ class AdDecisionView(GeoIpMixin, APIView):
     permission_classes = (AdDecisionPermission,)
     renderer_classes = (JSONRenderer, JSONPRenderer)
 
-    def _prepare_response(self, ad, placement, publisher):
-        """Wrap `offer_ad` with the placement for the publisher."""
+    def _prepare_response(self, ad, placement, publisher, keywords):
+        """
+        Wrap `offer_ad` with the placement for the publisher.
+
+        Data passed to `offer_ad` is cached for use on the View & Click tracking.
+        """
         if not ad or not placement:
             return {}
 
         ad_type_slug = placement["ad_type"]
         div_id = placement["div_id"]
-        data = ad.offer_ad(publisher, ad_type_slug)
+        data = ad.offer_ad(publisher, ad_type_slug, div_id=div_id, keywords=keywords)
 
         # The div where the ad is chosen to go is echoed back to the client
         data.update({"div_id": div_id})
@@ -203,13 +207,14 @@ class AdDecisionView(GeoIpMixin, APIView):
         if serializer.is_valid():
             publisher = serializer.validated_data["publisher"]
             self.check_object_permissions(request, publisher)
+            keywords = serializer.validated_data.get("keywords")
             backend = get_ad_decision_backend()(
                 # Required parameters
                 request=request,
                 placements=serializer.validated_data["placements"],
                 publisher=publisher,
                 # Optional parameters
-                keywords=serializer.validated_data.get("keywords"),
+                keywords=keywords,
                 campaign_types=serializer.validated_data.get("campaign_types"),
                 # Debugging parameters
                 ad_slug=serializer.validated_data.get("force_ad"),
@@ -217,7 +222,9 @@ class AdDecisionView(GeoIpMixin, APIView):
             )
             ad, placement = backend.get_ad_and_placement()
 
-            return Response(self._prepare_response(ad, placement, publisher))
+            return Response(
+                self._prepare_response(ad, placement, publisher, keywords=keywords)
+            )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

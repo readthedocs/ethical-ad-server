@@ -49,7 +49,6 @@ from .utils import get_client_user_agent
 from .utils import get_geolocation
 from .validators import TargetingParametersValidator
 
-
 log = logging.getLogger(__name__)  # noqa
 
 
@@ -203,18 +202,32 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return return_keywords
         return []
 
-    def daily_reports(self, start_date=None, end_date=None, campaign_type=None):
+    def daily_reports(
+        self,
+        start_date=None,
+        end_date=None,
+        campaign_type=None,
+        keyword=None,
+        placement=None,
+    ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
         :param campaign_type: only return campaigns of a specific type (eg. house, paid)
+        :param keyword: filter ads based on keyword
+        :param placement: filter ads based on placement
         :return: A dictionary containing a list of days for the report
             and an aggregated total
         """
         report = {"days": [], "total": {}}
+
         impressions = AdImpression.objects.filter(publisher=self)
+        if placement:
+            # Use the proper aggregate for placement data
+            impressions = PlacementImpression.objects.filter(publisher=self)
+
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
@@ -223,6 +236,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             impressions = impressions.filter(
                 advertisement__flight__campaign__campaign_type=campaign_type
             )
+        if placement:
+            impressions = impressions.filter(placement=placement)
 
         impressions = impressions.select_related(
             "advertisement", "advertisement__flight"
@@ -1025,12 +1040,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return self.name
 
     def cache_key(self, impression_type, nonce):
-        assert impression_type in IMPRESSION_TYPES + ("publisher",)
+        assert impression_type in IMPRESSION_TYPES + ("publisher", "request")
         return "advertisement:{id}:{nonce}:{type}".format(
             id=self.slug, nonce=nonce, type=impression_type
         )
 
-    def incr(self, impression_type, publisher):
+    def incr(self, impression_type, publisher, placement=None):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
@@ -1042,6 +1057,17 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             **{impression_type: models.F(impression_type) + 1}
         )
 
+        # TODO: expand this to more data types and cleanup logic
+        if placement:
+            # Create placement impressions
+            placement_impression, _ = self.placement_impressions.get_or_create(
+                publisher=publisher, date=day, placement=placement
+            )
+
+            PlacementImpression.objects.filter(pk=placement_impression.pk).update(
+                **{impression_type: models.F(impression_type) + 1}
+            )
+
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
             Flight.objects.filter(pk=self.flight_id).update(
@@ -1052,7 +1078,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 total_clicks=models.F("total_clicks") + 1
             )
 
-    def _record_base(self, request, model, publisher, url):
+    def _record_base(
+        self, request, model, publisher, url, keywords=None, placement=None
+    ):
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
         client_id = get_client_id(request)
@@ -1086,26 +1114,31 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             os_family=parsed_ua.os.family,
             is_bot=parsed_ua.is_bot,
             is_mobile=parsed_ua.is_mobile,
+            # Client Data
+            keywords=keywords,
+            placement=placement,
             # Page info
             advertisement=self,
         )
         return obj
 
-    def track_impression(self, request, impression_type, publisher, url):
+    def track_impression(
+        self, request, impression_type, publisher, url, keywords=None, placement=None
+    ):
         if impression_type not in (CLICKS, VIEWS):
             raise RuntimeError("Impression must be either a click or a view")
 
         if impression_type == CLICKS:
-            self.track_click(request, publisher, url)
+            self.track_click(request, publisher, url, keywords, placement)
         elif impression_type == VIEWS:
-            self.track_view(request, publisher, url)
+            self.track_view(request, publisher, url, keywords, placement)
 
-    def track_click(self, request, publisher, url):
+    def track_click(self, request, publisher, url, keywords, placement):
         """Store click data in the DB."""
-        self.incr(CLICKS, publisher)
-        return self._record_base(request, Click, publisher, url)
+        self.incr(CLICKS, publisher, placement=placement)
+        return self._record_base(request, Click, publisher, url, keywords, placement)
 
-    def track_view(self, request, publisher, url):
+    def track_view(self, request, publisher, url, keywords, placement):
         """
         Store view data in the DB.
 
@@ -1114,15 +1147,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(VIEWS, publisher)
+        self.incr(VIEWS, publisher, placement=placement)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
-            return self._record_base(request, View, publisher, url)
+            return self._record_base(request, View, publisher, url, keywords, placement)
 
         log.debug("Not recording ad view.")
         return None
 
-    def offer_ad(self, publisher, ad_type_slug):
+    def offer_ad(self, publisher, ad_type_slug, div_id, keywords=None):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
 
@@ -1162,7 +1195,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # https://github.com/mozilla/bleach/issues/192
         body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
 
-        self.incr(OFFERS, publisher)
+        self.incr(OFFERS, publisher, placement=div_id)
         # Set validation cache
         for impression_type in [VIEWS, CLICKS]:
             cache.set(
@@ -1176,6 +1209,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         cache.set(
             self.cache_key(impression_type="publisher", nonce=nonce),
             publisher.slug,
+            offer_time_limit,
+        )
+
+        # Cache request data we want to keep later
+        # This is needed to store that data in in the DB for the View & Click
+        cache.set(
+            self.cache_key(impression_type="request", nonce=nonce),
+            "%s|%s" % (div_id, ",".join(keywords)),
             offer_time_limit,
         )
 
@@ -1202,6 +1243,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             publisher = Publisher.objects.filter(slug=publisher_slug).first()
 
         return publisher
+
+    def get_request_data(self, nonce):
+        """
+        Pull additional cache data off request
+        """
+        keywords = None
+        placement = None
+        data = cache.get(self.cache_key(impression_type="request", nonce=nonce), None)
+
+        placement, keyword_str = data.split("|", 1)
+
+        if keywords:
+            return keywords.split(",")
+        return (placement, keywords)
 
     def is_valid_nonce(self, impression_type, nonce):
         """
@@ -1437,6 +1492,36 @@ class AdImpression(BaseImpression):
         return "%s on %s" % (self.advertisement, self.date)
 
 
+class PlacementImpression(BaseImpression):
+
+    """
+    Create an index of placements for ads
+
+    Indexed one per ad per day per publisher.
+    """
+
+    placement = models.CharField(max_length=255, null=True, blank=True)
+    publisher = models.ForeignKey(
+        Publisher, related_name="placement_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement, related_name="placement_impressions", on_delete=models.PROTECT
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "placement")
+        verbose_name_plural = _("Placement impressions")
+
+    def __str__(self):
+        """Simple override."""
+        return "Placement %s of %s on %s" % (
+            self.placement,
+            self.advertisement,
+            self.date,
+        )
+
+
 class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
@@ -1455,7 +1540,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
     )
 
-    # Click Data
+    # User Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
     user_agent = models.CharField(
         _("User Agent"), max_length=1000, blank=True, null=True
@@ -1474,6 +1559,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         default=None,
+    )
+
+    # Client data
+    keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
+    placement = models.CharField(
+        _("Placement on the client"), blank=True, null=True, max_length=100
     )
 
     is_bot = models.BooleanField(default=False)

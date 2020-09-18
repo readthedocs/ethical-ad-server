@@ -414,6 +414,7 @@ class BaseProxyView(View):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
         publisher = advertisement.get_publisher(nonce)
+        placement, keywords = advertisement.get_request_data(nonce)
         referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(
@@ -424,7 +425,12 @@ class BaseProxyView(View):
             log.log(self.log_level, self.success_message)
             advertisement.invalidate_nonce(self.impression_type, nonce)
             advertisement.track_impression(
-                request, self.impression_type, publisher, referrer
+                request,
+                self.impression_type,
+                publisher,
+                referrer,
+                keywords=keywords,
+                placement=placement,
             )
 
         message = ignore_reason or self.success_message
@@ -543,6 +549,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        keyword = self.request.GET.get("keyword", "")
+        placement = self.request.GET.get("placement", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -552,6 +560,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
+            "keyword": keyword,
+            "placement": placement,
         }
 
     def _parse_date_string(self, date_str):
@@ -759,10 +769,48 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
+            keyword=context["keyword"],
         )
 
         context.update(
             {"publisher": publisher, "report": report, "campaign_types": CAMPAIGN_TYPES}
+        )
+
+        return context
+
+
+class PublisherPlacementReportView(PublisherReportView):
+
+    """A report for a single publisher."""
+
+    PLACEMENT_LIMIT = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        report = publisher.daily_reports(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            keyword=context["keyword"],
+            placement=context["placement"],
+        )
+
+        placement_options = publisher.placement_impressions.values_list(
+            "placement", flat=True
+        ).distinct()[: self.PLACEMENT_LIMIT]
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "placement": context["placement"],
+                "placement_options": placement_options,
+            }
         )
 
         return context
