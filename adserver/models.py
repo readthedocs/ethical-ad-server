@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 import bleach
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
@@ -42,6 +41,7 @@ from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_id
 from .utils import get_client_ip
@@ -203,12 +203,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return []
 
     def daily_reports(
-        self,
-        start_date=None,
-        end_date=None,
-        campaign_type=None,
-        keyword=None,
-        placement=None,
+        self, start_date=None, end_date=None, campaign_type=None, placement=None
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -216,7 +211,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
         :param campaign_type: only return campaigns of a specific type (eg. house, paid)
-        :param keyword: filter ads based on keyword
         :param placement: filter ads based on placement
         :return: A dictionary containing a list of days for the report
             and an aggregated total
@@ -1169,26 +1163,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         nonce = get_random_string(16)
 
-        site = get_current_site(None)
-        domain = site.domain
-        scheme = "http"
-        if settings.ADSERVER_HTTPS:
-            scheme = "https"
-
-        view_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
+        view_url = generate_absolute_url(
+            "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
         )
 
-        click_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
+        click_url = generate_absolute_url(
+            "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
         )
 
         # This required unescaping HTML entities that bleach escapes,
