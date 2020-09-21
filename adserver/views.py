@@ -549,7 +549,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
-        keyword = self.request.GET.get("keyword", "")
         placement = self.request.GET.get("placement", "")
 
         if end_date and end_date < start_date:
@@ -560,7 +559,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
-            "keyword": keyword,
             "placement": placement,
         }
 
@@ -769,7 +767,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            keyword=context["keyword"],
         )
 
         context.update(
@@ -795,7 +792,6 @@ class PublisherPlacementReportView(PublisherReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            keyword=context["keyword"],
             placement=context["placement"],
         )
 
