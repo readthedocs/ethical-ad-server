@@ -1249,9 +1249,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return publisher
 
     def get_request_data(self, nonce):
-        """
-        Pull additional cache data off request
-        """
+        """Pull additional cache data off request."""
         keywords = None
         placement = None
         data = cache.get(self.cache_key(impression_type="request", nonce=nonce), None)
@@ -1501,7 +1499,7 @@ class AdImpression(BaseImpression):
 class PlacementImpression(BaseImpression):
 
     """
-    Create an index of placements for ads
+    Create an index of placements for ads.
 
     Indexed one per ad per day per publisher.
     """
