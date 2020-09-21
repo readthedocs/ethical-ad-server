@@ -224,9 +224,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         report = {"days": [], "total": {}}
 
         impressions = AdImpression.objects.filter(publisher=self)
+
         if placement:
             # Use the proper aggregate for placement data
-            impressions = PlacementImpression.objects.filter(publisher=self)
+            impressions = PlacementImpression.objects.filter(
+                publisher=self, placement=placement
+            )
 
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
@@ -236,8 +239,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             impressions = impressions.filter(
                 advertisement__flight__campaign__campaign_type=campaign_type
             )
-        if placement:
-            impressions = impressions.filter(placement=placement)
 
         impressions = impressions.select_related(
             "advertisement", "advertisement__flight"
@@ -1133,12 +1134,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         elif impression_type == VIEWS:
             self.track_view(request, publisher, url, keywords, placement)
 
-    def track_click(self, request, publisher, url, keywords, placement):
+    def track_click(self, request, publisher, url, keywords=None, placement=None):
         """Store click data in the DB."""
         self.incr(CLICKS, publisher, placement=placement)
         return self._record_base(request, Click, publisher, url, keywords, placement)
 
-    def track_view(self, request, publisher, url, keywords, placement):
+    def track_view(self, request, publisher, url, keywords=None, placement=None):
         """
         Store view data in the DB.
 
@@ -1155,7 +1156,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         log.debug("Not recording ad view.")
         return None
 
-    def offer_ad(self, publisher, ad_type_slug, div_id, keywords=None):
+    def offer_ad(self, publisher, ad_type_slug, div_id=None, keywords=None):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
 
@@ -1214,11 +1215,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         # Cache request data we want to keep later
         # This is needed to store that data in in the DB for the View & Click
-        cache.set(
-            self.cache_key(impression_type="request", nonce=nonce),
-            "%s|%s" % (div_id, ",".join(keywords)),
-            offer_time_limit,
-        )
+        if div_id or keywords:
+            keyword_str = ",".join(keywords) if keywords else ""
+            request_value = "|".join([div_id, keyword_str])
+            cache.set(
+                self.cache_key(impression_type="request", nonce=nonce),
+                request_value,
+                offer_time_limit,
+            )
 
         return {
             "id": self.slug,
@@ -1252,10 +1256,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         placement = None
         data = cache.get(self.cache_key(impression_type="request", nonce=nonce), None)
 
-        placement, keyword_str = data.split("|", 1)
+        if not data:
+            return ("", "")
 
-        if keywords:
-            return keywords.split(",")
+        placement, keyword_str = data.split("|", 1)
+        if keyword_str:
+            keywords = keyword_str.split(",")
         return (placement, keywords)
 
     def is_valid_nonce(self, impression_type, nonce):
