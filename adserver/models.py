@@ -1053,21 +1053,21 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         # Ensure that an impression object exists for today
         impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
-
         AdImpression.objects.filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
 
-        # TODO: expand this to more data types and cleanup logic
-        if placement:
-            # Create placement impressions
-            placement_impression, _ = self.placement_impressions.get_or_create(
-                publisher=publisher, date=day, placement=placement
-            )
+        # `placement` here can be null, but that's ok, we still make a record
+        # to make sure we're recording all views to keep data consistent with
+        # the `AdImpression` table.
+        placement_impression, _ = self.placement_impressions.get_or_create(
+            publisher=publisher, date=day, placement=placement
+        )
+        PlacementImpression.objects.filter(pk=placement_impression.pk).update(
+            **{impression_type: models.F(impression_type) + 1}
+        )
 
-            PlacementImpression.objects.filter(pk=placement_impression.pk).update(
-                **{impression_type: models.F(impression_type) + 1}
-            )
+        # TODO: Add more denormalized impression tables
 
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:

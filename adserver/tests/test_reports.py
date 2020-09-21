@@ -101,8 +101,9 @@ class TestReportViews(TestCase):
         )
 
         # Trigger some impressions so flights will be shown in the date range
-        self.ad1.incr(VIEWS, self.publisher1)
-        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(VIEWS, self.publisher1, placement="p1")
+        self.ad1.incr(VIEWS, self.publisher1, placement="p2")
+        self.ad1.incr(VIEWS, self.publisher1, placement="p2")
         self.ad1.incr(CLICKS, self.publisher1)
 
         self.password = "(@*#$&ASDFKJ"
@@ -378,4 +379,24 @@ class TestReportViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(
             response["Content-Disposition"].startswith("attachment; filename=")
+        )
+
+    def test_publisher_placement_report_contents(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_placement_report", args=[self.publisher1.slug])
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+
+        # Filter reports
+        response = self.client.get(url, {"placement": "p1"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"placement": "p2"})
+        self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>1</strong></td>'
         )
