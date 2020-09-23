@@ -393,7 +393,6 @@ class TestReportViews(TestCase):
 
         # All reports
         response = self.client.get(url)
-        print(response.content)
         self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
         self.assertNotContains(response, "ad_23453464")
 
