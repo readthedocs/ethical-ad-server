@@ -104,6 +104,7 @@ class TestReportViews(TestCase):
         self.ad1.incr(VIEWS, self.publisher1, placement="p1")
         self.ad1.incr(VIEWS, self.publisher1, placement="p2")
         self.ad1.incr(VIEWS, self.publisher1, placement="p2")
+        self.ad1.incr(VIEWS, self.publisher1, placement="ad_23453464")
         self.ad1.incr(CLICKS, self.publisher1)
 
         self.password = "(@*#$&ASDFKJ"
@@ -388,6 +389,7 @@ class TestReportViews(TestCase):
         # All reports
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(response, "ad_23453464")
 
         # Filter reports
         response = self.client.get(url, {"placement": "p1"})
@@ -400,3 +402,7 @@ class TestReportViews(TestCase):
         self.assertNotContains(
             response, '<td class="text-right"><strong>1</strong></td>'
         )
+
+        # Filter old default slugs
+        response = self.client.get(url, {"placement": "ad_23453464"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')

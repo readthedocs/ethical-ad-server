@@ -414,7 +414,7 @@ class BaseProxyView(View):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
         publisher = advertisement.get_publisher(nonce)
-        placement, keywords = advertisement.get_request_data(nonce)
+        div_id, keywords, ad_type = advertisement.get_request_data(nonce)
         referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(
@@ -430,7 +430,8 @@ class BaseProxyView(View):
                 publisher,
                 referrer,
                 keywords=keywords,
-                placement=placement,
+                div_id=div_id,
+                ad_type=ad_type,
             )
 
         message = ignore_reason or self.success_message
@@ -549,7 +550,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
-        placement = self.request.GET.get("placement", "")
+        div_id = self.request.GET.get("div_id", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -559,7 +560,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
-            "placement": placement,
+            "div_id": div_id,
         }
 
     def _parse_date_string(self, date_str):
@@ -792,11 +793,11 @@ class PublisherPlacementReportView(PublisherReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            placement=context["placement"],
+            div_id=context["div_id"],
         )
 
-        placement_options = publisher.placement_impressions.values_list(
-            "placement", flat=True
+        div_id_options = publisher.placement_impressions.values_list(
+            "div_id", flat=True
         ).distinct()[: self.PLACEMENT_LIMIT]
 
         context.update(
@@ -804,8 +805,8 @@ class PublisherPlacementReportView(PublisherReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
-                "placement": context["placement"],
-                "placement_options": placement_options,
+                "div_id": context["div_id"],
+                "div_id_options": div_id_options,
             }
         )
 

@@ -301,6 +301,21 @@ class PublisherSettingsForm(forms.ModelForm):
                 ),
                 css_class="my-3",
             ),
+            Fieldset(
+                _("Reporting settings"),
+                "record_placements",
+                HTML(
+                    "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "Placements allow you to track ads on different parts of your site. "
+                            "Any ad block with a `id` will be recorded, and you can view results based on the `id`."
+                        )
+                    )
+                    + "</p>"
+                ),
+                css_class="my-3",
+            ),
             Submit("submit", "Save settings"),
         )
 
@@ -313,4 +328,5 @@ class PublisherSettingsForm(forms.ModelForm):
             "allow_affiliate_campaigns",
             "allow_community_campaigns",
             "allow_house_campaigns",
+            "record_placements",
         ]

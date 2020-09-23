@@ -25,13 +25,13 @@
   </select>
 </div>
 
-{% if placement_options %}
+{% if div_id_options %}
 <div class="col-lg-2 col-md-4 mb-3">
   <label class="col-form-label" for="id_campaign_type">{% trans 'Placement' %}</label>
-  <select class="form-control" name="placement" id="id_placement">
-    <option value="">All Placements</option>
-    {% for option in placement_options %}
-      <option value="{{ option }}"{% if placement == option %} selected{% endif %}>{{ option }}</option>
+  <select class="form-control" name="div_id" id="id_div_id">
+    <option value="">All Divs</option>
+    {% for option in div_id_options %}
+      <option value="{{ option }}"{% if div_id == option %} selected{% endif %}>{{ option }}</option>
     {% endfor %}
   </select>
 </div>

@@ -685,8 +685,8 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 
 class PlacementImpressionAdmin(AdImpressionsAdmin):
-    readonly_fields = ("placement",) + AdImpressionsAdmin.readonly_fields
-    list_display = ("placement",) + AdImpressionsAdmin.list_display
+    readonly_fields = ("div_id", "ad_type") + AdImpressionsAdmin.readonly_fields
+    list_display = ("div_id", "ad_type") + AdImpressionsAdmin.list_display
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):

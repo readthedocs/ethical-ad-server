@@ -145,7 +145,9 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         ad_type_slug = placement["ad_type"]
         div_id = placement["div_id"]
-        data = ad.offer_ad(publisher, ad_type_slug, div_id=div_id, keywords=keywords)
+        data = ad.offer_ad(
+            publisher, ad_type_slug=ad_type_slug, div_id=div_id, keywords=keywords
+        )
 
         # The div where the ad is chosen to go is echoed back to the client
         data.update({"div_id": div_id})
