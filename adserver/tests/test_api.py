@@ -1000,6 +1000,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         # Set the publisher flag to always record views
         # It should override the one in settings
         self.publisher1.record_views = True
+        self.publisher1.record_placements = True
         self.publisher1.save()
 
         data = {"placements": self.placements, "publisher": self.publisher1.slug}

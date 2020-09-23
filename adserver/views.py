@@ -777,10 +777,11 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherPlacementReportView(PublisherReportView):
+class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    template_name = "adserver/reports/publisher_placement.html"
     PLACEMENT_LIMIT = 10
 
     def get_context_data(self, **kwargs):
@@ -793,7 +794,7 @@ class PublisherPlacementReportView(PublisherReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            div_id=context["div_id"],
+            div_id=context.get("div_id", ""),
         )
 
         div_id_options = publisher.placement_impressions.values_list(

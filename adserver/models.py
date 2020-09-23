@@ -223,11 +223,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
         impressions = AdImpression.objects.filter(publisher=self)
 
+        # When passed in from the placement report, div_id will be an empty string, not None
+        # So we differentiate between None and "" here
         if div_id is not None:
-            # Use the proper aggregate for div_id data
-            impressions = PlacementImpression.objects.filter(
-                publisher=self, div_id=div_id
-            )
+            impressions = PlacementImpression.objects.filter(publisher=self)
+            if div_id:
+                impressions = impressions.filter(div_id=div_id)
 
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
@@ -1056,12 +1057,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         )
 
         # Only store div_id when publisher has it enabled, and old defaults aren't present
+        ad_type = AdType.objects.filter(slug=ad_type).first()
         if (
             div_id
+            and ad_type
             and publisher.record_placements
             and not re.search(r"rtd-\w{8}|ad_\w{8}", div_id)
         ):
-            ad_type = AdType.objects.get(slug=ad_type)
             placement_impression, _ = self.placement_impressions.get_or_create(
                 publisher=publisher, date=day, div_id=div_id, ad_type=ad_type
             )

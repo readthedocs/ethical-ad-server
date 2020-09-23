@@ -28,7 +28,10 @@ class TestReportViews(TestCase):
             Advertiser, name="Another Advertiser", slug="another-advertiser"
         )
         self.publisher1 = get(
-            Publisher, slug="test-publisher", allow_paid_campaigns=True
+            Publisher,
+            slug="test-publisher",
+            allow_paid_campaigns=True,
+            record_placements=True,
         )
         self.publisher2 = get(
             Publisher, slug="another-publisher", allow_paid_campaigns=True
@@ -101,10 +104,12 @@ class TestReportViews(TestCase):
         )
 
         # Trigger some impressions so flights will be shown in the date range
-        self.ad1.incr(VIEWS, self.publisher1, placement="p1")
-        self.ad1.incr(VIEWS, self.publisher1, placement="p2")
-        self.ad1.incr(VIEWS, self.publisher1, placement="p2")
-        self.ad1.incr(VIEWS, self.publisher1, placement="ad_23453464")
+        self.ad1.incr(VIEWS, self.publisher1, div_id="p1", ad_type=self.ad_type1.slug)
+        self.ad1.incr(VIEWS, self.publisher1, div_id="p2", ad_type=self.ad_type1.slug)
+        self.ad1.incr(VIEWS, self.publisher1, div_id="p2", ad_type=self.ad_type1.slug)
+        self.ad1.incr(
+            VIEWS, self.publisher1, div_id="ad_23453464", ad_type=self.ad_type1.slug
+        )
         self.ad1.incr(CLICKS, self.publisher1)
 
         self.password = "(@*#$&ASDFKJ"
@@ -388,21 +393,22 @@ class TestReportViews(TestCase):
 
         # All reports
         response = self.client.get(url)
+        print(response.content)
         self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
         self.assertNotContains(response, "ad_23453464")
 
         # Filter reports
-        response = self.client.get(url, {"placement": "p1"})
+        response = self.client.get(url, {"div_id": "p1"})
         self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
         self.assertNotContains(
             response, '<td class="text-right"><strong>2</strong></td>'
         )
-        response = self.client.get(url, {"placement": "p2"})
+        response = self.client.get(url, {"div_id": "p2"})
         self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
         self.assertNotContains(
             response, '<td class="text-right"><strong>1</strong></td>'
         )
 
         # Filter old default slugs
-        response = self.client.get(url, {"placement": "ad_23453464"})
+        response = self.client.get(url, {"div_id": "ad_23453464"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
