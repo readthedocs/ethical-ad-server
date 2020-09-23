@@ -1507,7 +1507,7 @@ class PlacementImpression(BaseImpression):
     """
     Create an index of placements for ads.
 
-    Indexed one per ad per day per publisher.
+    Indexed one per ad/publisher/placement per day.
     """
 
     div_id = models.CharField(max_length=255, null=True, blank=True)
