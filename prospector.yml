@@ -27,6 +27,7 @@ pylint:
     dummy-variables-rgx: '_$|__$|dummy'
   disable:
     - too-many-arguments
+    - too-many-locals
 
 mccabe:
   run: true
