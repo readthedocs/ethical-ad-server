@@ -11,6 +11,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Click
 from ..models import Flight
+from ..models import Offer
 from ..models import Publisher
 from .common import BaseAdModelsTestCase
 
@@ -178,7 +179,9 @@ class AdModelAdminTests(BaseAdModelsTestCase):
     def test_click_admin(self):
         request = self.factory.get("/")
 
-        self.ad1.track_click(request, self.publisher, "http://example.com")
+        offer = get(Offer, publisher=self.publisher)
+
+        self.ad1.track_click(request, self.publisher, "http://example.com", offer=offer)
         click = Click.objects.all().first()
 
         list_url = reverse("admin:adserver_click_changelist")
@@ -190,9 +193,14 @@ class AdModelAdminTests(BaseAdModelsTestCase):
 
     def test_view_refund_action(self):
         request = self.factory.get("/")
+        offer = get(Offer, publisher=self.publisher)
 
-        view1 = self.ad1.track_view(request, self.publisher, "http://example.com")
-        view2 = self.ad1.track_view(request, self.publisher, "http://example.com")
+        view1 = self.ad1.track_view(
+            request, self.publisher, "http://example.com", offer=offer
+        )
+        view2 = self.ad1.track_view(
+            request, self.publisher, "http://example.com", offer=offer
+        )
         self.assertTrue(view1)
         self.assertTrue(view2)
 
@@ -219,7 +227,10 @@ class AdModelAdminTests(BaseAdModelsTestCase):
     def test_click_refund_action(self):
         request = self.factory.get("/")
 
-        click = self.ad1.track_click(request, self.publisher, "http://example.com")
+        offer = get(Offer, publisher=self.publisher)
+        click = self.ad1.track_click(
+            request, self.publisher, "http://example.com", offer=offer
+        )
         self.assertTrue(click)
 
         url = reverse("admin:adserver_click_changelist")

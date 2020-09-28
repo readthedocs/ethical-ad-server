@@ -317,7 +317,7 @@ class BaseProxyView(View):
     impression_type = VIEWS
     success_message = "Billed impression"
 
-    def ignore_tracking_reason(self, request, advertisement, nonce, publisher):
+    def ignore_tracking_reason(self, request, advertisement, offer):
         """Returns a reason this impression should not be tracked or `None` if this *should* be tracked."""
         reason = None
 
@@ -325,6 +325,7 @@ class BaseProxyView(View):
         user_agent = get_client_user_agent(request)
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
+        publisher = offer.publisher
 
         country_code = None
         region_code = None
@@ -337,9 +338,9 @@ class BaseProxyView(View):
             region_code = geo_data["region"]
             metro_code = geo_data["dma_code"]
 
-        if not advertisement.is_valid_nonce(self.impression_type, nonce):
+        if not advertisement.is_valid_offer(self.impression_type, offer):
             log.log(self.log_level, "Old or nonexistent impression nonce")
-            reason = "Old/Nonexistent nonce"
+            reason = "Old/Invalid nonce"
         elif parsed_ua.is_bot:
             log.log(self.log_level, "Bot impression. User Agent: [%s]", user_agent)
             reason = "Bot impression"
@@ -414,13 +415,11 @@ class BaseProxyView(View):
     def get(self, request, advertisement_id, nonce):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
-        offer = get_object_or_404(Offer, id=nonce)
-        publisher = offer.publisher
+        offer = Offer.objects.filter(id=nonce).first()
+        publisher = getattr(offer, "publisher", None)
         referrer = request.META.get("HTTP_REFERER")
 
-        ignore_reason = self.ignore_tracking_reason(
-            request, advertisement, nonce, publisher
-        )
+        ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
 
         if not ignore_reason:
             log.log(self.log_level, self.success_message)

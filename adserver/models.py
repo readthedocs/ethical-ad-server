@@ -1040,12 +1040,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def cache_key(self, impression_type, nonce):
-        assert impression_type in IMPRESSION_TYPES + ("publisher", "request")
-        return "advertisement:{id}:{nonce}:{type}".format(
-            id=self.slug, nonce=nonce, type=impression_type
-        )
-
     def incr(self, impression_type, publisher, div_id=None, ad_type=None):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
@@ -1076,7 +1070,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
             Flight.objects.filter(pk=self.flight_id).update(
-                total_views=models.F("total_views/") + 1
+                total_views=models.F("total_views") + 1
             )
         elif impression_type == CLICKS:
             Flight.objects.filter(pk=self.flight_id).update(
@@ -1227,20 +1221,30 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "campaign_type": self.flight.campaign.campaign_type,
         }
 
-    def is_valid_nonce(self, impression_type, nonce):
+    def is_valid_offer(self, impression_type, offer):
         """
         Returns true if this nonce (from ``offer_ad``) is valid for a given impression type.
 
         A nonce is valid if it was generated recently (hasn't timed out)
         and hasn't already been used.
         """
+
         four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
-        return Offer.objects.filter(
-            id=nonce, date__lte=four_hours_ago, viewed=False
-        ).exists()
+        if offer.date < four_hours_ago:
+            return False
+
+        if impression_type == VIEWS:
+            return offer.viewed is False
+        if impression_type == CLICKS:
+            return offer.viewed is True and offer.clicked is False
+
+        return False
 
     def invalidate_nonce(self, impression_type, nonce):
-        Offer.objects.filter(id=nonce).update(viewed=True)
+        if impression_type == VIEWS:
+            Offer.objects.filter(id=nonce).update(viewed=True)
+        if impression_type == CLICKS:
+            Offer.objects.filter(id=nonce).update(clicked=True)
 
     def view_ratio(self, day=None):
         if not day:
@@ -1616,7 +1620,8 @@ class Offer(AdBase):
     impression_type = OFFERS
 
     # Invalidation logic
-    viewed = models.BooleanField(_("View count"), default=False)
+    viewed = models.BooleanField(_("Offer was viewed"), default=False)
+    clicked = models.BooleanField(_("Offer was clicked"), default=False)
 
 
 class PublisherPayout(TimeStampedModel):
