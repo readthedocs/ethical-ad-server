@@ -22,6 +22,7 @@ from .models import Advertiser
 from .models import Campaign
 from .models import Click
 from .models import Flight
+from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
@@ -699,6 +700,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "advertisement",
         "publisher",
         "page_url",
+        "keywords",
         "country",
         "browser_family",
         "os_family",
@@ -708,6 +710,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "user_agent",
         "ip",
         "client_id",
+        "div_id",
+        "ad_type",
         "modified",
         "created",
     )
@@ -776,6 +780,13 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return None
 
 
+class OfferAdmin(AdBaseAdmin):
+
+    """Django admin configuration for ad offers."""
+
+    model = Offer
+
+
 class ClickAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad clicks."""
@@ -821,6 +832,7 @@ admin.site.register(PublisherGroup, PublisherGroupAdmin)
 admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
+admin.site.register(Offer, OfferAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
 admin.site.register(PlacementImpression, PlacementImpressionAdmin)
 admin.site.register(AdType, AdTypeAdmin)

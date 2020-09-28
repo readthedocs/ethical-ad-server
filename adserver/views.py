@@ -48,6 +48,7 @@ from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
+from .models import Offer
 from .models import Publisher
 from .models import PublisherPayout
 from .utils import analytics_event
@@ -413,8 +414,8 @@ class BaseProxyView(View):
     def get(self, request, advertisement_id, nonce):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
-        publisher = advertisement.get_publisher(nonce)
-        div_id, keywords, ad_type = advertisement.get_request_data(nonce)
+        offer = get_object_or_404(Offer, id=nonce)
+        publisher = offer.publisher
         referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(
@@ -427,11 +428,9 @@ class BaseProxyView(View):
             advertisement.track_impression(
                 request,
                 self.impression_type,
-                publisher,
-                referrer,
-                keywords=keywords,
-                div_id=div_id,
-                ad_type=ad_type,
+                publisher=offer.publisher,
+                url=referrer,
+                offer=offer,
             )
 
         message = ignore_reason or self.success_message
