@@ -887,6 +887,14 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
+        # Ensure also that an offer object is written
+        self.assertEqual(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )
+
         # Simulate an ad view and verify it was viewed
         view_url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
@@ -938,6 +946,14 @@ class AdvertisingIntegrationTests(BaseApiTest):
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 0)
+
+        # Ensure also that an offer object is written
+        self.assertEqual(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )
 
         # Ad clicked without a view
         click_url = reverse(
