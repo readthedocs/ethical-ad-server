@@ -11,7 +11,6 @@ from collections import OrderedDict
 
 import bleach
 from django.conf import settings
-from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -21,7 +20,6 @@ from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -1079,10 +1077,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def _record_base(self, request, model, publisher, url, keywords, div_id, ad_type):
         """
-        Save the actual AdBase model to the database
+        Save the actual AdBase model to the database.
 
         This is used for all subclasses,
-        so we need to keep all the data passed in generic
+        so we need to keep all the data passed in generic.
         """
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
@@ -1228,7 +1226,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         A nonce is valid if it was generated recently (hasn't timed out)
         and hasn't already been used.
         """
-
         four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
         if offer.date < four_hours_ago:
             return False
@@ -1533,9 +1530,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     # Client data
     keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
-    div_id = models.CharField(
-        _("Placement on the client"), blank=True, null=True, max_length=100
-    )
+    div_id = models.CharField(_("Div id"), blank=True, null=True, max_length=100)
     ad_type = models.ForeignKey(
         AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
     )
@@ -1622,6 +1617,10 @@ class Offer(AdBase):
     # Invalidation logic
     viewed = models.BooleanField(_("Offer was viewed"), default=False)
     clicked = models.BooleanField(_("Offer was clicked"), default=False)
+
+    class Meta:
+        # This is needed because we can't sort on pk to get the created ordering
+        ordering = ("-date",)
 
 
 class PublisherPayout(TimeStampedModel):
