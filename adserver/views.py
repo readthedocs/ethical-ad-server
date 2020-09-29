@@ -1006,6 +1006,15 @@ class AllPublisherReportView(BaseReportView):
 
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
+        advertiser_list = (
+            impressions.order_by("advertisement__flight__campaign__advertiser__slug")
+            .values_list(
+                "advertisement__flight__campaign__advertiser__slug",
+                "advertisement__flight__campaign__advertiser__name",
+            )
+            .distinct()
+        )
+
         if context["revenue_share_percentage"]:
             try:
                 publishers = publishers.filter(
@@ -1020,6 +1029,7 @@ class AllPublisherReportView(BaseReportView):
                 start_date=context["start_date"],
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
+                advertiser=context["report_advertiser"],
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
@@ -1080,6 +1090,7 @@ class AllPublisherReportView(BaseReportView):
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
+                "advertiser_list": advertiser_list,
                 "sort": sort,
             }
         )

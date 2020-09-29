@@ -15,25 +15,6 @@
 {% endblock breadcrumbs %}
 
 {% block additional_filters %}
-<div class="col-lg-2 col-md-4 mb-3">
-  <label class="col-form-label" for="id_campaign_type">{% trans 'Campaign type' %}</label>
-  <select class="form-control" name="campaign_type" id="id_campaign_type">
-    <option>All types</option>
-    {% for slug, type in campaign_types %}
-      <option value="{{ slug }}"{% if campaign_type == slug %} selected{% endif %}>{{ type }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="col-lg-2 col-md-4 mb-3">
-  <label class="col-form-label" for="id_advertiser">{% trans 'Advertisers' %}</label>
-  <select class="form-control" name="report_advertiser" id="id_advertiser">
-    <option>All advertisers</option>
-    {% for slug, name in advertiser_list %}
-      <option value="{{ slug }}"{% if report_advertiser == slug %} selected{% endif %}>{{ name }}</option>
-    {% endfor %}
-  </select>
-</div>
 {% endblock additional_filters %}
 
 
