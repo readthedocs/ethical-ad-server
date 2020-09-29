@@ -769,6 +769,10 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             .distinct()
         )
 
+        # Remove report_advertiser if there's invalid data passed in
+        if context["report_advertiser"] not in advertiser_list:
+            context["report_advertiser"] = None
+
         report = publisher.daily_reports(
             start_date=context["start_date"],
             end_date=context["end_date"],
