@@ -762,7 +762,10 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             publisher.adimpression_set.order_by(
                 "advertisement__flight__campaign__advertiser__slug"
             )
-            .values_list("advertisement__flight__campaign__advertiser__slug", flat=True)
+            .values_list(
+                "advertisement__flight__campaign__advertiser__slug",
+                "advertisement__flight__campaign__advertiser__name",
+            )
             .distinct()
         )
 
