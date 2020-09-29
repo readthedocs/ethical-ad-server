@@ -543,6 +543,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
+        report_advertiser = self.request.GET.get("report_advertiser", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -552,6 +554,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
+            "report_advertiser": report_advertiser,
         }
 
     def _parse_date_string(self, date_str):
@@ -755,14 +758,28 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
+        advertiser_list = (
+            publisher.adimpression_set.order_by(
+                "advertisement__flight__campaign__advertiser__slug"
+            )
+            .values_list("advertisement__flight__campaign__advertiser__slug", flat=True)
+            .distinct()
+        )
+
         report = publisher.daily_reports(
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
+            advertiser=context["report_advertiser"],
         )
 
         context.update(
-            {"publisher": publisher, "report": report, "campaign_types": CAMPAIGN_TYPES}
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "advertiser_list": advertiser_list,
+            }
         )
 
         return context
