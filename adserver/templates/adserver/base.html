@@ -90,8 +90,7 @@
                 </a>
               </li>
 
-              {% if request.user.is_staff %}
-              {# Test this out just with staff for now, until we backport data and test it #}
+              {% if publisher.record_placements %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_placement_report' publisher.slug %}">
                   <span class="fa fa-bar-chart fa-fw ml-4 text-muted" aria-hidden="true"></span>

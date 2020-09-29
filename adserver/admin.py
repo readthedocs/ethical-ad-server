@@ -709,9 +709,9 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "is_refunded",
         "user_agent",
         "ip",
-        "client_id",
         "div_id",
         "ad_type",
+        "client_id",
         "modified",
         "created",
     )
@@ -785,6 +785,8 @@ class OfferAdmin(AdBaseAdmin):
     """Django admin configuration for ad offers."""
 
     model = Offer
+    readonly_fields = AdBaseAdmin.readonly_fields + ("viewed", "clicked")
+    list_display = AdBaseAdmin.list_display + ("viewed", "clicked")
 
 
 class ClickAdmin(AdBaseAdmin):
