@@ -416,7 +416,6 @@ class BaseProxyView(View):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
         offer = Offer.objects.filter(id=nonce).first()
-        publisher = getattr(offer, "publisher", None)
         referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
