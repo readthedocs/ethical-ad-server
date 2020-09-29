@@ -432,7 +432,7 @@ class BaseProxyView(View):
             )
 
         message = ignore_reason or self.success_message
-        response = self.get_response(request, advertisement, publisher)
+        response = self.get_response(request, advertisement, offer.publisher)
 
         self.send_to_analytics(request, advertisement, message)
 
