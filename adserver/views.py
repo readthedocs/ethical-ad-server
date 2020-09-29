@@ -1007,6 +1007,8 @@ class AllPublisherReportView(BaseReportView):
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
         advertiser_list = (
+            # order_by is required for `distinct()` to work
+            # https://code.djangoproject.com/ticket/16058
             impressions.order_by("advertisement__flight__campaign__advertiser__slug")
             .values_list(
                 "advertisement__flight__campaign__advertiser__slug",
