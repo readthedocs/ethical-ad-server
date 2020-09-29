@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -325,7 +326,6 @@ class BaseProxyView(View):
         user_agent = get_client_user_agent(request)
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
-        publisher = offer.publisher
 
         country_code = None
         region_code = None
@@ -338,7 +338,10 @@ class BaseProxyView(View):
             region_code = geo_data["region"]
             metro_code = geo_data["dma_code"]
 
-        if not advertisement.is_valid_offer(self.impression_type, offer):
+        if not offer:
+            log.log(self.log_level, "Ad impression for unknown offer")
+            reason = "Unknown offer"
+        elif not advertisement.is_valid_offer(self.impression_type, offer):
             log.log(self.log_level, "Old or nonexistent impression nonce")
             reason = "Old/Invalid nonce"
         elif parsed_ua.is_bot:
@@ -365,14 +368,18 @@ class BaseProxyView(View):
                 self.log_level,
                 "Blocklisted referrer [%s], Publisher: [%s], UA: [%s]",
                 referrer,
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Blocked referrer impression"
         elif is_blocklisted_ip(ip_address):
-            log.log(self.log_level, "Blocked IP impression, Publisher: [%s]", publisher)
+            log.log(
+                self.log_level,
+                "Blocked IP impression, Publisher: [%s]",
+                offer.publisher,
+            )
             reason = "Blocked IP impression"
-        elif not publisher:
+        elif not offer.publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
         elif not advertisement.flight.show_to_geo(
@@ -415,8 +422,13 @@ class BaseProxyView(View):
     def get(self, request, advertisement_id, nonce):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
-        offer = Offer.objects.filter(id=nonce).first()
-        publisher = getattr(offer, "publisher", None)
+        try:
+            offer = Offer.objects.get(id=nonce)
+            publisher = offer.publisher
+        except (ValidationError, Offer.DoesNotExist) as exception:
+            log.debug("Invalid Offer. exception=%s", exception)
+            offer = None
+            publisher = None
         referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
