@@ -401,7 +401,7 @@ class BaseProxyView(View):
             log.log(
                 self.log_level,
                 "User has clicked too many ads recently, Publisher: [%s], UA: [%s]",
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Ratelimited click impression"
@@ -409,7 +409,7 @@ class BaseProxyView(View):
             log.log(
                 self.log_level,
                 "User has viewed too many ads recently, Publisher: [%s], UA: [%s]",
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Ratelimited view impression"

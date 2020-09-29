@@ -1125,8 +1125,9 @@ class TestProxyViews(BaseApiTest):
             "view-proxy",
             kwargs={"advertisement_id": self.ad.pk, "nonce": "invalidnonce"},
         )
-        with self.assertRaises(ValidationError):
-            resp = self.client.get(url)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Unknown offer")
 
     def test_view_tracking_internal_ip(self):
         client = Client(HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR="127.0.0.1")
