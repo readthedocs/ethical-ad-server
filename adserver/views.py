@@ -759,10 +759,15 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
+        advertiser_list = publisher.adimpression_set.all()
+
+        if context["start_date"]:
+            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
+
         advertiser_list = (
-            publisher.adimpression_set.values_list(
-                "advertisement__flight__campaign__advertiser"
-            )
+            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .filter(total_views__gt=100)
@@ -771,11 +776,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "advertisement__flight__campaign__advertiser__name",
             )
         )
-
-        if context["start_date"]:
-            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
 
         advertiser_list = advertiser_list[:10]
 
