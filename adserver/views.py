@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Sum
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -759,18 +760,27 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
         advertiser_list = (
-            publisher.adimpression_set.order_by(
-                "advertisement__flight__campaign__advertiser__slug"
+            publisher.adimpression_set.values_list(
+                "advertisement__flight__campaign__advertiser"
             )
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .filter(total_views__gt=100)
             .values_list(
                 "advertisement__flight__campaign__advertiser__slug",
                 "advertisement__flight__campaign__advertiser__name",
             )
-            .distinct()
         )
 
+        if context["start_date"]:
+            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
+
+        advertiser_list = advertiser_list[:10]
+
         # Remove report_advertiser if there's invalid data passed in
-        if context["report_advertiser"] not in advertiser_list:
+        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
             context["report_advertiser"] = None
 
         report = publisher.daily_reports(
