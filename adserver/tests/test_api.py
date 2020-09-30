@@ -1072,6 +1072,44 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
+    @override_settings(ADSERVER_RECORD_VIEWS=False)
+    def test_record_geos_ad_network(self):
+        # Set the publisher flag to always record views
+        # It should override the one in settings
+        self.publisher1.record_views = True
+        self.publisher1.record_geos = True
+        self.publisher1.save()
+
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+
+        with mock.patch("adserver.models.get_client_country") as get_geo:
+            get_geo.return_value = "US"
+            resp1 = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            nonce = resp1.json()["nonce"]
+            # Simulate an ad view and verify it was viewed
+            view_url = reverse(
+                "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+            )
+            resp2 = self.proxy_client.get(view_url)
+
+        self.assertEqual(resp1.status_code, 200, resp1.content)
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2["X-Adserver-Reason"], "Billed view")
+
+        # Verify an impression was written
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 1)
+
+        # Verify a GeoImpression was written
+        geo_impression = self.ad.geo_impressions.filter(
+            publisher=self.publisher1
+        ).first()
+        self.assertEqual(geo_impression.offers, 1)
+        self.assertEqual(geo_impression.views, 1)
+
 
 class TestProxyViews(BaseApiTest):
     def setUp(self):

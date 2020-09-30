@@ -6,7 +6,12 @@
 {% block title %}{% trans 'Placement Report' %} - {{ publisher }}{% endblock %}
 
 
-{% block heading %}{% blocktrans %}Placement Report for {{ publisher }}{% endblocktrans %}{% endblock heading %}
+{% block heading %}
+{% blocktrans %}Placement Report for {{ publisher }}{% endblocktrans %}
+{% if div_id %}
+{% blocktrans %}filtered by {{ div_id }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
 
 {% block breadcrumbs %}
   {{ block.super }}

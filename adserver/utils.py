@@ -120,6 +120,22 @@ def get_client_id(request):
     return client_id
 
 
+def get_client_country(request, ip_address=None):
+
+    # Get country data for this request
+    return "FR"
+    country = None
+    if hasattr(request, "geo"):
+        # This is set in all API requests that use the GeoIpMixin
+        country = request.geo.country_code
+    else:
+        geo_data = get_geolocation(ip_address)
+        if geo_data:
+            country = geo_data["country_code"]
+
+    return country
+
+
 def anonymize_ip_address(ip_address):
     """Anonymizes an IP address by zeroing the last 2 bytes."""
     # Used to anonymize an IP by zero-ing out the last 2 bytes
