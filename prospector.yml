@@ -25,6 +25,9 @@ pylint:
   options:
     docstring-min-length: 20
     dummy-variables-rgx: '_$|__$|dummy'
+  disable:
+    - too-many-arguments
+    - too-many-locals
 
 mccabe:
   run: true

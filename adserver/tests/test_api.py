@@ -6,6 +6,7 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
 from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
@@ -30,6 +31,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Click
 from ..models import Flight
+from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
 from ..models import View
@@ -885,6 +887,14 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
+        # Ensure also that an offer object is written
+        self.assertEqual(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )
+
         # Simulate an ad view and verify it was viewed
         view_url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
@@ -937,7 +947,31 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 0)
 
-        # Simulate an ad click
+        # Ensure also that an offer object is written
+        self.assertEqual(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1
+            ).count(),
+            1,
+        )
+
+        # Ad clicked without a view
+        click_url = reverse(
+            "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+        resp = self.proxy_client.get(click_url, HTTP_REFERER=self.page_url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp["X-Adserver-Reason"], "Old/Invalid nonce")
+
+        # now do a view
+        click_url = reverse(
+            "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+        resp = self.proxy_client.get(click_url, HTTP_REFERER=self.page_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        # and the click should work
         click_url = reverse(
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
         )
@@ -1000,6 +1034,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         # Set the publisher flag to always record views
         # It should override the one in settings
         self.publisher1.record_views = True
+        self.publisher1.record_placements = True
         self.publisher1.save()
 
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
@@ -1023,6 +1058,13 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
+        # Verify a PlacementImpression was written
+        placement_impression = self.ad.placement_impressions.filter(
+            publisher=self.publisher1
+        ).first()
+        self.assertEqual(placement_impression.offers, 1)
+        self.assertEqual(placement_impression.views, 1)
+
         # Make sure we're writing ads for ad network views
         self.assertTrue(
             View.objects.filter(
@@ -1039,7 +1081,17 @@ class TestProxyViews(BaseApiTest):
 
         self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
 
-        self.offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
+        self.factory = RequestFactory()
+        self.request = self.factory.get("/")
+        self.request.user = AnonymousUser()
+
+        self.offer = self.ad.offer_ad(
+            request=self.request,
+            publisher=self.publisher,
+            ad_type_slug=self.ad_type.slug,
+            div_id="foo",
+            keywords=None,
+        )
         self.nonce = self.offer["nonce"]
 
         self.client = Client(
@@ -1074,9 +1126,8 @@ class TestProxyViews(BaseApiTest):
             kwargs={"advertisement_id": self.ad.pk, "nonce": "invalidnonce"},
         )
         resp = self.client.get(url)
-
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp["X-Adserver-Reason"], "Old/Nonexistent nonce")
+        self.assertEqual(resp["X-Adserver-Reason"], "Unknown offer")
 
     def test_view_tracking_internal_ip(self):
         client = Client(HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR="127.0.0.1")
@@ -1168,7 +1219,13 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
 
         # View the ad again with a new nonce
-        offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
+        offer = self.ad.offer_ad(
+            request=self.request,
+            publisher=self.publisher,
+            ad_type_slug=self.ad_type.slug,
+            div_id="foo",
+            keywords=None,
+        )
         view_url = offer["view_url"]
         resp = self.client.get(view_url)
         self.assertEqual(resp.status_code, 200)
@@ -1178,6 +1235,7 @@ class TestProxyViews(BaseApiTest):
         self.ad.link = "http://example.com?utm_source=${publisher}"
         self.ad.save()
 
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
         resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
@@ -1196,6 +1254,7 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["Location"], self.ad.link)
 
     def test_click_tracking_valid(self):
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
         resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
@@ -1207,16 +1266,24 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["Location"], self.ad.link)
-        self.assertEqual(resp["X-Adserver-Reason"], "Old/Nonexistent nonce")
+        self.assertEqual(resp["X-Adserver-Reason"], "Old/Invalid nonce")
 
     @override_settings(ADSERVER_CLICK_RATELIMITS=["1/s", "1/m"])
     def test_click_tracking_ratelimit(self):
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
         resp = self.client.get(self.click_url)
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
 
         # Click the ad again with a new nonce
-        offer = self.ad.offer_ad(self.publisher, self.ad_type.slug)
+        offer = self.ad.offer_ad(
+            request=self.request,
+            publisher=self.publisher,
+            ad_type_slug=self.ad_type.slug,
+            div_id="foo",
+            keywords=None,
+        )
+        Offer.objects.filter(id=offer["nonce"]).update(viewed=True)
         nonce = offer["nonce"]
         click_url = reverse(
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
@@ -1228,6 +1295,8 @@ class TestProxyViews(BaseApiTest):
     def test_click_tracking_invalid_targeting(self):
         self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
         self.ad.flight.save()
+
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
             get_geo.return_value = {
@@ -1247,6 +1316,7 @@ class TestProxyViews(BaseApiTest):
             "include_metro_codes": [825, 803],  # San Diego, LA
         }
         self.ad.flight.save()
+        get(View, offer=self.offer)
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
             get_geo.return_value = {

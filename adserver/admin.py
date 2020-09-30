@@ -22,6 +22,8 @@ from .models import Advertiser
 from .models import Campaign
 from .models import Click
 from .models import Flight
+from .models import Offer
+from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherPayout
@@ -683,6 +685,11 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return "{:.3f}%".format(calculate_ctr(obj.views, obj.offers))
 
 
+class PlacementImpressionAdmin(AdImpressionsAdmin):
+    readonly_fields = ("div_id", "ad_type") + AdImpressionsAdmin.readonly_fields
+    list_display = ("div_id", "ad_type") + AdImpressionsAdmin.list_display
+
+
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the base class of ad views and clicks."""
@@ -693,6 +700,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "advertisement",
         "publisher",
         "page_url",
+        "keywords",
         "country",
         "browser_family",
         "os_family",
@@ -701,6 +709,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "is_refunded",
         "user_agent",
         "ip",
+        "div_id",
+        "ad_type",
         "client_id",
         "modified",
         "created",
@@ -770,6 +780,15 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return None
 
 
+class OfferAdmin(AdBaseAdmin):
+
+    """Django admin configuration for ad offers."""
+
+    model = Offer
+    readonly_fields = AdBaseAdmin.readonly_fields + ("viewed", "clicked")
+    list_display = AdBaseAdmin.list_display + ("viewed", "clicked")
+
+
 class ClickAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad clicks."""
@@ -815,7 +834,9 @@ admin.site.register(PublisherGroup, PublisherGroupAdmin)
 admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
+admin.site.register(Offer, OfferAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
+admin.site.register(PlacementImpression, PlacementImpressionAdmin)
 admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)
 admin.site.register(Flight, FlightAdmin)

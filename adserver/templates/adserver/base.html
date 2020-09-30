@@ -90,6 +90,15 @@
                 </a>
               </li>
 
+              {% if publisher.record_placements %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_placement_report' publisher.slug %}">
+                  <span class="fa fa-bar-chart fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Placements' %}</span>
+                </a>
+              </li>
+              {% endif %}
+
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_payouts' publisher.slug %}">
                   <span class="fa fa-dollar fa-fw mr-2 text-muted" aria-hidden="true"></span>

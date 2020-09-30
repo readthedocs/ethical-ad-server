@@ -3,6 +3,7 @@
 
 # Useful debugging tools
 django-debug-toolbar<2.0
+ipdb==0.13.3
 
 # Code formatters
 black==19.3b0

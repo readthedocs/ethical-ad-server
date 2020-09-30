@@ -10,6 +10,7 @@ from ..models import AdType
 from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
+from ..models import Offer
 from ..utils import calculate_ecpm
 from ..utils import get_ad_day
 from .common import BaseAdModelsTestCase
@@ -177,7 +178,15 @@ class TestAdModels(BaseAdModelsTestCase):
         self.ad1.save()
         self.ad1.ad_types.add(self.text_ad_type)
 
-        output = self.ad1.offer_ad(self.publisher, self.text_ad_type)
+        request = self.factory.get("/")
+
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id="foo",
+            keywords=None,
+        )
         self.assertEqual(output["body"], "Call to Action & such!")
 
     def test_ad_country_click_breakdown(self):
@@ -190,10 +199,16 @@ class TestAdModels(BaseAdModelsTestCase):
         request.ip_address = "127.0.0.1"
         request.user_agent = "test user agent"
 
-        self.ad1.track_click(request, self.publisher, None)
-        self.ad1.track_click(request, self.publisher, None)
-        self.ad1.track_impression(request, CLICKS, self.publisher, None)
-        self.ad1.track_impression(request, VIEWS, self.publisher, None)  # Doesn't count
+        offer = get(Offer, publisher=self.publisher)
+
+        self.ad1.track_click(request, self.publisher, url=None, offer=offer)
+        self.ad1.track_click(request, self.publisher, url=None, offer=offer)
+        self.ad1.track_impression(
+            request, CLICKS, self.publisher, url=None, offer=offer
+        )
+        self.ad1.track_impression(
+            request, VIEWS, self.publisher, url=None, offer=offer
+        )  # Doesn't count
 
         report = self.ad1.country_click_breakdown(dt, timezone.now())
         self.assertDictEqual(report, {"Unknown": 3})
@@ -319,10 +334,12 @@ class TestAdModels(BaseAdModelsTestCase):
         self.flight.sold_impressions = 100
         self.flight.save()
 
+        offer = get(Offer, publisher=self.publisher)
+
         # Each view is $0.05
-        view1 = self.ad1.track_view(request, self.publisher, None)
-        view2 = self.ad1.track_view(request, self.publisher, None)
-        view3 = self.ad1.track_view(request, self.publisher, None)
+        view1 = self.ad1.track_view(request, self.publisher, None, offer=offer)
+        view2 = self.ad1.track_view(request, self.publisher, None, offer=offer)
+        view3 = self.ad1.track_view(request, self.publisher, None, offer=offer)
 
         for view in (view1, view2, view3):
             self.assertIsNotNone(view)
@@ -368,10 +385,12 @@ class TestAdModels(BaseAdModelsTestCase):
         request.ip_address = "127.0.0.1"
         request.user_agent = "test user agent"
 
+        offer = get(Offer, publisher=self.publisher)
+
         # Each click is $2.00 (cpc)
-        click1 = self.ad1.track_click(request, self.publisher, None)
-        click2 = self.ad1.track_click(request, self.publisher, None)
-        click3 = self.ad1.track_click(request, self.publisher, None)
+        click1 = self.ad1.track_click(request, self.publisher, None, offer=offer)
+        click2 = self.ad1.track_click(request, self.publisher, None, offer=offer)
+        click3 = self.ad1.track_click(request, self.publisher, None, offer=offer)
 
         for click in (click1, click2, click3):
             self.assertIsNotNone(click)

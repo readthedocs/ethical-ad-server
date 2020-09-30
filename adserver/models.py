@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import re
 import uuid
 from collections import Counter
 from collections import defaultdict
@@ -10,8 +11,6 @@ from collections import OrderedDict
 
 import bleach
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -21,7 +20,6 @@ from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -42,13 +40,13 @@ from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
 from .validators import TargetingParametersValidator
-
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -164,10 +162,14 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     # This overrides settings.ADSERVER_RECORD_VIEWS for a specific publisher
     # Details of each ad view are written to the database.
-    # Setting this can result in some performance degradation and a bloated database.
+    # Setting this can result in some performance degradation and a bloated database,
+    # but note that all Offers are stored by default.
     record_views = models.BooleanField(
         default=True,
         help_text=_("Record each ad view from this publisher to the database"),
+    )
+    record_placements = models.BooleanField(
+        default=False, help_text=_("Record placement impressions for this publisher")
     )
 
     class Meta:
@@ -204,7 +206,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return []
 
     def daily_reports(
-        self, start_date=None, end_date=None, campaign_type=None, advertiser=None
+        self,
+        start_date=None,
+        end_date=None,
+        campaign_type=None,
+        div_id=None,
+        advertiser=None,
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -212,11 +219,21 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
         :param campaign_type: only return campaigns of a specific type (eg. house, paid)
+        :param div_id: filter ads based on div_id
         :return: A dictionary containing a list of days for the report
             and an aggregated total
         """
         report = {"days": [], "total": {}}
+
         impressions = AdImpression.objects.filter(publisher=self)
+
+        # When passed in from the placement report, div_id will be an empty string, not None
+        # So we differentiate between None and "" here
+        if div_id is not None:
+            impressions = PlacementImpression.objects.filter(publisher=self)
+            if div_id:
+                impressions = impressions.filter(div_id=div_id)
+
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
@@ -1031,23 +1048,32 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def cache_key(self, impression_type, nonce):
-        assert impression_type in IMPRESSION_TYPES + ("publisher",)
-        return "advertisement:{id}:{nonce}:{type}".format(
-            id=self.slug, nonce=nonce, type=impression_type
-        )
-
-    def incr(self, impression_type, publisher):
+    def incr(self, impression_type, publisher, div_id=None, ad_type=None):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
 
         # Ensure that an impression object exists for today
         impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
-
         AdImpression.objects.filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
+
+        # Only store div_id when publisher has it enabled, and old defaults aren't present
+        if (
+            div_id
+            and ad_type
+            and publisher.record_placements
+            and not re.search(r"rtd-\w{8}|ad_\w{8}", div_id)
+        ):
+            placement_impression, _ = self.placement_impressions.get_or_create(
+                publisher=publisher, date=day, div_id=div_id, ad_type=ad_type
+            )
+            PlacementImpression.objects.filter(pk=placement_impression.pk).update(
+                **{impression_type: models.F(impression_type) + 1}
+            )
+
+        # TODO: Add more denormalized impression tables
 
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
@@ -1059,7 +1085,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 total_clicks=models.F("total_clicks") + 1
             )
 
-    def _record_base(self, request, model, publisher, url):
+    def _record_base(self, request, model, publisher, url, keywords, div_id, ad_type):
+        """
+        Save the actual AdBase model to the database.
+
+        This is used for all subclasses,
+        so we need to keep all the data passed in generic.
+        """
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
         client_id = get_client_id(request)
@@ -1093,98 +1125,96 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             os_family=parsed_ua.os.family,
             is_bot=parsed_ua.is_bot,
             is_mobile=parsed_ua.is_mobile,
+            # Client Data
+            keywords=keywords if keywords else None,  # Don't save empty lists
+            div_id=div_id,
+            ad_type=ad_type,
             # Page info
             advertisement=self,
         )
         return obj
 
-    def track_impression(self, request, impression_type, publisher, url):
+    def track_impression(self, request, impression_type, publisher, url, offer):
         if impression_type not in (CLICKS, VIEWS):
             raise RuntimeError("Impression must be either a click or a view")
 
         if impression_type == CLICKS:
-            self.track_click(request, publisher, url)
+            self.track_click(request, publisher, url, offer)
         elif impression_type == VIEWS:
-            self.track_view(request, publisher, url)
+            self.track_view(request, publisher, url, offer)
 
-    def track_click(self, request, publisher, url):
+    def track_click(self, request, publisher, url, offer):
         """Store click data in the DB."""
-        self.incr(CLICKS, publisher)
-        return self._record_base(request, Click, publisher, url)
+        self.incr(CLICKS, publisher, div_id=offer.div_id, ad_type=offer.ad_type)
+        return self._record_base(
+            request=request,
+            model=Click,
+            publisher=publisher,
+            url=url,
+            keywords=offer.keywords,
+            div_id=offer.div_id,
+            ad_type=offer.ad_type,
+        )
 
-    def track_view(self, request, publisher, url):
+    def track_view(self, request, publisher, url, offer):
         """
         Store view data in the DB.
 
         Views are only stored if ``settings.ADSERVER_RECORD_VIEWS=True``
-        Or if a publisher has the ``Publisher.record_views`` flag set.
+        or a publisher has the ``Publisher.record_views`` flag set.
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(VIEWS, publisher)
+        self.incr(VIEWS, publisher, div_id=offer.div_id, ad_type=offer.ad_type)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
-            return self._record_base(request, View, publisher, url)
+            return self._record_base(
+                request=request,
+                model=View,
+                publisher=publisher,
+                url=url,
+                keywords=offer.keywords,
+                div_id=offer.div_id,
+                ad_type=offer.ad_type,
+            )
 
         log.debug("Not recording ad view.")
         return None
 
-    def offer_ad(self, publisher, ad_type_slug):
+    def offer_ad(self, request, publisher, ad_type_slug, div_id, keywords):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
 
-        Tracks an offer in the database and sets various cache variables
+        Tracks an offer in the database to save data about it and compare against view.
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
+        referrer = request.META.get("HTTP_REFERER")
 
-        # The time after an ad has been offered where impressions (clicks) won't count
-        offer_time_limit = 60 * 60 * 4  # 4 hours
-
-        nonce = get_random_string(16)
-
-        site = get_current_site(None)
-        domain = site.domain
-        scheme = "http"
-        if settings.ADSERVER_HTTPS:
-            scheme = "https"
-
-        view_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
+        self.incr(OFFERS, publisher, div_id=div_id, ad_type=ad_type)
+        offer = self._record_base(
+            request=request,
+            model=Offer,
+            publisher=publisher,
+            url=referrer,
+            keywords=keywords,
+            div_id=div_id,
+            ad_type=ad_type,
         )
 
-        click_url = "{scheme}://{domain}{url}".format(
-            scheme=scheme,
-            domain=domain,
-            url=reverse(
-                "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
-            ),
+        nonce = offer.pk
+
+        view_url = generate_absolute_url(
+            "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+        )
+
+        click_url = generate_absolute_url(
+            "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
         )
 
         # This required unescaping HTML entities that bleach escapes,
         # allowing it to be used outside of HTML contexts.
         # https://github.com/mozilla/bleach/issues/192
         body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
-
-        self.incr(OFFERS, publisher)
-        # Set validation cache
-        for impression_type in [VIEWS, CLICKS]:
-            cache.set(
-                self.cache_key(impression_type=impression_type, nonce=nonce),
-                0,  # Number of times used. Make this an int so we can detect multiple uses
-                offer_time_limit,
-            )
-
-        # Cache the publisher slug for this nonce
-        # This is needed so we can later retrieve the publisher if this ad/nonce is viewed/clicked
-        cache.set(
-            self.cache_key(impression_type="publisher", nonce=nonce),
-            publisher.slug,
-            offer_time_limit,
-        )
 
         return {
             "id": self.slug,
@@ -1199,33 +1229,29 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "campaign_type": self.flight.campaign.campaign_type,
         }
 
-    def get_publisher(self, nonce):
-        publisher = None
-        publisher_slug = cache.get(
-            self.cache_key(impression_type="publisher", nonce=nonce), None
-        )
-
-        if publisher_slug:
-            publisher = Publisher.objects.filter(slug=publisher_slug).first()
-
-        return publisher
-
-    def is_valid_nonce(self, impression_type, nonce):
+    def is_valid_offer(self, impression_type, offer):
         """
-        Returns true if this nonce (from ``offer_ad``) is valid for a given impression type (click, view).
+        Returns true if this nonce (from ``offer_ad``) is valid for a given impression type.
 
         A nonce is valid if it was generated recently (hasn't timed out)
-        and hasn't already been used
+        and hasn't already been used.
         """
-        return (
-            cache.get(
-                self.cache_key(impression_type=impression_type, nonce=nonce), None
-            )
-            == 0
-        )
+        four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
+        if offer.date < four_hours_ago:
+            return False
+
+        if impression_type == VIEWS:
+            return offer.viewed is False
+        if impression_type == CLICKS:
+            return offer.viewed is True and offer.clicked is False
+
+        return False
 
     def invalidate_nonce(self, impression_type, nonce):
-        cache.delete(self.cache_key(impression_type=impression_type, nonce=nonce))
+        if impression_type == VIEWS:
+            Offer.objects.filter(id=nonce).update(viewed=True)
+        if impression_type == CLICKS:
+            Offer.objects.filter(id=nonce).update(clicked=True)
 
     def view_ratio(self, day=None):
         if not day:
@@ -1444,6 +1470,35 @@ class AdImpression(BaseImpression):
         return "%s on %s" % (self.advertisement, self.date)
 
 
+class PlacementImpression(BaseImpression):
+
+    """
+    Create an index of placements for ads.
+
+    Indexed one per ad/publisher/placement per day.
+    """
+
+    div_id = models.CharField(max_length=255, null=True, blank=True)
+    ad_type = models.ForeignKey(
+        AdType, related_name="placement_impressions", on_delete=models.PROTECT
+    )
+    publisher = models.ForeignKey(
+        Publisher, related_name="placement_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement, related_name="placement_impressions", on_delete=models.PROTECT
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "div_id", "ad_type")
+        verbose_name_plural = _("Placement impressions")
+
+    def __str__(self):
+        """Simple override."""
+        return "Placement %s of %s on %s" % (self.div_id, self.advertisement, self.date)
+
+
 class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
@@ -1462,7 +1517,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
     )
 
-    # Click Data
+    # User Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
     user_agent = models.CharField(
         _("User Agent"), max_length=1000, blank=True, null=True
@@ -1481,6 +1536,13 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         default=None,
+    )
+
+    # Client data
+    keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
+    div_id = models.CharField(_("Div id"), blank=True, null=True, max_length=100)
+    ad_type = models.ForeignKey(
+        AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
     )
 
     is_bot = models.BooleanField(default=False)
@@ -1548,6 +1610,27 @@ class View(AdBase):
         Advertisement, max_length=255, related_name="views", on_delete=models.PROTECT
     )
     impression_type = VIEWS
+
+
+class Offer(AdBase):
+
+    """Contains data on ad views."""
+
+    # Use an ok user-facing pk value
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    advertisement = models.ForeignKey(
+        Advertisement, max_length=255, related_name="offers", on_delete=models.PROTECT
+    )
+    impression_type = OFFERS
+
+    # Invalidation logic
+    viewed = models.BooleanField(_("Offer was viewed"), default=False)
+    clicked = models.BooleanField(_("Offer was clicked"), default=False)
+
+    class Meta:
+        # This is needed because we can't sort on pk to get the created ordering
+        ordering = ("-date",)
 
 
 class PublisherPayout(TimeStampedModel):

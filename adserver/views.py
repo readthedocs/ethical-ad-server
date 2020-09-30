@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.http import Http404
 from django.http import HttpResponse
@@ -49,6 +50,7 @@ from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
+from .models import Offer
 from .models import Publisher
 from .models import PublisherPayout
 from .utils import analytics_event
@@ -317,7 +319,7 @@ class BaseProxyView(View):
     impression_type = VIEWS
     success_message = "Billed impression"
 
-    def ignore_tracking_reason(self, request, advertisement, nonce, publisher):
+    def ignore_tracking_reason(self, request, advertisement, offer):
         """Returns a reason this impression should not be tracked or `None` if this *should* be tracked."""
         reason = None
 
@@ -337,9 +339,12 @@ class BaseProxyView(View):
             region_code = geo_data["region"]
             metro_code = geo_data["dma_code"]
 
-        if not advertisement.is_valid_nonce(self.impression_type, nonce):
+        if not offer:
+            log.log(self.log_level, "Ad impression for unknown offer")
+            reason = "Unknown offer"
+        elif not advertisement.is_valid_offer(self.impression_type, offer):
             log.log(self.log_level, "Old or nonexistent impression nonce")
-            reason = "Old/Nonexistent nonce"
+            reason = "Old/Invalid nonce"
         elif parsed_ua.is_bot:
             log.log(self.log_level, "Bot impression. User Agent: [%s]", user_agent)
             reason = "Bot impression"
@@ -364,14 +369,18 @@ class BaseProxyView(View):
                 self.log_level,
                 "Blocklisted referrer [%s], Publisher: [%s], UA: [%s]",
                 referrer,
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Blocked referrer impression"
         elif is_blocklisted_ip(ip_address):
-            log.log(self.log_level, "Blocked IP impression, Publisher: [%s]", publisher)
+            log.log(
+                self.log_level,
+                "Blocked IP impression, Publisher: [%s]",
+                offer.publisher,
+            )
             reason = "Blocked IP impression"
-        elif not publisher:
+        elif not offer.publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
         elif not advertisement.flight.show_to_geo(
@@ -393,7 +402,7 @@ class BaseProxyView(View):
             log.log(
                 self.log_level,
                 "User has clicked too many ads recently, Publisher: [%s], UA: [%s]",
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Ratelimited click impression"
@@ -401,7 +410,7 @@ class BaseProxyView(View):
             log.log(
                 self.log_level,
                 "User has viewed too many ads recently, Publisher: [%s], UA: [%s]",
-                publisher,
+                offer.publisher,
                 user_agent,
             )
             reason = "Ratelimited view impression"
@@ -414,18 +423,26 @@ class BaseProxyView(View):
     def get(self, request, advertisement_id, nonce):
         """Handles proxying ad views and clicks and collecting metrics on them."""
         advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
-        publisher = advertisement.get_publisher(nonce)
+        try:
+            offer = Offer.objects.get(id=nonce)
+            publisher = offer.publisher
+        except (ValidationError, Offer.DoesNotExist) as exception:
+            log.debug("Invalid Offer. exception=%s", exception)
+            offer = None
+            publisher = None
         referrer = request.META.get("HTTP_REFERER")
 
-        ignore_reason = self.ignore_tracking_reason(
-            request, advertisement, nonce, publisher
-        )
+        ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
 
         if not ignore_reason:
             log.log(self.log_level, self.success_message)
             advertisement.invalidate_nonce(self.impression_type, nonce)
             advertisement.track_impression(
-                request, self.impression_type, publisher, referrer
+                request,
+                self.impression_type,
+                publisher=publisher,
+                url=referrer,
+                offer=offer,
             )
 
         message = ignore_reason or self.success_message
@@ -544,6 +561,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        div_id = self.request.GET.get("div_id", "")
         # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
         report_advertiser = self.request.GET.get("report_advertiser", "")
 
@@ -555,6 +573,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
+            "div_id": div_id,
             "report_advertiser": report_advertiser,
         }
 
@@ -796,6 +815,47 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "advertiser_list": advertiser_list,
+            }
+        )
+
+        return context
+
+
+class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
+
+    """A report for a single publisher."""
+
+    template_name = "adserver/reports/publisher_placement.html"
+    PLACEMENT_LIMIT = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        report = publisher.daily_reports(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            div_id=context.get("div_id", ""),
+        )
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        div_id_options = (
+            publisher.placement_impressions.values_list("div_id", flat=True)
+            .order_by()
+            .distinct()[: self.PLACEMENT_LIMIT]
+        )
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "div_id": context["div_id"],
+                "div_id_options": div_id_options,
             }
         )
 

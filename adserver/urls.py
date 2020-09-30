@@ -26,6 +26,7 @@ from .views import PublisherEmbedView
 from .views import PublisherMainView
 from .views import PublisherPayoutDetailView
 from .views import PublisherPayoutListView
+from .views import PublisherPlacementReportView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
 from .views import PublisherStripeOauthConnectView
@@ -128,6 +129,11 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/report/",
         PublisherReportView.as_view(),
         name="publisher_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/placements/",
+        PublisherPlacementReportView.as_view(),
+        name="publisher_placement_report",
     ),
     path(
         r"publisher/<slug:publisher_slug>/embed/",
