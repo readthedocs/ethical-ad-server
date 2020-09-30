@@ -898,7 +898,11 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
 
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
-        country_list = country_list.order_by().values_list("country", flat=True)
+        country_list = (
+            country_list.values_list("country", flat=True)
+            .order_by()
+            .distinct()[: self.LIMIT]
+        )
 
         countries_dict = dict(countries)
         country_options = (
