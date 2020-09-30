@@ -1530,7 +1530,7 @@ class PlacementImpression(BaseImpression):
 class GeoImpression(BaseImpression):
 
     """
-    Create an index of geo targeting for ads
+    Create an index of geo targeting for ads.
 
     Indexed one per ad/publisher/geo per day.
     """
