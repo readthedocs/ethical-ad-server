@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -561,6 +562,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         campaign_type = self.request.GET.get("campaign_type", "")
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
         div_id = self.request.GET.get("div_id", "")
+        # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
+        report_advertiser = self.request.GET.get("report_advertiser", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -571,6 +574,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "campaign_type": campaign_type,
             "revenue_share_percentage": revenue_share_percentage,
             "div_id": div_id,
+            "report_advertiser": report_advertiser,
         }
 
     def _parse_date_string(self, date_str):
@@ -774,14 +778,44 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
+        advertiser_list = publisher.adimpression_set.all()
+
+        if context["start_date"]:
+            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
+
+        advertiser_list = (
+            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .filter(total_views__gt=100)
+            .values_list(
+                "advertisement__flight__campaign__advertiser__slug",
+                "advertisement__flight__campaign__advertiser__name",
+            )
+        )
+
+        advertiser_list = advertiser_list[:10]
+
+        # Remove report_advertiser if there's invalid data passed in
+        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
+            context["report_advertiser"] = None
+
         report = publisher.daily_reports(
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
+            advertiser=context["report_advertiser"],
         )
 
         context.update(
-            {"publisher": publisher, "report": report, "campaign_types": CAMPAIGN_TYPES}
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "advertiser_list": advertiser_list,
+            }
         )
 
         return context
@@ -1042,6 +1076,17 @@ class AllPublisherReportView(BaseReportView):
 
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
+        advertiser_list = (
+            # order_by is required for `distinct()` to work
+            # https://code.djangoproject.com/ticket/16058
+            impressions.order_by("advertisement__flight__campaign__advertiser__slug")
+            .values_list(
+                "advertisement__flight__campaign__advertiser__slug",
+                "advertisement__flight__campaign__advertiser__name",
+            )
+            .distinct()
+        )
+
         if context["revenue_share_percentage"]:
             try:
                 publishers = publishers.filter(
@@ -1056,6 +1101,7 @@ class AllPublisherReportView(BaseReportView):
                 start_date=context["start_date"],
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
+                advertiser=context["report_advertiser"],
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
@@ -1116,6 +1162,7 @@ class AllPublisherReportView(BaseReportView):
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
+                "advertiser_list": advertiser_list,
                 "sort": sort,
             }
         )

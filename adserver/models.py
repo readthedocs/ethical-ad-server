@@ -206,7 +206,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return []
 
     def daily_reports(
-        self, start_date=None, end_date=None, campaign_type=None, div_id=None
+        self, start_date=None, end_date=None, campaign_type=None, div_id=None, advertiser=None
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -236,6 +236,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         if campaign_type and campaign_type in ALL_CAMPAIGN_TYPES:
             impressions = impressions.filter(
                 advertisement__flight__campaign__campaign_type=campaign_type
+            )
+
+        if advertiser:
+            impressions = impressions.filter(
+                advertisement__flight__campaign__advertiser__slug=advertiser
             )
 
         impressions = impressions.select_related(

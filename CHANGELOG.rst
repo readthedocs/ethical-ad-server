@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.9.1
+--------------
+
+:Date: September 22, 2020
+
+ * @ericholscher: Update precommit deps to match latest (#240)
+ * @ericholscher: Improve automation around payouts (#237)
+ * @ericholscher: Add a management command to add a publisher (#236)
+ * @ericholscher: Allow sorting All Publishers list by revenue (#235)
+
 Version v0.9.0
 --------------
 
