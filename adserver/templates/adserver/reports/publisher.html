@@ -18,12 +18,21 @@
 {% endblock additional_filters %}
 
 
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows all of the billable traffic for your site.
+    You can filter it to better understand what is going on with your traffic.
+  </p>
+</section>
+{% endblock explainer %}
+
 {% block summary %}
   {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
 
   <section>
     <div>
-      <h2></h2>
       <div class="row">
         <h2 class="col-md-8">{% trans 'Advertising results' %}</h2>
 
