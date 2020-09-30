@@ -121,9 +121,7 @@ def get_client_id(request):
 
 
 def get_client_country(request, ip_address=None):
-
-    # Get country data for this request
-    return "FR"
+    """Get country data for this request."""
     country = None
     if hasattr(request, "geo"):
         # This is set in all API requests that use the GeoIpMixin
