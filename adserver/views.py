@@ -844,10 +844,16 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
             div_id=context.get("div_id", ""),
         )
 
+        placement_list = publisher.placement_impressions.all()
+        if context["start_date"]:
+            placement_list = placement_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            placement_list = placement_list.filter(date__lte=context["end_date"])
+
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         div_id_options = (
-            publisher.placement_impressions.values_list("div_id", flat=True)
+            placement_list.values_list("div_id", flat=True)
             .order_by()
             .distinct()[: self.PLACEMENT_LIMIT]
         )
@@ -884,15 +890,15 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
             country=context.get("country", ""),
         )
 
-        # The order_by here is to enable distinct to work
-        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = publisher.geo_impressions.all()
         if context["start_date"]:
             country_list = country_list.filter(date__gte=context["start_date"])
         if context["end_date"]:
             country_list = country_list.filter(date__lte=context["end_date"])
 
-        country_list = country_list.values_list("country", flat=True)
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        country_list = country_list.order_by().values_list("country", flat=True)
 
         countries_dict = dict(countries)
         country_options = (
