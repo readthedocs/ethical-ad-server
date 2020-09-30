@@ -206,7 +206,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return []
 
     def daily_reports(
-        self, start_date=None, end_date=None, campaign_type=None, div_id=None, advertiser=None
+        self,
+        start_date=None,
+        end_date=None,
+        campaign_type=None,
+        div_id=None,
+        advertiser=None,
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
