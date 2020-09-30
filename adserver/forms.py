@@ -304,6 +304,7 @@ class PublisherSettingsForm(forms.ModelForm):
             Fieldset(
                 _("Reporting settings"),
                 "record_placements",
+                "record_geos",
                 HTML(
                     "<p class='form-text small text-muted'>"
                     + str(
@@ -329,4 +330,5 @@ class PublisherSettingsForm(forms.ModelForm):
             "allow_community_campaigns",
             "allow_house_campaigns",
             "record_placements",
+            "record_geos",
         ]
