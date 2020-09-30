@@ -841,9 +841,13 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
             div_id=context.get("div_id", ""),
         )
 
-        div_id_options = publisher.placement_impressions.values_list(
-            "div_id", flat=True
-        ).distinct()[: self.PLACEMENT_LIMIT]
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        div_id_options = (
+            publisher.placement_impressions.values_list("div_id", flat=True)
+            .order_by()
+            .distinct()[: self.PLACEMENT_LIMIT]
+        )
 
         context.update(
             {
