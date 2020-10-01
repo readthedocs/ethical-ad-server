@@ -1542,7 +1542,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
     div_id = models.CharField(_("Div id"), blank=True, null=True, max_length=100)
     ad_type = models.ForeignKey(
-        AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
+        AdType,
+        blank=True,
+        null=True,
+        default=None,
+        on_delete=models.PROTECT,
+        db_index=False,
     )
 
     is_bot = models.BooleanField(default=False)
