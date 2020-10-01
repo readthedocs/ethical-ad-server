@@ -686,8 +686,8 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 
 class PlacementImpressionAdmin(AdImpressionsAdmin):
-    readonly_fields = ("div_id", "ad_type") + AdImpressionsAdmin.readonly_fields
-    list_display = ("div_id", "ad_type") + AdImpressionsAdmin.list_display
+    readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
+    list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
@@ -710,7 +710,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "user_agent",
         "ip",
         "div_id",
-        "ad_type",
+        "ad_type_slug",
         "client_id",
         "modified",
         "created",
