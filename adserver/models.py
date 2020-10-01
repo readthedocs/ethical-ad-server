@@ -1547,7 +1547,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         null=True,
         default=None,
         on_delete=models.PROTECT,
-        db_index=False,
+        db_index=False,  # This locked up the DB for a long time trying to write to our huge View table
     )
 
     is_bot = models.BooleanField(default=False)
