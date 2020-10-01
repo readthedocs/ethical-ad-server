@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.10.1
+---------------
+
+:Date: October 1, 2020
+
+v0.10.0 caused a very long migration which we resolved in v0.10.1
+
+ * @ericholscher: Don’t index `ad_type` on the AdBase (#246)
+
+
 Version v0.10.0
 ---------------
 
