@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.10.2
+---------------
+
+:Date: October 1, 2020
+
+v0.10.2 finally fixed the slow migration issues.
+
+ * @ericholscher: Make ad_type a slug on the AdBase & PlacementImpression (#248)
+
+
 Version v0.10.1
 ---------------
 
