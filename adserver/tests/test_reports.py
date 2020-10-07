@@ -108,11 +108,20 @@ class TestReportViews(TestCase):
         )
 
         # Trigger some impressions so flights will be shown in the date range
-        self.ad1.incr(VIEWS, self.publisher1, div_id="p1", ad_type=self.ad_type1)
-        self.ad1.incr(VIEWS, self.publisher1, div_id="p2", ad_type=self.ad_type1)
-        self.ad1.incr(VIEWS, self.publisher1, div_id="p2", ad_type=self.ad_type1)
         self.ad1.incr(
-            VIEWS, self.publisher1, div_id="ad_23453464", ad_type=self.ad_type1
+            VIEWS, self.publisher1, div_id="p1", ad_type_slug=self.ad_type1.slug
+        )
+        self.ad1.incr(
+            VIEWS, self.publisher1, div_id="p2", ad_type_slug=self.ad_type1.slug
+        )
+        self.ad1.incr(
+            VIEWS, self.publisher1, div_id="p2", ad_type_slug=self.ad_type1.slug
+        )
+        self.ad1.incr(
+            VIEWS,
+            self.publisher1,
+            div_id="ad_23453464",
+            ad_type_slug=self.ad_type1.slug,
         )
         self.ad1.incr(CLICKS, self.publisher1)
 

@@ -6,6 +6,40 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.10.2
+---------------
+
+:Date: October 1, 2020
+
+v0.10.2 finally fixed the slow migration issues.
+
+ * @ericholscher: Make ad_type a slug on the AdBase & PlacementImpression (#248)
+
+
+Version v0.10.1
+---------------
+
+:Date: October 1, 2020
+
+v0.10.0 caused a very long migration which we resolved in v0.10.1
+
+ * @ericholscher: Don’t index `ad_type` on the AdBase (#246)
+
+
+Version v0.10.0
+---------------
+
+:Date: October 1, 2020
+
+The major change in this release was to allow publishers to individually
+track the performance of ads on certain pages/sections separately
+by adding an ``id`` attribute to the ad ``<div>``.
+Behind the scenes, there was a rework in how we track when an ad is
+offered and viewed but those are not user facing.
+
+ * @ericholscher: Store placements and keywords and add reporting (#239)
+
+
 Version v0.9.1
 --------------
 

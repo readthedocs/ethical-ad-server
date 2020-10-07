@@ -1057,7 +1057,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def incr(self, impression_type, publisher, request=None, div_id=None, ad_type=None):
+    def incr(self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
@@ -1071,12 +1071,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Only store div_id when publisher has it enabled, and old defaults aren't present
         if (
             div_id
-            and ad_type
+            and ad_type_slug
             and publisher.record_placements
             and not re.search(r"rtd-\w{8}|ad_\w{8}", div_id)
         ):
             placement_impression, _ = self.placement_impressions.get_or_create(
-                publisher=publisher, date=day, div_id=div_id, ad_type=ad_type
+                publisher=publisher, date=day, div_id=div_id, ad_type_slug=ad_type_slug
             )
             PlacementImpression.objects.filter(pk=placement_impression.pk).update(
                 **{impression_type: models.F(impression_type) + 1}
@@ -1105,7 +1105,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 total_clicks=models.F("total_clicks") + 1
             )
 
-    def _record_base(self, request, model, publisher, url, keywords, div_id, ad_type):
+    def _record_base(
+        self, request, model, publisher, url, keywords, div_id, ad_type_slug
+    ):
         """
         Save the actual AdBase model to the database.
 
@@ -1139,7 +1141,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # Client Data
             keywords=keywords if keywords else None,  # Don't save empty lists
             div_id=div_id,
-            ad_type=ad_type,
+            ad_type_slug=ad_type_slug,
             # Page info
             advertisement=self,
         )
@@ -1161,7 +1163,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             publisher=publisher,
             request=request,
             div_id=offer.div_id,
-            ad_type=offer.ad_type,
+            ad_type_slug=offer.ad_type_slug,
         )
         return self._record_base(
             request=request,
@@ -1170,7 +1172,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=url,
             keywords=offer.keywords,
             div_id=offer.div_id,
-            ad_type=offer.ad_type,
+            ad_type_slug=offer.ad_type_slug,
         )
 
     def track_view(self, request, publisher, url, offer):
@@ -1187,7 +1189,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             publisher=publisher,
             request=request,
             div_id=offer.div_id,
-            ad_type=offer.ad_type,
+            ad_type_slug=offer.ad_type_slug,
         )
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
@@ -1198,7 +1200,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 url=url,
                 keywords=offer.keywords,
                 div_id=offer.div_id,
-                ad_type=offer.ad_type,
+                ad_type_slug=offer.ad_type_slug,
             )
 
         log.debug("Not recording ad view.")
@@ -1210,15 +1212,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         Tracks an offer in the database to save data about it and compare against view.
         """
-        ad_type = AdType.objects.filter(slug=ad_type_slug).first()
         referrer = request.META.get("HTTP_REFERER")
+        ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
         self.incr(
             impression_type=OFFERS,
             publisher=publisher,
             request=request,
             div_id=div_id,
-            ad_type=ad_type,
+            ad_type_slug=ad_type_slug,
         )
         offer = self._record_base(
             request=request,
@@ -1227,7 +1229,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=referrer,
             keywords=keywords,
             div_id=div_id,
-            ad_type=ad_type,
+            ad_type_slug=ad_type_slug,
         )
 
         nonce = offer.pk
@@ -1508,9 +1510,7 @@ class PlacementImpression(BaseImpression):
     """
 
     div_id = models.CharField(max_length=255, null=True, blank=True)
-    ad_type = models.ForeignKey(
-        AdType, related_name="placement_impressions", on_delete=models.PROTECT
-    )
+    ad_type_slug = models.CharField(_("Ad type"), blank=True, null=True, max_length=100)
     publisher = models.ForeignKey(
         Publisher, related_name="placement_impressions", on_delete=models.PROTECT
     )
@@ -1520,7 +1520,14 @@ class PlacementImpression(BaseImpression):
 
     class Meta:
         ordering = ("-date",)
-        unique_together = ("publisher", "advertisement", "date", "div_id", "ad_type")
+        unique_together = (
+            "publisher",
+            "advertisement",
+            "date",
+            "div_id",
+            "ad_type_slug",
+        )
+        verbose_name_plural = _("Placement impressions")
 
     def __str__(self):
         """Simple override."""
@@ -1594,9 +1601,9 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     # Client data
     keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
     div_id = models.CharField(_("Div id"), blank=True, null=True, max_length=100)
-    ad_type = models.ForeignKey(
-        AdType, blank=True, null=True, default=None, on_delete=models.PROTECT
-    )
+    # This locked up the DB for a long time trying to write to our huge View table,
+    # so we made it a Text field instead of a FK.
+    ad_type_slug = models.CharField(_("Ad type"), blank=True, null=True, max_length=100)
 
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
