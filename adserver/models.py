@@ -1057,7 +1057,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def incr(self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None):
+    def incr(
+        self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None
+    ):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
