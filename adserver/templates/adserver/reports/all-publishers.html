@@ -70,6 +70,19 @@
           </tr>
         </thead>
         <tbody>
+          {% for date, day in days.items %}
+            {% if day.views > 0 or day.clicks > 0 %}
+            <tr>
+              <td>{{ date }}</td>
+              <td class="text-right">{{ day.views|intcomma }}</td>
+              <td class="text-right">{{ day.clicks|intcomma }}</td>
+              <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
+              <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
+              <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
+              <td class="text-right">${{ day.our_revenue|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endif %}
+          {% endfor %}
           <tr>
             <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
             <td class="text-right"><strong>{{ total_views|intcomma }}</strong></td>
