@@ -40,7 +40,7 @@
 {% block toc %}
 <section class="mb-5">
   {% if publishers %}
-    <h2>{% trans 'Publishers '%}</h2>
+    <h2>{% trans 'Publishers '%} ({{ publishers|length }})</h2>
     <ul>
     {% for publisher in publishers %}
       <li><a href="#{{ publisher.slug }}">{{ publisher }}</a></li>
