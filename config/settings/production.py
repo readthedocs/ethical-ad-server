@@ -12,6 +12,7 @@ Only a few environment variables are required:
 - SENDGRID_API_KEY
 """
 import logging
+import ssl
 
 from .base import *  # noqa
 from .base import env
@@ -103,6 +104,7 @@ AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
 
 
 # Sentry settings for error monitoring
