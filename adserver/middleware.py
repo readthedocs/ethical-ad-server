@@ -1,4 +1,5 @@
 """Ad server middleware."""
+import socket
 
 
 class XForwardedForMiddleware:
@@ -20,7 +21,9 @@ class XForwardedForMiddleware:
     def __call__(self, request):
         """Sets request.ip_address based on x-forwarded-for."""
         request.ip_address = self._get_ip_address(request)
-        return self.get_response(request)
+        response = self.get_response(request)
+        response["X-Server"] = socket.gethostname()
+        return response
 
     def _get_ip_address(self, request):
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", None)
