@@ -8,13 +8,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import json
+import logging
 import os
 
 import environ
 import stripe
+from django.core.exceptions import ImproperlyConfigured
 
+log = logging.getLogger(__name__)  # noqa
 
 env = environ.Env()
+try:
+    env.read_env(env("ENV_FILE"))
+    print(env("ENV_FILE"))
+except ImproperlyConfigured:
+    log.info("Unable to read env file. Assuming environment is already set.")
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
