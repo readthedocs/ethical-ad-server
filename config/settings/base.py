@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)  # noqa
 env = environ.Env()
 try:
     env.read_env(env("ENV_FILE"))
-    print(env("ENV_FILE"))
 except ImproperlyConfigured:
     log.info("Unable to read env file. Assuming environment is already set.")
 
