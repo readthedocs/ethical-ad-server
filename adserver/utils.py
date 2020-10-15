@@ -258,6 +258,8 @@ def get_ipproxy_db():
     filepath = os.path.join(settings.GEOIP_PATH, "IP2Proxy.BIN")
     if os.path.exists(filepath):
         db = IP2Proxy.IP2Proxy(filepath)
+    else:
+        log.warning("IP Proxy detection is not available.")
 
     return db
 
