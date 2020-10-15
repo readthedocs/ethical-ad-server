@@ -24,6 +24,8 @@ from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
 
+from .constants import PAID_CAMPAIGN
+
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -342,7 +344,9 @@ def generate_publisher_payout_data(publisher):
     )
 
     current_report = publisher.daily_reports(
-        start_date=today.replace(day=1), end_date=today
+        start_date=today.replace(day=1),
+        end_date=today,
+        campaign_type=PAID_CAMPAIGN,
     )
     current_report_url = (
         report_url
@@ -351,6 +355,7 @@ def generate_publisher_payout_data(publisher):
             {
                 "start_date": today.strftime("%Y-%m-01"),
                 "end_date": today.strftime("%Y-%m-%d"),
+                "campaign_type": PAID_CAMPAIGN,
             }
         )
     )
@@ -361,7 +366,9 @@ def generate_publisher_payout_data(publisher):
     # Handle cases where a publisher has just joined this month
     if last_payout_date.month != today.month:
         due_report = publisher.daily_reports(
-            start_date=last_payout_date, end_date=last_day_last_month
+            start_date=last_payout_date,
+            end_date=last_day_last_month,
+            campaign_type=PAID_CAMPAIGN,
         )
         due_report_url = (
             report_url
@@ -370,6 +377,7 @@ def generate_publisher_payout_data(publisher):
                 {
                     "start_date": last_payout_date.strftime("%Y-%m-%d"),
                     "end_date": last_day_last_month.strftime("%Y-%m-%d"),
+                    "campaign_type": PAID_CAMPAIGN,
                 }
             )
         )
