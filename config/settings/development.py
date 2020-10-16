@@ -25,3 +25,11 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
+
+
+# Celery settings for asynchronous tasks
+# http://docs.celeryproject.org
+# --------------------------------------------------------------------------
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
