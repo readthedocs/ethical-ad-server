@@ -1210,6 +1210,9 @@ class AllPublisherReportView(BaseReportView):
                 days[day["date"]]["ctr"] = calculate_ctr(
                     days[day["date"]]["clicks"], days[day["date"]]["views"]
                 )
+                days[day["date"]]["ecpm"] = calculate_ecpm(
+                    days[day["date"]]["revenue"], days[day["date"]]["views"]
+                )
 
         context.update(
             {
@@ -1218,6 +1221,7 @@ class AllPublisherReportView(BaseReportView):
                 "total_clicks": total_clicks,
                 "total_revenue": total_revenue,
                 "our_total_revenue": our_total_revenue,
+                "days": days,
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_revenue, total_views),
