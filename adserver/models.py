@@ -1409,7 +1409,7 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     """Statistics for tracking."""
 
-    date = models.DateField(_("Date"))
+    date = models.DateField(_("Date"), db_index=True)
 
     # Offers include cases where the server returned an ad
     # but the client didn't load it
@@ -1513,7 +1513,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
 
-    date = models.DateTimeField(_("Impression date"))
+    date = models.DateTimeField(_("Impression date"), db_index=True)
 
     publisher = models.ForeignKey(
         Publisher, null=True, blank=True, on_delete=models.PROTECT
