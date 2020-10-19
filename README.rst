@@ -34,6 +34,12 @@ Features
 The Ethical Ad Server uses GeoLite2 data created by MaxMind
 or IP Geolocation by DB-IP.
 
+Use our existing ad network
+---------------------------
+
+This code is what powers our `EthicalAds network <https://www.ethicalads.io/>`_.
+If you are just looking for a way to serve ethical ads,
+we'd recommend you give our existing network a try.
 
 Documentation
 -------------
