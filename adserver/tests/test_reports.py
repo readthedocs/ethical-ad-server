@@ -35,7 +35,6 @@ class TestReportViews(TestCase):
             slug="test-publisher",
             allow_paid_campaigns=True,
             record_placements=True,
-            record_geos=True,
         )
         self.publisher2 = get(
             Publisher, slug="another-publisher", allow_paid_campaigns=True

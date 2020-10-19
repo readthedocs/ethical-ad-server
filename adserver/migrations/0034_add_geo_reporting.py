@@ -13,11 +13,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='publisher',
-            name='record_geos',
-            field=models.BooleanField(default=False, help_text='Record geo impressions for this publisher'),
-        ),
         migrations.CreateModel(
             name='GeoImpression',
             fields=[

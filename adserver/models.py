@@ -171,9 +171,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     record_placements = models.BooleanField(
         default=False, help_text=_("Record placement impressions for this publisher")
     )
-    record_geos = models.BooleanField(
-        default=False, help_text=_("Record geo impressions for this publisher")
-    )
 
     class Meta:
         ordering = ("name",)
@@ -1083,19 +1080,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             PlacementImpression.objects.filter(pk=placement_impression.pk).update(
                 **{impression_type: models.F(impression_type) + 1}
             )
-
-        if publisher.record_geos and request:
-            ip_address = get_client_ip(request)
-            country = get_client_country(request, ip_address)
-            if country:
-                geo_impression, _ = self.geo_impressions.get_or_create(
-                    publisher=publisher, date=day, country=country
-                )
-                GeoImpression.objects.filter(pk=geo_impression.pk).update(
-                    **{impression_type: models.F(impression_type) + 1}
-                )
-
-        # TODO: Add more denormalized impression tables
 
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
