@@ -32,7 +32,7 @@ LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
 # http://docs.celeryproject.org
 # --------------------------------------------------------------------------
 CELERY_TASK_ALWAYS_EAGER = False
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=None))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 CELERYBEAT_SCHEDULE = {

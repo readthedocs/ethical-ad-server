@@ -16,7 +16,9 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
+from ..models import Offer
 from ..models import Publisher
+from ..tasks import daily_update_geos
 
 
 class TestReportViews(TestCase):
@@ -427,18 +429,13 @@ class TestReportViews(TestCase):
     def test_publisher_geo_report_contents(self):
         self.factory = RequestFactory()
 
-        request = self.factory.get("/")
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
 
-        with mock.patch("adserver.models.get_client_country") as get_geo:
-            get_geo.return_value = "US"
-            # Trigger some impressions so flights will be shown in the date range
-            self.ad1.incr(VIEWS, self.publisher1, request=request)
-            self.ad1.incr(VIEWS, self.publisher1, request=request)
-            self.ad1.incr(VIEWS, self.publisher1, request=request)
-
-            get_geo.return_value = "FR"
-            self.ad1.incr(VIEWS, self.publisher1, request=request)
-            self.ad1.incr(CLICKS, self.publisher1)
+        # Update reporting
+        daily_update_geos()
 
         self.client.force_login(self.staff_user)
         url = reverse("publisher_geo_report", args=[self.publisher1.slug])
