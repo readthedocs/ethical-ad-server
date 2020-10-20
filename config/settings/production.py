@@ -14,6 +14,8 @@ Only a few environment variables are required:
 import logging
 import ssl
 
+from celery.schedules import crontab
+
 from .base import *  # noqa
 from .base import env
 
