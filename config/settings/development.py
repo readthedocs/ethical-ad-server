@@ -1,3 +1,4 @@
+"""Development settings."""
 from celery.schedules import crontab
 
 from .base import *  # noqa

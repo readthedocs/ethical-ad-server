@@ -1,4 +1,4 @@
-"""Celery tasks for the ad server"""
+"""Celery tasks for the ad server."""
 import logging
 
 from django.db.models import Count
@@ -14,7 +14,6 @@ log = logging.getLogger(__name__)  # noqa
 @app.task()
 def daily_update_geos():
     """Update the Geo index each day."""
-
     beginning_of_today = get_ad_day()
     log.info("Updating GeoImpressions for %s", beginning_of_today)
 
