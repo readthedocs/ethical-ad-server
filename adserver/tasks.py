@@ -1,9 +1,13 @@
-from django.db import Count
+import logging
 
-from ..config.celery_app import app
+from django.db.models import Count
+
 from .models import GeoImpression
 from .models import Offer
 from .utils import get_ad_day
+from config.celery_app import app
+
+log = logging.getLogger(__name__)  # noqa
 
 
 @app.task()
@@ -13,6 +17,8 @@ def daily_update_geos(day=None):
     """
 
     beginning_of_today = get_ad_day()
+    log.info("Updating GeoImpressions for %s", beginning_of_today)
+
     for values in (
         Offer.objects.filter(date__gte=beginning_of_today, viewed=True)
         .values("publisher", "advertisement", "country")

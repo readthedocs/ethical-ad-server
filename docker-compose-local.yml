@@ -58,6 +58,7 @@ services:
 
     env_file:
       - ./.envs/local/django
+      - ./.envs/local/postgres
 
     ports: []
     command: /start-celeryworker
@@ -70,6 +71,7 @@ services:
       - postgres
 
     env_file:
+      - ./.envs/local/postgres
       - ./.envs/local/django
 
     ports: []
