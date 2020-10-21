@@ -22,6 +22,7 @@ from .models import Advertiser
 from .models import Campaign
 from .models import Click
 from .models import Flight
+from .models import GeoImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
@@ -690,6 +691,11 @@ class PlacementImpressionAdmin(AdImpressionsAdmin):
     list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
 
 
+class GeoImpressionAdmin(AdImpressionsAdmin):
+    readonly_fields = ("country",) + AdImpressionsAdmin.readonly_fields
+    list_display = ("country",) + AdImpressionsAdmin.list_display
+
+
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the base class of ad views and clicks."""
@@ -836,6 +842,7 @@ admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
 admin.site.register(Offer, OfferAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
+admin.site.register(GeoImpression, GeoImpressionAdmin)
 admin.site.register(PlacementImpression, PlacementImpressionAdmin)
 admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)

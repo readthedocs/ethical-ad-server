@@ -35,6 +35,7 @@ from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
+from django_countries import countries
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
@@ -564,6 +565,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         div_id = self.request.GET.get("div_id", "")
         # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
         report_advertiser = self.request.GET.get("report_advertiser", "")
+        country = self.request.GET.get("country", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -575,6 +577,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "revenue_share_percentage": revenue_share_percentage,
             "div_id": div_id,
             "report_advertiser": report_advertiser,
+            "country": country,
         }
 
     def _parse_date_string(self, date_str):
@@ -841,10 +844,16 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
             div_id=context.get("div_id", ""),
         )
 
+        placement_list = publisher.placement_impressions.all()
+        if context["start_date"]:
+            placement_list = placement_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            placement_list = placement_list.filter(date__lte=context["end_date"])
+
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         div_id_options = (
-            publisher.placement_impressions.values_list("div_id", flat=True)
+            placement_list.values_list("div_id", flat=True)
             .order_by()
             .distinct()[: self.PLACEMENT_LIMIT]
         )
@@ -854,8 +863,59 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
-                "div_id": context["div_id"],
                 "div_id_options": div_id_options,
+            }
+        )
+
+        return context
+
+
+class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
+
+    """A report for a single publisher."""
+
+    template_name = "adserver/reports/publisher_geo.html"
+    LIMIT = 20
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        report = publisher.daily_reports(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            country=context.get("country", ""),
+        )
+
+        country_list = publisher.geo_impressions.all()
+        if context["start_date"]:
+            country_list = country_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            country_list = country_list.filter(date__lte=context["end_date"])
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        country_list = (
+            country_list.values_list("country", flat=True)
+            .order_by()
+            .distinct()[: self.LIMIT]
+        )
+
+        countries_dict = dict(countries)
+        country_options = (
+            (cc, countries_dict.get(cc, "Unknown")) for cc in country_list
+        )
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "country_options": country_options,
+                "country_name": countries_dict.get(context["country"]),
             }
         )
 

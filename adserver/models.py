@@ -42,10 +42,10 @@ from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import generate_absolute_url
 from .utils import get_ad_day
+from .utils import get_client_country
 from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
-from .utils import get_geolocation
 from .validators import TargetingParametersValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -212,6 +212,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         campaign_type=None,
         div_id=None,
         advertiser=None,
+        country=None,
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -233,6 +234,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             impressions = PlacementImpression.objects.filter(publisher=self)
             if div_id:
                 impressions = impressions.filter(div_id=div_id)
+
+        if country is not None:
+            impressions = GeoImpression.objects.filter(publisher=self)
+            if country:
+                impressions = impressions.filter(country=country)
 
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
@@ -1048,7 +1054,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """Simple override."""
         return self.name
 
-    def incr(self, impression_type, publisher, div_id=None, ad_type_slug=None):
+    def incr(
+        self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None
+    ):
         """Add to the number of times this action has been performed, stored in the DB."""
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
@@ -1073,8 +1081,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 **{impression_type: models.F(impression_type) + 1}
             )
 
-        # TODO: Add more denormalized impression tables
-
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
             Flight.objects.filter(pk=self.flight_id).update(
@@ -1098,21 +1104,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         user_agent = get_client_user_agent(request)
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
+        country = get_client_country(request, ip_address)
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:
             # For compliance with DNT,
             # we can't store UAs indefinitely from a user merely browsing
             user_agent = None
-
-        # Get country data for this request
-        country = None
-        if hasattr(request, "geo"):
-            # This is set in all API requests that use the GeoIpMixin
-            country = request.geo.country_code
-        else:
-            geo_data = get_geolocation(ip_address)
-            if geo_data:
-                country = geo_data["country_code"]
 
         obj = model.objects.create(
             date=timezone.now(),
@@ -1148,7 +1145,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def track_click(self, request, publisher, url, offer):
         """Store click data in the DB."""
         self.incr(
-            CLICKS, publisher, div_id=offer.div_id, ad_type_slug=offer.ad_type_slug
+            impression_type=CLICKS,
+            publisher=publisher,
+            request=request,
+            div_id=offer.div_id,
+            ad_type_slug=offer.ad_type_slug,
         )
         return self._record_base(
             request=request,
@@ -1170,7 +1171,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         is not feasible
         """
         self.incr(
-            VIEWS, publisher, div_id=offer.div_id, ad_type_slug=offer.ad_type_slug
+            impression_type=VIEWS,
+            publisher=publisher,
+            request=request,
+            div_id=offer.div_id,
+            ad_type_slug=offer.ad_type_slug,
         )
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
@@ -1196,7 +1201,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         referrer = request.META.get("HTTP_REFERER")
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(OFFERS, publisher, div_id=div_id, ad_type_slug=ad_type_slug)
+        self.incr(
+            impression_type=OFFERS,
+            publisher=publisher,
+            request=request,
+            div_id=div_id,
+            ad_type_slug=ad_type_slug,
+        )
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1507,6 +1518,31 @@ class PlacementImpression(BaseImpression):
     def __str__(self):
         """Simple override."""
         return "Placement %s of %s on %s" % (self.div_id, self.advertisement, self.date)
+
+
+class GeoImpression(BaseImpression):
+
+    """
+    Create an index of geo targeting for ads.
+
+    Indexed one per ad/publisher/geo per day.
+    """
+
+    country = CountryField()
+    publisher = models.ForeignKey(
+        Publisher, related_name="geo_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement, related_name="geo_impressions", on_delete=models.PROTECT
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "country")
+
+    def __str__(self):
+        """Simple override."""
+        return "Geo %s of %s on %s" % (self.country, self.advertisement, self.date)
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):

@@ -1,6 +1,8 @@
+"""Development settings."""
+from celery.schedules import crontab
+
 from .base import *  # noqa
 from .base import env
-
 
 # Allow to use weak passwords for development
 AUTH_PASSWORD_VALIDATORS = []
@@ -25,3 +27,18 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
+
+
+# Celery settings for asynchronous tasks
+# http://docs.celeryproject.org
+# --------------------------------------------------------------------------
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=None))
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+CELERYBEAT_SCHEDULE = {
+    "every-day-generate-geo-index": {
+        "task": "adserver.tasks.daily_update_geos",
+        "schedule": crontab(minute="*/5"),
+    },
+}

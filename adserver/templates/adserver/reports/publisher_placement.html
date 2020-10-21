@@ -6,7 +6,12 @@
 {% block title %}{% trans 'Placement Report' %} - {{ publisher }}{% endblock %}
 
 
-{% block heading %}{% blocktrans %}Placement Report for {{ publisher }}{% endblocktrans %}{% endblock heading %}
+{% block heading %}
+{% blocktrans %}Placement Report for {{ publisher }}{% endblocktrans %}
+{% if div_id %}
+{% blocktrans %}filtered by {{ div_id }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
 
 {% block breadcrumbs %}
   {{ block.super }}
@@ -28,6 +33,18 @@
 </div>
 
 {% endblock additional_filters %}
+
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report allows you to break down your different ad placements and view reports on them.
+    You can use this to optomize the different placement on your site,
+    and better understand how each one is working to be able to improve them.
+  </p>
+</section>
+{% endblock explainer %}
 
 
 {% block report %}{% endblock report %}

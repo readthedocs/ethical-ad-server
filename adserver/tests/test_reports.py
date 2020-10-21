@@ -1,5 +1,8 @@
+from unittest import mock
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
 
@@ -13,7 +16,9 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
+from ..models import Offer
 from ..models import Publisher
+from ..tasks import daily_update_geos
 
 
 class TestReportViews(TestCase):
@@ -419,4 +424,37 @@ class TestReportViews(TestCase):
 
         # Filter old default slugs
         response = self.client.get(url, {"div_id": "ad_23453464"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+    def test_publisher_geo_report_contents(self):
+        self.factory = RequestFactory()
+
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
+
+        # Update reporting
+        daily_update_geos()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_geo_report", args=[self.publisher1.slug])
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "France")
+        self.assertNotContains(response, "Belgium")
+
+        # Filter reports
+        response = self.client.get(url, {"country": "US"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"country": "FR"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"country": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')

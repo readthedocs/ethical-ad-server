@@ -1,0 +1,49 @@
+{% extends "adserver/reports/publisher.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Geo Report' %} - {{ publisher }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Geo Report for {{ publisher }}{% endblocktrans %}
+{% if country %}
+{% blocktrans %}filtered by {{ country_name }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Geos' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block additional_filters %}
+{{ block.super }}
+
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_campaign_type">{% trans 'Country' %}</label>
+  <select class="form-control" name="country" id="id_country">
+    <option value="">All Countries</option>
+    {% for option, name in country_options %}
+      <option value="{{ option }}"{% if country == option %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% endblock additional_filters %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows all your traffic that had country data we could determine from the IP address.
+    We charge different rates based on the geo,
+    so it will let you understand a bit more about how your traffic is monetizing.
+  </p>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}

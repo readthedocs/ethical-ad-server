@@ -14,6 +14,8 @@ Only a few environment variables are required:
 import logging
 import ssl
 
+from celery.schedules import crontab
+
 from .base import *  # noqa
 from .base import env
 
@@ -106,6 +108,12 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
 
+CELERYBEAT_SCHEDULE = {
+    "every-day-generate-geo-index": {
+        "task": "adserver.tasks.daily_update_geos",
+        "schedule": crontab(minute="*/30"),
+    },
+}
 
 # Sentry settings for error monitoring
 # https://docs.sentry.io/platforms/python/django/
