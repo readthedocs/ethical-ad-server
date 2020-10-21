@@ -99,12 +99,14 @@
               </li>
               {% endif %}
 
+              {% if request.user.is_staff %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_geo_report' publisher.slug %}">
-                  <span class="fa fa-bar-chart fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                  <span class="fa fa-globe fa-fw ml-4 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Geos' %}</span>
                 </a>
               </li>
+              {% endif %}
 
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_payouts' publisher.slug %}">
