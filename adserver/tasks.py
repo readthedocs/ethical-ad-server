@@ -32,7 +32,7 @@ def daily_update_geos(day=None):
     for impression_type in IMPRESSION_TYPES:
         queryset = Offer.objects.filter(
             date__gte=start_date,
-            date__lt=end_date,  # Must be `lt` and not `lte` or you get the next days data
+            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         )
 
         if impression_type == CLICKS:
