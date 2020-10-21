@@ -38,7 +38,7 @@ def daily_update_geos(day=None):
         if impression_type == CLICKS:
             queryset = queryset.filter(clicked=True)
         elif impression_type == VIEWS:
-            queryset = queryset.filter(views=True)
+            queryset = queryset.filter(viewed=True)
 
         for values in (
             queryset.values("publisher", "advertisement", "country")
