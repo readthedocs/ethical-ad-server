@@ -116,7 +116,11 @@ if env.bool("REDIS_SSL", default=False):
 CELERY_BEAT_SCHEDULE = {
     "every-day-generate-geo-index": {
         "task": "adserver.tasks.daily_update_geos",
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(minute="15"),
+    },
+    "every-day-generate-placement-index": {
+        "task": "adserver.tasks.daily_update_placements",
+        "schedule": crontab(minute="45"),
     },
 }
 

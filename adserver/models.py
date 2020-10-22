@@ -1067,20 +1067,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             **{impression_type: models.F(impression_type) + 1}
         )
 
-        # Only store div_id when publisher has it enabled, and old defaults aren't present
-        if (
-            div_id
-            and ad_type_slug
-            and publisher.record_placements
-            and not re.search(r"rtd-\w{8}|ad_\w{8}", div_id)
-        ):
-            placement_impression, _ = self.placement_impressions.get_or_create(
-                publisher=publisher, date=day, div_id=div_id, ad_type_slug=ad_type_slug
-            )
-            PlacementImpression.objects.filter(pk=placement_impression.pk).update(
-                **{impression_type: models.F(impression_type) + 1}
-            )
-
         # Update the denormalized fields on the Flight
         if impression_type == VIEWS:
             Flight.objects.filter(pk=self.flight_id).update(
