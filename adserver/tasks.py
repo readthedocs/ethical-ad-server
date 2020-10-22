@@ -1,7 +1,6 @@
 """Celery tasks for the ad server."""
 import datetime
 import logging
-import re
 
 from django.db.models import Count
 
@@ -84,18 +83,6 @@ def daily_update_placements(day=None):
         elif impression_type == VIEWS:
             queryset = queryset.filter(viewed=True)
 
-        print(
-            str(
-                queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
-                .annotate(Count("div_id"))
-                .filter(div_id__count__gt=0)
-                .filter(publisher__record_placements=True)
-                .exclude(div_id__regex=r"(rtd-\w{4}|ad_\w{4})*")
-                .order_by("-div_id")
-                .query
-            )
-        )
-
         for values in (
             queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
             .annotate(Count("div_id"))
@@ -104,15 +91,14 @@ def daily_update_placements(day=None):
             .exclude(div_id__regex=r"(rtd-\w{4}|ad_\w{4}).*")
             .order_by("-div_id")
         ):
-            print(values)
 
-            # impression, _ = PlacementImpression.objects.get_or_create(
-            #     publisher_id=values["publisher"],
-            #     advertisement_id=values["advertisement"],
-            #     div_id=values["div_id"],
-            #     ad_type_slug=values["ad_type_slug"],
-            #     date=start_date,
-            # )
-            # PlacementImpression.objects.filter(pk=impression.pk).update(
-            #     **{impression_type: values["div_id__count"]}
-            # )
+            impression, _ = PlacementImpression.objects.get_or_create(
+                publisher_id=values["publisher"],
+                advertisement_id=values["advertisement"],
+                div_id=values["div_id"],
+                ad_type_slug=values["ad_type_slug"],
+                date=start_date,
+            )
+            PlacementImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: values["div_id__count"]}
+            )

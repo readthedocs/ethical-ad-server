@@ -1058,13 +1058,6 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
-        # Verify a PlacementImpression was written
-        placement_impression = self.ad.placement_impressions.filter(
-            publisher=self.publisher1
-        ).first()
-        self.assertEqual(placement_impression.offers, 1)
-        self.assertEqual(placement_impression.views, 1)
-
         # Make sure we're writing ads for ad network views
         self.assertTrue(
             View.objects.filter(

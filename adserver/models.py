@@ -3,7 +3,6 @@ import datetime
 import html
 import logging
 import math
-import re
 import uuid
 from collections import Counter
 from collections import defaultdict
