@@ -127,10 +127,14 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         _("Allow affiliate campaigns"), default=False
     )
     allow_community_campaigns = models.BooleanField(
-        _("Allow community campaigns"), default=True
+        _("Allow community campaigns"),
+        default=True,
+        help_text="These are unpaid campaigns that support non-profit projects in our community. Shown only when no paid ads are available",
     )
     allow_house_campaigns = models.BooleanField(
-        _("Allow house campaigns"), default=True
+        _("Allow house campaigns"),
+        default=True,
+        help_text="These are ads for EthicalAds itself. Shown only when no paid ads are available.",
     )
 
     # Payout information

@@ -285,7 +285,6 @@ class PublisherSettingsForm(forms.ModelForm):
             ),
             Fieldset(
                 _("Control advertiser campaign types"),
-                "allow_affiliate_campaigns",
                 "allow_community_campaigns",
                 "allow_house_campaigns",
                 HTML(
