@@ -285,7 +285,6 @@ class PublisherSettingsForm(forms.ModelForm):
             ),
             Fieldset(
                 _("Control advertiser campaign types"),
-                "allow_affiliate_campaigns",
                 "allow_community_campaigns",
                 "allow_house_campaigns",
                 HTML(
@@ -294,7 +293,7 @@ class PublisherSettingsForm(forms.ModelForm):
                         _(
                             "Use these checkboxes to control the types of advertiser campaigns "
                             "that are allowed on your site. "
-                            "House and community campaigns can be especially useful when settings things up."
+                            "House campaigns are used when initially setting up your account."
                         )
                     )
                     + "</p>"
