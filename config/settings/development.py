@@ -36,7 +36,7 @@ CELERY_TASK_ALWAYS_EAGER = False
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=None))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-CELERYBEAT_SCHEDULE = {
+CELERY_BEAT_SCHEDULE = {
     "every-day-generate-geo-index": {
         "task": "adserver.tasks.daily_update_geos",
         "schedule": crontab(minute="*/5"),
