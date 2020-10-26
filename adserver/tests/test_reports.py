@@ -1,3 +1,4 @@
+import datetime
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -19,6 +20,7 @@ from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
 from ..tasks import daily_update_geos
+from ..tasks import daily_update_placements
 
 
 class TestReportViews(TestCase):
@@ -404,6 +406,14 @@ class TestReportViews(TestCase):
     def test_publisher_placement_report_contents(self):
         self.client.force_login(self.staff_user)
         url = reverse("publisher_placement_report", args=[self.publisher1.slug])
+
+        get(Offer, publisher=self.publisher1, div_id="p1", viewed=True)
+        get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
+        get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
+        get(Offer, publisher=self.publisher1, div_id="ad_23453464", viewed=True)
+
+        # Update reporting
+        daily_update_placements(day=datetime.datetime.utcnow().isoformat())
 
         # All reports
         response = self.client.get(url)
