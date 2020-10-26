@@ -900,7 +900,8 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = (
             country_list.values_list("country", flat=True)
-            .order_by()
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
             .distinct()[: self.LIMIT]
         )
 
