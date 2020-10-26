@@ -1,3 +1,4 @@
+import datetime
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -412,7 +413,7 @@ class TestReportViews(TestCase):
         get(Offer, publisher=self.publisher1, div_id="ad_23453464", viewed=True)
 
         # Update reporting
-        daily_update_placements()
+        daily_update_placements(day=datetime.datetime.utcnow().isoformat())
 
         # All reports
         response = self.client.get(url)
