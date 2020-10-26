@@ -2,6 +2,7 @@
 import datetime
 import logging
 
+from celery.utils.iso8601 import parse_iso8601
 from django.db.models import Count
 
 from .constants import CLICKS
@@ -67,6 +68,10 @@ def daily_update_placements(day=None):
     """
     start_date = get_ad_day()
     if day:
+        log.info("Got day: %s", day)
+        if not isinstance(day, (datetime.datetime, datetime.date)):
+            log.info("Converting day from string")
+            day = parse_iso8601(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + datetime.timedelta(days=1)
 
