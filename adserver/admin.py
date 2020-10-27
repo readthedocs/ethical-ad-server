@@ -655,6 +655,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the ad impressions."""
 
+    date_hierarchy = "date"
     readonly_fields = (
         "date",
         "advertisement",
@@ -702,6 +703,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     """Django admin configuration for the base class of ad views and clicks."""
 
     actions = ["refund_impressions"]
+    date_hierarchy = "date"
     readonly_fields = (
         "date",
         "advertisement",
