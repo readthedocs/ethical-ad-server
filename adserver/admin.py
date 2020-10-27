@@ -739,6 +739,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "user_agent",
         "client_id",
     )
+    show_full_result_count = False
 
     def page_url(self, instance):
         if instance.url:

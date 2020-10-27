@@ -59,7 +59,10 @@ class EstimatedCountPaginator(Paginator):
 
     @cached_property
     def count(self):
-        if "postgresql" not in settings.DATABASES["default"]["ENGINE"]:
+        if (
+            settings.DEBUG
+            or "postgresql" not in settings.DATABASES["default"]["ENGINE"]
+        ):
             return super().count
 
         query = self.object_list.query
