@@ -1,5 +1,9 @@
 """Mixins for advertiser and publisher views."""
+from django.conf import settings
+from django.core.paginator import Paginator
+from django.db import connection
 from django.shortcuts import get_object_or_404
+from django.utils.functional import cached_property
 
 from .models import Advertiser
 from .models import Publisher
@@ -43,3 +47,29 @@ class PublisherAccessMixin:
             self.request.user.is_staff
             or publisher in self.request.user.publishers.all()
         )
+
+
+class EstimatedCountPaginator(Paginator):
+
+    """
+    Paginator that gives only an estimated count based on DB statistics..
+
+    This only works for PostgreSQL. Other database engines always return the full count.
+    """
+
+    @cached_property
+    def count(self):
+        if "postgresql" not in settings.DATABASES["default"]["ENGINE"]:
+            return super().count
+
+        query = self.object_list.query
+
+        # We set the timeout in a db transaction to prevent it from
+        # affecting other transactions.
+        with connection.cursor() as cursor:
+            # This is postgres specific
+            cursor.execute(
+                "SELECT reltuples FROM pg_class WHERE relname = %s",
+                [query.model._meta.db_table],
+            )
+            return int(cursor.fetchone()[0])
