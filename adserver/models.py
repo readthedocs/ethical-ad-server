@@ -689,6 +689,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return _("Upcoming")
         return _("Past")
 
+    def get_absolute_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.campaign.advertiser.slug,
+                "flight_slug": self.slug,
+            },
+        )
+
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
         countries_dict = dict(countries)
@@ -1056,6 +1065,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def __str__(self):
         """Simple override."""
         return self.name
+
+    def get_absolute_url(self):
+        return reverse(
+            "advertisement_detail",
+            kwargs={
+                "advertiser_slug": self.flight.campaign.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.slug,
+            },
+        )
 
     def incr(
         self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None
