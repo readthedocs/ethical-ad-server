@@ -276,10 +276,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         days = OrderedDict()
         for impression in impressions:
             index = getattr(impression, report_index)
-
             if index not in days:
                 days[index] = defaultdict(int)
-
             index_display = index
             if report_index == "country":
                 index_display = "%s (%s)" % (index, get_country_name(index))
@@ -304,13 +302,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                 days[index]["revenue"], days[index]["views"]
             )
 
-            if report_index == "country":
-                days[index]["country"] = impression.country
-
         report["days"] = days.values()
-
         if report_index != "date":
-            # Only include limit in the report
+            # Show a truncated list sorted by most views
             report["days"] = sorted(
                 days.values(),
                 key=lambda obj: obj["views"],
