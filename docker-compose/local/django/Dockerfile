@@ -20,8 +20,8 @@ COPY ./requirements /requirements
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
 
-COPY ./docker-compose/local/django/entrypoint /entrypoint
-RUN chmod +x /entrypoint
+# COPY ./docker-compose/local/django/entrypoint /entrypoint
+# RUN chmod +x /entrypoint
 
 COPY ./docker-compose/local/django/start /start
 RUN chmod +x /start
@@ -34,4 +34,4 @@ RUN chmod +x /start-celerybeat
 
 WORKDIR /app
 
-ENTRYPOINT ["/entrypoint"]
+# ENTRYPOINT ["/entrypoint"]
