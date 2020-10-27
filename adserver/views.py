@@ -829,7 +829,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher_placement.html"
-    PLACEMENT_LIMIT = 10
+    LIMIT = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -842,6 +842,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
             div_id=context.get("div_id", ""),
+            report_length=self.LIMIT,
         )
 
         placement_list = publisher.placement_impressions.all()
@@ -854,8 +855,9 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         div_id_options = (
             placement_list.values_list("div_id", flat=True)
-            .order_by()
-            .distinct()[: self.PLACEMENT_LIMIT]
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
         )
 
         context.update(
@@ -864,6 +866,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "div_id_options": div_id_options,
+                "limit": self.LIMIT,
             }
         )
 
@@ -888,6 +891,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
             country=context.get("country", ""),
+            report_length=self.LIMIT,
         )
 
         country_list = publisher.geo_impressions.all()
@@ -917,6 +921,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "country_options": country_options,
                 "country_name": countries_dict.get(context["country"]),
+                "limit": self.LIMIT,
             }
         )
 

@@ -20,6 +20,7 @@ from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_text
 from django.utils.http import urlencode
+from django_countries import countries
 from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
@@ -31,6 +32,10 @@ log = logging.getLogger(__name__)  # noqa
 GeolocationTuple = namedtuple(
     "GeolocationTuple", ["country_code", "region_code", "metro_code"]
 )
+
+
+# Put this here so we don't reload it on each call
+COUNTRY_DICT = dict(countries)
 
 
 def analytics_event(**kwargs):
@@ -132,6 +137,10 @@ def get_client_country(request, ip_address=None):
             country = geo_data["country_code"]
 
     return country
+
+
+def get_country_name(country_code):
+    return COUNTRY_DICT.get(country_code)
 
 
 def anonymize_ip_address(ip_address):
