@@ -5,6 +5,27 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.11.0
+---------------
+
+:Date: October 27, 2020
+
+This release adds Celery tasks for indexing of all our generated reporting indexes.
+We also added a Geo index in beta for this release,
+along with a few performance improvements.
+
+ * @davidfischer: Add an estimated count paginator (#265)
+ * @davidfischer: Add get_absolute_url methods to flight and advertiser models (#264)
+ * @ericholscher: Show breakdown report on the Geo/Placement reports by default (#263)
+ * @ericholscher: Remove unused entrypoint from dockerfile (#262)
+ * @ericholscher: Properly sort Countries in Geo report by most views (#261)
+ * @ericholscher: Migrate PlacementImpressions to a Celery task (#260)
+ * @ericholscher: Clean up Publisher settings (#259)
+ * @ericholscher: Cleanup celery config to work with beat (#258)
+ * @davidfischer: Index the date fields on ad impressions, clicks, views, and offers (#257)
+ * @ericholscher: Callout to EA (#256)
+ * @ericholscher: Add an initial Geo report for publishers (#244)
+
 
 Version v0.10.2
 ---------------
