@@ -45,6 +45,7 @@ from .utils import get_client_country
 from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
+from .utils import get_country_name
 from .validators import TargetingParametersValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -216,6 +217,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         div_id=None,
         advertiser=None,
         country=None,
+        report_length=20,
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -228,20 +230,30 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             and an aggregated total
         """
         report = {"days": [], "total": {}}
-
+        report_index = "date"
         impressions = AdImpression.objects.filter(publisher=self)
 
         # When passed in from the placement report, div_id will be an empty string, not None
         # So we differentiate between None and "" here
         if div_id is not None:
+            report_index = "div_id"
             impressions = PlacementImpression.objects.filter(publisher=self)
             if div_id:
-                impressions = impressions.filter(div_id=div_id)
+                # Show dates when filtered
+                report_index = "date"
+                impressions = PlacementImpression.objects.filter(
+                    publisher=self, div_id=div_id
+                )
 
         if country is not None:
+            report_index = "country"
             impressions = GeoImpression.objects.filter(publisher=self)
             if country:
-                impressions = impressions.filter(country=country)
+                # Show dates when filtered
+                report_index = "date"
+                impressions = GeoImpression.objects.filter(
+                    publisher=self, country=country
+                )
 
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
@@ -263,30 +275,41 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
         days = OrderedDict()
         for impression in impressions:
-            if impression.date not in days:
-                days[impression.date] = defaultdict(int)
+            index = getattr(impression, report_index)
+            if index not in days:
+                days[index] = defaultdict(int)
+            index_display = index
+            if report_index == "country":
+                index_display = "%s (%s)" % (index, get_country_name(index))
 
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["revenue"] += (
+            days[index]["date"] = impression.date
+            days[index]["index"] = index_display
+            days[index]["views"] += impression.views
+            days[index]["clicks"] += impression.clicks
+            days[index]["revenue"] += (
                 impression.clicks * float(impression.advertisement.flight.cpc)
             ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[impression.date]["revenue_share"] = days[impression.date][
-                "revenue"
-            ] * (self.revenue_share_percentage / 100.0)
-            days[impression.date]["our_revenue"] = (
-                days[impression.date]["revenue"]
-                - days[impression.date]["revenue_share"]
+            days[index]["revenue_share"] = days[index]["revenue"] * (
+                self.revenue_share_percentage / 100.0
             )
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
+            days[index]["our_revenue"] = (
+                days[index]["revenue"] - days[index]["revenue_share"]
             )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["revenue"], days[impression.date]["views"]
+            days[index]["ctr"] = calculate_ctr(
+                days[index]["clicks"], days[index]["views"]
+            )
+            days[index]["ecpm"] = calculate_ecpm(
+                days[index]["revenue"], days[index]["views"]
             )
 
         report["days"] = days.values()
+        if report_index != "date":
+            # Show a truncated list sorted by most views
+            report["days"] = sorted(
+                days.values(),
+                key=lambda obj: obj["views"],
+                reverse=True,
+            )[:report_length]
 
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])

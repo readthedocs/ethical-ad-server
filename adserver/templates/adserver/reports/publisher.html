@@ -50,7 +50,7 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th><strong>{% trans 'Time Period' %}</strong></th>
+            <th><strong>{% trans 'Report Index' %}</strong></th>
             <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
             <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
             <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
@@ -62,7 +62,7 @@
           {% for day in report.days %}
             {% if day.views > 0 or day.clicks > 0 %}
             <tr>
-              <td>{{ day.date }}</td>
+              <td>{{ day.index }}</td>
               <td class="text-right">{{ day.views|intcomma }}</td>
               <td class="text-right">{{ day.clicks|intcomma }}</td>
               <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
