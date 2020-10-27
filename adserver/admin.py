@@ -15,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
+from .mixins import EstimatedCountPaginator
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -729,6 +730,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
+    paginator = EstimatedCountPaginator
     search_fields = (
         "advertisement__name",
         "url",
@@ -737,6 +739,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "user_agent",
         "client_id",
     )
+    show_full_result_count = False
 
     def page_url(self, instance):
         if instance.url:
