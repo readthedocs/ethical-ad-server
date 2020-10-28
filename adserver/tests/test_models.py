@@ -11,6 +11,7 @@ from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
+from ..models import Publisher
 from ..utils import calculate_ecpm
 from ..utils import get_ad_day
 from .common import BaseAdModelsTestCase
@@ -157,6 +158,39 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertIn("Nothing here", self.ad1.render_ad(ad_type2))
         self.assertNotIn("Test", self.ad1.render_ad(ad_type2))
+
+    def test_render_ad_no_pixel(self):
+        ad_type1 = get(
+            AdType,
+            template=None,
+            has_image=True,
+            max_text_length=100,
+            image_height=None,
+            image_width=None,
+        )
+
+        publisher = get(Publisher)
+
+        self.ad1.ad_types.add(ad_type1.pk)
+        self.assertIn(
+            "<b>Test</b>",
+            self.ad1.render_ad(ad_type1, publisher=publisher, view_url="test.com"),
+        )
+        self.assertIn(
+            "ethical-pixel",
+            self.ad1.render_ad(ad_type1, publisher=publisher, view_url="test.com"),
+        )
+
+        publisher.render_pixel = False
+
+        self.assertIn(
+            "<b>Test</b>",
+            self.ad1.render_ad(ad_type1, publisher=publisher, view_url="test.com"),
+        )
+        self.assertNotIn(
+            "ethical-pixel",
+            self.ad1.render_ad(ad_type1, publisher=publisher, view_url="test.com"),
+        )
 
     def test_click_view_links_in_render(self):
         self.ad1.text = "<a>Call to Action!</a>"

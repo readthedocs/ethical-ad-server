@@ -175,6 +175,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     record_placements = models.BooleanField(
         default=False, help_text=_("Record placement impressions for this publisher")
     )
+    # TODO: Move this to default=False, so new publishers have to request custom integrations
+    render_pixel = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Render ethical-pixel in ad templates. This is needed for users not using the ad client."
+        ),
+    )
 
     class Meta:
         ordering = ("name",)
@@ -1268,7 +1275,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "id": self.slug,
             "text": self.text,
             "body": body,
-            "html": self.render_ad(ad_type, click_url=click_url, view_url=view_url),
+            "html": self.render_ad(
+                ad_type, click_url=click_url, view_url=view_url, publisher=publisher
+            ),
             "image": self.image.url if self.image else None,
             "link": click_url,
             "view_url": view_url,
@@ -1421,7 +1430,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self, ad_type, click_url=None, view_url=None):
+    def render_ad(self, ad_type, click_url=None, view_url=None, publisher=None):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
             # Render by the first ad type for this ad
@@ -1439,6 +1448,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return template.render(
             {
                 "ad": self,
+                "publisher": publisher,
                 "image_url": self.image.url if self.image else None,
                 "link_url": click_url or self.link,
                 "view_url": view_url,
