@@ -6,7 +6,7 @@
     <a href="{{ link_url }}" rel="nofollow" target="_blank">
       <img src="{{ image_url }}">
     </a>
-  {% elif view_url %}
+  {% elif view_url and publisher.render_pixel %}
     <img src="{{ view_url }}" class="ethical-pixel">
   {% endif %}
 
