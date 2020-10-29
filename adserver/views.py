@@ -527,6 +527,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     """
 
     DEFAULT_REPORT_DAYS = 30
+    LIMIT = 20
     export = False
     export_filename = "readthedocs-report.csv"
     fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
@@ -772,7 +773,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher.html"
-
     fieldnames = ["date", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -792,14 +792,12 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             advertiser_list.values_list("advertisement__flight__campaign__advertiser")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
-            .filter(total_views__gt=100)
             .values_list(
                 "advertisement__flight__campaign__advertiser__slug",
                 "advertisement__flight__campaign__advertiser__name",
             )
+            .distinct()[: self.LIMIT]
         )
-
-        advertiser_list = advertiser_list[:10]
 
         # Remove report_advertiser if there's invalid data passed in
         if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
@@ -829,7 +827,6 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher_placement.html"
-    LIMIT = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -878,7 +875,6 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher_geo.html"
-    LIMIT = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -921,6 +917,68 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "country_options": country_options,
                 "country_name": countries_dict.get(context["country"]),
+                "limit": self.LIMIT,
+            }
+        )
+
+        return context
+
+
+class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
+
+    """Show top advertisers for a publisher."""
+
+    template_name = "adserver/reports/publisher_advertiser.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        report_advertiser = context.get("report_advertiser")
+        report_index = "advertisement.flight.campaign.advertiser"
+        if report_advertiser:
+            # Show date breakdown for a specific advertiser
+            report_index = "date"
+
+        report = publisher.daily_reports(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            advertiser=context.get("report_advertiser", ""),
+            report_length=self.LIMIT,
+            report_index=report_index,
+        )
+
+        advertiser_list = publisher.adimpression_set.all()
+
+        if context["start_date"]:
+            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
+
+        advertiser_list = (
+            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .values_list(
+                "advertisement__flight__campaign__advertiser__slug",
+                "advertisement__flight__campaign__advertiser__name",
+            )
+            .distinct()[: self.LIMIT]
+        )
+
+        # Remove report_advertiser if there's invalid data passed in
+        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
+            context["report_advertiser"] = None
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "advertiser_list": advertiser_list,
                 "limit": self.LIMIT,
             }
         )
