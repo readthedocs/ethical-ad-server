@@ -5,6 +5,20 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.11.1
+---------------
+
+:date: October 29, 2020
+
+This release adds the ability do to viewport tracking on publisher sites.
+It is managed on the backend via an admin setting,
+and we'll be slowly rolling it out to publishers.
+
+ * @ericholscher: Add a render_pixel option to the publisher. (#269)
+ * @davidfischer: Performance workaround for the offer admin (#267)
+
+
 Version v0.11.0
 ---------------
 
