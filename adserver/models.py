@@ -226,7 +226,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         advertiser=None,
         country=None,
         report_length=20,
-        report_index="date",
     ):
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
@@ -240,6 +239,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         """
         report = {"days": [], "total": {}}
         impressions = AdImpression.objects.filter(publisher=self)
+        report_index = "date"
 
         # When passed in from the placement report, div_id will be an empty string, not None
         # So we differentiate between None and "" here
@@ -263,6 +263,16 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                     publisher=self, country=country
                 )
 
+        # Advertiser report
+        if advertiser is not None:
+            report_index = "advertisement.flight.campaign.advertiser"
+            impressions = impressions.select_related(
+                "advertisement__flight__campaign__advertiser"
+            )
+            if advertiser:
+                # Show dates when filtered
+                report_index = "date"
+
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
@@ -280,10 +290,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         impressions = impressions.select_related(
             "advertisement", "advertisement__flight"
         )
-
-        # Handle adding select_related to complex indexes
-        if "." in report_index:
-            impressions = impressions.select_related(report_index.replace(".", "__"))
 
         # This allows us to use `.` in the report_index to span relations
         getter = operator.attrgetter(report_index)

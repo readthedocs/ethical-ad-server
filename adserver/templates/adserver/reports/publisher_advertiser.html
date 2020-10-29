@@ -8,8 +8,8 @@
 
 {% block heading %}
 {% blocktrans %}Advertiser Report for {{ publisher }}{% endblocktrans %}
-{% if report_advertiser %}
-{% blocktrans %}filtered by {{ report_advertiser }}{% endblocktrans %}
+{% if advertiser_name %}
+{% blocktrans %}filtered by {{ advertiser_name }}{% endblocktrans %}
 {% endif %}
 {% endblock heading %}
 
@@ -23,7 +23,7 @@
 <section class="mb-5">
   <h3>About this report</h3>
   <p>
-    This report shows the top advertisers on your site.
+    This report shows the top advertisers across your network.
   </p>
   <em>
   This report shows the <strong>top {{ limit }} advertisers</strong> and updates periodically. All previous days data is complete.

@@ -579,6 +579,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "div_id": div_id,
             "report_advertiser": report_advertiser,
             "country": country,
+            "limit": self.LIMIT,
         }
 
     def _parse_date_string(self, date_str):
@@ -781,33 +782,10 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        advertiser_list = publisher.adimpression_set.all()
-
-        if context["start_date"]:
-            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
-
-        advertiser_list = (
-            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
-            .annotate(total_views=Sum("views"))
-            .order_by("-total_views")
-            .values_list(
-                "advertisement__flight__campaign__advertiser__slug",
-                "advertisement__flight__campaign__advertiser__name",
-            )
-            .distinct()[: self.LIMIT]
-        )
-
-        # Remove report_advertiser if there's invalid data passed in
-        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
-            context["report_advertiser"] = None
-
         report = publisher.daily_reports(
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            advertiser=context["report_advertiser"],
         )
 
         context.update(
@@ -815,7 +793,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
-                "advertiser_list": advertiser_list,
             }
         )
 
@@ -863,7 +840,6 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "div_id_options": div_id_options,
-                "limit": self.LIMIT,
             }
         )
 
@@ -917,7 +893,6 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "country_options": country_options,
                 "country_name": countries_dict.get(context["country"]),
-                "limit": self.LIMIT,
             }
         )
 
@@ -936,19 +911,12 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report_advertiser = context.get("report_advertiser")
-        report_index = "advertisement.flight.campaign.advertiser"
-        if report_advertiser:
-            # Show date breakdown for a specific advertiser
-            report_index = "date"
-
         report = publisher.daily_reports(
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
             advertiser=context.get("report_advertiser", ""),
             report_length=self.LIMIT,
-            report_index=report_index,
         )
 
         advertiser_list = publisher.adimpression_set.all()
@@ -982,6 +950,12 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
                 "limit": self.LIMIT,
             }
         )
+
+        if context["report_advertiser"]:
+            advertiser_name = Advertiser.objects.get(
+                slug=context["report_advertiser"]
+            ).name
+            context["advertiser_name"] = advertiser_name
 
         return context
 
