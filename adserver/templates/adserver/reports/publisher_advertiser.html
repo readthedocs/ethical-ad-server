@@ -1,0 +1,35 @@
+{% extends "adserver/reports/publisher.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Advertiser Report' %} - {{ publisher }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Advertiser Report for {{ publisher }}{% endblocktrans %}
+{% if report_advertiser %}
+{% blocktrans %}filtered by {{ report_advertiser }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Advertisers' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows the top advertisers across your network.
+  </p>
+  <em>
+  This report shows the <strong>top {{ limit }} advertisers</strong> and updates periodically. All previous days data is complete.
+  </em>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}

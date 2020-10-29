@@ -108,6 +108,15 @@
               </li>
               {% endif %}
 
+              {% if request.user.is_staff %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_advertiser_report' publisher.slug %}">
+                  <span class="fa fa-building fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Advertisers' %}</span>
+                </a>
+              </li>
+              {% endif %}
+
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_payouts' publisher.slug %}">
                   <span class="fa fa-dollar fa-fw mr-2 text-muted" aria-hidden="true"></span>
