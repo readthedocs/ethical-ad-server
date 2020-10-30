@@ -1065,6 +1065,22 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
+    def test_nullable_offers(self):
+        self.ad.live = False
+        self.ad.save()
+
+        # Not live - shouldn't be displayed
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Confirm a null offer is written
+        self.assertEqual(
+            Offer.objects.filter(advertisement=None, publisher=self.publisher1).count(),
+            1,
+        )
+
 
 class TestProxyViews(BaseApiTest):
     def setUp(self):

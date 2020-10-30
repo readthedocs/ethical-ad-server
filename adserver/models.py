@@ -1129,9 +1129,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 total_clicks=models.F("total_clicks") + 1
             )
 
-    def _record_base(
-        self, request, model, publisher, url, keywords, div_id, ad_type_slug
-    ):
+    def _record_base(self, request, model, publisher, keywords, div_id, ad_type_slug):
         """
         Save the actual AdBase model to the database.
 
@@ -1143,6 +1141,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
         country = get_client_country(request, ip_address)
+        url = request.META.get("HTTP_REFERER")
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:
             # For compliance with DNT,
@@ -1171,16 +1170,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         )
         return obj
 
-    def track_impression(self, request, impression_type, publisher, url, offer):
+    def track_impression(self, request, impression_type, publisher, offer):
         if impression_type not in (CLICKS, VIEWS):
             raise RuntimeError("Impression must be either a click or a view")
 
         if impression_type == CLICKS:
-            self.track_click(request, publisher, url, offer)
+            self.track_click(request, publisher, offer)
         elif impression_type == VIEWS:
-            self.track_view(request, publisher, url, offer)
+            self.track_view(request, publisher, offer)
 
-    def track_click(self, request, publisher, url, offer):
+    def track_click(self, request, publisher, offer):
         """Store click data in the DB."""
         self.incr(
             impression_type=CLICKS,
@@ -1193,13 +1192,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             request=request,
             model=Click,
             publisher=publisher,
-            url=url,
             keywords=offer.keywords,
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
         )
 
-    def track_view(self, request, publisher, url, offer):
+    def track_view(self, request, publisher, offer):
         """
         Store view data in the DB.
 
@@ -1221,7 +1219,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 request=request,
                 model=View,
                 publisher=publisher,
-                url=url,
                 keywords=offer.keywords,
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
@@ -1236,7 +1233,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         Tracks an offer in the database to save data about it and compare against view.
         """
-        referrer = request.META.get("HTTP_REFERER")
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
         self.incr(
@@ -1250,7 +1246,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             request=request,
             model=Offer,
             publisher=publisher,
-            url=referrer,
             keywords=keywords,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
@@ -1285,6 +1280,24 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "display_type": ad_type_slug,
             "campaign_type": self.flight.campaign.campaign_type,
         }
+
+    @classmethod
+    def record_null_offer(cls, request, publisher, ad_type_slug, div_id, keywords):
+        """
+        Store null offers, so that we can keep track of our fill rate.
+
+        Without this, when we don't offer an ad and a user doesn't have house ads on,
+        we don't have any way to track how many requests for an ad there have been.
+        """
+        cls._record_base(
+            self=None,
+            request=request,
+            model=Offer,
+            publisher=publisher,
+            keywords=keywords,
+            div_id=div_id,
+            ad_type_slug=ad_type_slug,
+        )
 
     def is_valid_offer(self, impression_type, offer):
         """
@@ -1707,7 +1720,11 @@ class Offer(AdBase):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     advertisement = models.ForeignKey(
-        Advertisement, max_length=255, related_name="offers", on_delete=models.PROTECT
+        Advertisement,
+        max_length=255,
+        related_name="offers",
+        on_delete=models.PROTECT,
+        null=True,
     )
     impression_type = OFFERS
 

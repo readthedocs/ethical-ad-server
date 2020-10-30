@@ -235,13 +235,11 @@ class TestAdModels(BaseAdModelsTestCase):
 
         offer = get(Offer, publisher=self.publisher)
 
-        self.ad1.track_click(request, self.publisher, url=None, offer=offer)
-        self.ad1.track_click(request, self.publisher, url=None, offer=offer)
+        self.ad1.track_click(request, self.publisher, offer=offer)
+        self.ad1.track_click(request, self.publisher, offer=offer)
+        self.ad1.track_impression(request, CLICKS, self.publisher, offer=offer)
         self.ad1.track_impression(
-            request, CLICKS, self.publisher, url=None, offer=offer
-        )
-        self.ad1.track_impression(
-            request, VIEWS, self.publisher, url=None, offer=offer
+            request, VIEWS, self.publisher, offer=offer
         )  # Doesn't count
 
         report = self.ad1.country_click_breakdown(dt, timezone.now())
@@ -371,9 +369,9 @@ class TestAdModels(BaseAdModelsTestCase):
         offer = get(Offer, publisher=self.publisher)
 
         # Each view is $0.05
-        view1 = self.ad1.track_view(request, self.publisher, None, offer=offer)
-        view2 = self.ad1.track_view(request, self.publisher, None, offer=offer)
-        view3 = self.ad1.track_view(request, self.publisher, None, offer=offer)
+        view1 = self.ad1.track_view(request, self.publisher, offer=offer)
+        view2 = self.ad1.track_view(request, self.publisher, offer=offer)
+        view3 = self.ad1.track_view(request, self.publisher, offer=offer)
 
         for view in (view1, view2, view3):
             self.assertIsNotNone(view)
@@ -422,9 +420,9 @@ class TestAdModels(BaseAdModelsTestCase):
         offer = get(Offer, publisher=self.publisher)
 
         # Each click is $2.00 (cpc)
-        click1 = self.ad1.track_click(request, self.publisher, None, offer=offer)
-        click2 = self.ad1.track_click(request, self.publisher, None, offer=offer)
-        click3 = self.ad1.track_click(request, self.publisher, None, offer=offer)
+        click1 = self.ad1.track_click(request, self.publisher, offer=offer)
+        click2 = self.ad1.track_click(request, self.publisher, offer=offer)
+        click3 = self.ad1.track_click(request, self.publisher, offer=offer)
 
         for click in (click1, click2, click3):
             self.assertIsNotNone(click)
