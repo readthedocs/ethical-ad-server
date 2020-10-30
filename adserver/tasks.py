@@ -35,6 +35,7 @@ def daily_update_geos(day=None):
         queryset = Offer.objects.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+            # TODO: Start indexing null offers. We need a new name for them -- maybe `requests` or `decisions`?
             advertisement__isnull=False,
         )
 
