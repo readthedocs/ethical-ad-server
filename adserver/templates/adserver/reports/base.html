@@ -41,18 +41,6 @@
           </div>
           {% endif %}
 
-          {% if advertiser_list %}
-          <div class="col-lg-2 col-md-4 mb-3">
-            <label class="col-form-label" for="id_advertiser">{% trans 'Top Advertisers' %}</label>
-            <select class="form-control" name="report_advertiser" id="id_advertiser">
-              <option value="">All advertisers</option>
-              {% for slug, name in advertiser_list %}
-                <option value="{{ slug }}"{% if report_advertiser == slug %} selected{% endif %}>{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          {% endif %}
-
           {% block additional_filters %}{% endblock additional_filters %}
         </div>
 
