@@ -431,7 +431,6 @@ class BaseProxyView(View):
             log.debug("Invalid Offer. exception=%s", exception)
             offer = None
             publisher = None
-        referrer = request.META.get("HTTP_REFERER")
 
         ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
 
@@ -442,7 +441,6 @@ class BaseProxyView(View):
                 request,
                 self.impression_type,
                 publisher=publisher,
-                url=referrer,
                 offer=offer,
             )
 
