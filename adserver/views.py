@@ -1177,12 +1177,16 @@ class AllPublisherReportView(BaseReportView):
                 publishers_and_reports.append((publisher, report))
 
         # Sort reports by revenue
-        if sort == "revenue":
-            publishers_and_reports = sorted(
-                publishers_and_reports,
-                key=lambda obj: obj[1]["total"]["revenue"],
-                reverse=True,
-            )
+        sort_options = report["total"].keys()
+        if sort:
+            if sort not in sort_options:
+                log.warning("Invalid sort: %s", sort)
+            else:
+                publishers_and_reports = sorted(
+                    publishers_and_reports,
+                    key=lambda obj: obj[1]["total"][sort],
+                    reverse=True,
+                )
 
         total_clicks = sum(
             report["total"]["clicks"] for _, report in publishers_and_reports
@@ -1238,6 +1242,7 @@ class AllPublisherReportView(BaseReportView):
                 ),
                 "advertiser_list": advertiser_list,
                 "sort": sort,
+                "sort_options": sort_options,
             }
         )
 
