@@ -7,6 +7,7 @@ from django.db.models import Count
 
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
+from .constants import OFFERS
 from .constants import VIEWS
 from .models import GeoImpression
 from .models import Offer
@@ -35,14 +36,14 @@ def daily_update_geos(day=None):
         queryset = Offer.objects.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-            # TODO: Start indexing null offers. We need a new name for them -- maybe `requests` or `decisions`?
-            advertisement__isnull=False,
         )
 
         if impression_type == CLICKS:
             queryset = queryset.filter(clicked=True)
         elif impression_type == VIEWS:
             queryset = queryset.filter(viewed=True)
+        elif impression_type == OFFERS:
+            queryset = queryset.filter(advertisement__isnull=False)
 
         for values in (
             queryset.values("publisher", "advertisement", "country")
@@ -83,13 +84,14 @@ def daily_update_placements(day=None):
         queryset = Offer.objects.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-            advertisement__isnull=False,
         )
 
         if impression_type == CLICKS:
             queryset = queryset.filter(clicked=True)
         elif impression_type == VIEWS:
             queryset = queryset.filter(viewed=True)
+        elif impression_type == OFFERS:
+            queryset = queryset.filter(advertisement__isnull=False)
 
         for values in (
             queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
