@@ -1475,6 +1475,9 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     date = models.DateField(_("Date"), db_index=True)
 
+    # Decisions are a superset of all Offers.
+    # Every API request that comes in results in a Decision,
+    # and an Offer is only created when we actually offer an ad.
     decisions = models.PositiveIntegerField(
         _("Decisions"),
         default=0,
