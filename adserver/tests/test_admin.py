@@ -181,7 +181,7 @@ class AdModelAdminTests(BaseAdModelsTestCase):
 
         offer = get(Offer, publisher=self.publisher)
 
-        self.ad1.track_click(request, self.publisher, "http://example.com", offer=offer)
+        self.ad1.track_click(request, self.publisher, offer=offer)
         click = Click.objects.all().first()
 
         list_url = reverse("admin:adserver_click_changelist")
@@ -195,12 +195,8 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         request = self.factory.get("/")
         offer = get(Offer, publisher=self.publisher)
 
-        view1 = self.ad1.track_view(
-            request, self.publisher, "http://example.com", offer=offer
-        )
-        view2 = self.ad1.track_view(
-            request, self.publisher, "http://example.com", offer=offer
-        )
+        view1 = self.ad1.track_view(request, self.publisher, offer=offer)
+        view2 = self.ad1.track_view(request, self.publisher, offer=offer)
         self.assertTrue(view1)
         self.assertTrue(view2)
 
@@ -228,9 +224,7 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         request = self.factory.get("/")
 
         offer = get(Offer, publisher=self.publisher)
-        click = self.ad1.track_click(
-            request, self.publisher, "http://example.com", offer=offer
-        )
+        click = self.ad1.track_click(request, self.publisher, offer=offer)
         self.assertTrue(click)
 
         url = reverse("admin:adserver_click_changelist")

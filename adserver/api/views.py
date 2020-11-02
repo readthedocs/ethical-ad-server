@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework_jsonp.renderers import JSONPRenderer
 
 from ..decisionengine import get_ad_decision_backend
+from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
@@ -141,10 +142,18 @@ class AdDecisionView(GeoIpMixin, APIView):
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
         if not ad or not placement:
+            Advertisement.record_null_offer(
+                request=self.request,
+                publisher=publisher,
+                ad_type_slug=None,
+                div_id=None,
+                keywords=keywords,
+            )
             return {}
 
         ad_type_slug = placement["ad_type"]
         div_id = placement["div_id"]
+
         data = ad.offer_ad(
             request=self.request,
             publisher=publisher,
