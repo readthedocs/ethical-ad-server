@@ -331,6 +331,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                 days.values(), key=lambda obj: obj["views"], reverse=True
             )[:report_length]
 
+        report["total"]["decisions"] = sum(day["decision"] for day in report["days"])
+        report["total"]["offers"] = sum(day["offers"] for day in report["days"])
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
         report["total"]["revenue"] = sum(day["revenue"] for day in report["days"])
@@ -345,6 +347,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         )
         report["total"]["ecpm"] = calculate_ecpm(
             report["total"]["revenue"], report["total"]["views"]
+        )
+        report["total"]["fill_rate"] = calculate_ctr(
+            report["total"]["offers"], report["total"]["decisions"]
+        )
+        report["total"]["offer_rate"] = calculate_ctr(
+            report["total"]["views"], report["total"]["offers"]
         )
 
         return report
