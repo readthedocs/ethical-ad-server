@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.12.0
+---------------
+
+:date: November 3, 2020
+
+None of the changes in this release are user facing.
+There are improvements to track and understand the fill rate for publishers
+(why some requests don't result in a paid ad) and another change
+to prepare to show publishers details of the advertisers advertising on their site.
+
+ * @ericholscher: Make Offers nullable to track fill rate (#272)
+ * @ericholscher: Add a new report for Publishers showing their advertisers (#271)
+ * @ericholscher: Add ability to sort All Publishers report by all metrics (#273)
+
+
 Version v0.11.1
 ---------------
 
