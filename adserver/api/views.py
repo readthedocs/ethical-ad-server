@@ -142,7 +142,6 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
-
         # Record a decision for every call to the API
         Advertisement.incr(
             self=ad or None, impression_type=DECISIONS, publisher=publisher

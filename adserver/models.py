@@ -1120,11 +1120,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         )
 
     def incr(self, impression_type, publisher):
-        """Add to the number of times this action has been performed, stored in the DB."""
+        """
+        Add to the number of times this action has been performed, stored in the DB.
 
-        # TODO: Refactor this method, moving it off the Advertisement class since it can be called
-        # without an advertisement when we have a Decision and no Offer.
-
+        TODO: Refactor this method, moving it off the Advertisement class since it can be called
+              without an advertisement when we have a Decision and no Offer.
+        """
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
 

@@ -133,12 +133,8 @@ def daily_update_impressions(day=None):
         for values in (
             queryset.values("publisher", "advertisement")
             # This needs to be publisher and not advertisement to gets decisions properly
-            .annotate(total=Count("publisher"))
-            .filter(total__gt=0)
-            .order_by("-total")
+            .annotate(total=Count("publisher")).order_by("-total")
         ):
-
-            print(impression_type, values)
 
             impression, _ = AdImpression.objects.get_or_create(
                 publisher_id=values["publisher"],
