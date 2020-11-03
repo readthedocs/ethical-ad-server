@@ -1178,15 +1178,12 @@ class AllPublisherReportView(BaseReportView):
 
         # Sort reports by revenue
         sort_options = report["total"].keys()
-        if sort:
-            if sort not in sort_options:
-                log.warning("Invalid sort: %s", sort)
-            else:
-                publishers_and_reports = sorted(
-                    publishers_and_reports,
-                    key=lambda obj: obj[1]["total"][sort],
-                    reverse=True,
-                )
+        if sort and sort in sort_options:
+            publishers_and_reports = sorted(
+                publishers_and_reports,
+                key=lambda obj: obj[1]["total"][sort],
+                reverse=True,
+            )
 
         total_clicks = sum(
             report["total"]["clicks"] for _, report in publishers_and_reports
