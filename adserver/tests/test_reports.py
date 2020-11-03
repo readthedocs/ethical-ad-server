@@ -468,3 +468,22 @@ class TestReportViews(TestCase):
         # Invalid country
         response = self.client.get(url, {"country": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+    def test_publisher_advertiser_report_contents(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_advertiser_report", args=[self.publisher1.slug])
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, self.advertiser1.name)
+        self.assertNotContains(response, self.advertiser2.name)
+
+        # Filter reports
+        response = self.client.get(url, {"report_advertiser": self.advertiser1.slug})
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        # Date breakdown, not advertiser breakdown
+        self.assertNotContains(response, f"<td>{self.advertiser1.name}</td>")
+
+        response = self.client.get(url, {"report_advertiser": self.advertiser2.slug})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')

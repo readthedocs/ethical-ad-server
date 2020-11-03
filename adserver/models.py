@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import operator
 import uuid
 from collections import Counter
 from collections import defaultdict
@@ -237,8 +238,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             and an aggregated total
         """
         report = {"days": [], "total": {}}
-        report_index = "date"
         impressions = AdImpression.objects.filter(publisher=self)
+        report_index = "date"
 
         # When passed in from the placement report, div_id will be an empty string, not None
         # So we differentiate between None and "" here
@@ -262,6 +263,16 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                     publisher=self, country=country
                 )
 
+        # Advertiser report
+        if advertiser is not None:
+            report_index = "advertisement.flight.campaign.advertiser"
+            impressions = impressions.select_related(
+                "advertisement__flight__campaign__advertiser"
+            )
+            if advertiser:
+                # Show dates when filtered
+                report_index = "date"
+
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
@@ -280,9 +291,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "advertisement", "advertisement__flight"
         )
 
+        # This allows us to use `.` in the report_index to span relations
+        getter = operator.attrgetter(report_index)
+
         days = OrderedDict()
         for impression in impressions:
-            index = getattr(impression, report_index)
+            index = getter(impression)
             if index not in days:
                 days[index] = defaultdict(int)
             index_display = index
