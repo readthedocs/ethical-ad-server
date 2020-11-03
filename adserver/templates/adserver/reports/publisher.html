@@ -74,7 +74,7 @@
               <td class="text-right">${{ day.revenue_share|floatformat:2|intcomma }}</td>
               {% if request.user.is_staff %}
               <td class="text-right">{{ day.fill_rate|floatformat:1 }}%</td>
-              <td class="text-right">{{ day.offer_rate|floatformat:1 }}%</td>
+              <td class="text-right">{{ day.view_rate|floatformat:1 }}%</td>
               {% endif %}
             </tr>
             {% endif %}
@@ -88,7 +88,7 @@
             <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
             {% if request.user.is_staff %}
             <td class="text-right">{{ report.total.fill_rate|floatformat:1 }}%</td>
-            <td class="text-right">{{ report.total.offer_rate|floatformat:1 }}%</td>
+            <td class="text-right">{{ report.total.view_rate|floatformat:1 }}%</td>
             {% endif %}
           </tr>
         </tbody>
