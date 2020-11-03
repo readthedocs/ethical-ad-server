@@ -1175,10 +1175,11 @@ class AllPublisherReportView(BaseReportView):
                 publishers_and_reports.append((publisher, report))
 
         # Sort reports by revenue
-        if sort == "revenue":
+        sort_options = report["total"].keys()
+        if sort and sort in sort_options:
             publishers_and_reports = sorted(
                 publishers_and_reports,
-                key=lambda obj: obj[1]["total"]["revenue"],
+                key=lambda obj: obj[1]["total"][sort],
                 reverse=True,
             )
 
@@ -1236,6 +1237,7 @@ class AllPublisherReportView(BaseReportView):
                 ),
                 "advertiser_list": advertiser_list,
                 "sort": sort,
+                "sort_options": sort_options,
             }
         )
 

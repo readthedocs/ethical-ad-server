@@ -224,7 +224,7 @@ class TestReportViews(TestCase):
 
         # No access
         self.client.force_login(self.user)
-        response = self.client.get(url)
+        response = self.client.get(url + "?sort=ctr")
         self.assertEqual(response.status_code, 403)
 
         # Staff only has has access
