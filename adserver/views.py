@@ -1201,7 +1201,6 @@ class AllPublisherReportView(BaseReportView):
                 start_date=context["start_date"],
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
-                advertiser=context["report_advertiser"],
             )
             if report["total"]["views"] > 0:
                 publishers_and_reports.append((publisher, report))
