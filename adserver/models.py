@@ -1228,6 +1228,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=offer.ad_type_slug,
         )
 
+        if request.GET.get("uplift"):
+            offer.uplifted = True
+            offer.save()
+
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
             return self._record_base(
                 request=request,
@@ -1745,6 +1749,13 @@ class Offer(AdBase):
     # Invalidation logic
     viewed = models.BooleanField(_("Offer was viewed"), default=False)
     clicked = models.BooleanField(_("Offer was clicked"), default=False)
+
+    # The Acceptable Ads program requires us to track how many impressions are attributed to them,
+    # so that we can report that data back to them.
+    # This uplifted boolean is where we track that on Offers.
+    uplifted = models.BooleanField(
+        _("Attribute Offer to uplift"), default=None, null=True
+    )
 
     class Meta:
         # This is needed because we can't sort on pk to get the created ordering
