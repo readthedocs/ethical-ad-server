@@ -1065,7 +1065,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
-    def test_record_views_ad_network(self):
+    def test_record_uplift(self):
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
