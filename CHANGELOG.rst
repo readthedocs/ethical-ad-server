@@ -5,6 +5,20 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.13.0
+---------------
+
+:date: November 10, 2020
+
+This version ships two new publisher reports: Geos and Advertisers.
+It also adds uplift tracking for Acceptable Ads tracking,
+allowing the server to be used for AA-approved ad networks.
+
+ * @ericholscher: Add uplift to Offers (#279)
+ * @ericholscher: Ship Geo & Advertiser reports to publishers (#278)
+ * @ericholscher: Don’t pass `advertiser` to the all publishers reports. (#277)
+ * @dependabot[bot]: Bump dot-prop from 4.2.0 to 4.2.1 (#276)
+
 
 Version v0.12.0
 ---------------
