@@ -1065,6 +1065,37 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
+    def test_record_uplift(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        nonce = resp.json()["nonce"]
+
+        # Simulate an ad view and verify it was viewed
+        view_url = reverse(
+            "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+
+        # No uplifted offers
+        self.assertFalse(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1, uplifted=True
+            ).exists()
+        )
+
+        resp = self.proxy_client.get(view_url, {"uplift": True})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        # Confirm uplift is stored in the DB
+        self.assertTrue(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1, uplifted=True
+            ).exists()
+        )
+
     def test_nullable_offers(self):
         self.ad.live = False
         self.ad.save()
