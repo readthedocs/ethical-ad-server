@@ -1695,11 +1695,15 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         )
 
         # Update the denormalized impressions on the Flight
-        if self.impression_type == VIEWS:
+        if self.impression_type == VIEWS or (
+            self.impression_type == OFFERS and self.viewed
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_views=models.F("total_views") - 1
             )
-        elif self.impression_type == CLICKS:
+        elif self.impression_type == CLICKS or (
+            self.impression_type == OFFERS and self.clicked
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_clicks=models.F("total_clicks") - 1
             )
