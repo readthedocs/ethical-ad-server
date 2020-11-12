@@ -78,6 +78,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     )
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("publisher_group_list", "modified", "created")
+    search_fields = ("name", "slug")
 
     def publisher_group_list(self, instance):
         if not instance.pk:
