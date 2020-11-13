@@ -410,6 +410,9 @@ class TestReportViews(TestCase):
         get(Offer, publisher=self.publisher1, div_id="p1", viewed=True)
         get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
         get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
+        get(
+            Offer, publisher=self.publisher1, div_id="p2", viewed=True, is_refunded=True
+        )
         get(Offer, publisher=self.publisher1, div_id="ad_23453464", viewed=True)
 
         # Update reporting
@@ -442,6 +445,13 @@ class TestReportViews(TestCase):
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            viewed=True,
+            is_refunded=True,
+        )
         get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
 
         # Update reporting
