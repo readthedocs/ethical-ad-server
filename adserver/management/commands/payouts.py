@@ -150,6 +150,7 @@ class Command(BaseCommand):
 
             if due_balance < float(50):
                 print(f"Skipping for low balance: {publisher.slug} owed {due_str}")
+                continue
 
             self.stdout.write("\n\n###########\n")
             self.stdout.write(str(publisher) + "\n")
