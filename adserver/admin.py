@@ -203,8 +203,9 @@ class AdTypeAdmin(admin.ModelAdmin):
         "default_enabled",
         "has_image",
         "has_text",
+        "deprecated",
     )
-    list_filter = ("has_image", "has_text", "default_enabled")
+    list_filter = ("has_image", "has_text", "default_enabled", "deprecated")
     readonly_fields = ("modified", "created")
     search_fields = ("name", "slug")
 
