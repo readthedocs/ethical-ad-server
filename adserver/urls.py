@@ -22,6 +22,7 @@ from .views import do_not_track_policy
 from .views import FlightDetailView
 from .views import FlightListView
 from .views import publisher_stripe_oauth_return
+from .views import PublisherAdvertiserReportView
 from .views import PublisherEmbedView
 from .views import PublisherGeoReportView
 from .views import PublisherMainView
@@ -140,6 +141,11 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/report/geos/",
         PublisherGeoReportView.as_view(),
         name="publisher_geo_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/advertisers/",
+        PublisherAdvertiserReportView.as_view(),
+        name="publisher_advertiser_report",
     ),
     path(
         r"publisher/<slug:publisher_slug>/embed/",

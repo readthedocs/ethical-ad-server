@@ -27,7 +27,7 @@ As noted in our publisher policy, we expect all our publishers to maintain a CTR
 
 {% endif %}
 
-We are now processing payments for **{{ today|date:"F" }} {{ today|date:"Y" }}**, and you made a total of **${{ report.total.revenue_share|floatformat:2 }}** for ads displayed in {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}. You can find the full report for this billing cycle on our [reports page]({{ url }}).
+We are now processing payments for **{{ today|date:"F" }} {{ today|date:"Y" }}**, and you made a total of **${{ report.total.revenue_share|floatformat:2 }}** for ads displayed between {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}. You can find the full report for this billing cycle on our [reports page]({{ url }}).
 
 {% if first %}
 We need a few pieces of information from you in order to process a payment:
@@ -111,6 +111,7 @@ class Command(BaseCommand):
                                     url=url,
                                     payouts_url=payouts_url,
                                     settings_url=settings_url,
+                                    ctr=ctr,
                                     **data,
                                 )
                             )

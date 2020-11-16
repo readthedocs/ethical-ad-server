@@ -31,7 +31,9 @@
   <label class="col-form-label" for="id_campaign_type">{% trans 'Sort' %}</label>
   <select class="form-control" name="sort" id="id_sort">
     <option value="name">Name</option>
-    <option value="revenue" {% if sort == "revenue" %}selected{% endif %}>Revenue</option>
+    {% for option in sort_options %}
+    <option value="{{ option }}" {% if sort == option %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
   </select>
 </div>
 {% endblock additional_filters %}

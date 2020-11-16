@@ -64,7 +64,6 @@ def daily_update_geos(day=None):
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
-
         for values in (
             queryset.values("publisher", "advertisement", "country")
             .annotate(total=Count("country"))
@@ -95,7 +94,6 @@ def daily_update_placements(day=None):
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
-
         for values in (
             queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
             .annotate(total=Count("div_id"))

@@ -1,0 +1,49 @@
+{% extends "adserver/reports/publisher.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Advertiser Report' %} - {{ publisher }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Advertiser Report for {{ publisher }}{% endblocktrans %}
+{% if advertiser_name %}
+{% blocktrans %}filtered by {{ advertiser_name }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Advertisers' %}</li>
+{% endblock breadcrumbs %}
+
+{% block additional_filters %}
+{{ block.super }}
+
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_advertiser">{% trans 'Top Advertisers' %}</label>
+  <select class="form-control" name="report_advertiser" id="id_advertiser">
+    <option value="">All advertisers</option>
+    {% for slug, name in advertiser_list %}
+      <option value="{{ slug }}"{% if report_advertiser == slug %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% endblock additional_filters %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows the top advertisers across your network.
+  </p>
+  <em>
+  This report shows the <strong>top {{ limit }} advertisers</strong> and updates periodically. All previous days data is complete.
+  </em>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}

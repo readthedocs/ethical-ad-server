@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import operator
 import uuid
 from collections import Counter
 from collections import defaultdict
@@ -237,8 +238,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             and an aggregated total
         """
         report = {"days": [], "total": {}}
-        report_index = "date"
         impressions = AdImpression.objects.filter(publisher=self)
+        report_index = "date"
 
         # When passed in from the placement report, div_id will be an empty string, not None
         # So we differentiate between None and "" here
@@ -262,6 +263,16 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                     publisher=self, country=country
                 )
 
+        # Advertiser report
+        if advertiser is not None:
+            report_index = "advertisement.flight.campaign.advertiser"
+            impressions = impressions.select_related(
+                "advertisement__flight__campaign__advertiser"
+            )
+            if advertiser:
+                # Show dates when filtered
+                report_index = "date"
+
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
             if end_date:
@@ -280,9 +291,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "advertisement", "advertisement__flight"
         )
 
+        # This allows us to use `.` in the report_index to span relations
+        getter = operator.attrgetter(report_index)
+
         days = OrderedDict()
         for impression in impressions:
-            index = getattr(impression, report_index)
+            index = getter(impression)
             if index not in days:
                 days[index] = defaultdict(int)
             index_display = index
@@ -1047,6 +1061,13 @@ class AdType(TimeStampedModel, models.Model):
     )
     order = models.PositiveSmallIntegerField(default=0)
 
+    deprecated = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Users cannot select deprecated ad types unless an ad is already that type."
+        ),
+    )
+
     class Meta:
         ordering = ("order", "name")
 
@@ -1227,6 +1248,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         is not feasible
         """
         self.incr(impression_type=VIEWS, publisher=publisher)
+
+        if request.GET.get("uplift"):
+            offer.uplifted = True
+            offer.save()
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
             return self._record_base(
@@ -1703,11 +1728,15 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         )
 
         # Update the denormalized impressions on the Flight
-        if self.impression_type == VIEWS:
+        if self.impression_type == VIEWS or (
+            self.impression_type == OFFERS and self.viewed
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_views=models.F("total_views") - 1
             )
-        elif self.impression_type == CLICKS:
+        elif self.impression_type == CLICKS or (
+            self.impression_type == OFFERS and self.clicked
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_clicks=models.F("total_clicks") - 1
             )
@@ -1757,6 +1786,13 @@ class Offer(AdBase):
     # Invalidation logic
     viewed = models.BooleanField(_("Offer was viewed"), default=False)
     clicked = models.BooleanField(_("Offer was clicked"), default=False)
+
+    # The Acceptable Ads program requires us to track how many impressions are attributed to them,
+    # so that we can report that data back to them.
+    # This uplifted boolean is where we track that on Offers.
+    uplifted = models.BooleanField(
+        _("Attribute Offer to uplift"), default=None, null=True
+    )
 
     class Meta:
         # This is needed because we can't sort on pk to get the created ordering
