@@ -32,6 +32,7 @@ from user_agents import parse
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
+from .constants import DECISIONS
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
@@ -1322,6 +1323,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Without this, when we don't offer an ad and a user doesn't have house ads on,
         we don't have any way to track how many requests for an ad there have been.
         """
+        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher)
         cls._record_base(
             self=None,
             request=request,
