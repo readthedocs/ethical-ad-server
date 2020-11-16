@@ -14,6 +14,7 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
 from django.core.files.images import get_image_dimensions
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
@@ -21,6 +22,7 @@ from django.utils.text import slugify
 from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 
+from .models import AdType
 from .models import Advertisement
 from .models import Flight
 from .models import Publisher
@@ -198,6 +200,15 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         )
         self.fields["live"].help_text = _("Uncheck to disable this advertisement")
         self.fields["ad_types"].label = _("Display types")
+
+        # Remove deprecated ad types unless the passed ad has those ad types
+        if self.instance.pk:
+            adtype_queryset = AdType.objects.filter(
+                Q(deprecated=False) | Q(pk__in=self.instance.ad_types.values("pk"))
+            )
+        else:
+            adtype_queryset = AdType.objects.exclude(deprecated=True)
+        self.fields["ad_types"].queryset = adtype_queryset
 
     def generate_slug(self):
         campaign_slug = self.flight.campaign.slug

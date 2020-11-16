@@ -286,7 +286,9 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
             {
                 "advertiser": self.advertiser,
                 "flight": self.flight,
-                "ad_types": AdType.objects.exclude(description="")[:5],
+                "ad_types": AdType.objects.exclude(deprecated=True).exclude(
+                    description=""
+                )[:5],
             }
         )
         return context

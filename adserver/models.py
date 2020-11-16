@@ -1040,6 +1040,13 @@ class AdType(TimeStampedModel, models.Model):
     )
     order = models.PositiveSmallIntegerField(default=0)
 
+    deprecated = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Users cannot select deprecated ad types unless an ad is already that type."
+        ),
+    )
+
     class Meta:
         ordering = ("order", "name")
 
