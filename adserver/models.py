@@ -227,7 +227,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         advertiser=None,
         country=None,
         report_length=20,
-    ):
+    ):  # pylint: disable=too-many-statements
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
