@@ -2,11 +2,12 @@
 from django.utils.translation import ugettext as _
 
 
+DECISIONS = "decisions"
 OFFERS = "offers"
 VIEWS = "views"
 CLICKS = "clicks"
 
-IMPRESSION_TYPES = (OFFERS, VIEWS, CLICKS)
+IMPRESSION_TYPES = (DECISIONS, OFFERS, VIEWS, CLICKS)
 
 PAID_CAMPAIGN = "paid"
 AFFILIATE_CAMPAIGN = "affiliate"

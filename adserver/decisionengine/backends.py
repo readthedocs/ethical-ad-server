@@ -108,6 +108,9 @@ class BaseAdDecisionBackend:
     def get_placement(self, advertisement):
         """Gets the first matching placement for a given ad."""
         if not advertisement:
+            # Always select the placement if there is only 1 for Decisions
+            if len(self.placements) == 1:
+                return self.placements[0]
             return None
 
         for placement in self.placements:

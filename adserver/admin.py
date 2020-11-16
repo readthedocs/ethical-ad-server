@@ -664,6 +664,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "views",
         "clicks",
         "offers",
+        "decisions",
         "click_to_offer_rate",
         "view_to_offer_rate",
         "modified",

@@ -32,6 +32,7 @@ from user_agents import parse
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
+from .constants import DECISIONS
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
@@ -226,7 +227,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         advertiser=None,
         country=None,
         report_length=20,
-    ):
+    ):  # pylint: disable=too-many-statements
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
@@ -305,33 +306,48 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
             days[index]["date"] = impression.date
             days[index]["index"] = index_display
+            days[index]["decisions"] += impression.decisions
+            days[index]["offers"] += impression.offers
             days[index]["views"] += impression.views
             days[index]["clicks"] += impression.clicks
-            days[index]["revenue"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[index]["revenue_share"] = days[index]["revenue"] * (
-                self.revenue_share_percentage / 100.0
-            )
-            days[index]["our_revenue"] = (
-                days[index]["revenue"] - days[index]["revenue_share"]
-            )
+
+            if impression.advertisement:
+                days[index]["revenue"] += (
+                    impression.clicks * float(impression.advertisement.flight.cpc)
+                ) + (
+                    impression.views
+                    * float(impression.advertisement.flight.cpm)
+                    / 1000.0
+                )
+                days[index]["revenue_share"] = days[index]["revenue"] * (
+                    self.revenue_share_percentage / 100.0
+                )
+                days[index]["our_revenue"] = (
+                    days[index]["revenue"] - days[index]["revenue_share"]
+                )
+
             days[index]["ctr"] = calculate_ctr(
                 days[index]["clicks"], days[index]["views"]
             )
             days[index]["ecpm"] = calculate_ecpm(
                 days[index]["revenue"], days[index]["views"]
             )
+            days[index]["fill_rate"] = calculate_ctr(
+                days[index]["offers"], days[index]["decisions"]
+            )
+            days[index]["offer_rate"] = calculate_ctr(
+                days[index]["views"], days[index]["offers"]
+            )
 
         report["days"] = days.values()
         if report_index != "date":
             # Show a truncated list sorted by most views
             report["days"] = sorted(
-                days.values(),
-                key=lambda obj: obj["views"],
-                reverse=True,
+                days.values(), key=lambda obj: obj["views"], reverse=True
             )[:report_length]
 
+        report["total"]["decisions"] = sum(day["decision"] for day in report["days"])
+        report["total"]["offers"] = sum(day["offers"] for day in report["days"])
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
         report["total"]["revenue"] = sum(day["revenue"] for day in report["days"])
@@ -346,6 +362,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         )
         report["total"]["ecpm"] = calculate_ecpm(
             report["total"]["revenue"], report["total"]["views"]
+        )
+        report["total"]["fill_rate"] = calculate_ctr(
+            report["total"]["offers"], report["total"]["decisions"]
+        )
+        report["total"]["offer_rate"] = calculate_ctr(
+            report["total"]["views"], report["total"]["offers"]
         )
 
         return report
@@ -1127,15 +1149,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             },
         )
 
-    def incr(
-        self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None
-    ):
-        """Add to the number of times this action has been performed, stored in the DB."""
+    def incr(self, impression_type, publisher):
+        """
+        Add to the number of times this action has been performed, stored in the DB.
+
+        TODO: Refactor this method, moving it off the Advertisement class since it can be called
+              without an advertisement when we have a Decision and no Offer.
+        """
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
 
         # Ensure that an impression object exists for today
-        impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
+        impression, _ = AdImpression.objects.get_or_create(
+            advertisement=self, publisher=publisher, date=day
+        )
         AdImpression.objects.filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
@@ -1202,13 +1229,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def track_click(self, request, publisher, offer):
         """Store click data in the DB."""
-        self.incr(
-            impression_type=CLICKS,
-            publisher=publisher,
-            request=request,
-            div_id=offer.div_id,
-            ad_type_slug=offer.ad_type_slug,
-        )
+        self.incr(impression_type=CLICKS, publisher=publisher)
         return self._record_base(
             request=request,
             model=Click,
@@ -1227,13 +1248,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(
-            impression_type=VIEWS,
-            publisher=publisher,
-            request=request,
-            div_id=offer.div_id,
-            ad_type_slug=offer.ad_type_slug,
-        )
+        self.incr(impression_type=VIEWS, publisher=publisher)
 
         if request.GET.get("uplift"):
             offer.uplifted = True
@@ -1260,13 +1275,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(
-            impression_type=OFFERS,
-            publisher=publisher,
-            request=request,
-            div_id=div_id,
-            ad_type_slug=ad_type_slug,
-        )
+        self.incr(impression_type=OFFERS, publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1314,6 +1323,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Without this, when we don't offer an ad and a user doesn't have house ads on,
         we don't have any way to track how many requests for an ad there have been.
         """
+        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher)
         cls._record_base(
             self=None,
             request=request,
@@ -1392,7 +1402,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def daily_reports(self, start_date=None, end_date=None):
         """
-        Generates a report of clicks, views, & cost for a given time period for this ad.
+        Generates a report of clicks, views, & cost for a given time period for this Advertisement.
 
         :param start_date: the start date to generate the report (or all time)
         :param end_date: the end date for the report (ignored if no `start_date`)
@@ -1501,6 +1511,18 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     date = models.DateField(_("Date"), db_index=True)
 
+    # Decisions are a superset of all Offers.
+    # Every API request that comes in results in a Decision,
+    # and an Offer is only created when we actually offer an ad.
+    decisions = models.PositiveIntegerField(
+        _("Decisions"),
+        default=0,
+        help_text=_(
+            "The number of times the Ad Decision API was called. "
+            "The server might not respond with an ad if there isn't inventory."
+        ),
+    )
+
     # Offers include cases where the server returned an ad
     # but the client didn't load it
     # or the client didn't qualify as a view (staff, blocklisted, etc.)
@@ -1553,7 +1575,7 @@ class AdImpression(BaseImpression):
         Publisher, null=True, blank=True, on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="impressions", on_delete=models.PROTECT
+        Advertisement, related_name="impressions", on_delete=models.PROTECT, null=True
     )
 
     class Meta:
@@ -1580,7 +1602,10 @@ class PlacementImpression(BaseImpression):
         Publisher, related_name="placement_impressions", on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="placement_impressions", on_delete=models.PROTECT
+        Advertisement,
+        related_name="placement_impressions",
+        on_delete=models.PROTECT,
+        null=True,
     )
 
     class Meta:
@@ -1612,7 +1637,10 @@ class GeoImpression(BaseImpression):
         Publisher, related_name="geo_impressions", on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="geo_impressions", on_delete=models.PROTECT
+        Advertisement,
+        related_name="geo_impressions",
+        on_delete=models.PROTECT,
+        null=True,
     )
 
     class Meta:

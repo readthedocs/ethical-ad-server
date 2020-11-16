@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jsonp.renderers import JSONPRenderer
 
+from ..constants import DECISIONS
 from ..decisionengine import get_ad_decision_backend
 from ..models import Advertisement
 from ..models import Advertiser
@@ -141,18 +142,22 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
-        if not ad or not placement:
+        # Record a decision for every call to the API
+
+        ad_type_slug = placement.get("ad_type")
+        div_id = placement.get("div_id")
+
+        if not ad:
             Advertisement.record_null_offer(
                 request=self.request,
                 publisher=publisher,
-                ad_type_slug=None,
-                div_id=None,
+                ad_type_slug=ad_type_slug,
+                div_id=div_id,
                 keywords=keywords,
             )
             return {}
 
-        ad_type_slug = placement["ad_type"]
-        div_id = placement["div_id"]
+        ad.incr(impression_type=DECISIONS, publisher=publisher)
 
         data = ad.offer_ad(
             request=self.request,

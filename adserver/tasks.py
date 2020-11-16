@@ -7,7 +7,9 @@ from django.db.models import Count
 
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
+from .constants import OFFERS
 from .constants import VIEWS
+from .models import AdImpression
 from .models import GeoImpression
 from .models import Offer
 from .models import PlacementImpression
@@ -17,6 +19,38 @@ from config.celery_app import app
 log = logging.getLogger(__name__)  # noqa
 
 
+def _get_day(day):
+    """Get the start and end time with support for celery-encoded strings, dates, and datetimes."""
+    start_date = get_ad_day()
+    if day:
+        log.info("Got day: %s", day)
+        if not isinstance(day, (datetime.datetime, datetime.date)):
+            log.info("Converting day from string")
+            day = parse_iso8601(day)
+        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = start_date + datetime.timedelta(days=1)
+
+    return (start_date, end_date)
+
+
+def _default_filters(impression_type, start_date, end_date):
+    """Filter the queryset by date and impression type."""
+    queryset = Offer.objects.filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+        is_refunded=False,
+    )
+
+    if impression_type == CLICKS:
+        queryset = queryset.filter(clicked=True)
+    elif impression_type == VIEWS:
+        queryset = queryset.filter(viewed=True)
+    elif impression_type == OFFERS:
+        queryset = queryset.filter(advertisement__isnull=False)
+
+    return queryset
+
+
 @app.task()
 def daily_update_geos(day=None):
     """
@@ -24,32 +58,17 @@ def daily_update_geos(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date = get_ad_day()
-    if day:
-        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + datetime.timedelta(days=1)
+    start_date, end_date = _get_day(day)
 
     log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
 
     for impression_type in IMPRESSION_TYPES:
-        queryset = Offer.objects.filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-            is_refunded=False,
-            # TODO: Start indexing null offers. We need a new name for them -- maybe `requests` or `decisions`?
-            advertisement__isnull=False,
-        )
-
-        if impression_type == CLICKS:
-            queryset = queryset.filter(clicked=True)
-        elif impression_type == VIEWS:
-            queryset = queryset.filter(viewed=True)
-
+        queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
             queryset.values("publisher", "advertisement", "country")
-            .annotate(Count("country"))
-            .filter(country__count__gt=0)
-            .order_by("-country__count")
+            .annotate(total=Count("country"))
+            .filter(total__gt=0)
+            .order_by("-total")
         ):
             impression, _ = GeoImpression.objects.get_or_create(
                 publisher_id=values["publisher"],
@@ -58,7 +77,7 @@ def daily_update_geos(day=None):
                 date=start_date,
             )
             GeoImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: values["country__count"]}
+                **{impression_type: values["total"]}
             )
 
 
@@ -69,34 +88,16 @@ def daily_update_placements(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date = get_ad_day()
-    if day:
-        log.info("Got day: %s", day)
-        if not isinstance(day, (datetime.datetime, datetime.date)):
-            log.info("Converting day from string")
-            day = parse_iso8601(day)
-        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + datetime.timedelta(days=1)
+    start_date, end_date = _get_day(day)
 
     log.info("Updating PlacementImpressions for %s-%s", start_date, end_date)
 
     for impression_type in IMPRESSION_TYPES:
-        queryset = Offer.objects.filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-            is_refunded=False,
-            advertisement__isnull=False,
-        )
-
-        if impression_type == CLICKS:
-            queryset = queryset.filter(clicked=True)
-        elif impression_type == VIEWS:
-            queryset = queryset.filter(viewed=True)
-
+        queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
             queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
-            .annotate(Count("div_id"))
-            .filter(div_id__count__gt=0)
+            .annotate(total=Count("div_id"))
+            .filter(total__gt=0)
             .filter(publisher__record_placements=True)
             .exclude(div_id__regex=r"(rtd-\w{4}|ad_\w{4}).*")
             .order_by("-div_id")
@@ -110,5 +111,35 @@ def daily_update_placements(day=None):
                 date=start_date,
             )
             PlacementImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: values["div_id__count"]}
+                **{impression_type: values["total"]}
+            )
+
+
+@app.task()
+def daily_update_impressions(day=None):
+    """
+    Update the AdImpression index each day.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = _get_day(day)
+
+    log.info("Updating AdImpressions for %s-%s", start_date, end_date)
+
+    for impression_type in IMPRESSION_TYPES:
+        queryset = _default_filters(impression_type, start_date, end_date)
+
+        for values in (
+            queryset.values("publisher", "advertisement")
+            # This needs to be publisher and not advertisement to gets decisions properly
+            .annotate(total=Count("publisher")).order_by("-total")
+        ):
+
+            impression, _ = AdImpression.objects.get_or_create(
+                publisher_id=values["publisher"],
+                advertisement_id=values["advertisement"],
+                date=start_date,
+            )
+            AdImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: values["total"]}
             )

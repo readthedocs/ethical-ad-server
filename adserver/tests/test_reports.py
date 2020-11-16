@@ -20,6 +20,7 @@ from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
 from ..tasks import daily_update_geos
+from ..tasks import daily_update_impressions
 from ..tasks import daily_update_placements
 
 
@@ -111,20 +112,12 @@ class TestReportViews(TestCase):
         )
 
         # Trigger some impressions so flights will be shown in the date range
-        self.ad1.incr(
-            VIEWS, self.publisher1, div_id="p1", ad_type_slug=self.ad_type1.slug
-        )
-        self.ad1.incr(
-            VIEWS, self.publisher1, div_id="p2", ad_type_slug=self.ad_type1.slug
-        )
-        self.ad1.incr(
-            VIEWS, self.publisher1, div_id="p2", ad_type_slug=self.ad_type1.slug
-        )
+        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(VIEWS, self.publisher1)
+        self.ad1.incr(VIEWS, self.publisher1)
         self.ad1.incr(
             VIEWS,
             self.publisher1,
-            div_id="ad_23453464",
-            ad_type_slug=self.ad_type1.slug,
         )
         self.ad1.incr(CLICKS, self.publisher1)
 
@@ -401,6 +394,43 @@ class TestReportViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(
             response["Content-Disposition"].startswith("attachment; filename=")
+        )
+
+    def test_publisher_report_contents(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_report", args=[self.publisher1.slug])
+
+        self.ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight2,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        # Paid
+        get(Offer, advertisement=self.ad1, publisher=self.publisher1, viewed=True)
+        get(Offer, advertisement=self.ad1, publisher=self.publisher1, viewed=True)
+
+        # Not paid
+        get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
+        get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
+        get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
+
+        # Update reporting
+        daily_update_impressions()
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>5</strong></td>')
+
+        # Filter reports
+        response = self.client.get(url, {"campaign_type": "paid"})
+        print(response.content)
+        self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>3</strong></td>'
         )
 
     def test_publisher_placement_report_contents(self):
