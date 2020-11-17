@@ -118,13 +118,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.daily_update_geos",
         "schedule": crontab(minute="15"),
     },
-    "every-hour-generate-keyword-index": {
-        "task": "adserver.tasks.daily_update_keywords",
-        "schedule": crontab(minute="30"),
-    },
     "every-hour-generate-placement-index": {
         "task": "adserver.tasks.daily_update_placements",
         "schedule": crontab(minute="45"),
+    },
+    # TODO: Make this run nightly on the previous days data
+    "every-hour-generate-keyword-index": {
+        "task": "adserver.tasks.daily_update_keywords",
+        "schedule": crontab(hour="23", minute="58"),
     },
 }
 
