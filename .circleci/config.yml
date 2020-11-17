@@ -10,7 +10,7 @@ jobs:
       - image: 'cimg/python:3.6'
     steps:
       - checkout
-      - run: pip install --user requirements/testing.txt
+      - run: pip install --user -r requirements/testing.txt
       - run: tox -e py3
 
   checks:
@@ -20,7 +20,7 @@ jobs:
           NODE_VERSION: 10.17.0
     steps:
       - checkout
-      - run: pip install --user requirements/testing.txt
+      - run: pip install --user -r requirements/testing.txt
       - run: tox -e migrations
       - run: tox -e lint
       - run: tox -e docs
