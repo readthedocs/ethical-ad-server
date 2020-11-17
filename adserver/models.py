@@ -226,8 +226,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         div_id=None,
         advertiser=None,
         country=None,
+        keyword=None,
         report_length=20,
-    ):  # pylint: disable=too-many-statements
+    ):  # pylint: disable=too-many-statements, too-many-branches
         """
         Generates a report of clicks, views, & cost for a given time period for the Publisher.
 
@@ -244,15 +245,22 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
         # When passed in from the placement report, div_id will be an empty string, not None
         # So we differentiate between None and "" here
+        if advertiser is not None:
+            report_index = "advertisement.flight.campaign.advertiser"
+            impressions = impressions.select_related(
+                "advertisement__flight__campaign__advertiser"
+            ).filter(advertisement__isnull=False)
+            if advertiser:
+                # Show dates when filtered
+                report_index = "date"
+
         if div_id is not None:
             report_index = "div_id"
             impressions = PlacementImpression.objects.filter(publisher=self)
             if div_id:
                 # Show dates when filtered
                 report_index = "date"
-                impressions = PlacementImpression.objects.filter(
-                    publisher=self, div_id=div_id
-                )
+                impressions = impressions.filter(div_id=div_id)
 
         if country is not None:
             report_index = "country"
@@ -260,19 +268,15 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             if country:
                 # Show dates when filtered
                 report_index = "date"
-                impressions = GeoImpression.objects.filter(
-                    publisher=self, country=country
-                )
+                impressions = impressions.filter(country=country)
 
-        # Advertiser report
-        if advertiser is not None:
-            report_index = "advertisement.flight.campaign.advertiser"
-            impressions = impressions.select_related(
-                "advertisement__flight__campaign__advertiser"
-            )
-            if advertiser:
+        if keyword is not None:
+            report_index = "keyword"
+            impressions = KeywordImpression.objects.filter(publisher=self)
+            if keyword:
                 # Show dates when filtered
                 report_index = "date"
+                impressions = impressions.filter(keyword=keyword)
 
         if start_date:
             impressions = impressions.filter(date__gte=start_date)
@@ -1650,6 +1654,34 @@ class GeoImpression(BaseImpression):
     def __str__(self):
         """Simple override."""
         return "Geo %s of %s on %s" % (self.country, self.advertisement, self.date)
+
+
+class KeywordImpression(BaseImpression):
+
+    """
+    Create an index of keyword targeting for ads.
+
+    Indexed one per ad/publisher/keyword per day.
+    """
+
+    keyword = models.CharField(_("Keyword"), max_length=1000)
+    publisher = models.ForeignKey(
+        Publisher, related_name="keyword_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="keyword_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "keyword")
+
+    def __str__(self):
+        """Simple override."""
+        return "Keyword %s of %s on %s" % (self.keyword, self.advertisement, self.date)
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):

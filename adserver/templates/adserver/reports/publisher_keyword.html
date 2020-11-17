@@ -1,0 +1,53 @@
+{% extends "adserver/reports/publisher.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Keyword Report' %} - {{ publisher }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Keyword Report for {{ publisher }}{% endblocktrans %}
+{% if keyword_name %}
+{% blocktrans %}filtered by {{ keyword }}{% endblocktrans %}
+{% endif %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Keywords' %}</li>
+{% endblock breadcrumbs %}
+
+{% block additional_filters %}
+{{ block.super }}
+
+<div class="col-lg-2 col-md-4 mb-3">
+  <label class="col-form-label" for="id_keyword">{% trans 'Top Keywords' %}</label>
+  <select class="form-control" name="keyword" id="id_keyword">
+    <option value="">All keywords</option>
+    {% for slug in keyword_list %}
+      <option value="{{ slug }}"{% if keyword == slug %} selected{% endif %}>{{ slug }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% endblock additional_filters %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows the performance of ads matching each of your keywords.
+    This report may report more than 100% of your ad views,
+    because some ads match multiple keywords for a publisher.
+  </p>
+  <p>
+  <em>
+  This report shows the <strong>top {{ limit }} keywords</strong> and updates periodically. All previous days data is complete.
+  </em>
+  </p>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}

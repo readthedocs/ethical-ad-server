@@ -562,11 +562,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
-        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
-        div_id = self.request.GET.get("div_id", "")
-        # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
-        report_advertiser = self.request.GET.get("report_advertiser", "")
-        country = self.request.GET.get("country", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -575,10 +570,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "start_date": start_date,
             "end_date": end_date,
             "campaign_type": campaign_type,
-            "revenue_share_percentage": revenue_share_percentage,
-            "div_id": div_id,
-            "report_advertiser": report_advertiser,
-            "country": country,
             "limit": self.LIMIT,
         }
 
@@ -808,6 +799,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        div_id = self.request.GET.get("div_id", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
@@ -815,7 +807,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            div_id=context.get("div_id", ""),
+            div_id=div_id,
             report_length=self.LIMIT,
         )
 
@@ -839,6 +831,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "div_id": div_id,
                 "div_id_options": div_id_options,
             }
         )
@@ -855,6 +848,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        country = self.request.GET.get("country", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
@@ -862,7 +856,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            country=context.get("country", ""),
+            country=country,
             report_length=self.LIMIT,
         )
 
@@ -891,8 +885,9 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "country": country,
                 "country_options": country_options,
-                "country_name": countries_dict.get(context["country"]),
+                "country_name": countries_dict.get(country),
             }
         )
 
@@ -908,6 +903,9 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # This needs to be something other than `advertiser`
+        # to not conflict with template context on advertising reports.
+        report_advertiser = self.request.GET.get("report_advertiser", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
@@ -915,11 +913,11 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
-            advertiser=context.get("report_advertiser", ""),
+            advertiser=report_advertiser,
             report_length=self.LIMIT,
         )
 
-        advertiser_list = publisher.adimpression_set.all()
+        advertiser_list = publisher.adimpression_set.filter(advertisement__isnull=False)
 
         if context["start_date"]:
             advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
@@ -937,25 +935,73 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
             .distinct()[: self.LIMIT]
         )
 
-        # Remove report_advertiser if there's invalid data passed in
-        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
-            context["report_advertiser"] = None
-
         context.update(
             {
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "advertiser_list": advertiser_list,
+                "report_advertiser": report_advertiser,
                 "limit": self.LIMIT,
             }
         )
 
-        if context["report_advertiser"]:
-            advertiser_name = Advertiser.objects.get(
-                slug=context["report_advertiser"]
-            ).name
+        # Remove report_advertiser if there's invalid data passed in
+        if report_advertiser not in (slug for slug, name in advertiser_list):
+            context["report_advertiser"] = None
+
+        if report_advertiser:
+            advertiser_name = Advertiser.objects.get(slug=report_advertiser).name
             context["advertiser_name"] = advertiser_name
+
+        return context
+
+
+class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
+
+    """A report for a single publisher."""
+
+    template_name = "adserver/reports/publisher_keyword.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        keyword = self.request.GET.get("keyword", "")
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        report = publisher.daily_reports(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            keyword=keyword,
+            report_length=self.LIMIT,
+        )
+
+        keyword_list = publisher.keyword_impressions.all()
+        if context["start_date"]:
+            keyword_list = keyword_list.filter(date__gte=context["start_date"])
+        if context["end_date"]:
+            keyword_list = keyword_list.filter(date__lte=context["end_date"])
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        keyword_list = (
+            keyword_list.values_list("keyword", flat=True)
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
+        )
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "keyword": keyword,
+                "keyword_list": keyword_list,
+            }
+        )
 
         return context
 
@@ -1189,10 +1235,11 @@ class AllPublisherReportView(BaseReportView):
             .distinct()
         )
 
-        if context["revenue_share_percentage"]:
+        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        if revenue_share_percentage:
             try:
                 publishers = publishers.filter(
-                    revenue_share_percentage=float(context["revenue_share_percentage"])
+                    revenue_share_percentage=float(revenue_share_percentage)
                 )
             except ValueError:
                 pass
@@ -1268,6 +1315,7 @@ class AllPublisherReportView(BaseReportView):
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
+                "revenue_share_percentage": revenue_share_percentage,
                 "advertiser_list": advertiser_list,
                 "sort": sort,
                 "sort_options": sort_options,

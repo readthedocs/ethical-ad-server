@@ -21,6 +21,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
+from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
 
 
@@ -78,7 +79,7 @@ class TestReportViews(TestCase):
             targeting_parameters={
                 "include_countries": ["US", "CA"],
                 "exclude_countries": ["DE"],
-                "include_keywords": ["python"],
+                "include_keywords": ["python", "test", "awesome"],
                 "include_metro_codes": [205],
                 "include_state_provinces": ["CA", "NY"],
             },
@@ -427,7 +428,6 @@ class TestReportViews(TestCase):
 
         # Filter reports
         response = self.client.get(url, {"campaign_type": "paid"})
-        print(response.content)
         self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
         self.assertNotContains(
             response, '<td class="text-right"><strong>3</strong></td>'
@@ -526,4 +526,69 @@ class TestReportViews(TestCase):
         self.assertNotContains(response, f"<td>{self.advertiser1.name}</td>")
 
         response = self.client.get(url, {"report_advertiser": self.advertiser2.slug})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+    def test_publisher_keyword_report_contents(self):
+        self.factory = RequestFactory()
+
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+            is_refunded=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["awesome"],
+            viewed=True,
+            clicked=True,
+        )
+
+        # Update reporting
+        daily_update_keywords()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_keyword_report", args=[self.publisher1.slug])
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "test")
+
+        # Filter reports
+        response = self.client.get(url, {"keyword": "test"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"keyword": "awesome"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"keyword": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
