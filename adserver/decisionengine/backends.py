@@ -54,7 +54,7 @@ class BaseAdDecisionBackend:
                 self.publisher.keywords,
             )
             merged_keywords = set(self.keywords) | set(self.publisher.keywords)
-            self.keywords = merged_keywords
+            self.keywords = list(merged_keywords)
 
         # Publishers can request certain campaign types
         # But only if those types are allowed by database settings
