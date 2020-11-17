@@ -205,6 +205,9 @@ def daily_update_keywords(day=None):
                     advertisement_id=values["advertisement"],
                     keyword=keyword,
                 )
+                # These are a Sum because we can't query for specific keywords from Postgres,
+                # so a specific publisher and advertisement set could return the same keyword:
+                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
                 KeywordImpression.objects.filter(pk=impression.pk).update(
                     **{impression_type: F(impression_type) + values["total"]}
                 )
