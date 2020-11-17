@@ -1,5 +1,6 @@
 """Celery tasks for the ad server."""
 import datetime
+import json
 import logging
 
 from celery.utils.iso8601 import parse_iso8601
@@ -10,7 +11,9 @@ from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import VIEWS
 from .models import AdImpression
+from .models import Advertisement
 from .models import GeoImpression
+from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .utils import get_ad_day
@@ -100,7 +103,7 @@ def daily_update_placements(day=None):
             .filter(total__gt=0)
             .filter(publisher__record_placements=True)
             .exclude(div_id__regex=r"(rtd-\w{4}|ad_\w{4}).*")
-            .order_by("-div_id")
+            .order_by("-total")
         ):
 
             impression, _ = PlacementImpression.objects.get_or_create(
@@ -132,7 +135,9 @@ def daily_update_impressions(day=None):
         for values in (
             queryset.values("publisher", "advertisement")
             # This needs to be publisher and not advertisement to gets decisions properly
-            .annotate(total=Count("publisher")).order_by("-total")
+            .annotate(total=Count("publisher"))
+            .filter(total__gt=0)
+            .order_by("-total")
         ):
 
             impression, _ = AdImpression.objects.get_or_create(
@@ -143,3 +148,49 @@ def daily_update_impressions(day=None):
             AdImpression.objects.filter(pk=impression.pk).update(
                 **{impression_type: values["total"]}
             )
+
+
+@app.task()
+def daily_update_keywords(day=None):
+    """
+    Update the KeywordImpression index each day.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = _get_day(day)
+
+    log.info("Updating KeywordImpression for %s-%s", start_date, end_date)
+
+    for impression_type in IMPRESSION_TYPES:
+        queryset = _default_filters(impression_type, start_date, end_date)
+
+        for values in (
+            queryset.values("publisher", "advertisement", "keywords")
+            # This needs to be publisher and not advertisement to gets decisions properly
+            .annotate(total=Count("keywords"))
+            .filter(total__gt=0)
+            .order_by("-keywords")
+        ):
+
+            keywords = json.loads(values["keywords"])
+            ad = Advertisement.objects.filter(id=values["advertisement"]).first()
+
+            if not keywords or not ad:
+                continue
+
+            publisher_keywords = set(keywords)
+            if ad.flight.targeting_parameters:
+                flight_keywords = set(
+                    ad.flight.targeting_parameters.get("include_keywords", [])
+                )
+                matched_keywords = publisher_keywords & flight_keywords
+                for keyword in matched_keywords:
+                    impression, _ = KeywordImpression.objects.get_or_create(
+                        date=start_date,
+                        publisher_id=values["publisher"],
+                        advertisement_id=values["advertisement"],
+                        keyword=keyword,
+                    )
+                    KeywordImpression.objects.filter(pk=impression.pk).update(
+                        **{impression_type: values["total"]}
+                    )

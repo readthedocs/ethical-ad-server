@@ -25,6 +25,7 @@ from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
 from .views import PublisherEmbedView
 from .views import PublisherGeoReportView
+from .views import PublisherKeywordReportView
 from .views import PublisherMainView
 from .views import PublisherPayoutDetailView
 from .views import PublisherPayoutListView
@@ -146,6 +147,11 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/report/advertisers/",
         PublisherAdvertiserReportView.as_view(),
         name="publisher_advertiser_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/keywords/",
+        PublisherKeywordReportView.as_view(),
+        name="publisher_keyword_report",
     ),
     path(
         r"publisher/<slug:publisher_slug>/embed/",
