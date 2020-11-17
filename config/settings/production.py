@@ -119,7 +119,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="15"),
     },
     "every-hour-generate-keyword-index": {
-        "task": "adserver.tasks.daily_keyword_placements",
+        "task": "adserver.tasks.daily_update_keywords",
         "schedule": crontab(minute="30"),
     },
     "every-hour-generate-placement-index": {
