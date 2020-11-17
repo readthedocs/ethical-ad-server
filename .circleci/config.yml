@@ -16,8 +16,6 @@ jobs:
   checks:
     docker:
       - image: 'cimg/python:3.6'
-        environment:
-          NODE_VERSION: 10.17.0
     steps:
       - checkout
       - run: pip install --user -r requirements/testing.txt
