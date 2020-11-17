@@ -677,8 +677,8 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
-    list_select_related = ["advertisement", "publisher"]
-    search_fields = ["advertisement__slug", "advertisement__name"]
+    list_select_related = ("advertisement", "publisher")
+    search_fields = ("advertisement__slug", "advertisement__name")
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""

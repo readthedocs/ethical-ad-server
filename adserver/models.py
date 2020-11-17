@@ -339,7 +339,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             days[index]["fill_rate"] = calculate_ctr(
                 days[index]["offers"], days[index]["decisions"]
             )
-            days[index]["offer_rate"] = calculate_ctr(
+            days[index]["view_rate"] = calculate_ctr(
                 days[index]["views"], days[index]["offers"]
             )
 
@@ -350,7 +350,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                 days.values(), key=lambda obj: obj["views"], reverse=True
             )[:report_length]
 
-        report["total"]["decisions"] = sum(day["decision"] for day in report["days"])
+        report["total"]["decisions"] = sum(day["decisions"] for day in report["days"])
         report["total"]["offers"] = sum(day["offers"] for day in report["days"])
         report["total"]["views"] = sum(day["views"] for day in report["days"])
         report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
@@ -370,7 +370,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         report["total"]["fill_rate"] = calculate_ctr(
             report["total"]["offers"], report["total"]["decisions"]
         )
-        report["total"]["offer_rate"] = calculate_ctr(
+        report["total"]["view_rate"] = calculate_ctr(
             report["total"]["views"], report["total"]["offers"]
         )
 
