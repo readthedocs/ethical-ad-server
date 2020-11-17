@@ -22,7 +22,6 @@ jobs:
       - run: tox -e migrations
       - run: tox -e lint
       - run: tox -e docs
-      - run: tox -e eslint
 
 workflows:
   version: 2
