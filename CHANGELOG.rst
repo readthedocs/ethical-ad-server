@@ -5,6 +5,19 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.14.0
+---------------
+
+:date: November 17, 2020
+
+This version adds additional reporting around keywords and offer rate.
+Both of these are behind admin-only flags until we do more testing,
+but will likely be enabled in the next release.
+
+ * @ericholscher: Add keyword reporting for publishers (#286)
+ * @ericholscher: Add Decision modeling to our indexes (#274)
+
+
 Version v0.13.0
 ---------------
 
