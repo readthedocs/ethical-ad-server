@@ -263,7 +263,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                 impressions = impressions.filter(div_id=div_id)
 
         if country is not None:
-            print(country)
             report_index = "country"
             impressions = GeoImpression.objects.filter(publisher=self)
             if country:

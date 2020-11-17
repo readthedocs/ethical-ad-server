@@ -498,7 +498,6 @@ class TestReportViews(TestCase):
 
         # Filter reports
         response = self.client.get(url, {"country": "US"})
-        print(response.content)
         self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
         self.assertNotContains(
             response, '<td class="text-right"><strong>2</strong></td>'
