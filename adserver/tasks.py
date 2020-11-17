@@ -11,7 +11,6 @@ from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import VIEWS
 from .models import AdImpression
-from .models import Advertisement
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
