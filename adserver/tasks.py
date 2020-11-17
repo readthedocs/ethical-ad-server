@@ -168,28 +168,37 @@ def daily_update_keywords(day=None):
             queryset.values("publisher", "advertisement", "keywords")
             .annotate(total=Count("keywords"))
             .filter(total__gt=0)
-            .order_by("-keywords")
+            .order_by("-total")
+            .values(
+                "publisher",
+                "advertisement",
+                "keywords",
+                "advertisement__flight__targeting_parameters",
+                "total",
+            )
         ):
-
-            keywords = json.loads(values["keywords"])
-            ad = Advertisement.objects.filter(id=values["advertisement"]).first()
-
-            if not keywords or not ad:
+            if not (
+                values["keywords"]
+                and values["advertisement__flight__targeting_parameters"]
+            ):
                 continue
 
+            keywords = json.loads(values["keywords"])
             publisher_keywords = set(keywords)
-            if ad.flight.targeting_parameters:
-                flight_keywords = set(
-                    ad.flight.targeting_parameters.get("include_keywords", [])
+
+            flight_targeting = json.loads(
+                values["advertisement__flight__targeting_parameters"]
+            )
+            flight_keywords = set(flight_targeting.get("include_keywords", {}))
+
+            matched_keywords = publisher_keywords & flight_keywords
+            for keyword in matched_keywords:
+                impression, _ = KeywordImpression.objects.get_or_create(
+                    date=start_date,
+                    publisher_id=values["publisher"],
+                    advertisement_id=values["advertisement"],
+                    keyword=keyword,
                 )
-                matched_keywords = publisher_keywords & flight_keywords
-                for keyword in matched_keywords:
-                    impression, _ = KeywordImpression.objects.get_or_create(
-                        date=start_date,
-                        publisher_id=values["publisher"],
-                        advertisement_id=values["advertisement"],
-                        keyword=keyword,
-                    )
-                    KeywordImpression.objects.filter(pk=impression.pk).update(
-                        **{impression_type: values["total"]}
-                    )
+                KeywordImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: values["total"]}
+                )
