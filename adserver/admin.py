@@ -677,8 +677,8 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
-    list_select_related = ["advertisement", "publisher"]
-    search_fields = ["advertisement__slug", "advertisement__name"]
+    list_select_related = ("advertisement", "publisher")
+    search_fields = ("advertisement__slug", "advertisement__name")
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
@@ -694,16 +694,19 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 class PlacementImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
     list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
+    search_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.search_fields
 
 
 class GeoImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("country",) + AdImpressionsAdmin.readonly_fields
     list_display = ("country",) + AdImpressionsAdmin.list_display
+    search_fields = ("country",) + AdImpressionsAdmin.search_fields
 
 
 class KeywordImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("keyword",) + AdImpressionsAdmin.readonly_fields
     list_display = ("keyword",) + AdImpressionsAdmin.list_display
+    search_fields = ("keyword",) + AdImpressionsAdmin.search_fields
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):

@@ -5,6 +5,7 @@ import logging
 
 from celery.utils.iso8601 import parse_iso8601
 from django.db.models import Count
+from django.db.models import F
 
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
@@ -160,6 +161,12 @@ def daily_update_keywords(day=None):
 
     log.info("Updating KeywordImpression for %s-%s", start_date, end_date)
 
+    # Remove all old keyword impressions, because they are cumulative
+    KeywordImpression.objects.filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    ).delete()
+
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
 
@@ -198,6 +205,9 @@ def daily_update_keywords(day=None):
                     advertisement_id=values["advertisement"],
                     keyword=keyword,
                 )
+                # These are a Sum because we can't query for specific keywords from Postgres,
+                # so a specific publisher and advertisement set could return the same keyword:
+                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
                 KeywordImpression.objects.filter(pk=impression.pk).update(
-                    **{impression_type: values["total"]}
+                    **{impression_type: F(impression_type) + values["total"]}
                 )
