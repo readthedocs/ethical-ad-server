@@ -166,7 +166,6 @@ def daily_update_keywords(day=None):
 
         for values in (
             queryset.values("publisher", "advertisement", "keywords")
-            # This needs to be publisher and not advertisement to gets decisions properly
             .annotate(total=Count("keywords"))
             .filter(total__gt=0)
             .order_by("-keywords")
