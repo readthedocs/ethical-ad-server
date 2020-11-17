@@ -22,6 +22,7 @@ jobs:
       - run: tox -e migrations
       - run: tox -e lint
       - run: tox -e docs
+      - run: tox -e coverage
 
 workflows:
   version: 2
