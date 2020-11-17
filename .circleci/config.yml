@@ -12,6 +12,7 @@ jobs:
       - checkout
       - run: pip install --user -r requirements/testing.txt
       - run: tox -e py3
+      - run: tox -e coverage
 
   checks:
     docker:
@@ -22,7 +23,6 @@ jobs:
       - run: tox -e migrations
       - run: tox -e lint
       - run: tox -e docs
-      - run: tox -e coverage
 
 workflows:
   version: 2
