@@ -250,7 +250,13 @@ class AdDecisionView(GeoIpMixin, APIView):
             ad, placement = backend.get_ad_and_placement()
 
             return Response(
-                self._prepare_response(ad, placement, publisher, keywords=keywords)
+                self._prepare_response(
+                    ad=ad,
+                    placement=placement,
+                    publisher=publisher,
+                    # We need backend.keywords here to get the combined publisher/user keywords
+                    keywords=backend.keywords,
+                )
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
