@@ -2,26 +2,33 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
-version: 2
+version: 2.1
+
 jobs:
-  build:
+  tests:
     docker:
-      - image: circleci/python:3.6
-
-    working_directory: ~/repo
-
+      - image: 'cimg/python:3.6'
     steps:
       - checkout
+      - run: pip install --user requirements/testing.txt
+      - run: tox -e py3
 
-      - run:
-          name: Install test dependencies
-          command: |
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install -r requirements/testing.txt
+  checks:
+    docker:
+      - image: 'cimg/python:3.6'
+        environment:
+          NODE_VERSION: 10.17.0
+    steps:
+      - checkout
+      - run: pip install --user requirements/testing.txt
+      - run: tox -e migrations
+      - run: tox -e lint
+      - run: tox -e docs
+      - run: tox -e eslint
 
-      - run:
-          name: Run tests
-          command: |
-            . .venv/bin/activate
-            tox
+workflows:
+  version: 2
+  test:
+    jobs:
+      - checks
+      - tests
