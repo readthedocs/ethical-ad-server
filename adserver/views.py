@@ -54,6 +54,8 @@ from .models import Flight
 from .models import Offer
 from .models import Publisher
 from .models import PublisherPayout
+from .reports import BaseReport
+from .reports import PublisherReport
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -544,15 +546,23 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
+            # This is temporary until all report views use the new report classes
+            if isinstance(report, BaseReport):
+                days = report.days
+                total = report.total
+            else:
+                days = report["days"]
+                total = report["total"]
+
             writer = csv.DictWriter(
                 response, fieldnames=self.fieldnames, extrasaction="ignore"
             )
             writer.writeheader()
-            writer.writerows(report["days"])
+            writer.writerows(days)
 
             # Update the Total field for display purposes only
-            report["total"]["date"] = "Total"
-            writer.writerow(report["total"])
+            total["date"] = "Total"
+            writer.writerow(total)
 
             return response
 
@@ -773,11 +783,13 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
+        report = PublisherReport(
+            publisher=publisher,
             start_date=context["start_date"],
             end_date=context["end_date"],
             campaign_type=context["campaign_type"],
         )
+        report.generate()
 
         context.update(
             {
