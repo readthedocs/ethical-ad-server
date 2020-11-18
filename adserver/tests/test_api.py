@@ -1099,6 +1099,14 @@ class AdvertisingIntegrationTests(BaseApiTest):
                 viewed=True,
             ).exists()
         )
+        self.assertFalse(
+            Offer.objects.filter(
+                advertisement=self.ad,
+                publisher=self.publisher1,
+                uplifted=True,
+                viewed=False,
+            ).exists()
+        )
 
     def test_nullable_offers(self):
         self.ad.live = False
