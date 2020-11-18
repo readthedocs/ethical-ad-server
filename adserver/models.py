@@ -1255,8 +1255,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         self.incr(impression_type=VIEWS, publisher=publisher)
 
         if request.GET.get("uplift"):
-            offer.uplifted = True
-            offer.save()
+            # Don't overwrite Offer object here, since it might have changed prior to our writing
+            Offer.objects.filter(pk=offer.pk).update(uplifted=True)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
             return self._record_base(
