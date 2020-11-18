@@ -1099,6 +1099,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
                 viewed=True,
             ).exists()
         )
+        # Test for regressions on https://github.com/readthedocs/ethical-ad-server/pull/290
         self.assertFalse(
             Offer.objects.filter(
                 advertisement=self.ad,
