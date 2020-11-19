@@ -74,16 +74,16 @@
           </tr>
         </thead>
         <tbody>
-          {% for date, day in days.items %}
-            {% if day.views > 0 or day.clicks > 0 %}
+          {% for result in days %}
+            {% if result.views > 0 or result.clicks > 0 %}
             <tr>
-              <td>{{ date }}</td>
-              <td class="text-right">{{ day.views|intcomma }}</td>
-              <td class="text-right">{{ day.clicks|intcomma }}</td>
-              <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
-              <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
-              <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
-              <td class="text-right">${{ day.our_revenue|floatformat:2|intcomma }}</td>
+              <td>{{ result.date }}</td>
+              <td class="text-right">{{ result.views|intcomma }}</td>
+              <td class="text-right">{{ result.clicks|intcomma }}</td>
+              <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
+              <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
+              <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
+              <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
             </tr>
             {% endif %}
           {% endfor %}
@@ -124,16 +124,16 @@
             <th class="text-right"><strong>{% trans 'Our&nbsp;Revenue&nbsp;Share' %}</strong></th>
           </tr>
         </thead>
-        {% for day in report.days %}
-          {% if day.views > 0 or day.clicks > 0 %}
+        {% for result in report.results %}
+          {% if result.views > 0 or result.clicks > 0 %}
           <tr>
-            <td>{{ day.date }}</td>
-            <td class="text-right">{{ day.views|intcomma }}</td>
-            <td class="text-right">{{ day.clicks|intcomma }}</td>
-            <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
-            <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
-            <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
-            <td class="text-right">${{ day.our_revenue|floatformat:2|intcomma }}</td>
+            <td>{{ result.index }}</td>
+            <td class="text-right">{{ result.views|intcomma }}</td>
+            <td class="text-right">{{ result.clicks|intcomma }}</td>
+            <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
+            <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
+            <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
+            <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
         {% endfor %}

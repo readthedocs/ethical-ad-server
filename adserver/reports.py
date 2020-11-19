@@ -5,6 +5,8 @@ import operator
 
 from .models import AdImpression
 from .models import GeoImpression
+from .models import KeywordImpression
+from .models import PlacementImpression
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import get_country_name
@@ -28,11 +30,32 @@ class BaseReport:
     # The "getter" to order the results by (``-views`` to order by views descending)
     order = None
 
-    max_results = 9999
+    DEFAULT_MAX_RESULTS = 65535
 
-    def __init__(self, queryset, **kwargs):
-        """Initialize the report using filtered, ordered queryset."""
+    # Fields to apply select_related on the queryset
+    select_related_fields = ("advertisement", "advertisement__flight")
+
+    def __init__(self, queryset, index=None, order=None, max_results=None, **kwargs):
+        """
+        Initialize the report using filtered, ordered queryset.
+
+        :param queryset: A filtered queryset to use with the report.
+        :param index: Override the report result index.
+            This is sometimes necessary for example when filtering a geo report to a specific country,
+            you probably want to index by date.
+        :param order: Override the report result order.
+        :param max_results: Override the maximum results to return
+        """
         self.queryset = queryset
+
+        if index:
+            self.index = index
+        if order:
+            self.order = order
+        if max_results:
+            self.max_results = max_results
+        else:
+            self.max_results = self.DEFAULT_MAX_RESULTS
 
         # Save any other keyword args for use in subclasses
         self.kwargs = kwargs
@@ -64,9 +87,7 @@ class AdvertiserReport(BaseReport):
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
-        queryset = self.queryset.select_related(
-            "advertisement", "advertisement__flight"
-        )
+        queryset = self.queryset.select_related(*self.select_related_fields)
 
         # This allows us to use `.` in the report_index to span relations
         getter = operator.attrgetter(self.index)
@@ -128,12 +149,11 @@ class PublisherReport(BaseReport):
     model = AdImpression
     index = "date"
     order = "-index"
+    select_related_fields = ("publisher", "advertisement", "advertisement__flight")
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
-        queryset = self.queryset.select_related(
-            "publisher", "advertisement", "advertisement__flight"
-        )
+        queryset = self.queryset.select_related(*self.select_related_fields)
 
         # This allows us to use `.` in the report_index to span relations
         getter = operator.attrgetter(self.index)
@@ -216,10 +236,48 @@ class PublisherReport(BaseReport):
 
 class PublisherGeoReport(PublisherReport):
 
+    """Report to breakdown publisher performance by country."""
+
     model = GeoImpression
     index = "country"
     order = "-views"
-    max_results = 20
 
     def get_index_display(self, index):
-        return get_country_name(index)
+        if self.index == "country":
+            return get_country_name(index)
+
+        return super().get_index_display(index)
+
+
+class PublisherPlacementReport(PublisherReport):
+
+    """Report to breakdown publisher performance by placement (<div>'s, ad type)."""
+
+    model = PlacementImpression
+    index = "div_id"
+    order = "-views"
+
+
+class PublisherAdvertiserReport(PublisherReport):
+
+    """Report to breakdown publisher performance by advertiser."""
+
+    model = AdImpression
+    index = "advertisement.flight.campaign.advertiser"
+    order = "-views"
+    select_related_fields = (
+        "publisher",
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+        "advertisement__flight__campaign__advertiser",
+    )
+
+
+class PublisherKeywordReport(PublisherReport):
+
+    """Report to breakdown publisher performance by keyword."""
+
+    model = KeywordImpression
+    index = "keyword"
+    order = "-views"

@@ -349,12 +349,19 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
                 }
                 flight_data["advertisements"] = []
 
-                for ad, ad_report in flight.ad_reports(
-                    start_date=start_date, end_date=end_date
-                ):
-                    ad_data = AdvertisementSerializer(ad).data
-                    ad_data["report"] = ad_report
-                    flight_data["advertisements"].append(ad_data)
+                for ad in flight.advertisements.all():
+                    ad_queryset = queryset.filter(advertisement=ad)
+                    ad_report = AdvertiserReport(ad_queryset)
+                    ad_report.generate()
+
+                    if ad_report.total["views"]:
+                        ad_data = AdvertisementSerializer(ad).data
+                        ad_data["report"] = {
+                            "total": ad_report.total,
+                            # Use "days" instead of "results" for backwards compatibility
+                            "days": ad_report.results,
+                        }
+                        flight_data["advertisements"].append(ad_data)
 
                 flights.append(flight_data)
 
