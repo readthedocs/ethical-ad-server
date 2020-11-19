@@ -61,12 +61,14 @@
       <div class="row">
         <h2 class="col-md-8">{% trans 'Total results for all ads across all flights' %}</h2>
 
-        <aside class="mb-3 col-md-4 text-right">
-          <a href="{% url 'advertiser_report_export' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
-            <span class="fa fa-download mr-1" aria-hidden="true"></span>
-            <span>CSV Export</span>
-          </a>
-        </aside>
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
       </div>
 
       <table class="table table-hover">
@@ -80,23 +82,23 @@
           </tr>
         </thead>
         <tbody>
-          {% for day in advertiser_report.days %}
-            {% if day.views > 0 or day.clicks > 0 %}
+          {% for result in advertiser_report.results %}
+            {% if result.views > 0 or result.clicks > 0 %}
             <tr>
-              <td>{{ day.date }}</td>
-              <td class="text-right">{{ day.views|intcomma }}</td>
-              <td class="text-right">{{ day.clicks|intcomma }}</td>
-              <td class="text-right">${{ day.cost|floatformat:2|intcomma }}</td>
-              <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
+              <td>{{ result.index }}</td>
+              <td class="text-right">{{ result.views|intcomma }}</td>
+              <td class="text-right">{{ result.clicks|intcomma }}</td>
+              <td class="text-right">${{ result.cost|floatformat:2|intcomma }}</td>
+              <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
             </tr>
             {% endif %}
           {% endfor %}
           <tr>
             <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
-            <td class="text-right"><strong>{{ total_views|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ total_clicks|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ total_cost|floatformat:2|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ total_ctr|floatformat:3 }}%</strong></td>
+            <td class="text-right"><strong>{{ advertiser_report.total.views|intcomma }}</strong></td>
+            <td class="text-right"><strong>{{ advertiser_report.total.clicks|intcomma }}</strong></td>
+            <td class="text-right"><strong>${{ advertiser_report.total.cost|floatformat:2|intcomma }}</strong></td>
+            <td class="text-right"><strong>{{ advertiser_report.total.ctr|floatformat:3 }}%</strong></td>
           </tr>
         </tbody>
       </table>

@@ -13,10 +13,13 @@ from rest_framework_jsonp.renderers import JSONPRenderer
 
 from ..constants import DECISIONS
 from ..decisionengine import get_ad_decision_backend
+from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
+from ..reports import AdvertiserReport
+from ..reports import PublisherReport
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
 from .permissions import AdDecisionPermission
@@ -321,15 +324,29 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
 
-        data = advertiser.daily_reports(start_date=start_date, end_date=end_date)
+        queryset = AdImpression.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser
+        ).filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        advertiser_report = AdvertiserReport(queryset)
+        advertiser_report.generate()
 
         # Add the daily performance of all flights and ads within the timeframe
-        data["flights"] = []
+        flights = []
         for flight in Flight.objects.filter(campaign__advertiser=advertiser):
-            report = flight.daily_reports(start_date=start_date, end_date=end_date)
-            if report["total"]["views"]:
+            flight_queryset = queryset.filter(advertisement__flight=flight)
+            report = AdvertiserReport(flight_queryset)
+            report.generate()
+
+            if report.total["views"]:
                 flight_data = FlightSerializer(flight).data
-                flight_data["report"] = report
+                flight_data["report"] = {
+                    "total": report.total,
+                    # Use "days" instead of "results" for backwards compatibility
+                    "days": report.results,
+                }
                 flight_data["advertisements"] = []
 
                 for ad, ad_report in flight.ad_reports(
@@ -339,9 +356,16 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
                     ad_data["report"] = ad_report
                     flight_data["advertisements"].append(ad_data)
 
-                data["flights"].append(flight_data)
+                flights.append(flight_data)
 
-        return Response(data)
+        return Response(
+            {
+                "total": advertiser_report.total,
+                # Use "days" instead of "results" for backwards compatibility
+                "days": advertiser_report.results,
+                "flights": flights,
+            }
+        )
 
 
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
@@ -402,6 +426,19 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
 
+        queryset = AdImpression.objects.filter(
+            publisher=publisher, date__gte=start_date
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        report = PublisherReport(queryset)
+        report.generate()
+
         return Response(
-            publisher.daily_reports(start_date=start_date, end_date=end_date)
+            {
+                "total": report.total,
+                # Use "days" instead of "results" for backwards compatibility
+                "days": report.results,
+            }
         )

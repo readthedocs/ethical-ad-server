@@ -134,6 +134,11 @@ urlpatterns = [
         name="publisher_report",
     ),
     path(
+        r"publisher/<slug:publisher_slug>/report.csv",
+        PublisherReportView.as_view(export=True),
+        name="publisher_report_export",
+    ),
+    path(
         r"publisher/<slug:publisher_slug>/report/placements/",
         PublisherPlacementReportView.as_view(),
         name="publisher_placement_report",
@@ -142,6 +147,11 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/report/geos/",
         PublisherGeoReportView.as_view(),
         name="publisher_geo_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/geos.csv",
+        PublisherGeoReportView.as_view(export=True),
+        name="publisher_geo_report_export",
     ),
     path(
         r"publisher/<slug:publisher_slug>/report/advertisers/",
@@ -182,11 +192,6 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/payouts/<uuid:pk>/",
         PublisherPayoutDetailView.as_view(),
         name="publisher_payout",
-    ),
-    path(
-        r"publisher/<slug:publisher_slug>/report.csv",
-        PublisherReportView.as_view(export=True),
-        name="publisher_report_export",
     ),
     # User account management
     path(r"accounts/api-token/", ApiTokenListView.as_view(), name="api_token_list"),

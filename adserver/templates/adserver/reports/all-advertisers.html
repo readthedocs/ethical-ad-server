@@ -83,15 +83,15 @@
             <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
           </tr>
         </thead>
-        {% for day in report.days %}
-          {% if day.views > 0 or day.clicks > 0 %}
+        {% for result in report.results %}
+          {% if result.views > 0 or result.clicks > 0 %}
           <tr>
-            <td>{{ day.date }}</td>
-            <td class="text-right">{{ day.views|intcomma }}</td>
-            <td class="text-right">{{ day.clicks|intcomma }}</td>
-            <td class="text-right">${{ day.cost|floatformat:2|intcomma }}</td>
-            <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
-            <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
+            <td>{{ result.index }}</td>
+            <td class="text-right">{{ result.views|intcomma }}</td>
+            <td class="text-right">{{ result.clicks|intcomma }}</td>
+            <td class="text-right">${{ result.cost|floatformat:2|intcomma }}</td>
+            <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
+            <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
           </tr>
           {% endif %}
         {% endfor %}

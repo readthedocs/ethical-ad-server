@@ -1,11 +1,13 @@
 """Advertising performance reports displayed to advertisers, publishers, and staff."""
 import collections
 import logging
+import operator
 
-from .constants import ALL_CAMPAIGN_TYPES
 from .models import AdImpression
+from .models import GeoImpression
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import get_country_name
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -15,142 +17,192 @@ class BaseReport:
 
     """Base report which other reports are extended from."""
 
+    # Model of the aggregated impression class
+    # This is used to validate that the expected queryset class matches the passed one
     model = None
 
-    def __init__(self, start_date, end_date=None, **kwargs):
-        """Initialize the report using the passed filter parameters."""
-        self.start_date = start_date
-        self.end_date = end_date
+    # This is a "getter" (potentially dotted) used to get the field that the data is indexed by
+    # For example, to get a report broken down by day, use ``date`` which will get ``adimpression.date``
+    index = None
+
+    # The "getter" to order the results by (``-views`` to order by views descending)
+    order = None
+
+    max_results = 9999
+
+    def __init__(self, queryset, **kwargs):
+        """Initialize the report using filtered, ordered queryset."""
+        self.queryset = queryset
 
         # Save any other keyword args for use in subclasses
         self.kwargs = kwargs
 
-        # Generated fields available after the report has been processed
+        # Processed fields available after the report has been generated
         self.total = {}
+        self.results = []
 
-        if not self.start_date:
-            raise RuntimeError("Start date is required")
-        if self.end_date and self.start_date > self.end_date:
-            log.warning(
-                "Start date is after the end date. This report will return nothing."
+        if self.queryset.model is not self.model:
+            raise RuntimeError(
+                f"Report queryset (type {self.queryset.model}) is not type {self.model}"
             )
 
-    def get_queryset(self):
-        raise NotImplementedError("Subclasses implement this method")
+    def get_index_display(self, index):
+        """Used to add display logic the index field."""
+        return index
 
     def generate(self):
         raise NotImplementedError("Subclasses implement this method")
 
 
-class PublisherReport(BaseReport):
+class AdvertiserReport(BaseReport):
 
-    """Report for showing daily ad performance for a publisher by day."""
+    """Report for showing daily ad performance for an advertiser."""
 
     model = AdImpression
-
-    def __init__(self, publisher, campaign_type=None, **kwargs):
-        """
-        Initialize the report with the passed filter parameters.
-
-        :param publisher: the publisher for this report (required)
-        :param campaign_type: limit to a specific campaign type (optional)
-        """
-        self.publisher = publisher
-
-        self.campaign_type = campaign_type
-
-        # Generated fields available after the report has been processed
-        self.days = []
-
-        if not self.publisher:
-            raise RuntimeError("Publisher is required")
-        if self.campaign_type and self.campaign_type not in ALL_CAMPAIGN_TYPES:
-            self.campaign_type = None
-            log.warning(
-                "Invalid campaign type %s, not limiting the report by campaign type",
-                campaign_type,
-            )
-
-        super().__init__(**kwargs)
-
-    def get_queryset(self):
-        queryset = self.model.objects.filter(publisher=self.publisher).filter(
-            date__gte=self.start_date
-        )
-
-        # Limit the report by end date
-        if self.end_date:
-            queryset = queryset.filter(date__lte=self.end_date)
-
-        # Limit the report to specific campaign types
-        if self.campaign_type:
-            queryset = queryset.filter(
-                advertisement__flight__campaign__campaign_type=self.campaign_type
-            )
-
-        return queryset
+    index = "date"
+    order = "-index"
 
     def generate(self):
-        queryset = self.get_queryset()
-        queryset = queryset.select_related("advertisement", "advertisement__flight")
+        """Generate/calculate the report from the queryset by the index."""
+        queryset = self.queryset.select_related(
+            "advertisement", "advertisement__flight"
+        )
 
-        days = collections.OrderedDict()
+        # This allows us to use `.` in the report_index to span relations
+        getter = operator.attrgetter(self.index)
+
+        results = {}
 
         for impression in queryset:
-            if impression.date not in days:
-                days[impression.date] = collections.defaultdict(int)
+            index = getter(impression)
 
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["index"] = impression.date
-            days[impression.date]["decisions"] += impression.decisions
-            days[impression.date]["offers"] += impression.offers
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
+            if index not in results:
+                results[index] = collections.defaultdict(int)
 
-            # Calculate our revenue if the offer resulted in an ad impression
+            results[index]["index"] = self.get_index_display(index)
+            results[index][self.index] = self.get_index_display(index)
+            results[index]["views"] += impression.views
+            results[index]["clicks"] += impression.clicks
+
+            # Calculate advertiser cost if the offer resulted in an ad impression
             # There's no revenue for offers with no views/clicks
             if impression.advertisement:
-                days[impression.date]["revenue"] += (
+                results[index]["cost"] += (
                     impression.clicks * float(impression.advertisement.flight.cpc)
                 ) + (
                     impression.views
                     * float(impression.advertisement.flight.cpm)
                     / 1000.0
                 )
-                days[impression.date]["revenue_share"] = days[impression.date][
-                    "revenue"
-                ] * (self.publisher.revenue_share_percentage / 100.0)
-                days[impression.date]["our_revenue"] = (
-                    days[impression.date]["revenue"]
-                    - days[impression.date]["revenue_share"]
-                )
 
             # These fields must be calculated from the fields above
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
+            results[index]["ctr"] = calculate_ctr(
+                results[index]["clicks"], results[index]["views"]
             )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["revenue"], days[impression.date]["views"]
-            )
-            days[impression.date]["fill_rate"] = calculate_ctr(
-                days[impression.date]["offers"], days[impression.date]["decisions"]
-            )
-            days[impression.date]["view_rate"] = calculate_ctr(
-                days[impression.date]["views"], days[impression.date]["offers"]
+            results[index]["ecpm"] = calculate_ecpm(
+                results[index]["cost"], results[index]["views"]
             )
 
-        self.days = days.values()
-
+        # Store, order, and aggregate on the report results
+        self.results = sorted(
+            results.values(),
+            key=lambda obj: obj[self.order.lstrip("-")],
+            reverse=self.order.startswith("-"),
+        )[: self.max_results]
         self.calculate_totals()
 
     def calculate_totals(self):
-        """Calculate the totals across the report data."""
-        self.total["decisions"] = sum(day["decisions"] for day in self.days)
-        self.total["offers"] = sum(day["offers"] for day in self.days)
-        self.total["views"] = sum(day["views"] for day in self.days)
-        self.total["clicks"] = sum(day["clicks"] for day in self.days)
-        self.total["revenue"] = sum(day["revenue"] for day in self.days)
-        self.total["revenue_share"] = sum(day["revenue_share"] for day in self.days)
+        """Calculate the totals across the report results."""
+        self.total["index"] = "Total"
+        self.total["views"] = sum(result["views"] for result in self.results)
+        self.total["clicks"] = sum(result["clicks"] for result in self.results)
+        self.total["cost"] = sum(result["cost"] for result in self.results)
+        self.total["ctr"] = calculate_ctr(self.total["clicks"], self.total["views"])
+        self.total["ecpm"] = calculate_ecpm(self.total["cost"], self.total["views"])
+
+
+class PublisherReport(BaseReport):
+
+    """Report for showing daily ad performance for a publisher."""
+
+    model = AdImpression
+    index = "date"
+    order = "-index"
+
+    def generate(self):
+        """Generate/calculate the report from the queryset by the index."""
+        queryset = self.queryset.select_related(
+            "publisher", "advertisement", "advertisement__flight"
+        )
+
+        # This allows us to use `.` in the report_index to span relations
+        getter = operator.attrgetter(self.index)
+
+        results = {}
+
+        for impression in queryset:
+            index = getter(impression)
+
+            if index not in results:
+                results[index] = collections.defaultdict(int)
+
+            results[index]["index"] = self.get_index_display(index)
+            results[index][self.index] = self.get_index_display(index)
+            results[index]["decisions"] += impression.decisions
+            results[index]["offers"] += impression.offers
+            results[index]["views"] += impression.views
+            results[index]["clicks"] += impression.clicks
+
+            # Calculate our revenue if the offer resulted in an ad impression
+            # There's no revenue for offers with no views/clicks
+            if impression.advertisement:
+                results[index]["revenue"] += (
+                    impression.clicks * float(impression.advertisement.flight.cpc)
+                ) + (
+                    impression.views
+                    * float(impression.advertisement.flight.cpm)
+                    / 1000.0
+                )
+                results[index]["revenue_share"] = results[index]["revenue"] * (
+                    impression.publisher.revenue_share_percentage / 100.0
+                )
+                results[index]["our_revenue"] = (
+                    results[index]["revenue"] - results[index]["revenue_share"]
+                )
+
+            # These fields must be calculated from the fields above
+            results[index]["ctr"] = calculate_ctr(
+                results[index]["clicks"], results[index]["views"]
+            )
+            results[index]["ecpm"] = calculate_ecpm(
+                results[index]["revenue"], results[index]["views"]
+            )
+            results[index]["fill_rate"] = calculate_ctr(
+                results[index]["offers"], results[index]["decisions"]
+            )
+            results[index]["view_rate"] = calculate_ctr(
+                results[index]["views"], results[index]["offers"]
+            )
+
+        # Store, order, and aggregate on the report results
+        self.results = sorted(
+            results.values(),
+            key=lambda obj: obj[self.order.lstrip("-")],
+            reverse=self.order.startswith("-"),
+        )[: self.max_results]
+        self.calculate_totals()
+
+    def calculate_totals(self):
+        """Calculate the totals across the report results."""
+        self.total["index"] = "Total"
+        self.total["decisions"] = sum(result["decisions"] for result in self.results)
+        self.total["offers"] = sum(result["offers"] for result in self.results)
+        self.total["views"] = sum(result["views"] for result in self.results)
+        self.total["clicks"] = sum(result["clicks"] for result in self.results)
+        self.total["revenue"] = sum(result["revenue"] for result in self.results)
+        self.total["revenue_share"] = sum(
+            result["revenue_share"] for result in self.results
+        )
         self.total["our_revenue"] = self.total["revenue"] - self.total["revenue_share"]
         self.total["ctr"] = calculate_ctr(self.total["clicks"], self.total["views"])
         self.total["ecpm"] = calculate_ecpm(self.total["revenue"], self.total["views"])
@@ -160,3 +212,14 @@ class PublisherReport(BaseReport):
         self.total["view_rate"] = calculate_ctr(
             self.total["views"], self.total["offers"]
         )
+
+
+class PublisherGeoReport(PublisherReport):
+
+    model = GeoImpression
+    index = "country"
+    order = "-views"
+    max_results = 20
+
+    def get_index_display(self, index):
+        return get_country_name(index)

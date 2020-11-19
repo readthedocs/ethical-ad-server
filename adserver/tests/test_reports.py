@@ -1,5 +1,4 @@
 import datetime
-from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -12,6 +11,7 @@ from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..constants import VIEWS
+from ..models import AdImpression
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
@@ -19,10 +19,14 @@ from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
+from ..reports import AdvertiserReport
+from ..reports import PublisherGeoReport
+from ..reports import PublisherReport
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
+from ..utils import calculate_ecpm
 
 
 class TestReportViews(TestCase):
@@ -116,10 +120,7 @@ class TestReportViews(TestCase):
         self.ad1.incr(VIEWS, self.publisher1)
         self.ad1.incr(VIEWS, self.publisher1)
         self.ad1.incr(VIEWS, self.publisher1)
-        self.ad1.incr(
-            VIEWS,
-            self.publisher1,
-        )
+        self.ad1.incr(VIEWS, self.publisher1)
         self.ad1.incr(CLICKS, self.publisher1)
 
         self.password = "(@*#$&ASDFKJ"
@@ -470,8 +471,6 @@ class TestReportViews(TestCase):
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
     def test_publisher_geo_report_contents(self):
-        self.factory = RequestFactory()
-
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
@@ -529,8 +528,6 @@ class TestReportViews(TestCase):
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
     def test_publisher_keyword_report_contents(self):
-        self.factory = RequestFactory()
-
         get(
             Offer,
             advertisement=self.ad1,
@@ -592,3 +589,75 @@ class TestReportViews(TestCase):
         # Invalid country
         response = self.client.get(url, {"keyword": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+
+class TestReportClasses(TestReportViews):
+    def setUp(self):
+        super().setUp()
+
+    def test_invalid_report_queryset(self):
+        with self.assertRaises(RuntimeError):
+            PublisherGeoReport(AdImpression.objects.filter(advertisement=self.ad1))
+
+    def test_publisher_report(self):
+        # Record a null offer (decisions that don't return an ad)
+        factory = RequestFactory()
+        request = factory.get("/")
+        Advertisement.record_null_offer(
+            request=request,
+            publisher=self.publisher1,
+            ad_type_slug=self.ad_type1.slug,
+            div_id="ad-id",
+            keywords=[],
+        )
+
+        report = PublisherReport(AdImpression.objects.filter(publisher=self.publisher1))
+        report.generate()
+
+        self.assertEqual(len(report.results), 1)
+        self.assertAlmostEqual(report.total["views"], 4)
+        self.assertAlmostEqual(report.total["clicks"], 1)
+        # The other views didn't result in an offer/decision
+        # Since they didn't go through the "offer_ad" workflow
+        self.assertAlmostEqual(report.total["decisions"], 1)
+
+    def test_advertiser_flight_report(self):
+        ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight2,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        report = AdvertiserReport(
+            AdImpression.objects.filter(advertisement__flight=ad2.flight)
+        )
+        report.generate()
+
+        self.assertEqual(report.results, [])
+        self.assertDictEqual(
+            report.total,
+            {
+                "views": 0,
+                "clicks": 0,
+                "cost": 0.0,
+                "ctr": 0.0,
+                "ecpm": 0.0,
+                "index": "Total",
+            },
+        )
+
+        # From the base class setup, ad1 has 4 views and 1 click
+        # Generate the report with some views/clicks
+        queryset = AdImpression.objects.filter(advertisement__flight=self.ad1.flight)
+        report = AdvertiserReport(queryset)
+        report.generate()
+
+        self.assertEqual(len(report.results), 1)
+        self.assertAlmostEqual(report.total["views"], 4)
+        self.assertAlmostEqual(report.total["clicks"], 1)
+        self.assertAlmostEqual(report.total["cost"], 2.0)
+        self.assertAlmostEqual(report.total["ctr"], 100 * 1 / 4)
+        self.assertAlmostEqual(report.total["ecpm"], calculate_ecpm(2.0, 4))

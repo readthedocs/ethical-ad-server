@@ -39,6 +39,7 @@ from django_countries import countries
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
+from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
@@ -51,10 +52,12 @@ from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
+from .models import GeoImpression
 from .models import Offer
 from .models import Publisher
 from .models import PublisherPayout
-from .reports import BaseReport
+from .reports import AdvertiserReport
+from .reports import PublisherGeoReport
 from .reports import PublisherReport
 from .utils import analytics_event
 from .utils import calculate_ctr
@@ -532,7 +535,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     LIMIT = 20
     export = False
     export_filename = "readthedocs-report.csv"
-    fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
+    fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
 
     def test_func(self):
         """By default, reports are locked down to staff."""
@@ -546,23 +549,12 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            # This is temporary until all report views use the new report classes
-            if isinstance(report, BaseReport):
-                days = report.days
-                total = report.total
-            else:
-                days = report["days"]
-                total = report["total"]
-
             writer = csv.DictWriter(
                 response, fieldnames=self.fieldnames, extrasaction="ignore"
             )
             writer.writeheader()
-            writer.writerows(days)
-
-            # Update the Total field for display purposes only
-            total["date"] = "Total"
-            writer.writerow(total)
+            writer.writerows(report.results)
+            writer.writerow(report.total)
 
             return response
 
@@ -624,9 +616,15 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         advertiser_slug = kwargs.get("advertiser_slug", "")
 
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
-        advertiser_report = advertiser.daily_reports(
-            start_date=start_date, end_date=end_date
-        )
+
+        queryset = AdImpression.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser
+        ).filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        advertiser_report = AdvertiserReport(queryset)
+        advertiser_report.generate()
 
         flights = (
             Flight.objects.filter(campaign__advertiser=advertiser)
@@ -640,10 +638,17 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
                 "advertiser_report": advertiser_report,
                 "report": advertiser_report,
                 "flights": flights,
-                "total_clicks": advertiser_report["total"]["clicks"],
-                "total_cost": advertiser_report["total"]["cost"],
-                "total_views": advertiser_report["total"]["views"],
-                "total_ctr": advertiser_report["total"]["ctr"],
+                "export_url": "{url}?{params}".format(
+                    url=reverse("advertiser_report_export", args=[advertiser.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -670,14 +675,24 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
             Flight, slug=flight_slug, campaign__advertiser=advertiser
         )
 
-        flight_report = flight.daily_reports(start_date=start_date, end_date=end_date)
+        queryset = AdImpression.objects.filter(advertisement__flight=flight).filter(
+            date__gte=start_date
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
 
+        flight_report = AdvertiserReport(queryset)
+        flight_report.generate()
+
+        # Get the breakdown of performance per ad
         advertisements = []
-        for ad, ad_report in flight.ad_reports(
-            start_date=start_date, end_date=end_date
-        ):
+        for ad in flight.advertisements.prefetch_related("ad_types"):
+            ad_queryset = queryset.filter(advertisement=ad)
+            ad_report = AdvertiserReport(ad_queryset)
+            ad_report.generate()
             ad.report = ad_report
-            advertisements.append(ad)
+            if ad_report.total["views"]:
+                advertisements.append(ad)
 
         context.update(
             {
@@ -686,10 +701,19 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
                 "flight_report": flight_report,
                 "report": flight_report,
                 "advertisements": advertisements,
-                "total_clicks": flight_report["total"]["clicks"],
-                "total_cost": flight_report["total"]["cost"],
-                "total_views": flight_report["total"]["views"],
-                "total_ctr": flight_report["total"]["ctr"],
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "flight_report_export", args=[advertiser.slug, flight.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -705,11 +729,14 @@ class AllAdvertiserReportView(BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
-        impressions = AdImpression.objects.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            impressions = impressions.filter(date__lte=context["end_date"])
+        impressions = AdImpression.objects.filter(date__gte=start_date)
+        if end_date:
+            impressions = impressions.filter(date__lte=end_date)
         advertisers = Advertiser.objects.filter(
             id__in=Advertisement.objects.filter(
                 id__in=impressions.values("advertisement")
@@ -718,42 +745,24 @@ class AllAdvertiserReportView(BaseReportView):
 
         advertisers_and_reports = []
         for advertiser in advertisers:
-            report = advertiser.daily_reports(
-                start_date=context["start_date"], end_date=context["end_date"]
-            )
-            if report["total"]["views"] > 0:
+            queryset = AdImpression.objects.filter(
+                advertisement__flight__campaign__advertiser=advertiser
+            ).filter(date__gte=start_date)
+            if end_date:
+                queryset = queryset.filter(date__lte=end_date)
+            report = AdvertiserReport(queryset)
+            report.generate()
+
+            if report.total["views"] > 0:
                 advertisers_and_reports.append((advertiser, report))
 
         total_clicks = sum(
-            report["total"]["clicks"] for _, report in advertisers_and_reports
+            report.total["clicks"] for _, report in advertisers_and_reports
         )
         total_views = sum(
-            report["total"]["views"] for _, report in advertisers_and_reports
+            report.total["views"] for _, report in advertisers_and_reports
         )
-        total_cost = sum(
-            report["total"]["cost"] for _, report in advertisers_and_reports
-        )
-
-        # Aggregate the different advertiser reports by day
-        days = {}
-        for advertiser, report in advertisers_and_reports:
-            for day in report["days"]:
-                if day["date"] not in days:
-                    days[day["date"]] = collections.defaultdict(int)
-                    days[day["date"]]["views_by_advertiser"] = {}
-                    days[day["date"]]["clicks_by_advertiser"] = {}
-
-                days[day["date"]]["date"] = day["date"].strftime("%Y-%m-%d")
-                days[day["date"]]["views"] += day["views"]
-                days[day["date"]]["clicks"] += day["clicks"]
-                days[day["date"]]["views_by_advertiser"][advertiser.name] = day["views"]
-                days[day["date"]]["clicks_by_advertiser"][advertiser.name] = day[
-                    "clicks"
-                ]
-                days[day["date"]]["cost"] += float(day["cost"])
-                days[day["date"]]["ctr"] = calculate_ctr(
-                    days[day["date"]]["clicks"], days[day["date"]]["views"]
-                )
+        total_cost = sum(report.total["cost"] for _, report in advertisers_and_reports)
 
         context.update(
             {
@@ -775,7 +784,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher.html"
-    fieldnames = ["date", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -783,12 +792,19 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = PublisherReport(
-            publisher=publisher,
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
+        queryset = AdImpression.objects.filter(publisher=publisher).filter(
+            date__gte=context["start_date"]
         )
+
+        if context["end_date"]:
+            queryset = queryset.filter(date__lte=context["end_date"])
+
+        if context["campaign_type"] and context["campaign_type"] in ALL_CAMPAIGN_TYPES:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__campaign_type=context["campaign_type"]
+            )
+
+        report = PublisherReport(queryset)
         report.generate()
 
         context.update(
@@ -796,6 +812,18 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "export_url": "{url}?{params}".format(
+                    url=reverse("publisher_report_export", args=[publisher.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -851,7 +879,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
+class PublisherGeoReportView(PublisherReportView):
 
     """A report for a single publisher."""
 
@@ -864,13 +892,23 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
-            country=country,
-            report_length=self.LIMIT,
+        queryset = GeoImpression.objects.filter(publisher=publisher).filter(
+            date__gte=context["start_date"]
         )
+
+        if context["end_date"]:
+            queryset = queryset.filter(date__lte=context["end_date"])
+
+        if country:
+            queryset = queryset.filter(country=country)
+
+        if context["campaign_type"] and context["campaign_type"] in ALL_CAMPAIGN_TYPES:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__campaign_type=context["campaign_type"]
+            )
+
+        report = PublisherGeoReport(queryset)
+        report.generate()
 
         country_list = publisher.geo_impressions.all()
         if context["start_date"]:
@@ -900,6 +938,19 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "country": country,
                 "country_options": country_options,
                 "country_name": countries_dict.get(country),
+                "export_url": "{url}?{params}".format(
+                    url=reverse("publisher_geo_report_export", args=[publisher.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "country": country or "",
+                        }
+                    ),
+                ),
             }
         )
 
