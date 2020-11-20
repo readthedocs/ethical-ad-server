@@ -179,7 +179,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     )
     # TODO: Move this to default=False, so new publishers have to request custom integrations
     render_pixel = models.BooleanField(
-        default=True,
+        default=False,
         help_text=_(
             "Render ethical-pixel in ad templates. This is needed for users not using the ad client."
         ),
