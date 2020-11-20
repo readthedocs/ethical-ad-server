@@ -161,17 +161,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         _("PayPal email address"), blank=True, null=True, default=None
     )
 
-    # DEPRECATED - this has no effect and will be removed in a future update
-    paid_campaigns_only = models.BooleanField(
-        default=True, help_text=_("Only show paid campaigns for this publisher")
-    )
-
     # This overrides settings.ADSERVER_RECORD_VIEWS for a specific publisher
     # Details of each ad view are written to the database.
     # Setting this can result in some performance degradation and a bloated database,
     # but note that all Offers are stored by default.
     record_views = models.BooleanField(
-        default=True,
+        default=False,
         help_text=_("Record each ad view from this publisher to the database"),
     )
     record_placements = models.BooleanField(
