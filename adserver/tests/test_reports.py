@@ -29,10 +29,7 @@ from ..tasks import daily_update_placements
 from ..utils import calculate_ecpm
 
 
-class TestReportViews(TestCase):
-
-    """These are the HTML reports that logged-in advertisers and publishers see."""
-
+class TestReportsBase(TestCase):
     def setUp(self):
         self.advertiser1 = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
@@ -131,6 +128,11 @@ class TestReportViews(TestCase):
         self.user.save()
 
         self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+
+
+class TestReportViews(TestReportsBase):
+
+    """These are the HTML reports that logged-in advertisers and publishers see."""
 
     def test_login(self):
         url = reverse("account_login")
@@ -434,6 +436,9 @@ class TestReportViews(TestCase):
             response, '<td class="text-right"><strong>3</strong></td>'
         )
 
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
     def test_publisher_placement_report_contents(self):
         self.client.force_login(self.staff_user)
         url = reverse("publisher_placement_report", args=[self.publisher1.slug])
@@ -469,6 +474,15 @@ class TestReportViews(TestCase):
         # Filter old default slugs
         response = self.client.get(url, {"div_id": "ad_23453464"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
+        export_url = reverse(
+            "publisher_placement_report_export", args=[self.publisher1.slug]
+        )
+        response = self.client.get(export_url, {"div_id": "p2"})
+        self.assertContains(response, "Total,2")
 
     def test_publisher_geo_report_contents(self):
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
@@ -508,6 +522,13 @@ class TestReportViews(TestCase):
         response = self.client.get(url, {"country": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
+        export_url = reverse("publisher_geo_report_export", args=[self.publisher1.slug])
+        response = self.client.get(export_url, {"country": "FR"})
+        self.assertContains(response, "Total,1")
+
     def test_publisher_advertiser_report_contents(self):
         self.client.force_login(self.staff_user)
         url = reverse("publisher_advertiser_report", args=[self.publisher1.slug])
@@ -526,6 +547,17 @@ class TestReportViews(TestCase):
 
         response = self.client.get(url, {"report_advertiser": self.advertiser2.slug})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
+        export_url = reverse(
+            "publisher_advertiser_report_export", args=[self.publisher1.slug]
+        )
+        response = self.client.get(
+            export_url, {"report_advertiser": self.advertiser1.slug}
+        )
+        self.assertContains(response, "Total,4")
 
     def test_publisher_keyword_report_contents(self):
         get(
@@ -590,8 +622,17 @@ class TestReportViews(TestCase):
         response = self.client.get(url, {"keyword": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
 
-class TestReportClasses(TestReportViews):
+        export_url = reverse(
+            "publisher_keyword_report_export", args=[self.publisher1.slug]
+        )
+        response = self.client.get(export_url, {"keyword": "awesome"})
+        self.assertContains(response, "Total,1,1")
+
+
+class TestReportClasses(TestReportsBase):
     def setUp(self):
         super().setUp()
 
