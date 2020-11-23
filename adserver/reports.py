@@ -83,7 +83,7 @@ class AdvertiserReport(BaseReport):
 
     model = AdImpression
     index = "date"
-    order = "-index"
+    order = "-date"
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
@@ -148,7 +148,7 @@ class PublisherReport(BaseReport):
 
     model = AdImpression
     index = "date"
-    order = "-index"
+    order = "-date"
     select_related_fields = ("publisher", "advertisement", "advertisement__flight")
 
     def generate(self):

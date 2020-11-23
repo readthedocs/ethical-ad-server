@@ -767,9 +767,10 @@ class AllAdvertiserReportView(BaseReportView):
 
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
-        impressions = AdImpression.objects.filter(date__gte=start_date)
-        if end_date:
-            impressions = impressions.filter(date__lte=end_date)
+        impressions = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
         advertisers = Advertiser.objects.filter(
             id__in=Advertisement.objects.filter(
                 id__in=impressions.values("advertisement")
@@ -889,16 +890,15 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        placement_list = publisher.placement_impressions.all()
-        if context["start_date"]:
-            placement_list = placement_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            placement_list = placement_list.filter(date__lte=context["end_date"])
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         div_id_options = (
-            placement_list.values_list("div_id", flat=True)
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("div_id", flat=True)
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
@@ -956,16 +956,15 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        country_list = publisher.geo_impressions.all()
-        if context["start_date"]:
-            country_list = country_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            country_list = country_list.filter(date__lte=context["end_date"])
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = (
-            country_list.values_list("country", flat=True)
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("country", flat=True)
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
@@ -1030,9 +1029,10 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
         queryset = self.get_queryset(
             publisher=publisher,
             advertiser=Advertiser.objects.filter(slug=report_advertiser).first(),
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
-        )
+        ).filter(advertisement__isnull=False)
 
         report = PublisherAdvertiserReport(
             queryset,
@@ -1043,15 +1043,15 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        advertiser_list = publisher.adimpression_set.filter(advertisement__isnull=False)
-
-        if context["start_date"]:
-            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
-
+        # Get the list of advertisers for the filter dropdown
         advertiser_list = (
-            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .filter(advertisement__isnull=False)
+            .values_list("advertisement__flight__campaign__advertiser")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .values_list(
@@ -1100,6 +1100,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
         queryset = self.get_queryset(
             publisher=publisher,
             keyword=keyword,
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
         )
@@ -1113,16 +1114,15 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        keyword_list = publisher.keyword_impressions.all()
-        if context["start_date"]:
-            keyword_list = keyword_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            keyword_list = keyword_list.filter(date__lte=context["end_date"])
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         keyword_list = (
-            keyword_list.values_list("keyword", flat=True)
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("keyword", flat=True)
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
@@ -1361,10 +1361,10 @@ class AllPublisherReportView(BaseReportView):
         sort = self.request.GET.get("sort", "")
 
         # Get all publishers where an ad has a view or click in the specified date range
-        impressions = AdImpression.objects.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            impressions = impressions.filter(date__lte=context["end_date"])
-
+        impressions = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
         advertiser_list = (
