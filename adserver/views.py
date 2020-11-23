@@ -865,6 +865,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
     model = PlacementImpression
     template_name = "adserver/reports/publisher_placement.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -911,6 +912,21 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "div_id": div_id,
                 "div_id_options": div_id_options,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_placement_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "div_id": div_id or "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -931,6 +947,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
 
     model = GeoImpression
     template_name = "adserver/reports/publisher_geo.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1015,6 +1032,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
     """Show top advertisers for a publisher."""
 
     template_name = "adserver/reports/publisher_advertiser.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1069,6 +1087,21 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
                 "advertiser_list": advertiser_list,
                 "report_advertiser": report_advertiser,
                 "limit": self.LIMIT,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_advertiser_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "report_advertiser": report_advertiser,
+                        }
+                    ),
+                ),
             }
         )
 
@@ -1089,6 +1122,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
 
     model = KeywordImpression
     template_name = "adserver/reports/publisher_keyword.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1135,6 +1169,21 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "keyword": keyword,
                 "keyword_list": keyword_list,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_keyword_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "keyword": keyword,
+                        }
+                    ),
+                ),
             }
         )
 
