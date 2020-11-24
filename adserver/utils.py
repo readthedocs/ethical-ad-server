@@ -349,7 +349,13 @@ def generate_absolute_url(view, kwargs):
 
 
 def generate_publisher_payout_data(publisher):
-    """Generate the amount due at next payout and current month payout data."""
+    """
+    Generate the amount due at next payout and current month payout data.
+
+    TODO: Break this function up and move it out of utils.
+    """
+    from .reports import PublisherReport  # pylint: disable=cyclic-import
+
     today = timezone.now()
     last_day_last_month = today.replace(day=1) - timedelta(days=1)
     last_payout = publisher.payouts.last()
@@ -368,11 +374,14 @@ def generate_publisher_payout_data(publisher):
         "publisher_report", kwargs={"publisher_slug": publisher.slug}
     )
 
-    current_report = publisher.daily_reports(
-        start_date=today.replace(day=1),
-        end_date=today,
-        campaign_type=PAID_CAMPAIGN,
+    current_queryset = publisher.adimpression_set.filter(
+        date__gte=today.replace(day=1),
+        date__lte=today,
+        advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
     )
+    current_report = PublisherReport(current_queryset)
+    current_report.generate()
+
     current_report_url = (
         report_url
         + "?"
@@ -390,11 +399,14 @@ def generate_publisher_payout_data(publisher):
 
     # Handle cases where a publisher has just joined this month
     if last_payout_date.month != today.month:
-        due_report = publisher.daily_reports(
-            start_date=last_payout_date,
-            end_date=last_day_last_month,
-            campaign_type=PAID_CAMPAIGN,
+        due_queryset = publisher.adimpression_set.filter(
+            date__gte=last_payout_date,
+            date__lte=last_day_last_month,
+            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
         )
+        due_report = PublisherReport(due_queryset)
+        due_report.generate()
+
         due_report_url = (
             report_url
             + "?"
@@ -412,9 +424,17 @@ def generate_publisher_payout_data(publisher):
         last_payout_date=last_payout_date,
         last_day_last_month=last_day_last_month,
         today=today,
-        due_report=due_report,
+        due_report={
+            "total": due_report.total,
+            "results": due_report.results,
+        }
+        if due_report
+        else None,
         due_report_url=due_report_url,
-        current_report=current_report,
+        current_report={
+            "total": current_report.total,
+            "results": current_report.results,
+        },
         current_report_url=current_report_url,
     )
 

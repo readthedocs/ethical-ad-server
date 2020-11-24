@@ -6,13 +6,14 @@ from django_dynamic_fixture import get
 
 from ..constants import CLICKS
 from ..constants import VIEWS
+from ..models import AdImpression
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
-from ..utils import calculate_ecpm
+from ..reports import AdvertiserReport
 from ..utils import get_ad_day
 from .common import BaseAdModelsTestCase
 
@@ -283,28 +284,6 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.campaign.total_value(), 4.3)
 
-    def test_campaign_daily_report(self):
-        report = self.campaign.daily_reports()
-        self.assertEqual(report["days"], [])
-        self.assertDictEqual(
-            report["total"],
-            {"views": 0, "clicks": 0, "cost": 0.0, "ctr": 0.0, "ecpm": 0.0},
-        )
-
-        self.ad1.incr(CLICKS, self.publisher)  # $2
-        self.ad1.incr(CLICKS, self.publisher)  # $2
-        self.ad1.incr(VIEWS, self.publisher)  # $0
-        self.ad1.incr(VIEWS, self.publisher)
-        self.ad1.incr(VIEWS, self.publisher)
-
-        report = self.campaign.daily_reports()
-        self.assertEqual(len(report["days"]), 1)
-        self.assertAlmostEqual(report["total"]["views"], 3)
-        self.assertAlmostEqual(report["total"]["clicks"], 2)
-        self.assertAlmostEqual(report["total"]["cost"], 4.0)
-        self.assertAlmostEqual(report["total"]["ctr"], 100 * 2 / 3)
-        self.assertAlmostEqual(report["total"]["ecpm"], calculate_ecpm(4.0, 3))
-
     def test_flight_value_remaining(self):
         self.assertAlmostEqual(self.flight.value_remaining(), 1000 * 2)
 
@@ -385,9 +364,12 @@ class TestAdModels(BaseAdModelsTestCase):
         )
         self.assertEqual(impression.views, 3)
 
-        report = self.flight.daily_reports()
-        self.assertAlmostEqual(report["total"]["views"], 3)
-        self.assertAlmostEqual(report["total"]["cost"], 0.15)
+        report = AdvertiserReport(
+            AdImpression.objects.filter(advertisement__flight=self.flight)
+        )
+        report.generate()
+        self.assertAlmostEqual(report.total["views"], 3)
+        self.assertAlmostEqual(report.total["cost"], 0.15)
 
         # Refund 2 of the 3 views
         self.assertTrue(view1.refund())
@@ -407,9 +389,12 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertEqual(self.flight.total_views, 1)
         self.assertEqual(impression.views, 1)
 
-        report = self.flight.daily_reports()
-        self.assertAlmostEqual(report["total"]["views"], 1)
-        self.assertAlmostEqual(report["total"]["cost"], 0.05)
+        report = AdvertiserReport(
+            AdImpression.objects.filter(advertisement__flight=self.flight)
+        )
+        report.generate()
+        self.assertAlmostEqual(report.total["views"], 1)
+        self.assertAlmostEqual(report.total["cost"], 0.05)
 
     def test_click_refund(self):
         request = self.factory.get("/")
@@ -436,9 +421,12 @@ class TestAdModels(BaseAdModelsTestCase):
         )
         self.assertEqual(impression.clicks, 3)
 
-        report = self.flight.daily_reports()
-        self.assertAlmostEqual(report["total"]["clicks"], 3)
-        self.assertAlmostEqual(report["total"]["cost"], 6.0)
+        report = AdvertiserReport(
+            AdImpression.objects.filter(advertisement__flight=self.flight)
+        )
+        report.generate()
+        self.assertAlmostEqual(report.total["clicks"], 3)
+        self.assertAlmostEqual(report.total["cost"], 6.0)
 
         # Refund 2 of the 3 clicks
         self.assertTrue(click1.refund())
@@ -458,6 +446,9 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertEqual(self.flight.total_clicks, 1)
         self.assertEqual(impression.clicks, 1)
 
-        report = self.flight.daily_reports()
-        self.assertAlmostEqual(report["total"]["clicks"], 1)
-        self.assertAlmostEqual(report["total"]["cost"], 2.0)
+        report = AdvertiserReport(
+            AdImpression.objects.filter(advertisement__flight=self.flight)
+        )
+        report.generate()
+        self.assertAlmostEqual(report.total["clicks"], 1)
+        self.assertAlmostEqual(report.total["cost"], 2.0)

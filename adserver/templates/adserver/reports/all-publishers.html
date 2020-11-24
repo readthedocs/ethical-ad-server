@@ -74,16 +74,16 @@
           </tr>
         </thead>
         <tbody>
-          {% for date, day in days.items %}
-            {% if day.views > 0 or day.clicks > 0 %}
+          {% for result in days %}
+            {% if result.views > 0 or result.clicks > 0 %}
             <tr>
-              <td>{{ date }}</td>
-              <td class="text-right">{{ day.views|intcomma }}</td>
-              <td class="text-right">{{ day.clicks|intcomma }}</td>
-              <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
-              <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
-              <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
-              <td class="text-right">${{ day.our_revenue|floatformat:2|intcomma }}</td>
+              <td>{{ result.date }}</td>
+              <td class="text-right">{{ result.views|intcomma }}</td>
+              <td class="text-right">{{ result.clicks|intcomma }}</td>
+              <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
+              <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
+              <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
+              <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
             </tr>
             {% endif %}
           {% endfor %}
@@ -112,43 +112,7 @@
         <a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}">{{ publisher.name }}</a>
       </h3>
 
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th><strong>{% trans 'Day (UTC)' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Views' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Clicks' %}</strong></th>
-            <th class="text-right"><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
-            <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Our&nbsp;Revenue&nbsp;Share' %}</strong></th>
-          </tr>
-        </thead>
-        {% for day in report.days %}
-          {% if day.views > 0 or day.clicks > 0 %}
-          <tr>
-            <td>{{ day.date }}</td>
-            <td class="text-right">{{ day.views|intcomma }}</td>
-            <td class="text-right">{{ day.clicks|intcomma }}</td>
-            <td class="text-right">${{ day.ecpm|floatformat:2 }}</td>
-            <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
-            <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
-            <td class="text-right">${{ day.our_revenue|floatformat:2|intcomma }}</td>
-          </tr>
-          {% endif %}
-        {% endfor %}
-        <tfoot>
-          <tr>
-            <td><strong>{% trans 'Total' %}</strong> </td>
-            <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
-            <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
-            <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ report.total.our_revenue|floatformat:2|intcomma }}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
+      {% include "adserver/reports/includes/publisher-report-table.html" %}
     </section>
   {% endfor %}
 {% endblock report %}

@@ -134,9 +134,19 @@ urlpatterns = [
         name="publisher_report",
     ),
     path(
+        r"publisher/<slug:publisher_slug>/report.csv",
+        PublisherReportView.as_view(export=True),
+        name="publisher_report_export",
+    ),
+    path(
         r"publisher/<slug:publisher_slug>/report/placements/",
         PublisherPlacementReportView.as_view(),
         name="publisher_placement_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/placements.csv",
+        PublisherPlacementReportView.as_view(export=True),
+        name="publisher_placement_report_export",
     ),
     path(
         r"publisher/<slug:publisher_slug>/report/geos/",
@@ -144,14 +154,29 @@ urlpatterns = [
         name="publisher_geo_report",
     ),
     path(
+        r"publisher/<slug:publisher_slug>/report/geos.csv",
+        PublisherGeoReportView.as_view(export=True),
+        name="publisher_geo_report_export",
+    ),
+    path(
         r"publisher/<slug:publisher_slug>/report/advertisers/",
         PublisherAdvertiserReportView.as_view(),
         name="publisher_advertiser_report",
     ),
     path(
+        r"publisher/<slug:publisher_slug>/report/advertisers.csv",
+        PublisherAdvertiserReportView.as_view(export=True),
+        name="publisher_advertiser_report_export",
+    ),
+    path(
         r"publisher/<slug:publisher_slug>/report/keywords/",
         PublisherKeywordReportView.as_view(),
         name="publisher_keyword_report",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/report/keywords.csv",
+        PublisherKeywordReportView.as_view(export=True),
+        name="publisher_keyword_report_export",
     ),
     path(
         r"publisher/<slug:publisher_slug>/embed/",
@@ -182,11 +207,6 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/payouts/<uuid:pk>/",
         PublisherPayoutDetailView.as_view(),
         name="publisher_payout",
-    ),
-    path(
-        r"publisher/<slug:publisher_slug>/report.csv",
-        PublisherReportView.as_view(export=True),
-        name="publisher_report_export",
     ),
     # User account management
     path(r"accounts/api-token/", ApiTokenListView.as_view(), name="api_token_list"),
