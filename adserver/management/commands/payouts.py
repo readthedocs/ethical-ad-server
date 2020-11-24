@@ -11,7 +11,6 @@ Example::
 """
 import datetime
 import sys
-from pprint import pprint
 
 import requests
 from django.conf import settings
@@ -120,6 +119,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
+        # pylint: disable=too-many-statements,too-many-branches
         print_email = kwargs.get("email")
         send_email = kwargs.get("send")
         create_payout = kwargs.get("payout")
