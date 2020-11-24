@@ -289,5 +289,3 @@ class PublisherUpliftReport(PublisherReport):
     """Report to breakdown publisher performance by keyword."""
 
     model = UpliftImpression
-    index = "publisher"
-    order = "-views"
