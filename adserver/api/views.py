@@ -11,11 +11,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jsonp.renderers import JSONPRenderer
 
+from ..constants import DECISIONS
 from ..decisionengine import get_ad_decision_backend
+from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
+from ..reports import AdvertiserReport
+from ..reports import PublisherReport
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
 from .permissions import AdDecisionPermission
@@ -141,18 +145,22 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
-        if not ad or not placement:
+        # Record a decision for every call to the API
+
+        ad_type_slug = placement.get("ad_type")
+        div_id = placement.get("div_id")
+
+        if not ad:
             Advertisement.record_null_offer(
                 request=self.request,
                 publisher=publisher,
-                ad_type_slug=None,
-                div_id=None,
+                ad_type_slug=ad_type_slug,
+                div_id=div_id,
                 keywords=keywords,
             )
             return {}
 
-        ad_type_slug = placement["ad_type"]
-        div_id = placement["div_id"]
+        ad.incr(impression_type=DECISIONS, publisher=publisher)
 
         data = ad.offer_ad(
             request=self.request,
@@ -245,7 +253,13 @@ class AdDecisionView(GeoIpMixin, APIView):
             ad, placement = backend.get_ad_and_placement()
 
             return Response(
-                self._prepare_response(ad, placement, publisher, keywords=keywords)
+                self._prepare_response(
+                    ad=ad,
+                    placement=placement,
+                    publisher=publisher,
+                    # We need backend.keywords here to get the combined publisher/user keywords
+                    keywords=backend.keywords,
+                )
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -310,27 +324,55 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
 
-        data = advertiser.daily_reports(start_date=start_date, end_date=end_date)
+        queryset = AdImpression.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser
+        ).filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        advertiser_report = AdvertiserReport(queryset)
+        advertiser_report.generate()
 
         # Add the daily performance of all flights and ads within the timeframe
-        data["flights"] = []
+        flights = []
         for flight in Flight.objects.filter(campaign__advertiser=advertiser):
-            report = flight.daily_reports(start_date=start_date, end_date=end_date)
-            if report["total"]["views"]:
+            flight_queryset = queryset.filter(advertisement__flight=flight)
+            report = AdvertiserReport(flight_queryset)
+            report.generate()
+
+            if report.total["views"]:
                 flight_data = FlightSerializer(flight).data
-                flight_data["report"] = report
+                flight_data["report"] = {
+                    "total": report.total,
+                    # Use "days" instead of "results" for backwards compatibility
+                    "days": report.results,
+                }
                 flight_data["advertisements"] = []
 
-                for ad, ad_report in flight.ad_reports(
-                    start_date=start_date, end_date=end_date
-                ):
-                    ad_data = AdvertisementSerializer(ad).data
-                    ad_data["report"] = ad_report
-                    flight_data["advertisements"].append(ad_data)
+                for ad in flight.advertisements.all():
+                    ad_queryset = queryset.filter(advertisement=ad)
+                    ad_report = AdvertiserReport(ad_queryset)
+                    ad_report.generate()
 
-                data["flights"].append(flight_data)
+                    if ad_report.total["views"]:
+                        ad_data = AdvertisementSerializer(ad).data
+                        ad_data["report"] = {
+                            "total": ad_report.total,
+                            # Use "days" instead of "results" for backwards compatibility
+                            "days": ad_report.results,
+                        }
+                        flight_data["advertisements"].append(ad_data)
 
-        return Response(data)
+                flights.append(flight_data)
+
+        return Response(
+            {
+                "total": advertiser_report.total,
+                # Use "days" instead of "results" for backwards compatibility
+                "days": advertiser_report.results,
+                "flights": flights,
+            }
+        )
 
 
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
@@ -391,6 +433,19 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
 
+        queryset = AdImpression.objects.filter(
+            publisher=publisher, date__gte=start_date
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        report = PublisherReport(queryset)
+        report.generate()
+
         return Response(
-            publisher.daily_reports(start_date=start_date, end_date=end_date)
+            {
+                "total": report.total,
+                # Use "days" instead of "results" for backwards compatibility
+                "days": report.results,
+            }
         )

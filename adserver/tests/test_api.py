@@ -1089,10 +1089,23 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
 
-        # Confirm uplift is stored in the DB
+        # Confirm uplift is stored in the DB,
+        # and that it doesn't overwrite the ``viewed`` attribute.
         self.assertTrue(
             Offer.objects.filter(
-                advertisement=self.ad, publisher=self.publisher1, uplifted=True
+                advertisement=self.ad,
+                publisher=self.publisher1,
+                uplifted=True,
+                viewed=True,
+            ).exists()
+        )
+        # Test for regressions on https://github.com/readthedocs/ethical-ad-server/pull/290
+        self.assertFalse(
+            Offer.objects.filter(
+                advertisement=self.ad,
+                publisher=self.publisher1,
+                uplifted=True,
+                viewed=False,
             ).exists()
         )
 

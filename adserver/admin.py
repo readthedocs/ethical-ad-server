@@ -24,6 +24,7 @@ from .models import Campaign
 from .models import Click
 from .models import Flight
 from .models import GeoImpression
+from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
@@ -203,8 +204,9 @@ class AdTypeAdmin(admin.ModelAdmin):
         "default_enabled",
         "has_image",
         "has_text",
+        "deprecated",
     )
-    list_filter = ("has_image", "has_text", "default_enabled")
+    list_filter = ("has_image", "has_text", "default_enabled", "deprecated")
     readonly_fields = ("modified", "created")
     search_fields = ("name", "slug")
 
@@ -663,6 +665,7 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "views",
         "clicks",
         "offers",
+        "decisions",
         "click_to_offer_rate",
         "view_to_offer_rate",
         "modified",
@@ -674,8 +677,8 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
-    list_select_related = ["advertisement", "publisher"]
-    search_fields = ["advertisement__slug", "advertisement__name"]
+    list_select_related = ("advertisement", "publisher")
+    search_fields = ("advertisement__slug", "advertisement__name")
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
@@ -691,11 +694,19 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 class PlacementImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
     list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
+    search_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.search_fields
 
 
 class GeoImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("country",) + AdImpressionsAdmin.readonly_fields
     list_display = ("country",) + AdImpressionsAdmin.list_display
+    search_fields = ("country",) + AdImpressionsAdmin.search_fields
+
+
+class KeywordImpressionAdmin(AdImpressionsAdmin):
+    readonly_fields = ("keyword",) + AdImpressionsAdmin.readonly_fields
+    list_display = ("keyword",) + AdImpressionsAdmin.list_display
+    search_fields = ("keyword",) + AdImpressionsAdmin.search_fields
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
@@ -855,6 +866,7 @@ admin.site.register(Offer, OfferAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
 admin.site.register(GeoImpression, GeoImpressionAdmin)
 admin.site.register(PlacementImpression, PlacementImpressionAdmin)
+admin.site.register(KeywordImpression, KeywordImpressionAdmin)
 admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)
 admin.site.register(Flight, FlightAdmin)

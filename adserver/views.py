@@ -39,6 +39,7 @@ from django_countries import countries
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
+from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
@@ -51,9 +52,18 @@ from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import Flight
+from .models import GeoImpression
+from .models import KeywordImpression
 from .models import Offer
+from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .reports import AdvertiserReport
+from .reports import PublisherAdvertiserReport
+from .reports import PublisherGeoReport
+from .reports import PublisherKeywordReport
+from .reports import PublisherPlacementReport
+from .reports import PublisherReport
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -179,7 +189,7 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
         )
         return context
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -202,7 +212,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
         context.update({"advertiser": self.advertiser})
         return context
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -238,7 +248,7 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
         kwargs["flight"] = ad.flight
         return kwargs
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -286,7 +296,9 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
             {
                 "advertiser": self.advertiser,
                 "flight": self.flight,
-                "ad_types": AdType.objects.exclude(description="")[:5],
+                "ad_types": AdType.objects.exclude(deprecated=True).exclude(
+                    description=""
+                )[:5],
             }
         )
         return context
@@ -528,7 +540,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     LIMIT = 20
     export = False
     export_filename = "readthedocs-report.csv"
-    fieldnames = ["date", "views", "clicks", "cost", "ctr", "ecpm"]
+    fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
+    model = AdImpression
 
     def test_func(self):
         """By default, reports are locked down to staff."""
@@ -546,11 +559,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
                 response, fieldnames=self.fieldnames, extrasaction="ignore"
             )
             writer.writeheader()
-            writer.writerows(report["days"])
-
-            # Update the Total field for display purposes only
-            report["total"]["date"] = "Total"
-            writer.writerow(report["total"])
+            writer.writerows(report.results)
+            writer.writerow(report.total)
 
             return response
 
@@ -560,11 +570,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
-        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
-        div_id = self.request.GET.get("div_id", "")
-        # This needs to be something other than `advertiser` to not conflict with template context on advertising reports.
-        report_advertiser = self.request.GET.get("report_advertiser", "")
-        country = self.request.GET.get("country", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -573,12 +578,35 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "start_date": start_date,
             "end_date": end_date,
             "campaign_type": campaign_type,
-            "revenue_share_percentage": revenue_share_percentage,
-            "div_id": div_id,
-            "report_advertiser": report_advertiser,
-            "country": country,
             "limit": self.LIMIT,
         }
+
+    def get_queryset(self, **kwargs):
+        """Get the queryset (from ``model``) used to generate the report."""
+        queryset = self.model.objects.all()
+
+        if "start_date" in kwargs and kwargs["start_date"]:
+            queryset = queryset.filter(date__gte=kwargs["start_date"])
+        if "end_date" in kwargs and kwargs["end_date"]:
+            queryset = queryset.filter(date__lte=kwargs["end_date"])
+
+        # Advertiser filters
+        if "advertiser" in kwargs and kwargs["advertiser"]:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__advertiser=kwargs["advertiser"]
+            )
+        if "flight" in kwargs and kwargs["flight"]:
+            queryset = queryset.filter(advertisement__flight=kwargs["flight"])
+
+        # Publisher filters
+        if "publisher" in kwargs and kwargs["publisher"]:
+            queryset = queryset.filter(publisher=kwargs["publisher"])
+        if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
+            )
+
+        return queryset
 
     def _parse_date_string(self, date_str):
         try:
@@ -621,9 +649,14 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         advertiser_slug = kwargs.get("advertiser_slug", "")
 
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
-        advertiser_report = advertiser.daily_reports(
-            start_date=start_date, end_date=end_date
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            start_date=start_date,
+            end_date=end_date,
         )
+        report = AdvertiserReport(queryset)
+        report.generate()
 
         flights = (
             Flight.objects.filter(campaign__advertiser=advertiser)
@@ -634,13 +667,19 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         context.update(
             {
                 "advertiser": advertiser,
-                "advertiser_report": advertiser_report,
-                "report": advertiser_report,
+                "report": report,
                 "flights": flights,
-                "total_clicks": advertiser_report["total"]["clicks"],
-                "total_cost": advertiser_report["total"]["cost"],
-                "total_views": advertiser_report["total"]["views"],
-                "total_ctr": advertiser_report["total"]["ctr"],
+                "export_url": "{url}?{params}".format(
+                    url=reverse("advertiser_report_export", args=[advertiser.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -667,26 +706,45 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
             Flight, slug=flight_slug, campaign__advertiser=advertiser
         )
 
-        flight_report = flight.daily_reports(start_date=start_date, end_date=end_date)
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            flight=flight,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
+        report = AdvertiserReport(queryset)
+        report.generate()
+
+        # Get the breakdown of performance per ad
         advertisements = []
-        for ad, ad_report in flight.ad_reports(
-            start_date=start_date, end_date=end_date
-        ):
+        for ad in flight.advertisements.prefetch_related("ad_types"):
+            ad_queryset = queryset.filter(advertisement=ad)
+            ad_report = AdvertiserReport(ad_queryset)
+            ad_report.generate()
             ad.report = ad_report
-            advertisements.append(ad)
+            if ad_report.total["views"]:
+                advertisements.append(ad)
 
         context.update(
             {
                 "advertiser": advertiser,
                 "flight": flight,
-                "flight_report": flight_report,
-                "report": flight_report,
+                "report": report,
                 "advertisements": advertisements,
-                "total_clicks": flight_report["total"]["clicks"],
-                "total_cost": flight_report["total"]["cost"],
-                "total_views": flight_report["total"]["views"],
-                "total_ctr": flight_report["total"]["ctr"],
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "flight_report_export", args=[advertiser.slug, flight.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -702,11 +760,15 @@ class AllAdvertiserReportView(BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
-        impressions = AdImpression.objects.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            impressions = impressions.filter(date__lte=context["end_date"])
+        impressions = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
         advertisers = Advertiser.objects.filter(
             id__in=Advertisement.objects.filter(
                 id__in=impressions.values("advertisement")
@@ -715,42 +777,24 @@ class AllAdvertiserReportView(BaseReportView):
 
         advertisers_and_reports = []
         for advertiser in advertisers:
-            report = advertiser.daily_reports(
-                start_date=context["start_date"], end_date=context["end_date"]
+            queryset = self.get_queryset(
+                advertiser=advertiser,
+                start_date=start_date,
+                end_date=end_date,
             )
-            if report["total"]["views"] > 0:
+            report = AdvertiserReport(queryset)
+            report.generate()
+
+            if report.total["views"] > 0:
                 advertisers_and_reports.append((advertiser, report))
 
         total_clicks = sum(
-            report["total"]["clicks"] for _, report in advertisers_and_reports
+            report.total["clicks"] for _, report in advertisers_and_reports
         )
         total_views = sum(
-            report["total"]["views"] for _, report in advertisers_and_reports
+            report.total["views"] for _, report in advertisers_and_reports
         )
-        total_cost = sum(
-            report["total"]["cost"] for _, report in advertisers_and_reports
-        )
-
-        # Aggregate the different advertiser reports by day
-        days = {}
-        for advertiser, report in advertisers_and_reports:
-            for day in report["days"]:
-                if day["date"] not in days:
-                    days[day["date"]] = collections.defaultdict(int)
-                    days[day["date"]]["views_by_advertiser"] = {}
-                    days[day["date"]]["clicks_by_advertiser"] = {}
-
-                days[day["date"]]["date"] = day["date"].strftime("%Y-%m-%d")
-                days[day["date"]]["views"] += day["views"]
-                days[day["date"]]["clicks"] += day["clicks"]
-                days[day["date"]]["views_by_advertiser"][advertiser.name] = day["views"]
-                days[day["date"]]["clicks_by_advertiser"][advertiser.name] = day[
-                    "clicks"
-                ]
-                days[day["date"]]["cost"] += float(day["cost"])
-                days[day["date"]]["ctr"] = calculate_ctr(
-                    days[day["date"]]["clicks"], days[day["date"]]["views"]
-                )
+        total_cost = sum(report.total["cost"] for _, report in advertisers_and_reports)
 
         context.update(
             {
@@ -772,7 +816,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     template_name = "adserver/reports/publisher.html"
-    fieldnames = ["date", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -780,17 +824,33 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
+        queryset = self.get_queryset(
+            publisher=publisher,
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
         )
+
+        report = PublisherReport(queryset)
+        report.generate()
 
         context.update(
             {
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "export_url": "{url}?{params}".format(
+                    url=reverse("publisher_report_export", args=[publisher.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                        }
+                    ),
+                ),
             }
         )
 
@@ -799,34 +859,45 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
 class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
-    """A report for a single publisher."""
+    """A report for a single publisher broken down by placement (Div/ad type)."""
 
+    model = PlacementImpression
     template_name = "adserver/reports/publisher_placement.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        div_id = self.request.GET.get("div_id", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
+        queryset = self.get_queryset(
+            publisher=publisher,
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
-            div_id=context.get("div_id", ""),
-            report_length=self.LIMIT,
+            div_id=div_id,
         )
 
-        placement_list = publisher.placement_impressions.all()
-        if context["start_date"]:
-            placement_list = placement_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            placement_list = placement_list.filter(date__lte=context["end_date"])
+        report = PublisherPlacementReport(
+            queryset,
+            # Index by date if filtering report to a single placement
+            index="date" if div_id else None,
+            order="-date" if div_id else None,
+            max_results=None if div_id else self.LIMIT,
+        )
+        report.generate()
 
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         div_id_options = (
-            placement_list.values_list("div_id", flat=True)
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("div_id", flat=True)
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
@@ -837,43 +908,78 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "div_id": div_id,
                 "div_id_options": div_id_options,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_placement_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "div_id": div_id or "",
+                        }
+                    ),
+                ),
             }
         )
 
         return context
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "div_id" in kwargs and kwargs["div_id"]:
+            queryset = queryset.filter(div_id=kwargs["div_id"])
+
+        return queryset
 
 
 class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    model = GeoImpression
     template_name = "adserver/reports/publisher_geo.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        country = self.request.GET.get("country", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
+        queryset = self.get_queryset(
+            publisher=publisher,
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
-            country=context.get("country", ""),
-            report_length=self.LIMIT,
+            country=country,
         )
 
-        country_list = publisher.geo_impressions.all()
-        if context["start_date"]:
-            country_list = country_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            country_list = country_list.filter(date__lte=context["end_date"])
+        report = PublisherGeoReport(
+            queryset,
+            # Index by date if filtering report to a single country
+            index="date" if country else None,
+            order="-date" if country else None,
+            max_results=None if country else self.LIMIT,
+        )
+        report.generate()
 
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = (
-            country_list.values_list("country", flat=True)
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("country", flat=True)
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
@@ -889,12 +995,34 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
+                "country": country,
                 "country_options": country_options,
-                "country_name": countries_dict.get(context["country"]),
+                "country_name": countries_dict.get(country),
+                "export_url": "{url}?{params}".format(
+                    url=reverse("publisher_geo_report_export", args=[publisher.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "country": country or "",
+                        }
+                    ),
+                ),
             }
         )
 
         return context
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "country" in kwargs and kwargs["country"]:
+            queryset = queryset.filter(country=kwargs["country"])
+
+        return queryset
 
 
 class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
@@ -902,30 +1030,44 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
     """Show top advertisers for a publisher."""
 
     template_name = "adserver/reports/publisher_advertiser.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # This needs to be something other than `advertiser`
+        # to not conflict with template context on advertising reports.
+        report_advertiser = self.request.GET.get("report_advertiser", "")
+
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
-        report = publisher.daily_reports(
+        queryset = self.get_queryset(
+            publisher=publisher,
+            advertiser=Advertiser.objects.filter(slug=report_advertiser).first(),
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
-            advertiser=context.get("report_advertiser", ""),
-            report_length=self.LIMIT,
+        ).filter(advertisement__isnull=False)
+
+        report = PublisherAdvertiserReport(
+            queryset,
+            # Index by date if filtering report to a single country
+            index="date" if report_advertiser else None,
+            order="-date" if report_advertiser else None,
+            max_results=None if report_advertiser else self.LIMIT,
         )
+        report.generate()
 
-        advertiser_list = publisher.adimpression_set.all()
-
-        if context["start_date"]:
-            advertiser_list = advertiser_list.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            advertiser_list = advertiser_list.filter(date__lte=context["end_date"])
-
+        # Get the list of advertisers for the filter dropdown
         advertiser_list = (
-            advertiser_list.values_list("advertisement__flight__campaign__advertiser")
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .filter(advertisement__isnull=False)
+            .values_list("advertisement__flight__campaign__advertiser")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
             .values_list(
@@ -935,27 +1077,123 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
             .distinct()[: self.LIMIT]
         )
 
-        # Remove report_advertiser if there's invalid data passed in
-        if context["report_advertiser"] not in (slug for slug, name in advertiser_list):
-            context["report_advertiser"] = None
-
         context.update(
             {
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "advertiser_list": advertiser_list,
+                "report_advertiser": report_advertiser,
                 "limit": self.LIMIT,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_advertiser_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "report_advertiser": report_advertiser,
+                        }
+                    ),
+                ),
             }
         )
 
-        if context["report_advertiser"]:
-            advertiser_name = Advertiser.objects.get(
-                slug=context["report_advertiser"]
-            ).name
+        # Remove report_advertiser if there's invalid data passed in
+        if report_advertiser not in (slug for slug, name in advertiser_list):
+            context["report_advertiser"] = None
+
+        if report_advertiser:
+            advertiser_name = Advertiser.objects.get(slug=report_advertiser).name
             context["advertiser_name"] = advertiser_name
 
         return context
+
+
+class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
+
+    """A report for a single publisher."""
+
+    model = KeywordImpression
+    template_name = "adserver/reports/publisher_keyword.html"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        keyword = self.request.GET.get("keyword", "")
+        publisher_slug = kwargs.get("publisher_slug", "")
+        publisher = get_object_or_404(Publisher, slug=publisher_slug)
+
+        queryset = self.get_queryset(
+            publisher=publisher,
+            keyword=keyword,
+            campaign_type=context["campaign_type"],
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
+
+        report = PublisherKeywordReport(
+            queryset,
+            # Index by date if filtering report to a single country
+            index="date" if keyword else None,
+            order="-date" if keyword else None,
+            max_results=None if keyword else self.LIMIT,
+        )
+        report.generate()
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        keyword_list = (
+            self.get_queryset(
+                publisher=publisher,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("keyword", flat=True)
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
+        )
+
+        context.update(
+            {
+                "publisher": publisher,
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "keyword": keyword,
+                "keyword_list": keyword_list,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "publisher_keyword_report_export", args=[publisher.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "campaign_type": context["campaign_type"] or "",
+                            "keyword": keyword,
+                        }
+                    ),
+                ),
+            }
+        )
+
+        return context
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "keyword" in kwargs and kwargs["keyword"]:
+            queryset = queryset.filter(keyword=kwargs["keyword"])
+
+        return queryset
 
 
 class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView):
@@ -999,7 +1237,7 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         context.update({"publisher": self.object})
         return context
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
     def get_success_url(self):
@@ -1040,7 +1278,7 @@ class PublisherStripeOauthConnectView(
         }
         return f"https://connect.stripe.com/express/oauth/authorize?{urllib.parse.urlencode(params)}"
 
-    def get_object(self, queryset=None):  # noqa
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
 
@@ -1170,10 +1408,10 @@ class AllPublisherReportView(BaseReportView):
         sort = self.request.GET.get("sort", "")
 
         # Get all publishers where an ad has a view or click in the specified date range
-        impressions = AdImpression.objects.filter(date__gte=context["start_date"])
-        if context["end_date"]:
-            impressions = impressions.filter(date__lte=context["end_date"])
-
+        impressions = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
         advertiser_list = (
@@ -1187,56 +1425,58 @@ class AllPublisherReportView(BaseReportView):
             .distinct()
         )
 
-        if context["revenue_share_percentage"]:
+        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        if revenue_share_percentage:
             try:
                 publishers = publishers.filter(
-                    revenue_share_percentage=float(context["revenue_share_percentage"])
+                    revenue_share_percentage=float(revenue_share_percentage)
                 )
             except ValueError:
                 pass
 
         publishers_and_reports = []
         for publisher in publishers:
-            report = publisher.daily_reports(
+            queryset = self.get_queryset(
+                publisher=publisher,
                 start_date=context["start_date"],
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
             )
-            if report["total"]["views"] > 0:
+            report = PublisherReport(queryset)
+            report.generate()
+            if report.total["views"] > 0:
                 publishers_and_reports.append((publisher, report))
 
         # Sort reports by revenue
-        sort_options = report["total"].keys()
+        sort_options = report.total.keys()
         if sort and sort in sort_options:
             publishers_and_reports = sorted(
                 publishers_and_reports,
-                key=lambda obj: obj[1]["total"][sort],
+                key=lambda obj: obj[1].total[sort],
                 reverse=True,
             )
 
         total_clicks = sum(
-            report["total"]["clicks"] for _, report in publishers_and_reports
+            report.total["clicks"] for _, report in publishers_and_reports
         )
-        total_views = sum(
-            report["total"]["views"] for _, report in publishers_and_reports
-        )
+        total_views = sum(report.total["views"] for _, report in publishers_and_reports)
         total_revenue = sum(
-            report["total"]["revenue"] for _, report in publishers_and_reports
+            report.total["revenue"] for _, report in publishers_and_reports
         )
         our_total_revenue = total_revenue - sum(
-            report["total"]["revenue_share"] for _, report in publishers_and_reports
+            report.total["revenue_share"] for _, report in publishers_and_reports
         )
 
         # Aggregate the different publisher reports by day
         days = {}
         for publisher, report in publishers_and_reports:
-            for day in report["days"]:
+            for day in report.results:
                 if day["date"] not in days:
                     days[day["date"]] = collections.defaultdict(int)
                     days[day["date"]]["views_by_publisher"] = {}
                     days[day["date"]]["clicks_by_publisher"] = {}
 
-                days[day["date"]]["date"] = day["date"].strftime("%Y-%m-%d")
+                days[day["date"]]["date"] = day["date"]
                 days[day["date"]]["views"] += day["views"]
                 days[day["date"]]["clicks"] += day["clicks"]
                 days[day["date"]]["views_by_publisher"][publisher.name] = day["views"]
@@ -1249,6 +1489,13 @@ class AllPublisherReportView(BaseReportView):
                 days[day["date"]]["ecpm"] = calculate_ecpm(
                     days[day["date"]]["revenue"], days[day["date"]]["views"]
                 )
+
+        # Ensure the aggregated total is sorted
+        days = sorted(
+            days.values(),
+            key=lambda obj: obj["date"],
+            reverse=True,
+        )
 
         context.update(
             {
@@ -1266,6 +1513,7 @@ class AllPublisherReportView(BaseReportView):
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
+                "revenue_share_percentage": revenue_share_percentage,
                 "advertiser_list": advertiser_list,
                 "sort": sort,
                 "sort_options": sort_options,
@@ -1330,7 +1578,7 @@ class ApiTokenDeleteView(ApiTokenMixin, DeleteView):
         messages.info(request, _("API token revoked"))
         return result
 
-    def get_object(self, queryset=None):  # noqa
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
         token = Token.objects.filter(user=self.request.user).first()
         if not token:
             raise Http404

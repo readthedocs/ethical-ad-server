@@ -31,6 +31,8 @@ pylint:
 
 mccabe:
   run: true
+  disable:
+  - MC0001
 
 pep257:
   run: true

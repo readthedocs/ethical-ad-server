@@ -3,11 +3,8 @@ import datetime
 import html
 import logging
 import math
-import operator
 import uuid
 from collections import Counter
-from collections import defaultdict
-from collections import OrderedDict
 
 import bleach
 from django.conf import settings
@@ -29,9 +26,9 @@ from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
 from user_agents import parse
 
-from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
+from .constants import DECISIONS
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
@@ -39,14 +36,12 @@ from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
-from .utils import calculate_ecpm
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_country
 from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
-from .utils import get_country_name
 from .validators import TargetingParametersValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -160,17 +155,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         _("PayPal email address"), blank=True, null=True, default=None
     )
 
-    # DEPRECATED - this has no effect and will be removed in a future update
-    paid_campaigns_only = models.BooleanField(
-        default=True, help_text=_("Only show paid campaigns for this publisher")
-    )
-
     # This overrides settings.ADSERVER_RECORD_VIEWS for a specific publisher
     # Details of each ad view are written to the database.
     # Setting this can result in some performance degradation and a bloated database,
     # but note that all Offers are stored by default.
     record_views = models.BooleanField(
-        default=True,
+        default=False,
         help_text=_("Record each ad view from this publisher to the database"),
     )
     record_placements = models.BooleanField(
@@ -178,7 +168,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     )
     # TODO: Move this to default=False, so new publishers have to request custom integrations
     render_pixel = models.BooleanField(
-        default=True,
+        default=False,
         help_text=_(
             "Render ethical-pixel in ad templates. This is needed for users not using the ad client."
         ),
@@ -216,139 +206,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
                     return_keywords.append(keyword)
             return return_keywords
         return []
-
-    def daily_reports(
-        self,
-        start_date=None,
-        end_date=None,
-        campaign_type=None,
-        div_id=None,
-        advertiser=None,
-        country=None,
-        report_length=20,
-    ):
-        """
-        Generates a report of clicks, views, & cost for a given time period for the Publisher.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :param campaign_type: only return campaigns of a specific type (eg. house, paid)
-        :param div_id: filter ads based on div_id
-        :return: A dictionary containing a list of days for the report
-            and an aggregated total
-        """
-        report = {"days": [], "total": {}}
-        impressions = AdImpression.objects.filter(publisher=self)
-        report_index = "date"
-
-        # When passed in from the placement report, div_id will be an empty string, not None
-        # So we differentiate between None and "" here
-        if div_id is not None:
-            report_index = "div_id"
-            impressions = PlacementImpression.objects.filter(publisher=self)
-            if div_id:
-                # Show dates when filtered
-                report_index = "date"
-                impressions = PlacementImpression.objects.filter(
-                    publisher=self, div_id=div_id
-                )
-
-        if country is not None:
-            report_index = "country"
-            impressions = GeoImpression.objects.filter(publisher=self)
-            if country:
-                # Show dates when filtered
-                report_index = "date"
-                impressions = GeoImpression.objects.filter(
-                    publisher=self, country=country
-                )
-
-        # Advertiser report
-        if advertiser is not None:
-            report_index = "advertisement.flight.campaign.advertiser"
-            impressions = impressions.select_related(
-                "advertisement__flight__campaign__advertiser"
-            )
-            if advertiser:
-                # Show dates when filtered
-                report_index = "date"
-
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-            if end_date:
-                impressions = impressions.filter(date__lte=end_date)
-        if campaign_type and campaign_type in ALL_CAMPAIGN_TYPES:
-            impressions = impressions.filter(
-                advertisement__flight__campaign__campaign_type=campaign_type
-            )
-
-        if advertiser:
-            impressions = impressions.filter(
-                advertisement__flight__campaign__advertiser__slug=advertiser
-            )
-
-        impressions = impressions.select_related(
-            "advertisement", "advertisement__flight"
-        )
-
-        # This allows us to use `.` in the report_index to span relations
-        getter = operator.attrgetter(report_index)
-
-        days = OrderedDict()
-        for impression in impressions:
-            index = getter(impression)
-            if index not in days:
-                days[index] = defaultdict(int)
-            index_display = index
-            if report_index == "country":
-                index_display = "%s (%s)" % (index, get_country_name(index))
-
-            days[index]["date"] = impression.date
-            days[index]["index"] = index_display
-            days[index]["views"] += impression.views
-            days[index]["clicks"] += impression.clicks
-            days[index]["revenue"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[index]["revenue_share"] = days[index]["revenue"] * (
-                self.revenue_share_percentage / 100.0
-            )
-            days[index]["our_revenue"] = (
-                days[index]["revenue"] - days[index]["revenue_share"]
-            )
-            days[index]["ctr"] = calculate_ctr(
-                days[index]["clicks"], days[index]["views"]
-            )
-            days[index]["ecpm"] = calculate_ecpm(
-                days[index]["revenue"], days[index]["views"]
-            )
-
-        report["days"] = days.values()
-        if report_index != "date":
-            # Show a truncated list sorted by most views
-            report["days"] = sorted(
-                days.values(),
-                key=lambda obj: obj["views"],
-                reverse=True,
-            )[:report_length]
-
-        report["total"]["views"] = sum(day["views"] for day in report["days"])
-        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["revenue"] = sum(day["revenue"] for day in report["days"])
-        report["total"]["revenue_share"] = sum(
-            day["revenue_share"] for day in report["days"]
-        )
-        report["total"]["our_revenue"] = (
-            report["total"]["revenue"] - report["total"]["revenue_share"]
-        )
-        report["total"]["ctr"] = calculate_ctr(
-            report["total"]["clicks"], report["total"]["views"]
-        )
-        report["total"]["ecpm"] = calculate_ecpm(
-            report["total"]["revenue"], report["total"]["views"]
-        )
-
-        return report
 
     def total_payout_sum(self):
         """The total amount ever paid out to this publisher."""
@@ -404,59 +261,6 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     def get_absolute_url(self):
         return reverse("advertiser_report", kwargs={"advertiser_slug": self.slug})
-
-    def daily_reports(self, start_date=None, end_date=None):
-        """
-        Generates a report of clicks, views, & cost for a given time period for the Advertiser.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :return: A dictionary containing a list of days for the report
-            and an aggregated total
-        """
-        report = {"days": [], "total": {}}
-        impressions = AdImpression.objects.filter(
-            advertisement__flight__campaign__advertiser=self
-        )
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-            if end_date:
-                impressions = impressions.filter(date__lte=end_date)
-        impressions = impressions.select_related(
-            "advertisement", "advertisement__flight"
-        )
-
-        days = OrderedDict()
-        for impression in impressions:
-            if impression.date not in days:
-                days[impression.date] = defaultdict(int)
-
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["cost"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
-            )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["cost"], days[impression.date]["views"]
-            )
-
-        report["days"] = days.values()
-
-        report["total"]["views"] = sum(day["views"] for day in report["days"])
-        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
-        report["total"]["ctr"] = calculate_ctr(
-            report["total"]["clicks"], report["total"]["views"]
-        )
-        report["total"]["ecpm"] = calculate_ecpm(
-            report["total"]["cost"], report["total"]["views"]
-        )
-
-        return report
 
 
 class Campaign(TimeStampedModel, IndestructibleModel):
@@ -536,66 +340,6 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         )["total_value"]
 
         return aggregation or 0.0
-
-    def daily_reports(
-        self, start_date=None, end_date=None, name_filter=None, inactive=True
-    ):
-        """
-        Generates a report of clicks, views, & cost for a given time period for the Campaign.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :param name_filter: ignore ads that don't match the specified string
-        :param inactive: if True, show inactive ads in addition to live ones
-        :return: A dictionary containing a list of days for the report
-            and an aggregated total
-        """
-        report = {"days": [], "total": {}}
-
-        impressions = AdImpression.objects.filter(advertisement__flight__campaign=self)
-        if name_filter:
-            impressions = impressions.filter(advertisement__name__icontains=name_filter)
-        if not inactive:
-            impressions = impressions.filter(advertisement__live=True)
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-            if end_date:
-                impressions = impressions.filter(date__lte=end_date)
-        impressions = impressions.select_related(
-            "advertisement", "advertisement__flight"
-        )
-
-        days = OrderedDict()
-        for impression in impressions:
-            if impression.date not in days:
-                days[impression.date] = defaultdict(int)
-
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["cost"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
-            )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["cost"], days[impression.date]["views"]
-            )
-
-        report["days"] = list(days.values())
-
-        report["total"]["views"] = sum(day["views"] for day in report["days"])
-        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
-        report["total"]["ctr"] = calculate_ctr(
-            report["total"]["clicks"], report["total"]["views"]
-        )
-        report["total"]["ecpm"] = calculate_ecpm(
-            report["total"]["cost"], report["total"]["views"]
-        )
-
-        return report
 
 
 class Flight(TimeStampedModel, IndestructibleModel):
@@ -908,82 +652,6 @@ class Flight(TimeStampedModel, IndestructibleModel):
         projected_value_views = float(self.sold_impressions * self.cpm) / 1000.0
         return projected_value_clicks + projected_value_views
 
-    def daily_reports(
-        self, start_date=None, end_date=None, name_filter=None, inactive=True
-    ):
-        """
-        Generates a report of clicks, views, & cost for a given time period for the Flight.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :param name_filter: ignore ads that don't match the specified string
-        :param inactive: if True, show inactive ads in addition to live ones
-        :return: A dictionary containing a list of days for the report and an aggregated total
-        """
-        report = {"days": [], "total": {}}
-
-        impressions = AdImpression.objects.filter(advertisement__flight=self)
-        if name_filter:
-            impressions = impressions.filter(advertisement__name__icontains=name_filter)
-        if not inactive:
-            impressions = impressions.filter(advertisement__live=True)
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-            if end_date:
-                impressions = impressions.filter(date__lte=end_date)
-        impressions = impressions.select_related(
-            "advertisement", "advertisement__flight"
-        )
-
-        days = OrderedDict()
-        for impression in impressions:
-            if impression.date not in days:
-                days[impression.date] = defaultdict(int)
-
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["cost"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
-            )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["cost"], days[impression.date]["views"]
-            )
-
-        report["days"] = days.values()
-
-        report["total"]["views"] = sum(day["views"] for day in report["days"])
-        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
-        report["total"]["ctr"] = calculate_ctr(
-            report["total"]["clicks"], report["total"]["views"]
-        )
-        report["total"]["ecpm"] = calculate_ecpm(
-            report["total"]["cost"], report["total"]["views"]
-        )
-
-        return report
-
-    def ad_reports(self, start_date=None, end_date=None):
-        """
-        Generates a report broken down by advertisement in the given time period.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :return: A list of ads and their daily report for all ads in the time period.
-        """
-        ad_reports = []
-
-        for ad in self.advertisements.prefetch_related("ad_types"):
-            report = ad.daily_reports(start_date=start_date, end_date=end_date)
-            if report["total"]["views"]:
-                ad_reports.append((ad, report))
-
-        return ad_reports
-
 
 class AdType(TimeStampedModel, models.Model):
 
@@ -1039,6 +707,13 @@ class AdType(TimeStampedModel, models.Model):
         help_text=_("A short description of the ad type to guide advertisers."),
     )
     order = models.PositiveSmallIntegerField(default=0)
+
+    deprecated = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Users cannot select deprecated ad types unless an ad is already that type."
+        ),
+    )
 
     class Meta:
         ordering = ("order", "name")
@@ -1120,15 +795,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             },
         )
 
-    def incr(
-        self, impression_type, publisher, request=None, div_id=None, ad_type_slug=None
-    ):
-        """Add to the number of times this action has been performed, stored in the DB."""
+    def incr(self, impression_type, publisher):
+        """
+        Add to the number of times this action has been performed, stored in the DB.
+
+        TODO: Refactor this method, moving it off the Advertisement class since it can be called
+              without an advertisement when we have a Decision and no Offer.
+        """
         assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
 
         # Ensure that an impression object exists for today
-        impression, _ = self.impressions.get_or_create(publisher=publisher, date=day)
+        impression, _ = AdImpression.objects.get_or_create(
+            advertisement=self, publisher=publisher, date=day
+        )
         AdImpression.objects.filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
@@ -1195,13 +875,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def track_click(self, request, publisher, offer):
         """Store click data in the DB."""
-        self.incr(
-            impression_type=CLICKS,
-            publisher=publisher,
-            request=request,
-            div_id=offer.div_id,
-            ad_type_slug=offer.ad_type_slug,
-        )
+        self.incr(impression_type=CLICKS, publisher=publisher)
         return self._record_base(
             request=request,
             model=Click,
@@ -1220,17 +894,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(
-            impression_type=VIEWS,
-            publisher=publisher,
-            request=request,
-            div_id=offer.div_id,
-            ad_type_slug=offer.ad_type_slug,
-        )
+        self.incr(impression_type=VIEWS, publisher=publisher)
 
         if request.GET.get("uplift"):
-            offer.uplifted = True
-            offer.save()
+            # Don't overwrite Offer object here, since it might have changed prior to our writing
+            Offer.objects.filter(pk=offer.pk).update(uplifted=True)
 
         if settings.ADSERVER_RECORD_VIEWS or publisher.record_views:
             return self._record_base(
@@ -1253,13 +921,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(
-            impression_type=OFFERS,
-            publisher=publisher,
-            request=request,
-            div_id=div_id,
-            ad_type_slug=ad_type_slug,
-        )
+        self.incr(impression_type=OFFERS, publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1307,6 +969,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Without this, when we don't offer an ad and a user doesn't have house ads on,
         we don't have any way to track how many requests for an ad there have been.
         """
+        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher)
         cls._record_base(
             self=None,
             request=request,
@@ -1383,55 +1046,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def total_click_ratio(self):
         return calculate_ctr(self.total_clicks(), self.total_views())
 
-    def daily_reports(self, start_date=None, end_date=None):
-        """
-        Generates a report of clicks, views, & cost for a given time period for this ad.
-
-        :param start_date: the start date to generate the report (or all time)
-        :param end_date: the end date for the report (ignored if no `start_date`)
-        :return: A dictionary containing a list of days for the report
-            and an aggregated total
-        """
-        report = {"days": [], "total": {}}
-
-        impressions = self.impressions
-
-        if start_date:
-            impressions = impressions.filter(date__gte=start_date)
-            if end_date:
-                impressions = impressions.filter(date__lte=end_date)
-        else:
-            impressions = impressions.all()
-
-        days = OrderedDict()
-        for impression in impressions:
-            if impression.date not in days:
-                days[impression.date] = defaultdict(int)
-
-            days[impression.date]["date"] = impression.date
-            days[impression.date]["views"] += impression.views
-            days[impression.date]["clicks"] += impression.clicks
-            days[impression.date]["cost"] += (
-                impression.clicks * float(impression.advertisement.flight.cpc)
-            ) + (impression.views * float(impression.advertisement.flight.cpm) / 1000.0)
-            days[impression.date]["ctr"] = calculate_ctr(
-                days[impression.date]["clicks"], days[impression.date]["views"]
-            )
-            days[impression.date]["ecpm"] = calculate_ecpm(
-                days[impression.date]["cost"], days[impression.date]["views"]
-            )
-
-        report["days"] = days.values()
-
-        report["total"]["views"] = sum(day["views"] for day in report["days"])
-        report["total"]["clicks"] = sum(day["clicks"] for day in report["days"])
-        report["total"]["cost"] = sum(day["cost"] for day in report["days"])
-        report["total"]["ctr"] = calculate_ctr(
-            report["total"]["clicks"], report["total"]["views"]
-        )
-
-        return report
-
     def country_click_breakdown(self, start_date, end_date=None):
         report = Counter()
 
@@ -1494,6 +1108,18 @@ class BaseImpression(TimeStampedModel, models.Model):
 
     date = models.DateField(_("Date"), db_index=True)
 
+    # Decisions are a superset of all Offers.
+    # Every API request that comes in results in a Decision,
+    # and an Offer is only created when we actually offer an ad.
+    decisions = models.PositiveIntegerField(
+        _("Decisions"),
+        default=0,
+        help_text=_(
+            "The number of times the Ad Decision API was called. "
+            "The server might not respond with an ad if there isn't inventory."
+        ),
+    )
+
     # Offers include cases where the server returned an ad
     # but the client didn't load it
     # or the client didn't qualify as a view (staff, blocklisted, etc.)
@@ -1546,7 +1172,7 @@ class AdImpression(BaseImpression):
         Publisher, null=True, blank=True, on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="impressions", on_delete=models.PROTECT
+        Advertisement, related_name="impressions", on_delete=models.PROTECT, null=True
     )
 
     class Meta:
@@ -1573,7 +1199,10 @@ class PlacementImpression(BaseImpression):
         Publisher, related_name="placement_impressions", on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="placement_impressions", on_delete=models.PROTECT
+        Advertisement,
+        related_name="placement_impressions",
+        on_delete=models.PROTECT,
+        null=True,
     )
 
     class Meta:
@@ -1605,7 +1234,10 @@ class GeoImpression(BaseImpression):
         Publisher, related_name="geo_impressions", on_delete=models.PROTECT
     )
     advertisement = models.ForeignKey(
-        Advertisement, related_name="geo_impressions", on_delete=models.PROTECT
+        Advertisement,
+        related_name="geo_impressions",
+        on_delete=models.PROTECT,
+        null=True,
     )
 
     class Meta:
@@ -1615,6 +1247,34 @@ class GeoImpression(BaseImpression):
     def __str__(self):
         """Simple override."""
         return "Geo %s of %s on %s" % (self.country, self.advertisement, self.date)
+
+
+class KeywordImpression(BaseImpression):
+
+    """
+    Create an index of keyword targeting for ads.
+
+    Indexed one per ad/publisher/keyword per day.
+    """
+
+    keyword = models.CharField(_("Keyword"), max_length=1000)
+    publisher = models.ForeignKey(
+        Publisher, related_name="keyword_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="keyword_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "keyword")
+
+    def __str__(self):
+        """Simple override."""
+        return "Keyword %s of %s on %s" % (self.keyword, self.advertisement, self.date)
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):
@@ -1695,11 +1355,15 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         )
 
         # Update the denormalized impressions on the Flight
-        if self.impression_type == VIEWS:
+        if self.impression_type == VIEWS or (
+            self.impression_type == OFFERS and self.viewed
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_views=models.F("total_views") - 1
             )
-        elif self.impression_type == CLICKS:
+        elif self.impression_type == CLICKS or (
+            self.impression_type == OFFERS and self.clicked
+        ):
             Flight.objects.filter(pk=self.advertisement.flight_id).update(
                 total_clicks=models.F("total_clicks") - 1
             )

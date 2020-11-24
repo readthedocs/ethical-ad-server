@@ -234,3 +234,41 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(
             Advertisement.objects.filter(flight=self.flight, name="New Name").exists()
         )
+
+    def test_deprecated_ad_type(self):
+        url = reverse(
+            "advertisement_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad_type3.name)
+
+        # Deprecate the ad type
+        self.ad_type3.name += " (Deprecated)"
+        self.ad_type3.deprecated = True
+        self.ad_type3.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self.ad_type3.name)
+
+        # Ad3 has ad type 3
+        url = reverse(
+            "advertisement_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad3.slug,
+            },
+        )
+
+        # Since ad3 has ad type 3, that option is shown
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ad_type3.name)

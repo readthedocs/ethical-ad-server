@@ -1,5 +1,4 @@
 {% extends "adserver/reports/base.html" %}
-{% load humanize %}
 {% load i18n %}
 
 
@@ -39,48 +38,17 @@
       <div class="row">
         <h2 class="col-md-8">{% trans 'Advertising results' %}</h2>
 
-        <aside class="mb-3 col-md-4 text-right">
-          <a href="{% url 'publisher_report_export' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}{% if end_date %}&amp;end_date={{ end_date|date:'Y-m-d' }}{% endif %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
-            <span class="fa fa-download mr-1" aria-hidden="true"></span>
-            <span>CSV Export</span>
-          </a>
-        </aside>
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
       </div>
 
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th><strong>{% trans 'Report Index' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
-            <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Revenue' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Your&nbsp;Revenue&nbsp;Share' %}</strong></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for day in report.days %}
-            {% if day.views > 0 or day.clicks > 0 %}
-            <tr>
-              <td>{{ day.index }}</td>
-              <td class="text-right">{{ day.views|intcomma }}</td>
-              <td class="text-right">{{ day.clicks|intcomma }}</td>
-              <td class="text-right">{{ day.ctr|floatformat:3 }}%</td>
-              <td class="text-right">${{ day.revenue|floatformat:2|intcomma }}</td>
-              <td class="text-right">${{ day.revenue_share|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endif %}
-          {% endfor %}
-          <tr>
-            <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
-            <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
-            <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
-          </tr>
-        </tbody>
-      </table>
+      {% include "adserver/reports/includes/publisher-report-table.html" %}
     </div>
   </section>
 {% endblock summary %}

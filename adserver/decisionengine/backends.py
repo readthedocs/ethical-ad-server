@@ -53,7 +53,8 @@ class BaseAdDecisionBackend:
                 self.publisher.slug,
                 self.publisher.keywords,
             )
-            self.keywords.extend(self.publisher.keywords)
+            merged_keywords = set(self.keywords) | set(self.publisher.keywords)
+            self.keywords = list(merged_keywords)
 
         # Publishers can request certain campaign types
         # But only if those types are allowed by database settings
@@ -108,6 +109,9 @@ class BaseAdDecisionBackend:
     def get_placement(self, advertisement):
         """Gets the first matching placement for a given ad."""
         if not advertisement:
+            # Always select the placement if there is only 1 for Decisions
+            if len(self.placements) == 1:
+                return self.placements[0]
             return None
 
         for placement in self.placements:
