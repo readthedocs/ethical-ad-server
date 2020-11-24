@@ -71,37 +71,7 @@
         {% endif %}
       </div>
 
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th><strong>{% trans 'Time Period' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Cost' %}</strong></th>
-            <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for result in advertiser_report.results %}
-            {% if result.views > 0 or result.clicks > 0 %}
-            <tr>
-              <td>{{ result.index }}</td>
-              <td class="text-right">{{ result.views|intcomma }}</td>
-              <td class="text-right">{{ result.clicks|intcomma }}</td>
-              <td class="text-right">${{ result.cost|floatformat:2|intcomma }}</td>
-              <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
-            </tr>
-            {% endif %}
-          {% endfor %}
-          <tr>
-            <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
-            <td class="text-right"><strong>{{ advertiser_report.total.views|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ advertiser_report.total.clicks|intcomma }}</strong></td>
-            <td class="text-right"><strong>${{ advertiser_report.total.cost|floatformat:2|intcomma }}</strong></td>
-            <td class="text-right"><strong>{{ advertiser_report.total.ctr|floatformat:3 }}%</strong></td>
-          </tr>
-        </tbody>
-      </table>
+      {% include "adserver/reports/includes/advertiser-report-table.html" %}
     </div>
   </section>
 {% endblock summary %}

@@ -655,8 +655,8 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
             start_date=start_date,
             end_date=end_date,
         )
-        advertiser_report = AdvertiserReport(queryset)
-        advertiser_report.generate()
+        report = AdvertiserReport(queryset)
+        report.generate()
 
         flights = (
             Flight.objects.filter(campaign__advertiser=advertiser)
@@ -667,8 +667,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         context.update(
             {
                 "advertiser": advertiser,
-                "advertiser_report": advertiser_report,
-                "report": advertiser_report,
+                "report": report,
                 "flights": flights,
                 "export_url": "{url}?{params}".format(
                     url=reverse("advertiser_report_export", args=[advertiser.slug]),
@@ -714,8 +713,8 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
             end_date=end_date,
         )
 
-        flight_report = AdvertiserReport(queryset)
-        flight_report.generate()
+        report = AdvertiserReport(queryset)
+        report.generate()
 
         # Get the breakdown of performance per ad
         advertisements = []
@@ -731,8 +730,7 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
             {
                 "advertiser": advertiser,
                 "flight": flight,
-                "flight_report": flight_report,
-                "report": flight_report,
+                "report": report,
                 "advertisements": advertisements,
                 "export_url": "{url}?{params}".format(
                     url=reverse(
