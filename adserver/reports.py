@@ -7,6 +7,7 @@ from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
+from .models import UpliftImpression
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import get_country_name
@@ -280,4 +281,13 @@ class PublisherKeywordReport(PublisherReport):
 
     model = KeywordImpression
     index = "keyword"
+    order = "-views"
+
+
+class PublisherUpliftReport(PublisherReport):
+
+    """Report to breakdown publisher performance by keyword."""
+
+    model = UpliftImpression
+    index = "publisher"
     order = "-views"

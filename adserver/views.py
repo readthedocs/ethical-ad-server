@@ -58,12 +58,14 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import UpliftImpression
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
 from .reports import PublisherPlacementReport
 from .reports import PublisherReport
+from .reports import PublisherUpliftReport
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -542,6 +544,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     export_filename = "readthedocs-report.csv"
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
     model = AdImpression
+    report = PublisherReport
 
     def test_func(self):
         """By default, reports are locked down to staff."""
@@ -1414,17 +1417,6 @@ class AllPublisherReportView(BaseReportView):
         )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
-        advertiser_list = (
-            # order_by is required for `distinct()` to work
-            # https://code.djangoproject.com/ticket/16058
-            impressions.order_by("advertisement__flight__campaign__advertiser__slug")
-            .values_list(
-                "advertisement__flight__campaign__advertiser__slug",
-                "advertisement__flight__campaign__advertiser__name",
-            )
-            .distinct()
-        )
-
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
         if revenue_share_percentage:
             try:
@@ -1442,7 +1434,7 @@ class AllPublisherReportView(BaseReportView):
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
             )
-            report = PublisherReport(queryset)
+            report = self.report(queryset)
             report.generate()
             if report.total["views"] > 0:
                 publishers_and_reports.append((publisher, report))
@@ -1476,6 +1468,7 @@ class AllPublisherReportView(BaseReportView):
                     days[day["date"]]["views_by_publisher"] = {}
                     days[day["date"]]["clicks_by_publisher"] = {}
 
+                days[day["date"]]["index"] = day["index"]
                 days[day["date"]]["date"] = day["date"]
                 days[day["date"]]["views"] += day["views"]
                 days[day["date"]]["clicks"] += day["clicks"]
@@ -1514,13 +1507,21 @@ class AllPublisherReportView(BaseReportView):
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
                 "revenue_share_percentage": revenue_share_percentage,
-                "advertiser_list": advertiser_list,
                 "sort": sort,
                 "sort_options": sort_options,
             }
         )
 
         return context
+
+
+class UpliftReportView(AllPublisherReportView):
+
+    """An uplift report for all publishers."""
+
+    model = UpliftImpression
+    report = PublisherUpliftReport
+    template_name = "adserver/reports/all-publishers_uplift.html"
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):

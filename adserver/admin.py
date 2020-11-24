@@ -30,6 +30,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherPayout
+from .models import UpliftImpression
 from .models import View
 from .stripe_utils import get_customer_url
 from .stripe_utils import get_invoice_url
@@ -864,6 +865,7 @@ admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
 admin.site.register(Offer, OfferAdmin)
 admin.site.register(AdImpression, AdImpressionsAdmin)
+admin.site.register(UpliftImpression, AdImpressionsAdmin)
 admin.site.register(GeoImpression, GeoImpressionAdmin)
 admin.site.register(PlacementImpression, PlacementImpressionAdmin)
 admin.site.register(KeywordImpression, KeywordImpressionAdmin)

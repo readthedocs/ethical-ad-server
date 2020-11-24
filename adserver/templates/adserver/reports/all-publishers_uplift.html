@@ -1,0 +1,19 @@
+{% extends "adserver/reports/all-publishers.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Uplift Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'Uplift Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Uplift Report' %}</li>
+{% endblock breadcrumbs %}
+
+{% block toc %} {% endblock toc %}
+
+{% block report %} {% endblock report %}

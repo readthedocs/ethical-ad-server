@@ -19,6 +19,8 @@
     <ul>
       {% if request.user.is_staff %}
         <li><a href="{% url 'all_publishers_report' %}">{% trans 'All publishers' %}</a></li>
+        <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Uplift report' %}</a></li>
+        <li>--</li>
       {% endif %}
       {% for publisher in publishers %}
         <li><a href="{% url 'publisher_report' publisher.slug %}">{{ publisher.name }}</a></li>

@@ -1277,6 +1277,33 @@ class KeywordImpression(BaseImpression):
         return "Keyword %s of %s on %s" % (self.keyword, self.advertisement, self.date)
 
 
+class UpliftImpression(BaseImpression):
+
+    """
+    Create an index of uplift for ads.
+
+    Indexed one per ad/publisher per day.
+    """
+
+    publisher = models.ForeignKey(
+        Publisher, related_name="uplift_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="uplift_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date")
+
+    def __str__(self):
+        """Simple override."""
+        return "Uplift of %s on %s" % (self.advertisement, self.date)
+
+
 class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
