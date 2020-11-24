@@ -170,7 +170,7 @@ class TestAdModels(BaseAdModelsTestCase):
             image_width=None,
         )
 
-        publisher = get(Publisher)
+        publisher = get(Publisher, render_pixel=True)
 
         self.ad1.ad_types.add(ad_type1.pk)
         self.assertIn(
