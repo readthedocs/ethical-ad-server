@@ -10,7 +10,6 @@ Example::
     ./manage.py payouts --email
 """
 import datetime
-import sys
 
 import requests
 from django.conf import settings
