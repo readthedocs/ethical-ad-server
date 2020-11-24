@@ -5,6 +5,23 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.15.0
+---------------
+
+:date: November 24, 2020
+
+There were a few minor fixes and refactors in this release.
+We are defaulting new publishers to use viewport tracking (#292),
+and we found a slight bug which was hotfixed related to Acceptable Ads uplift.
+There were significant internal changes to reporting to make
+creating new reports easier but these should not have significant user-facing changes.
+
+ * @ericholscher: Update a few model method defaults (#292)
+ * @davidfischer: Report refactor (#291)
+ * @ericholscher: Don't overwrite Offer on uplift (#290)
+
+
 Version v0.14.0
 ---------------
 
