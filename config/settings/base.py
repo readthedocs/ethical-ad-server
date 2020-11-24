@@ -165,6 +165,10 @@ SERVER_EMAIL = "noreply@ethicalads.io"
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 EMAIL_TIMEOUT = 5
 
+# For sending Front email. Only used for Payouts.
+FRONT_TOKEN = env("FRONT_TOKEN", default=None)
+FRONT_CHANNEL = env("FRONT_CHANNEL", default=None)
+FRONT_AUTHOR = env("FRONT_AUTHOR", default=None)
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/

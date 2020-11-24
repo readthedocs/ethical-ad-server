@@ -1,9 +1,11 @@
 import io
 import os
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import management
 from django.db import models
+from django.test import override_settings
 from django.test import TestCase
 
 from ..constants import CLICKS
@@ -117,10 +119,11 @@ class TestAddPublisher(TestCase):
 
 class TestPayouts(TestCase):
     def setUp(self):
-        self.out = io.StringIO()
         TestPublisherDashboardViews.setUp(self)
 
-    def test_publisher_plus_user(self):
+    @patch("builtins.input", return_value="y")
+    def test_publisher_plus_user(self, mock_input):
+        self.out = io.StringIO()
         for x in range(50):
             self.ad1.incr(VIEWS, self.publisher1)
             self.ad1.incr(CLICKS, self.publisher1)
@@ -131,3 +134,70 @@ class TestPayouts(TestCase):
 
         self.assertIn("total=70.00", output)
         self.assertIn("first=True", output)
+
+    @patch("builtins.input", return_value="y")
+    def test_publisher_option(self, mock_input):
+        self.out = io.StringIO()
+        self.publisher1.payout_method = "payout"
+        self.publisher1.stripe_connected_account_id = "test"
+        self.publisher1.save()
+        for x in range(50):
+            self.ad1.incr(VIEWS, self.publisher1)
+            self.ad1.incr(CLICKS, self.publisher1)
+
+        management.call_command(
+            "payouts",
+            "--all",
+            "--email",
+            "--payout",
+            "--publisher",
+            self.publisher1.slug,
+            stdout=self.out,
+        )
+
+        output = self.out.getvalue()
+
+        self.assertIn(self.publisher1.slug, output)
+        self.assertIn("total=70.00", output)
+        self.assertIn("Create Payout?", output)
+        self.assertIn("dashboard.stripe.com/connect/accounts/test", output)
+
+    @patch("builtins.input", return_value="y")
+    def test_publisher_low_ctr(self, mock_input):
+        self.out = io.StringIO()
+        for x in range(50):
+            self.ad1.incr(VIEWS, self.publisher1)
+
+        management.call_command("payouts", "--email", "--all", stdout=self.out)
+
+        output = self.out.getvalue()
+
+        self.assertIn("total=0.00", output)
+        self.assertIn("first=True", output)
+
+    @override_settings(FRONT_TOKEN="test", FRONT_CHANNEL="test", FRONT_AUTHOR="test")
+    @patch("builtins.input", return_value="y")
+    @patch("adserver.management.commands.payouts.requests.request")
+    def test_publisher_email(self, requests_mock, mock_input):
+        self.out = io.StringIO()
+        for x in range(50):
+            self.ad1.incr(VIEWS, self.publisher1)
+            self.ad1.incr(CLICKS, self.publisher1)
+
+        management.call_command(
+            "payouts",
+            "--all",
+            "--send",
+            "--publisher",
+            self.publisher1.slug,
+            stdout=self.out,
+        )
+
+        output = self.out.getvalue()
+
+        self.assertEqual(
+            requests_mock.call_args[0],
+            ("POST", "https://api2.frontapp.com/channels/test/messages"),
+        )
+        self.assertIn(self.publisher1.slug, output)
+        self.assertIn("total=70.00", output)

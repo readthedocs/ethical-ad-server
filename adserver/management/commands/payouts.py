@@ -9,6 +9,10 @@ Example::
     # List all active payouts and show the email
     ./manage.py payouts --email
 """
+import datetime
+
+import requests
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.template import Context
 from django.template import Template
@@ -18,36 +22,73 @@ from ...utils import generate_publisher_payout_data
 from adserver.utils import generate_absolute_url
 
 email_template = """
-
-Thanks for being one of the first publishers on our EthicalAds network. We aim to get payouts completed by the 15th of the month, as noted in our [publisher policy](https://www.ethicalads.io/publisher-policy/). If you haven't had a chance to look it over, please do, as it sets expectations around ad placements and payments.
+{% autoescape off %}
+<p>
+Thanks for being one of the first publishers on our EthicalAds network.
+We aim to get payouts completed by the 15th of the month,
+as noted in our <a href="https://www.ethicalads.io/publisher-policy/">Publisher Policy</a>.
+If you haven't had a chance to look it over, please do,
+as it sets expectations around ad placements and payments.
+</p>
 
 {% if ctr < .06 %}
 
-As noted in our publisher policy, we expect all our publishers to maintain a CTR (click though rate) around or above .1%. Your CTR is currently {{ report.total.ctr|floatformat:3 }}%, which is below our current minimum. We're working on documenting some recommendations for improving CTR, but for now the primary thing is making sure your ads are displayed in a prominent place, and appropriate for each screen size.
+<p>
+We generally expect all our publishers to maintain a CTR (click though rate) around or above .1%.
+Your CTR is currently {{ report.total.ctr|floatformat:3 }}%,
+which is below our current minimum.
+We're working on documenting some recommendations for improving CTR,
+but for now the primary thing is making sure your ads are displayed in a prominent place on your site.
+</p>
 
 {% endif %}
 
-We are now processing payments for **{{ today|date:"F" }} {{ today|date:"Y" }}**, and you made a total of **${{ report.total.revenue_share|floatformat:2 }}** for ads displayed between {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}. You can find the full report for this billing cycle on our [reports page]({{ url }}).
+<p>
+We are now processing payments for <strong>{{ today|date:"F" }} {{ today|date:"Y" }}</strong>,
+and you made a total of <strong>${{ report.total.revenue_share|floatformat:2 }}</strong> for ads displayed between <strong>{{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}</strong>.
+You can find the full report for this billing cycle on our <a href="{{ report_url }}">revenue report</a>.
+</p>
 
 {% if first %}
+<p>
 We need a few pieces of information from you in order to process a payment:
-* The name of the person or organization that will be receiving the payment
-* The address, including country, for the person/organization
-* Fill out the payment information in the [publisher settings]({{ settings_url }})
+</p>
 
-Once we have this information, we will process the payment. These will show up in the [Payouts dashboard]({{ payouts_url }}), once they have been started.
+<p>
+<ul>
+<li>The name of the person or organization that will be receiving the payment</li>
+<li>The address, including country, for the person/organization</li>
+<li>Fill out the payment information in the <a href="{{ settings_url }}">publisher settings</a></li>
+</ul>
+</p>
+
+<p>
+Once we have this information, we will process the payment.
+These will show up in the <a href="{{ payouts_url }}">payouts dashboard</a>,
+once they have been started.
+</p>
 
 {% else %}
 
-Since we have already processed a payout for you, we should have all the information needed to move ahead. You can always update your payout settings in the [publisher settings]({{ settings_url }}). Payouts will show up in the [payouts dashboard]({{ payouts_url }}) for your records.
+<p>
+Since we have already processed a payout for you,
+we should have all the information needed to move ahead.
+You can always update your payout settings in the <a href="{{ settings_url }}">publisher settings</a>.
+Payouts will show up in the <a href="{{ payouts_url }}">payouts dashboard</a> for your records once processed.
+</p>
 
 {% endif %}
 
-Thanks again for being part of the EthicalAds network, and we look forward to many more months of payouts!
+<p>
+Thanks again for being part of the EthicalAds network,
+and we look forward to many more months of payouts!
+</p>
 
-Cheers,
+<p>
+Cheers,<br>
 Eric
-
+</p>
+{% endautoescape %}
 """
 
 
@@ -60,6 +101,15 @@ class Command(BaseCommand):
             "-e", "--email", help="Generate email", required=False, action="store_true"
         )
         parser.add_argument(
+            "-s", "--send", help="Send email", required=False, action="store_true"
+        )
+        parser.add_argument(
+            "-p", "--payout", help="Create payouts", required=False, action="store_true"
+        )
+        parser.add_argument(
+            "--publisher", help="Specify a specific publisher", required=False
+        )
+        parser.add_argument(
             "-a",
             "--all",
             help="Output payouts for all publishers",
@@ -68,52 +118,142 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        email = kwargs.get("email")
+        # pylint: disable=too-many-statements,too-many-branches
+        print_email = kwargs.get("email")
+        send_email = kwargs.get("send")
+        create_payout = kwargs.get("payout")
         all_publishers = kwargs.get("all")
+        publisher_slug = kwargs.get("publisher")
+
         self.stdout.write("Processing payouts. \n")
-        for publisher in Publisher.objects.all():
+
+        queryset = Publisher.objects.all()
+        if publisher_slug:
+            queryset = queryset.filter(slug__contains=publisher_slug)
+
+        for publisher in queryset:
             data = generate_publisher_payout_data(publisher)
             report = data.get("due_report")
-            url = data.get("due_report_url")
+            report_url = data.get("due_report_url")
             if not report:
                 if not all_publishers:
+                    self.stdout.write(f"Skipping for no due report: {publisher.slug}\n")
                     # Skip publishers without due money
                     continue
                 report = data.get("current_report")
-                url = data.get("current_report_url")
+                report_url = data.get("current_report_url")
 
             due_balance = report["total"]["revenue_share"]
+            due_str = "{:.2f}".format(due_balance)
             ctr = report["total"]["ctr"]
 
-            if due_balance > float(50):
-                self.stdout.write("###########" + "\n")
-                self.stdout.write(str(publisher) + "\n")
+            if due_balance < float(50) and not all_publishers:
                 self.stdout.write(
-                    "total={:.2f}".format(due_balance)
-                    + " ctr={:.3f}".format(ctr)
-                    + " first={}".format(data.get("first"))
-                    + "\n"
+                    f"Skipping for low balance: {publisher.slug} owed {due_str}\n"
                 )
-                self.stdout.write(url + "\n")
-                self.stdout.write("###########" + "\n" + "\n")
-                if email:
-                    payouts_url = generate_absolute_url(
-                        "publisher_payouts", kwargs={"publisher_slug": publisher.slug}
-                    )
-                    settings_url = generate_absolute_url(
-                        "publisher_settings", kwargs={"publisher_slug": publisher.slug}
-                    )
-                    self.stdout.write(
-                        Template(email_template).render(
-                            Context(
-                                dict(
-                                    report=report,
-                                    url=url,
-                                    payouts_url=payouts_url,
-                                    settings_url=settings_url,
-                                    ctr=ctr,
-                                    **data,
-                                )
-                            )
+                continue
+
+            self.stdout.write("\n\n###########\n")
+            self.stdout.write(str(publisher) + "\n")
+            self.stdout.write(
+                "total={:.2f}".format(due_balance)
+                + " ctr={:.3f}".format(ctr)
+                + " first={}".format(data.get("first"))
+                + "\n"
+            )
+            self.stdout.write(report_url + "\n")
+            self.stdout.write("###########\n\n")
+
+            if print_email or send_email:
+                payouts_url = generate_absolute_url(
+                    "publisher_payouts", kwargs={"publisher_slug": publisher.slug}
+                )
+                settings_url = generate_absolute_url(
+                    "publisher_settings", kwargs={"publisher_slug": publisher.slug}
+                )
+                context = dict(
+                    report=report,
+                    report_url=report_url,
+                    payouts_url=payouts_url,
+                    settings_url=settings_url,
+                    publisher=publisher,
+                    **data,
+                )
+                if ctr < 0.08:
+                    self.stdout.write("Include CTR callout?\n")
+                    ctr_proceed = input("y/n?: ")
+                    if ctr_proceed:
+                        context["ctr"] = ctr
+
+                email_html = (
+                    Template(email_template)
+                    .render(Context(context))
+                    .replace("\n\n", "\n")
+                )
+
+            if print_email:
+                self.stdout.write(email_html)
+
+            if send_email:
+                token = getattr(settings, "FRONT_TOKEN")
+                channel = getattr(settings, "FRONT_CHANNEL")
+                author = getattr(settings, "FRONT_AUTHOR")
+
+                if not token or not channel:
+                    self.stdout.write("No front token, not sending email\n")
+                    return
+
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                }
+
+                payload = {
+                    # "to": ['eric@ericholscher.com'], # For testing
+                    "to": [user.email for user in publisher.user_set.all()],
+                    "sender_name": "EthicalAds by Read the Docs",
+                    "subject": f"EthicalAds Payout - {publisher.name}",
+                    "options": {"archive": False},
+                    "body": email_html,
+                }
+                if author:
+                    payload["author_id"] = author
+
+                url = f"https://api2.frontapp.com/channels/{channel}/messages"
+
+                self.stdout.write("Send email?\n")
+                self.stdout.write(f"{payload['to']}: {payload['subject']}\n")
+                proceed = input("y/n?: ")
+                if not proceed == "y":
+                    self.stdout.write("Skipping email.\n")
+                else:
+                    requests.request("POST", url, json=payload, headers=headers)
+                    # pprint(response.json())
+
+            if create_payout:
+                self.stdout.write("Create Payout?\n")
+
+                if publisher.payout_method:
+                    if publisher.stripe_connected_account_id:
+                        self.stdout.write(
+                            f"Stripe: https://dashboard.stripe.com/connect/accounts/{publisher.stripe_connected_account_id}\n"
                         )
+                    if publisher.open_collective_name:
+                        self.stdout.write(
+                            f"Open Collective: https://opencollective.com/{publisher.open_collective_name}\n"
+                        )
+                    if publisher.paypal_email:
+                        self.stdout.write(f"Paypal: {publisher.paypal_email}\n")
+                    self.stdout.write(due_str)
+                    self.stdout.write(f"EthicalAds Payout - {publisher.name}\n")
+
+                payout_proceed = input("y/n?: ")
+                if not payout_proceed == "y":
+                    self.stdout.write("Skipping payout\n")
+                else:
+                    publisher.payouts.create(
+                        date=datetime.datetime.utcnow(),
+                        method=publisher.payout_method,
+                        amount=due_balance,
+                        note=report_url,
                     )
