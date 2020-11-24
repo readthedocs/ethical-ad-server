@@ -138,7 +138,7 @@ class Command(BaseCommand):
             report_url = data.get("due_report_url")
             if not report:
                 if not all_publishers:
-                    print(f"Skipping for no due report: {publisher.slug}")
+                    self.stdout.write(f"Skipping for no due report: {publisher.slug}\n")
                     # Skip publishers without due money
                     continue
                 report = data.get("current_report")
@@ -148,8 +148,10 @@ class Command(BaseCommand):
             due_str = "{:.2f}".format(due_balance)
             ctr = report["total"]["ctr"]
 
-            if due_balance < float(50):
-                print(f"Skipping for low balance: {publisher.slug} owed {due_str}")
+            if due_balance < float(50) and not all_publishers:
+                self.stdout.write(
+                    f"Skipping for low balance: {publisher.slug} owed {due_str}\n"
+                )
                 continue
 
             self.stdout.write("\n\n###########\n")
@@ -179,7 +181,7 @@ class Command(BaseCommand):
                     **data,
                 )
                 if ctr < 0.08:
-                    print("Include CTR callout?")
+                    self.stdout.write("Include CTR callout?\n")
                     ctr_proceed = input("y/n?: ")
                     if ctr_proceed:
                         context["ctr"] = ctr
@@ -191,7 +193,7 @@ class Command(BaseCommand):
                 )
 
             if print_email:
-                print(email_html)
+                self.stdout.write(email_html)
 
             if send_email:
                 token = getattr(settings, "FRONT_TOKEN")
@@ -199,8 +201,8 @@ class Command(BaseCommand):
                 author = getattr(settings, "FRONT_AUTHOR")
 
                 if not token or not channel:
-                    print("No front token, not sending email")
-                    sys.exit()
+                    self.stdout.write("No front token, not sending email\n")
+                    return
 
                 headers = {
                     "Authorization": f"Bearer {token}",
@@ -220,35 +222,35 @@ class Command(BaseCommand):
 
                 url = f"https://api2.frontapp.com/channels/{channel}/messages"
 
-                print("Send email?")
-                print(f"{payload['to']}: {payload['subject']}")
+                self.stdout.write("Send email?\n")
+                self.stdout.write(f"{payload['to']}: {payload['subject']}\n")
                 proceed = input("y/n?: ")
                 if not proceed == "y":
-                    print("Skipping email.")
+                    self.stdout.write("Skipping email.\n")
                 else:
                     requests.request("POST", url, json=payload, headers=headers)
                     # pprint(response.json())
 
             if create_payout:
-                print("Create Payout?")
+                self.stdout.write("Create Payout?\n")
 
                 if publisher.payout_method:
                     if publisher.stripe_connected_account_id:
-                        print(
-                            f"Stripe: https://dashboard.stripe.com/connect/accounts/{publisher.stripe_connected_account_id}"
+                        self.stdout.write(
+                            f"Stripe: https://dashboard.stripe.com/connect/accounts/{publisher.stripe_connected_account_id}\n"
                         )
                     if publisher.open_collective_name:
-                        print(
-                            f"Open Collective: https://opencollective.com/{publisher.open_collective_name}"
+                        self.stdout.write(
+                            f"Open Collective: https://opencollective.com/{publisher.open_collective_name}\n"
                         )
                     if publisher.paypal_email:
-                        print(f"Paypal: {publisher.paypal_email}")
-                    print(due_str)
-                    print(f"EthicalAds Payout - {publisher.name}")
+                        self.stdout.write(f"Paypal: {publisher.paypal_email}\n")
+                    self.stdout.write(due_str)
+                    self.stdout.write(f"EthicalAds Payout - {publisher.name}\n")
 
                 payout_proceed = input("y/n?: ")
                 if not payout_proceed == "y":
-                    print("Skipping payout")
+                    self.stdout.write("Skipping payout\n")
                 else:
                     publisher.payouts.create(
                         date=datetime.datetime.utcnow(),
