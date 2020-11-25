@@ -184,8 +184,13 @@ class PublisherReport(BaseReport):
                     * float(impression.advertisement.flight.cpm)
                     / 1000.0
                 )
+                # Support arbitrary revshare numbers on reporting
+                applied_rev_share = (
+                    self.kwargs.get("force_revshare")
+                    or impression.publisher.revenue_share_percentage
+                )
                 results[index]["revenue_share"] = results[index]["revenue"] * (
-                    impression.publisher.revenue_share_percentage / 100.0
+                    applied_rev_share / 100.0
                 )
                 results[index]["our_revenue"] = (
                     results[index]["revenue"] - results[index]["revenue_share"]

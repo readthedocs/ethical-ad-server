@@ -1404,11 +1404,13 @@ class AllPublisherReportView(BaseReportView):
 
     """A report for all publishers."""
 
+    force_revshare = None
     template_name = "adserver/reports/all-publishers.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
         context = super().get_context_data(**kwargs)
         sort = self.request.GET.get("sort", "")
+        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = self.get_queryset(
@@ -1434,7 +1436,7 @@ class AllPublisherReportView(BaseReportView):
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
             )
-            report = self.report(queryset)
+            report = self.report(queryset, force_revshare=force_revshare)
             report.generate()
             if report.total["views"] > 0:
                 publishers_and_reports.append((publisher, report))
@@ -1520,6 +1522,7 @@ class UpliftReportView(AllPublisherReportView):
     """An uplift report for all publishers."""
 
     model = UpliftImpression
+    force_revshare = 70.0
     report = PublisherUpliftReport
     template_name = "adserver/reports/all-publishers_uplift.html"
 
