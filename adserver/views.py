@@ -1470,7 +1470,6 @@ class AllPublisherReportView(BaseReportView):
                     days[day["date"]]["views_by_publisher"] = {}
                     days[day["date"]]["clicks_by_publisher"] = {}
 
-                days[day["date"]]["index"] = day["index"]
                 days[day["date"]]["date"] = day["date"]
                 days[day["date"]]["views"] += day["views"]
                 days[day["date"]]["clicks"] += day["clicks"]
