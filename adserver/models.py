@@ -1283,6 +1283,7 @@ class UpliftImpression(BaseImpression):
     Create an index of uplift for ads.
 
     Indexed one per ad/publisher per day.
+    This is a subset of AdImpressions created by uplift from the Acceptable Ads program.
     """
 
     publisher = models.ForeignKey(

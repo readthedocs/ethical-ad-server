@@ -185,7 +185,7 @@ class PublisherReport(BaseReport):
                     / 1000.0
                 )
                 # Support arbitrary revshare numbers on reporting
-                applied_rev_share = (
+                applied_rev_share = float(
                     self.kwargs.get("force_revshare")
                     or impression.publisher.revenue_share_percentage
                 )
