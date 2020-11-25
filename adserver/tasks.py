@@ -217,7 +217,7 @@ def daily_update_keywords(day=None):
 @app.task()
 def daily_update_uplift(day=None):
     """
-    Output a list of uplifted domains.
+    Generate the daily index of UpliftImpressions.
 
     :arg day: An optional datetime object representing a day
     """
