@@ -260,9 +260,9 @@ class TestReportViews(TestReportsBase):
         self.assertEqual(response.status_code, 200)
 
     def test_advertiser_report_contents(self):
-        self.client.force_login(self.staff_user)
-
         url = reverse("advertiser_report", args=[self.advertiser1.slug])
+
+        self.client.force_login(self.staff_user)
         response = self.client.get(url)
         self.assertContains(response, self.advertiser1.name)
         self.assertContains(response, self.flight1.name)
@@ -402,8 +402,14 @@ class TestReportViews(TestReportsBase):
         # Update reporting
         daily_update_geos()
 
-        self.client.force_login(self.staff_user)
         url = reverse("advertiser_geo_report", args=[self.advertiser1.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
 
         # All reports
         response = self.client.get(url)
@@ -432,6 +438,67 @@ class TestReportViews(TestReportsBase):
         )
         response = self.client.get(export_url, {"country": "FR"})
         self.assertContains(response, "Total,1")
+
+    def test_advertiser_publisher_report_contents(self):
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher2,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher2,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+            is_refunded=True,  # Won't count
+        )
+
+        # Update reporting
+        daily_update_impressions()
+
+        url = reverse("advertiser_publisher_report", args=[self.advertiser1.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertContains(response, self.publisher1.name)
+        self.assertContains(response, self.publisher2.name)
+        self.assertNotContains(response, "Belgium")
+
+        # Filter reports
+        response = self.client.get(url, {"publisher": self.publisher1.slug})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+        response = self.client.get(url, {"publisher": self.publisher2.slug})
+        self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
+
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
+        export_url = reverse(
+            "advertiser_publisher_report_export", args=[self.advertiser1.slug]
+        )
+        response = self.client.get(export_url)
+        self.assertContains(response, "Total,3")
 
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])

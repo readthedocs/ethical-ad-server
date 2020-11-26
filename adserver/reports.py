@@ -157,6 +157,16 @@ class AdvertiserGeoReport(AdvertiserReport):
         return super().get_index_display(index)
 
 
+class AdvertiserPublisherReport(AdvertiserReport):
+
+    """Report to breakdown advertiser performance by publisher."""
+
+    model = AdImpression
+    index = "publisher"
+    order = "-views"
+    select_related_fields = ("advertisement", "advertisement__flight", "publisher")
+
+
 class PublisherReport(BaseReport):
 
     """Report for showing daily ad performance for a publisher."""

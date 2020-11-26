@@ -59,6 +59,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
 from .reports import AdvertiserGeoReport
+from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
@@ -810,6 +811,85 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
                             if context["end_date"]
                             else "",
                             "country": country or "",
+                        }
+                    ),
+                ),
+            }
+        )
+
+        return context
+
+
+class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
+
+    """A report for an advertiser broken down by publishers where the advertisers ads are shown."""
+
+    template_name = "adserver/reports/advertiser-publisher.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+        report_publisher = Publisher.objects.filter(
+            slug=self.request.GET.get("publisher", "")
+        ).first()
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            publisher=report_publisher,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        report = AdvertiserPublisherReport(
+            queryset,
+            # Index by date if filtering report to a single publisher
+            index="date" if report_publisher else None,
+            order="-date" if report_publisher else None,
+            max_results=None if report_publisher else self.LIMIT,
+        )
+        report.generate()
+
+        # Get the list of publishers for the filter dropdown
+        publisher_list = (
+            self.get_queryset(
+                advertiser=advertiser,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("publisher")
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .values_list(
+                "publisher__slug",
+                "publisher__name",
+            )
+            .distinct()[: self.LIMIT]
+        )
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "report": report,
+                "report_publisher": report_publisher,
+                "publisher_list": publisher_list,
+                "export_url": "{url}?{params}".format(
+                    url=reverse(
+                        "advertiser_publisher_report_export", args=[advertiser.slug]
+                    ),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "publisher": report_publisher.slug
+                            if report_publisher
+                            else "",
                         }
                     ),
                 ),
