@@ -35,7 +35,6 @@ from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
-from django_countries import countries
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
@@ -46,6 +45,7 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
+from .mixins import GeoReportMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
 from .models import AdType
@@ -58,6 +58,7 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .reports import AdvertiserGeoReport
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
@@ -751,6 +752,73 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
         return context
 
 
+class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportView):
+
+    """A report for an advertiser broken down by geo."""
+
+    model = GeoImpression
+    template_name = "adserver/reports/advertiser-geo.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        start_date = context["start_date"]
+        end_date = context["end_date"]
+
+        country = self.request.GET.get("country", "")
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            start_date=start_date,
+            end_date=end_date,
+            country=country,
+        )
+
+        report = AdvertiserGeoReport(
+            queryset,
+            # Index by date if filtering report to a single country
+            index="date" if country else None,
+            order="-date" if country else None,
+            max_results=None if country else self.LIMIT,
+        )
+        report.generate()
+
+        country_options = self.get_country_options(
+            self.get_queryset(
+                advertiser=advertiser,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+        )
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "report": report,
+                "country": country,
+                "country_options": country_options,
+                "country_name": self.get_country_name(country),
+                "export_url": "{url}?{params}".format(
+                    url=reverse("advertiser_geo_report_export", args=[advertiser.slug]),
+                    params=urllib.parse.urlencode(
+                        {
+                            "start_date": context["start_date"].date(),
+                            "end_date": context["end_date"].date()
+                            if context["end_date"]
+                            else "",
+                            "country": country or "",
+                        }
+                    ),
+                ),
+            }
+        )
+
+        return context
+
+
 class AllAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""
@@ -939,7 +1007,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         return queryset
 
 
-class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
+class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportView):
 
     """A report for a single publisher."""
 
@@ -971,23 +1039,13 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        # The order_by here is to enable distinct to work
-        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
-        country_list = (
+        country_options = self.get_country_options(
             self.get_queryset(
                 publisher=publisher,
+                campaign_type=context["campaign_type"],
                 start_date=context["start_date"],
                 end_date=context["end_date"],
             )
-            .values_list("country", flat=True)
-            .annotate(total_views=Sum("views"))
-            .order_by("-total_views")
-            .distinct()[: self.LIMIT]
-        )
-
-        countries_dict = dict(countries)
-        country_options = (
-            (cc, countries_dict.get(cc, "Unknown")) for cc in country_list
         )
 
         context.update(
@@ -997,7 +1055,7 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "country": country,
                 "country_options": country_options,
-                "country_name": countries_dict.get(country),
+                "country_name": self.get_country_name(country),
                 "export_url": "{url}?{params}".format(
                     url=reverse("publisher_geo_report_export", args=[publisher.slug]),
                     params=urllib.parse.urlencode(
@@ -1015,14 +1073,6 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         )
 
         return context
-
-    def get_queryset(self, **kwargs):
-        queryset = super().get_queryset(**kwargs)
-
-        if "country" in kwargs and kwargs["country"]:
-            queryset = queryset.filter(country=kwargs["country"])
-
-        return queryset
 
 
 class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):

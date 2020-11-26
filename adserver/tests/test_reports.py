@@ -360,6 +360,79 @@ class TestReportViews(TestReportsBase):
             response["Content-Disposition"].startswith("attachment; filename=")
         )
 
+    def test_advertiser_geo_report_contents(self):
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            country="US",
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            country="US",
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            country="US",
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            country="US",
+            viewed=True,
+            is_refunded=True,  # Won't count
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            country="FR",
+            viewed=True,
+            clicked=True,
+        )
+
+        # Update reporting
+        daily_update_geos()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("advertiser_geo_report", args=[self.advertiser1.slug])
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "France")
+        self.assertNotContains(response, "Belgium")
+
+        # Filter reports
+        response = self.client.get(url, {"country": "US"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"country": "FR"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"country": "foobar"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Verify the export URL is configured
+        self.assertContains(response, "CSV Export")
+
+        export_url = reverse(
+            "advertiser_geo_report_export", args=[self.advertiser1.slug]
+        )
+        response = self.client.get(export_url, {"country": "FR"})
+        self.assertContains(response, "Total,1")
+
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])
         url2 = reverse("publisher_report", args=[self.publisher2.slug])

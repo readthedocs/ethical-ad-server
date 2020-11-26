@@ -77,6 +77,15 @@
                   <span>{% trans 'Reports' %}</span>
                 </a>
               </li>
+
+              {% if request.user.is_staff %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'advertiser_geo_report' advertiser.slug %}">
+                  <span class="fa fa-globe fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Geos' %}</span>
+                </a>
+              </li>
+              {% endif %}
             </ul>
           {% elif publisher %}
             <h6 class="text-muted">{{ publisher }}</h6>
