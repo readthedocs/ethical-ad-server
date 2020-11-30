@@ -13,3 +13,17 @@
   {{ block.super }}
   <li class="breadcrumb-item active">{% trans 'Uplift Report' %}</li>
 {% endblock breadcrumbs %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+    This report shows the additional advertising data that we can attribute to Acceptable Ads.
+  </p>
+  <p>
+  <em>
+  This report shows all publishers and updates periodically. All previous days data is complete.
+  </em>
+  </p>
+</section>
+{% endblock explainer %}
