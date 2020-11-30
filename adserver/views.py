@@ -544,6 +544,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     LIMIT = 20
     export = False
     export_filename = "readthedocs-report.csv"
+    export_view = None
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
     model = AdImpression
     report = PublisherReport
@@ -585,6 +586,15 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "campaign_type": campaign_type,
             "limit": self.LIMIT,
         }
+
+    def get_export_url(self, **kwargs):
+        if not self.export_view:
+            return None
+
+        return "{url}?{params}".format(
+            url=reverse(self.export_view, kwargs=kwargs),
+            params=urllib.parse.urlencode(self.request.GET),
+        )
 
     def get_queryset(self, **kwargs):
         """Get the queryset (from ``model``) used to generate the report."""
@@ -643,6 +653,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one advertiser."""
 
+    export_view = "advertiser_report_export"
     template_name = "adserver/reports/advertiser.html"
 
     def get_context_data(self, **kwargs):
@@ -671,17 +682,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
                 "advertiser": advertiser,
                 "report": report,
                 "flights": flights,
-                "export_url": "{url}?{params}".format(
-                    url=reverse("advertiser_report_export", args=[advertiser.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
 
@@ -692,6 +693,7 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one flight for an advertiser."""
 
+    export_view = "flight_report_export"
     template_name = "adserver/reports/advertiser-flight.html"
 
     def get_context_data(self, **kwargs):
@@ -731,18 +733,8 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
                 "flight": flight,
                 "report": report,
                 "advertisements": advertisements,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "flight_report_export", args=[advertiser.slug, flight.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                        }
-                    ),
+                "export_url": self.get_export_url(
+                    advertiser_slug=advertiser.slug, flight_slug=flight.slug
                 ),
             }
         )
@@ -754,6 +746,7 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
 
     """A report for an advertiser broken down by geo."""
 
+    export_view = "advertiser_geo_report_export"
     model = GeoImpression
     template_name = "adserver/reports/advertiser-geo.html"
 
@@ -796,18 +789,7 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
                 "country": country,
                 "country_options": country_options,
                 "country_name": self.get_country_name(country),
-                "export_url": "{url}?{params}".format(
-                    url=reverse("advertiser_geo_report_export", args=[advertiser.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "country": country or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
 
@@ -818,6 +800,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for an advertiser broken down by publishers where the advertisers ads are shown."""
 
+    export_view = "advertiser_publisher_report_export"
     template_name = "adserver/reports/advertiser-publisher.html"
 
     def get_context_data(self, **kwargs):
@@ -868,22 +851,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
                 "report": report,
                 "report_publisher": report_publisher,
                 "publisher_list": publisher_list,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "advertiser_publisher_report_export", args=[advertiser.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "publisher": report_publisher.slug
-                            if report_publisher
-                            else "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
 
@@ -951,6 +919,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    export_view = "publisher_report_export"
     template_name = "adserver/reports/publisher.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -975,18 +944,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
-                "export_url": "{url}?{params}".format(
-                    url=reverse("publisher_report_export", args=[publisher.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -997,6 +955,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher broken down by placement (Div/ad type)."""
 
+    export_view = "publisher_placement_report_export"
     model = PlacementImpression
     template_name = "adserver/reports/publisher-placement.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
@@ -1046,21 +1005,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "div_id": div_id,
                 "div_id_options": div_id_options,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_placement_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "div_id": div_id or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -1079,6 +1024,7 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
 
     """A report for a single publisher."""
 
+    export_view = "publisher_geo_report_export"
     model = GeoImpression
     template_name = "adserver/reports/publisher-geo.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
@@ -1124,19 +1070,7 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
                 "country": country,
                 "country_options": country_options,
                 "country_name": self.get_country_name(country),
-                "export_url": "{url}?{params}".format(
-                    url=reverse("publisher_geo_report_export", args=[publisher.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "country": country or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -1147,6 +1081,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
     """Show top advertisers for a publisher."""
 
+    export_view = "publisher_advertiser_report_export"
     template_name = "adserver/reports/publisher-advertiser.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -1205,23 +1140,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
                 "advertiser_list": advertiser_list,
                 "report_advertiser": report_advertiser,
                 "limit": self.LIMIT,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_advertiser_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "advertiser": report_advertiser.slug
-                            if report_advertiser
-                            else None,
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -1232,6 +1151,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    export_view = "publisher_keyword_report_export"
     model = KeywordImpression
     template_name = "adserver/reports/publisher-keyword.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
@@ -1281,21 +1201,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "keyword": keyword,
                 "keyword_list": keyword_list,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_keyword_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "keyword": keyword,
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
