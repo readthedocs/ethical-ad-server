@@ -143,6 +143,31 @@ class AdvertiserReport(BaseReport):
         self.total["ecpm"] = calculate_ecpm(self.total["cost"], self.total["views"])
 
 
+class AdvertiserGeoReport(AdvertiserReport):
+
+    """Report to breakdown advertiser performance by country."""
+
+    model = GeoImpression
+    index = "country"
+    order = "-views"
+
+    def get_index_display(self, index):
+        if self.index == "country":
+            return get_country_name(index)
+
+        return super().get_index_display(index)
+
+
+class AdvertiserPublisherReport(AdvertiserReport):
+
+    """Report to breakdown advertiser performance by publisher."""
+
+    model = AdImpression
+    index = "publisher"
+    order = "-views"
+    select_related_fields = ("advertisement", "advertisement__flight", "publisher")
+
+
 class PublisherReport(BaseReport):
 
     """Report for showing daily ad performance for a publisher."""

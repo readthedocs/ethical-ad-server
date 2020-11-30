@@ -2,8 +2,10 @@
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db import connection
+from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
+from django_countries import countries
 
 from .models import Advertiser
 from .models import Publisher
@@ -47,6 +49,37 @@ class PublisherAccessMixin:
             self.request.user.is_staff
             or publisher in self.request.user.publishers.all()
         )
+
+
+class GeoReportMixin:
+
+    """Provide geo report functionality. MUST be used with BaseReportView."""
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "country" in kwargs and kwargs["country"]:
+            queryset = queryset.filter(country=kwargs["country"])
+
+        return queryset
+
+    def get_country_options(self, queryset):
+        countries_dict = dict(countries)
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        country_list = (
+            queryset.values_list("country", flat=True)
+            .annotate(total_views=models.Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
+        )
+
+        return ((cc, countries_dict.get(cc, "Unknown")) for cc in country_list)
+
+    def get_country_name(self, country):
+        countries_dict = dict(countries)
+        return countries_dict.get(country)
 
 
 class EstimatedCountPaginator(Paginator):

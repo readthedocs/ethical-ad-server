@@ -35,7 +35,6 @@ from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
-from django_countries import countries
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
@@ -46,6 +45,7 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
+from .mixins import GeoReportMixin
 from .mixins import PublisherAccessMixin
 from .models import AdImpression
 from .models import AdType
@@ -59,6 +59,8 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
 from .models import UpliftImpression
+from .reports import AdvertiserGeoReport
+from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
@@ -542,6 +544,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     LIMIT = 20
     export = False
     export_filename = "readthedocs-report.csv"
+    export_view = None
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
     model = AdImpression
     report = PublisherReport
@@ -583,6 +586,15 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             "campaign_type": campaign_type,
             "limit": self.LIMIT,
         }
+
+    def get_export_url(self, **kwargs):
+        if not self.export_view:
+            return None
+
+        return "{url}?{params}".format(
+            url=reverse(self.export_view, kwargs=kwargs),
+            params=urllib.parse.urlencode(self.request.GET),
+        )
 
     def get_queryset(self, **kwargs):
         """Get the queryset (from ``model``) used to generate the report."""
@@ -641,13 +653,11 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one advertiser."""
 
+    export_view = "advertiser_report_export"
     template_name = "adserver/reports/advertiser.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        start_date = context["start_date"]
-        end_date = context["end_date"]
 
         advertiser_slug = kwargs.get("advertiser_slug", "")
 
@@ -655,8 +665,8 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
         queryset = self.get_queryset(
             advertiser=advertiser,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
         )
         report = AdvertiserReport(queryset)
         report.generate()
@@ -672,17 +682,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
                 "advertiser": advertiser,
                 "report": report,
                 "flights": flights,
-                "export_url": "{url}?{params}".format(
-                    url=reverse("advertiser_report_export", args=[advertiser.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
 
@@ -693,13 +693,11 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one flight for an advertiser."""
 
+    export_view = "flight_report_export"
     template_name = "adserver/reports/advertiser-flight.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        start_date = context["start_date"]
-        end_date = context["end_date"]
 
         advertiser_slug = kwargs.get("advertiser_slug", "")
         flight_slug = kwargs.get("flight_slug", "")
@@ -712,8 +710,8 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
         queryset = self.get_queryset(
             advertiser=advertiser,
             flight=flight,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
         )
 
         report = AdvertiserReport(queryset)
@@ -735,19 +733,125 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
                 "flight": flight,
                 "report": report,
                 "advertisements": advertisements,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "flight_report_export", args=[advertiser.slug, flight.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                        }
-                    ),
+                "export_url": self.get_export_url(
+                    advertiser_slug=advertiser.slug, flight_slug=flight.slug
                 ),
+            }
+        )
+
+        return context
+
+
+class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportView):
+
+    """A report for an advertiser broken down by geo."""
+
+    export_view = "advertiser_geo_report_export"
+    model = GeoImpression
+    template_name = "adserver/reports/advertiser-geo.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        country = self.request.GET.get("country", "")
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            country=country,
+        )
+
+        report = AdvertiserGeoReport(
+            queryset,
+            # Index by date if filtering report to a single country
+            index="date" if country else None,
+            order="-date" if country else None,
+            max_results=None if country else self.LIMIT,
+        )
+        report.generate()
+
+        country_options = self.get_country_options(
+            self.get_queryset(
+                advertiser=advertiser,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+        )
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "report": report,
+                "country": country,
+                "country_options": country_options,
+                "country_name": self.get_country_name(country),
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
+            }
+        )
+
+        return context
+
+
+class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
+
+    """A report for an advertiser broken down by publishers where the advertisers ads are shown."""
+
+    export_view = "advertiser_publisher_report_export"
+    template_name = "adserver/reports/advertiser-publisher.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+        report_publisher = Publisher.objects.filter(
+            slug=self.request.GET.get("publisher", "")
+        ).first()
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            publisher=report_publisher,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
+
+        report = AdvertiserPublisherReport(
+            queryset,
+            # Index by date if filtering report to a single publisher
+            index="date" if report_publisher else None,
+            order="-date" if report_publisher else None,
+            max_results=None if report_publisher else self.LIMIT,
+        )
+        report.generate()
+
+        # Get the list of publishers for the filter dropdown
+        publisher_list = (
+            self.get_queryset(
+                advertiser=advertiser,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+            .values_list("publisher")
+            .annotate(total_views=Sum("views"))
+            .order_by("-total_views")
+            .values_list(
+                "publisher__slug",
+                "publisher__name",
+            )
+            .distinct()[: self.LIMIT]
+        )
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "report": report,
+                "report_publisher": report_publisher,
+                "publisher_list": publisher_list,
+                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
 
@@ -762,9 +866,6 @@ class AllAdvertiserReportView(BaseReportView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        start_date = context["start_date"]
-        end_date = context["end_date"]
 
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
@@ -782,8 +883,8 @@ class AllAdvertiserReportView(BaseReportView):
         for advertiser in advertisers:
             queryset = self.get_queryset(
                 advertiser=advertiser,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
             )
             report = AdvertiserReport(queryset)
             report.generate()
@@ -818,6 +919,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    export_view = "publisher_report_export"
     template_name = "adserver/reports/publisher.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -842,18 +944,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "publisher": publisher,
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
-                "export_url": "{url}?{params}".format(
-                    url=reverse("publisher_report_export", args=[publisher.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -864,8 +955,9 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher broken down by placement (Div/ad type)."""
 
+    export_view = "publisher_placement_report_export"
     model = PlacementImpression
-    template_name = "adserver/reports/publisher_placement.html"
+    template_name = "adserver/reports/publisher-placement.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -913,21 +1005,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "div_id": div_id,
                 "div_id_options": div_id_options,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_placement_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "div_id": div_id or "",
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -942,12 +1020,13 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         return queryset
 
 
-class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
+class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    export_view = "publisher_geo_report_export"
     model = GeoImpression
-    template_name = "adserver/reports/publisher_geo.html"
+    template_name = "adserver/reports/publisher-geo.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -974,23 +1053,13 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        # The order_by here is to enable distinct to work
-        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
-        country_list = (
+        country_options = self.get_country_options(
             self.get_queryset(
                 publisher=publisher,
+                campaign_type=context["campaign_type"],
                 start_date=context["start_date"],
                 end_date=context["end_date"],
             )
-            .values_list("country", flat=True)
-            .annotate(total_views=Sum("views"))
-            .order_by("-total_views")
-            .distinct()[: self.LIMIT]
-        )
-
-        countries_dict = dict(countries)
-        country_options = (
-            (cc, countries_dict.get(cc, "Unknown")) for cc in country_list
         )
 
         context.update(
@@ -1000,39 +1069,20 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "country": country,
                 "country_options": country_options,
-                "country_name": countries_dict.get(country),
-                "export_url": "{url}?{params}".format(
-                    url=reverse("publisher_geo_report_export", args=[publisher.slug]),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "country": country or "",
-                        }
-                    ),
-                ),
+                "country_name": self.get_country_name(country),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
         return context
-
-    def get_queryset(self, **kwargs):
-        queryset = super().get_queryset(**kwargs)
-
-        if "country" in kwargs and kwargs["country"]:
-            queryset = queryset.filter(country=kwargs["country"])
-
-        return queryset
 
 
 class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
     """Show top advertisers for a publisher."""
 
-    template_name = "adserver/reports/publisher_advertiser.html"
+    export_view = "publisher_advertiser_report_export"
+    template_name = "adserver/reports/publisher-advertiser.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1040,14 +1090,16 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
         # This needs to be something other than `advertiser`
         # to not conflict with template context on advertising reports.
-        report_advertiser = self.request.GET.get("report_advertiser", "")
+        report_advertiser = Advertiser.objects.filter(
+            slug=self.request.GET.get("advertiser", "")
+        ).first()
 
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
         queryset = self.get_queryset(
             publisher=publisher,
-            advertiser=Advertiser.objects.filter(slug=report_advertiser).first(),
+            advertiser=report_advertiser,
             campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
@@ -1088,31 +1140,9 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
                 "advertiser_list": advertiser_list,
                 "report_advertiser": report_advertiser,
                 "limit": self.LIMIT,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_advertiser_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "report_advertiser": report_advertiser,
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
-
-        # Remove report_advertiser if there's invalid data passed in
-        if report_advertiser not in (slug for slug, name in advertiser_list):
-            context["report_advertiser"] = None
-
-        if report_advertiser:
-            advertiser_name = Advertiser.objects.get(slug=report_advertiser).name
-            context["advertiser_name"] = advertiser_name
 
         return context
 
@@ -1121,8 +1151,9 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
 
     """A report for a single publisher."""
 
+    export_view = "publisher_keyword_report_export"
     model = KeywordImpression
-    template_name = "adserver/reports/publisher_keyword.html"
+    template_name = "adserver/reports/publisher-keyword.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1170,21 +1201,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
                 "campaign_types": CAMPAIGN_TYPES,
                 "keyword": keyword,
                 "keyword_list": keyword_list,
-                "export_url": "{url}?{params}".format(
-                    url=reverse(
-                        "publisher_keyword_report_export", args=[publisher.slug]
-                    ),
-                    params=urllib.parse.urlencode(
-                        {
-                            "start_date": context["start_date"].date(),
-                            "end_date": context["end_date"].date()
-                            if context["end_date"]
-                            else "",
-                            "campaign_type": context["campaign_type"] or "",
-                            "keyword": keyword,
-                        }
-                    ),
-                ),
+                "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
@@ -1523,7 +1540,7 @@ class UpliftReportView(AllPublisherReportView):
     model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
-    template_name = "adserver/reports/all-publishers_uplift.html"
+    template_name = "adserver/reports/all-publishers-uplift.html"
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
