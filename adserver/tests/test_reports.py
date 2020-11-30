@@ -26,6 +26,7 @@ from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
+from ..tasks import daily_update_uplift
 from ..utils import calculate_ecpm
 
 
@@ -630,6 +631,72 @@ class TestReportViews(TestReportsBase):
         )
         response = self.client.get(export_url, {"keyword": "awesome"})
         self.assertContains(response, "Total,1,1")
+
+    def test_publisher_uplift_report_contents(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("publisher_uplift_report")
+
+        self.ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight2,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        # Paid
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+            uplifted=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+            uplifted=True,
+        )
+
+        # Not paid
+        get(
+            Offer,
+            advertisement=self.ad2,
+            publisher=self.publisher1,
+            viewed=True,
+            uplifted=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad2,
+            publisher=self.publisher1,
+            viewed=True,
+            uplifted=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad2,
+            publisher=self.publisher1,
+            viewed=True,
+            uplifted=True,
+        )
+
+        # Update reporting
+        daily_update_uplift()
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>5</strong></td>')
+
+        # Filter reports
+        response = self.client.get(url, {"campaign_type": "paid"})
+        self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>3</strong></td>'
+        )
 
 
 class TestReportClasses(TestReportsBase):

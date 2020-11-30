@@ -16,6 +16,7 @@ from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
+from .models import UpliftImpression
 from .utils import get_ad_day
 from config.celery_app import app
 
@@ -211,3 +212,35 @@ def daily_update_keywords(day=None):
                 KeywordImpression.objects.filter(pk=impression.pk).update(
                     **{impression_type: F(impression_type) + values["total"]}
                 )
+
+
+@app.task()
+def daily_update_uplift(day=None):
+    """
+    Generate the daily index of UpliftImpressions.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = _get_day(day)
+
+    log.info("Updating uplift for %s-%s", start_date, end_date)
+
+    for impression_type in IMPRESSION_TYPES:
+        queryset = _default_filters(impression_type, start_date, end_date)
+
+        for values in (
+            queryset.values("publisher", "advertisement")
+            .annotate(total=Count("uplifted"))
+            .filter(total__gt=0)
+            .order_by("-total")
+            .values("publisher", "advertisement", "total")
+        ):
+
+            impression, _ = UpliftImpression.objects.get_or_create(
+                publisher_id=values["publisher"],
+                advertisement_id=values["advertisement"],
+                date=start_date,
+            )
+            UpliftImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: values["total"]}
+            )

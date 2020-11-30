@@ -33,6 +33,7 @@ from .views import PublisherPlacementReportView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
 from .views import PublisherStripeOauthConnectView
+from .views import UpliftReportView
 
 
 urlpatterns = [
@@ -122,6 +123,11 @@ urlpatterns = [
         r"publisher/all/report/",
         AllPublisherReportView.as_view(),
         name="all_publishers_report",
+    ),
+    path(
+        r"publisher/all/report/uplift/",
+        UpliftReportView.as_view(),
+        name="publisher_uplift_report",
     ),
     path(
         r"publisher/<slug:publisher_slug>/",

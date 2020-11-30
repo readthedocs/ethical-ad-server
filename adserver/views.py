@@ -58,12 +58,14 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import UpliftImpression
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
 from .reports import PublisherPlacementReport
 from .reports import PublisherReport
+from .reports import PublisherUpliftReport
 from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -542,6 +544,7 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
     export_filename = "readthedocs-report.csv"
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
     model = AdImpression
+    report = PublisherReport
 
     def test_func(self):
         """By default, reports are locked down to staff."""
@@ -1401,11 +1404,13 @@ class AllPublisherReportView(BaseReportView):
 
     """A report for all publishers."""
 
+    force_revshare = None
     template_name = "adserver/reports/all-publishers.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
         context = super().get_context_data(**kwargs)
         sort = self.request.GET.get("sort", "")
+        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = self.get_queryset(
@@ -1413,17 +1418,6 @@ class AllPublisherReportView(BaseReportView):
             end_date=context["end_date"],
         )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
-
-        advertiser_list = (
-            # order_by is required for `distinct()` to work
-            # https://code.djangoproject.com/ticket/16058
-            impressions.order_by("advertisement__flight__campaign__advertiser__slug")
-            .values_list(
-                "advertisement__flight__campaign__advertiser__slug",
-                "advertisement__flight__campaign__advertiser__name",
-            )
-            .distinct()
-        )
 
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
         if revenue_share_percentage:
@@ -1442,7 +1436,7 @@ class AllPublisherReportView(BaseReportView):
                 end_date=context["end_date"],
                 campaign_type=context["campaign_type"],
             )
-            report = PublisherReport(queryset)
+            report = self.report(queryset, force_revshare=force_revshare)
             report.generate()
             if report.total["views"] > 0:
                 publishers_and_reports.append((publisher, report))
@@ -1514,13 +1508,22 @@ class AllPublisherReportView(BaseReportView):
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
                 ),
                 "revenue_share_percentage": revenue_share_percentage,
-                "advertiser_list": advertiser_list,
                 "sort": sort,
                 "sort_options": sort_options,
             }
         )
 
         return context
+
+
+class UpliftReportView(AllPublisherReportView):
+
+    """An uplift report for all publishers."""
+
+    model = UpliftImpression
+    force_revshare = 70.0
+    report = PublisherUpliftReport
+    template_name = "adserver/reports/all-publishers_uplift.html"
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
