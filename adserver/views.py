@@ -645,17 +645,14 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = context["start_date"]
-        end_date = context["end_date"]
-
         advertiser_slug = kwargs.get("advertiser_slug", "")
 
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
 
         queryset = self.get_queryset(
             advertiser=advertiser,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
         )
         report = AdvertiserReport(queryset)
         report.generate()
@@ -697,9 +694,6 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = context["start_date"]
-        end_date = context["end_date"]
-
         advertiser_slug = kwargs.get("advertiser_slug", "")
         flight_slug = kwargs.get("flight_slug", "")
 
@@ -711,8 +705,8 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
         queryset = self.get_queryset(
             advertiser=advertiser,
             flight=flight,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
         )
 
         report = AdvertiserReport(queryset)
@@ -763,9 +757,6 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = context["start_date"]
-        end_date = context["end_date"]
-
         country = self.request.GET.get("country", "")
 
         advertiser_slug = kwargs.get("advertiser_slug", "")
@@ -773,8 +764,8 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
 
         queryset = self.get_queryset(
             advertiser=advertiser,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
             country=country,
         )
 
@@ -829,9 +820,6 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = context["start_date"]
-        end_date = context["end_date"]
-
         advertiser_slug = kwargs.get("advertiser_slug", "")
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
         report_publisher = Publisher.objects.filter(
@@ -841,8 +829,8 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
         queryset = self.get_queryset(
             advertiser=advertiser,
             publisher=report_publisher,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
         )
 
         report = AdvertiserPublisherReport(
@@ -908,9 +896,6 @@ class AllAdvertiserReportView(BaseReportView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = context["start_date"]
-        end_date = context["end_date"]
-
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
         impressions = self.get_queryset(
@@ -927,8 +912,8 @@ class AllAdvertiserReportView(BaseReportView):
         for advertiser in advertisers:
             queryset = self.get_queryset(
                 advertiser=advertiser,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=context["start_date"],
+                end_date=context["end_date"],
             )
             report = AdvertiserReport(queryset)
             report.generate()
@@ -1167,14 +1152,16 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
         # This needs to be something other than `advertiser`
         # to not conflict with template context on advertising reports.
-        report_advertiser = self.request.GET.get("report_advertiser", "")
+        report_advertiser = Advertiser.objects.filter(
+            slug=self.request.GET.get("advertiser", "")
+        ).first()
 
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
         queryset = self.get_queryset(
             publisher=publisher,
-            advertiser=Advertiser.objects.filter(slug=report_advertiser).first(),
+            advertiser=report_advertiser,
             campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
@@ -1226,20 +1213,14 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
                             if context["end_date"]
                             else "",
                             "campaign_type": context["campaign_type"] or "",
-                            "report_advertiser": report_advertiser,
+                            "advertiser": report_advertiser.slug
+                            if report_advertiser
+                            else None,
                         }
                     ),
                 ),
             }
         )
-
-        # Remove report_advertiser if there's invalid data passed in
-        if report_advertiser not in (slug for slug, name in advertiser_list):
-            context["report_advertiser"] = None
-
-        if report_advertiser:
-            advertiser_name = Advertiser.objects.get(slug=report_advertiser).name
-            context["advertiser_name"] = advertiser_name
 
         return context
 

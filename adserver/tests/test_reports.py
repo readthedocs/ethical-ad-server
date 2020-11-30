@@ -680,12 +680,12 @@ class TestReportViews(TestReportsBase):
         self.assertNotContains(response, self.advertiser2.name)
 
         # Filter reports
-        response = self.client.get(url, {"report_advertiser": self.advertiser1.slug})
+        response = self.client.get(url, {"advertiser": self.advertiser1.slug})
         self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
         # Date breakdown, not advertiser breakdown
         self.assertNotContains(response, f"<td>{self.advertiser1.name}</td>")
 
-        response = self.client.get(url, {"report_advertiser": self.advertiser2.slug})
+        response = self.client.get(url, {"advertiser": self.advertiser2.slug})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
         # Verify the export URL is configured
@@ -694,9 +694,7 @@ class TestReportViews(TestReportsBase):
         export_url = reverse(
             "publisher_advertiser_report_export", args=[self.publisher1.slug]
         )
-        response = self.client.get(
-            export_url, {"report_advertiser": self.advertiser1.slug}
-        )
+        response = self.client.get(export_url, {"advertiser": self.advertiser1.slug})
         self.assertContains(response, "Total,4")
 
     def test_publisher_keyword_report_contents(self):
