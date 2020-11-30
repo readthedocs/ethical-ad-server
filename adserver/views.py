@@ -998,7 +998,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher broken down by placement (Div/ad type)."""
 
     model = PlacementImpression
-    template_name = "adserver/reports/publisher_placement.html"
+    template_name = "adserver/reports/publisher-placement.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1080,7 +1080,7 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
     """A report for a single publisher."""
 
     model = GeoImpression
-    template_name = "adserver/reports/publisher_geo.html"
+    template_name = "adserver/reports/publisher-geo.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1147,7 +1147,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
     """Show top advertisers for a publisher."""
 
-    template_name = "adserver/reports/publisher_advertiser.html"
+    template_name = "adserver/reports/publisher-advertiser.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1233,7 +1233,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     model = KeywordImpression
-    template_name = "adserver/reports/publisher_keyword.html"
+    template_name = "adserver/reports/publisher-keyword.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
@@ -1634,7 +1634,7 @@ class UpliftReportView(AllPublisherReportView):
     model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
-    template_name = "adserver/reports/all-publishers_uplift.html"
+    template_name = "adserver/reports/all-publishers-uplift.html"
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
