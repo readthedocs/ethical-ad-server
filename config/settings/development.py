@@ -37,16 +37,20 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=No
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 CELERY_BEAT_SCHEDULE = {
-    "every-day-generate-geo-index": {
+    "dev-geo-index": {
         "task": "adserver.tasks.daily_update_geos",
         "schedule": crontab(minute="*/5"),
     },
-    "every-day-generate-placement-index": {
+    "dev-placement-index": {
         "task": "adserver.tasks.daily_update_placements",
         "schedule": crontab(minute="*/5"),
     },
-    "every-hour-generate-keyword-index": {
+    "dev-keyword-index": {
         "task": "adserver.tasks.daily_update_keywords",
+        "schedule": crontab(minute="*/5"),
+    },
+    "dev-uplift-index": {
+        "task": "adserver.tasks.daily_update_uplift",
         "schedule": crontab(minute="*/5"),
     },
 }
