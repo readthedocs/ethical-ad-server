@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.16.0
+---------------
+
+:date: December 1, 2020
+
+This release contained some minor reporting changes and some admin-specific reports.
+We are testing some new advertiser reports (showing top geos, top publishers)
+but those are staff-only now but will likely roll out to all advertisers
+in the next release.
+
+ * @davidfischer: Advertiser reporting breakdowns (#295)
+ * @ericholscher: Add uplift reporting (#294)
+ * @ericholscher: Additional payout automation (#285)
+
 Version v0.15.0
 ---------------
 
