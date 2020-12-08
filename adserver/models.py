@@ -305,6 +305,12 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    exclude_publishers = models.ManyToManyField(
+        Publisher,
+        blank=True,
+        help_text=_("Ads for this campaign will not be shown on these publishers"),
+    )
+
     # Deprecated and scheduled for removal
     publishers = models.ManyToManyField(
         Publisher,
