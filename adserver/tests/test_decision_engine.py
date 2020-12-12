@@ -616,3 +616,13 @@ class DecisionEngineTests(TestCase):
         self.assertTrue(
             self.backend.keywords, ["foo", "bar", "baz", "machine-learning"]
         )
+
+    def test_publisher_excluded(self):
+        flights = self.probabilistic_backend.get_candidate_flights()
+        self.assertTrue(flights.exists())
+
+        # Exclude the one and only publisher
+        self.campaign.exclude_publishers.add(self.publisher)
+
+        flights = self.probabilistic_backend.get_candidate_flights()
+        self.assertFalse(flights.exists())
