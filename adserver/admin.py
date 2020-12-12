@@ -714,7 +714,6 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the base class of ad views and clicks."""
 
-    actions = ["refund_impressions"]
     readonly_fields = (
         "date",
         "advertisement",
@@ -726,7 +725,6 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "os_family",
         "is_mobile",
         "is_bot",
-        "is_refunded",
         "user_agent",
         "ip",
         "div_id",
@@ -739,7 +737,6 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_select_related = ("advertisement", "publisher")
     list_filter = (
         "is_mobile",
-        "is_refunded",
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
@@ -764,6 +761,24 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""
         return False
+
+
+class OfferAdmin(AdBaseAdmin):
+
+    """Django admin configuration for ad offers."""
+
+    model = Offer
+    actions = ["refund_impressions"]
+    readonly_fields = AdBaseAdmin.readonly_fields + ("viewed", "clicked", "is_refunded")
+    list_display = AdBaseAdmin.list_display + ("viewed", "clicked", "is_refunded")
+    list_filter = AdBaseAdmin.list_filter + ("is_refunded",)
+
+    # Without this, the django admin will order by date and PK
+    # resulting in a very expensive query
+    # This is due to how the admin determines that the order should be deterministic.
+    # https://docs.djangoproject.com/en/2.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
+    # Ordering by a UUID isn't very useful.
+    ordering = ("-pk",)
 
     def refund_impressions(self, request, queryset):
         """Process a refund for the selected impressions."""
@@ -800,22 +815,6 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         )
 
         return None
-
-
-class OfferAdmin(AdBaseAdmin):
-
-    """Django admin configuration for ad offers."""
-
-    model = Offer
-    readonly_fields = AdBaseAdmin.readonly_fields + ("viewed", "clicked")
-    list_display = AdBaseAdmin.list_display + ("viewed", "clicked")
-
-    # Without this, the django admin will order by date and PK
-    # resulting in a very expensive query
-    # This is due to how the admin determines that the order should be deterministic.
-    # https://docs.djangoproject.com/en/2.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
-    # Ordering by a UUID isn't very useful.
-    ordering = ("-pk",)
 
 
 class ClickAdmin(AdBaseAdmin):
