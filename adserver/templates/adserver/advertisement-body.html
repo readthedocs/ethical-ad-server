@@ -1,0 +1,7 @@
+{% spaceless %}
+<a>
+{% if ad.headline %}<strong>{{ ad.headline }} </strong>{% endif %}
+<span>{{ ad.body }}</span>
+{% if ad.cta %}<strong> {{ ad.cta }}</strong>{% endif %}
+</a>
+{% endspaceless %}

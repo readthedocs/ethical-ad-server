@@ -19,8 +19,27 @@ class FormTests(TestCase):
         self.campaign = get(Campaign, name="Test Campaign", slug="test-campaign")
         self.flight = get(Flight, name="Test Flight", campaign=self.campaign)
         self.ad_type = get(AdType, has_text=True, max_text_length=100, has_image=False)
-        self.ad = get(Advertisement, name="Test Ad", flight=self.flight)
+        self.ad = get(
+            Advertisement,
+            name="Test Ad",
+            flight=self.flight,
+            text="",  # New style ad
+            headline="Old Headline",
+            body="Old Body",
+            cta="Old CTA",
+        )
         self.ad.ad_types.add(self.ad_type)
+
+        self.old_style_ad = get(
+            Advertisement,
+            name="Test Ad",
+            flight=self.flight,
+            text="This is a test",
+            headline="",
+            body="",
+            cta="",
+        )
+        self.old_style_ad.ad_types.add(self.ad_type)
 
         self.image_ad_type = get(
             AdType,
@@ -36,13 +55,25 @@ class FormTests(TestCase):
             "link": "http://example.com",
             "image": None,
             "live": True,
-            "text": "This is a test",
+            "headline": "Test Advertiser:",
+            "body": "Compelling Copy...",
+            "cta": "Buy Stuff Today!",
             "ad_types": [self.ad_type.pk],
         }
         self.files = {
             "image": SimpleUploadedFile(
                 name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
             )
+        }
+
+        # This is for use with `old_style_ad`
+        self.old_style_ad_data = {
+            "name": "Advertisement Test",
+            "link": "http://example.com",
+            "image": None,
+            "live": True,
+            "text": "This is a test",
+            "ad_types": [self.ad_type.pk],
         }
 
     def test_flight_form(self):
@@ -98,14 +129,19 @@ class FormTests(TestCase):
         )
         self.assertFalse(form.is_valid(), form.errors)
 
+        expected_text = "{} {} {}".format(
+            self.ad_data["headline"],
+            self.ad_data["body"],
+            self.ad_data["cta"],
+        )
         self.assertEquals(
-            form.errors["text"],
+            form.errors["body"],
             [
                 AdvertisementForm.messages["text_too_long"]
                 % {
                     "ad_type": str(self.ad_type),
                     "ad_type_max_chars": self.ad_type.max_text_length,
-                    "text_len": len(self.ad_data["text"]),
+                    "text_len": len(expected_text),
                 }
             ],
         )
@@ -119,6 +155,19 @@ class FormTests(TestCase):
         self.assertIsNotNone(form.cleaned_data.get("image"))
 
     def test_image_missing(self):
+        self.ad_data["ad_types"] = [self.image_ad_type.pk]
+        form = AdvertisementForm(data=self.ad_data, files={}, flight=self.flight)
+        self.assertFalse(form.is_valid(), form.errors)
+
+        self.assertEquals(
+            form.errors["image"],
+            [
+                AdvertisementForm.messages["missing_image"]
+                % {"ad_type": str(self.image_ad_type)}
+            ],
+        )
+
+    def test_multi_error(self):
         self.image_ad_type.max_text_length = 10
         self.image_ad_type.save()
         self.ad_data["ad_types"] = [self.image_ad_type.pk]
@@ -133,28 +182,20 @@ class FormTests(TestCase):
             ],
         )
 
+        expected_text = "{} {} {}".format(
+            self.ad_data["headline"],
+            self.ad_data["body"],
+            self.ad_data["cta"],
+        )
         self.assertEquals(
-            form.errors["text"],
+            form.errors["body"],
             [
                 AdvertisementForm.messages["text_too_long"]
                 % {
                     "ad_type": str(self.image_ad_type),
                     "ad_type_max_chars": self.image_ad_type.max_text_length,
-                    "text_len": len(self.ad_data["text"]),
+                    "text_len": len(expected_text),
                 }
-            ],
-        )
-
-    def test_multi_error(self):
-        self.ad_data["ad_types"] = [self.image_ad_type.pk]
-        form = AdvertisementForm(data=self.ad_data, files={}, flight=self.flight)
-        self.assertFalse(form.is_valid(), form.errors)
-
-        self.assertEquals(
-            form.errors["image"],
-            [
-                AdvertisementForm.messages["missing_image"]
-                % {"ad_type": str(self.image_ad_type)}
             ],
         )
 
@@ -215,46 +256,12 @@ class FormTests(TestCase):
 
         # Another with no need to rewrite the slug
         self.ad_data["name"] = "Test Campaign Third Test"
-        self.ad_data["text"] = "a <a>test</a>"
+        self.ad_data["body"] = "a test"
         form = AdvertisementForm(data=self.ad_data, flight=self.flight)
         self.assertTrue(form.is_valid(), form.errors)
         ad = form.save()
         self.assertEqual(ad.slug, "test-campaign-third-test")
-        self.assertEqual(ad.text, self.ad_data["text"])
-
-    def test_ad_form_add_link(self):
-        text = "This is a test"
-        self.ad_data["text"] = text
-        form = AdvertisementForm(data=self.ad_data, flight=self.flight)
-        self.assertTrue(form.is_valid(), form.errors)
-        ad = form.save()
-
-        self.assertEqual(ad.text, f"<a>{text}</a>")
-
-    def test_ad_broken_html(self):
-        # Ensures the ad validator is called by the form
-        text = "<a>noendtag"
-        self.ad_data["text"] = text
-        form = AdvertisementForm(data=self.ad_data, flight=self.flight)
-        self.assertTrue(form.is_valid(), form.errors)
-        ad = form.save()
-        self.assertEqual(ad.text, text + "</a>")
-
-    def test_ad_malicious_html(self):
-        text = '<script>alert("foo")</script>'
-        self.ad_data["text"] = text
-        form = AdvertisementForm(data=self.ad_data, flight=self.flight)
-        self.assertTrue(form.is_valid(), form.errors)
-        ad = form.save()
-        self.assertEqual(ad.text, '<a>alert("foo")</a>')
-
-    def test_ad_remove_inline_style(self):
-        text = '<b style="color: red">text</b>'
-        self.ad_data["text"] = text
-        form = AdvertisementForm(data=self.ad_data, flight=self.flight)
-        self.assertTrue(form.is_valid(), form.errors)
-        ad = form.save()
-        self.assertEqual(ad.text, "<a><b>text</b></a>")
+        self.assertEqual(ad.body, self.ad_data["body"])
 
     def test_ad_multiple_ad_types(self):
         self.ad_data["ad_types"] = [self.ad_type.pk, self.image_ad_type.pk]
@@ -273,3 +280,46 @@ class FormTests(TestCase):
             data=self.ad_data, files=self.files, flight=self.flight
         )
         self.assertTrue(form.is_valid(), form.errors)
+
+    # Below are tests for old-style ads with a single text field instead of broken out
+    # headline, body, and CTA
+    def test_ad_form_add_link(self):
+        text = self.old_style_ad_data["text"]
+        form = AdvertisementForm(
+            data=self.old_style_ad_data, flight=self.flight, instance=self.old_style_ad
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        ad = form.save()
+
+        self.assertEqual(ad.text, f"<a>{text}</a>")
+
+    def test_ad_broken_html(self):
+        # Ensures the ad validator is called by the form
+        text = "<a>noendtag"
+        self.old_style_ad_data["text"] = text
+        form = AdvertisementForm(
+            data=self.old_style_ad_data, flight=self.flight, instance=self.old_style_ad
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        ad = form.save()
+        self.assertEqual(ad.text, text + "</a>")
+
+    def test_ad_malicious_html(self):
+        text = '<script>alert("foo")</script>'
+        self.old_style_ad_data["text"] = text
+        form = AdvertisementForm(
+            data=self.old_style_ad_data, flight=self.flight, instance=self.old_style_ad
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        ad = form.save()
+        self.assertEqual(ad.text, '<a>alert("foo")</a>')
+
+    def test_ad_remove_inline_style(self):
+        text = '<b style="color: red">text</b>'
+        self.old_style_ad_data["text"] = text
+        form = AdvertisementForm(
+            data=self.old_style_ad_data, flight=self.flight, instance=self.old_style_ad
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        ad = form.save()
+        self.assertEqual(ad.text, "<a><b>text</b></a>")

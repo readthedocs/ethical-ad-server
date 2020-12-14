@@ -6,7 +6,6 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
 from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
@@ -311,6 +310,43 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
+
+    def test_ad_response_fields(self):
+        # Test a new style ad
+        self.ad.headline = "Test headline"
+        self.ad.body = "Test ad body"
+        self.ad.cta = "Test CTA"
+        self.ad.text = ""
+        self.ad.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["headline"], self.ad.headline)
+        self.assertEqual(resp_json["body"], self.ad.body)
+        self.assertEqual(resp_json["cta"], self.ad.cta)
+        self.assertTrue(self.ad.body in resp_json["text"])
+
+        # Test old style ad
+        self.ad.headline = None
+        self.ad.body = None
+        self.ad.cta = None
+        self.ad.text = "<a>This is only a test</a>"
+        self.ad.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertEqual(resp_json["headline"], None)
+        self.assertEqual(resp_json["body"], "This is only a test")
+        self.assertEqual(resp_json["cta"], None)
+        self.assertEqual(resp_json["text"], self.ad.text)
 
     def test_force_ad(self):
         # Force ad on the unauthed client

@@ -75,6 +75,8 @@ class AdDecisionView(GeoIpMixin, APIView):
         :>json string id: The advertisement slug of the chosen ad
         :>json string text: The HTML text of only the ad without any images (see ``html`` for full HTML)
         :>json string body: The text of the ad, stripped of any HTML.
+        :>json string headline: An optional headline for the ad (usually displayed before the body in bold)
+        :>json string cta: An optional call to action for the ad (usually displayed after the body in bold)
         :>json string html: An HTML rendering of the ad
         :>json string link: A click URL for the ad
         :>json string view_url: A view URL to count an ad view
