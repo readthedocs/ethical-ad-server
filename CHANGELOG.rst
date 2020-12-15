@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.17.0
+---------------
+
+The big user-facing change on this is to enable the publisher and geo reports for advertisers.
+There's also an easy option to exclude a publisher for an advertiser if requested.
+
+:date: December 15, 2020
+
+ * @davidfischer: Add a backend option to exclude publishers for an advertiser (#300)
+ * @davidfischer: Enable the geo and publisher report for advertisers (#299)
+ * @davidfischer: Fix a few issues with refunding (#298)
+
+
 Version v0.16.0
 ---------------
 
