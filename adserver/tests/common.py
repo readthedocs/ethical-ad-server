@@ -50,7 +50,7 @@ class BaseAdModelsTestCase(TestCase):
             image=None,
             text="<b>Test</b>",
             headline=None,
-            body=None,
+            content=None,
             cta=None,
             flight=self.flight,
         )
@@ -65,7 +65,7 @@ class BaseAdModelsTestCase(TestCase):
             ),
             text="<b>Test</b>",
             headline=None,
-            body=None,
+            content=None,
             cta=None,
             flight=self.flight,
         )

@@ -222,14 +222,20 @@ class TestAdModels(BaseAdModelsTestCase):
             div_id="foo",
             keywords=None,
         )
-        self.assertEqual(output["body"], "Call to Action & such!")
-        self.assertEqual(output["headline"], None)
-        self.assertEqual(output["cta"], None)
+        self.assertTrue("copy" in output)
+        self.assertDictEqual(
+            output["copy"],
+            {
+                "headline": "",
+                "content": "Call to Action & such!",
+                "cta": "",
+            },
+        )
 
     def test_ad_fields_breakout(self):
         self.ad1.text = ""
         self.ad1.headline = "Sample Advertiser"
-        self.ad1.body = "Compelling body copy..."
+        self.ad1.content = "Compelling body copy..."
         self.ad1.cta = "Buy Stuff Today!"
         self.ad1.save()
         self.ad1.ad_types.add(self.text_ad_type)
@@ -243,9 +249,15 @@ class TestAdModels(BaseAdModelsTestCase):
             div_id="foo",
             keywords=None,
         )
-        self.assertEqual(output["headline"], self.ad1.headline)
-        self.assertEqual(output["cta"], self.ad1.cta)
-        self.assertEqual(output["body"], self.ad1.body)
+        self.assertTrue("copy" in output)
+        self.assertDictEqual(
+            output["copy"],
+            {
+                "headline": self.ad1.headline,
+                "content": self.ad1.content,
+                "cta": self.ad1.cta,
+            },
+        )
 
     def test_ad_country_click_breakdown(self):
         dt = timezone.now() - datetime.timedelta(days=30)

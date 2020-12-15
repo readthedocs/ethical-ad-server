@@ -100,7 +100,7 @@ class AdvertisementFormMixin:
 
         # New ads
         headline = cleaned_data.get("headline", "")
-        body = cleaned_data.get("body")
+        content = cleaned_data.get("content")
         cta = cleaned_data.get("cta", "")
 
         if not ad_types:
@@ -166,11 +166,11 @@ class AdvertisementFormMixin:
                 if text:
                     stripped_text = bleach.clean(text, tags=[], strip=True)
                 else:
-                    stripped_text = f"{headline} {body} {cta}"
+                    stripped_text = f"{headline} {content} {cta}"
 
                 if len(stripped_text) > ad_type.max_text_length:
                     self.add_error(
-                        "text" if text else "body",
+                        "text" if text else "content",
                         forms.ValidationError(
                             self.messages["text_too_long"],
                             params={
@@ -220,16 +220,16 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             adtype_queryset = AdType.objects.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
 
-        # Ads are now composed of `headline`, `body`, and `cta`
+        # Ads are now composed of `headline`, `content`, and `cta`
         # but some older ads are just an HTML blob of `text`.
         # Support legacy ads while making sure new ads follow the new convention
-        if not self.instance.pk or self.instance.body:
+        if not self.instance.pk or self.instance.content:
             del self.fields["text"]
-            self.fields["body"].widget.attrs["rows"] = 3
-            ad_display_fields = ["headline", "body", "cta"]
+            self.fields["content"].widget.attrs["rows"] = 3
+            ad_display_fields = ["headline", "content", "cta"]
         else:
             del self.fields["headline"]
-            del self.fields["body"]
+            del self.fields["content"]
             del self.fields["cta"]
             self.fields["text"].widget.attrs["rows"] = 3
             ad_display_fields = ["text"]
@@ -282,7 +282,7 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             "link",
             "text",
             "headline",
-            "body",
+            "content",
             "cta",
         )
         widgets = {

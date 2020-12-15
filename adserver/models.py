@@ -750,8 +750,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     slug = models.SlugField(_("Slug"), max_length=200)
 
     # ad.text used to be a standalone field with certain HTML supported
-    # Now it is constructed from the headline, body, and call to action
-    # Headline, body, and CTA do not allow any HTML
+    # Now it is constructed from the headline, content, and call to action
+    # Headline, content, and CTA do not allow any HTML
     text = models.TextField(
         _("Text"),
         blank=True,
@@ -765,7 +765,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "An optional headline at the end of the ad usually displayed in bold"
         ),
     )
-    body = models.TextField(
+    content = models.TextField(
         blank=True,
         null=True,
         help_text=_(
@@ -974,28 +974,22 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
         )
 
-        text = self.text
-        headline = self.headline
-        body = self.body
-        cta = self.cta
-
-        if not body:
-            # This required unescaping HTML entities that bleach escapes,
-            # allowing it to be used outside of HTML contexts.
-            # https://github.com/mozilla/bleach/issues/192
-            body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
-        if not text:
-            text = self.render_links(click_url)
+        text = self.render_links(click_url)
+        body = html.unescape(bleach.clean(text, tags=[], strip=True))
 
         return {
             "id": self.slug,
             "text": text,
-            "headline": headline,
             "body": body,
-            "cta": cta,
             "html": self.render_ad(
                 ad_type, click_url=click_url, view_url=view_url, publisher=publisher
             ),
+            # Breakdown of the ad text into its component parts
+            "copy": {
+                "headline": self.headline or "",
+                "cta": self.cta or "",
+                "content": self.content or body,
+            },
             "image": self.image.url if self.image else None,
             "link": click_url,
             "view_url": view_url,
@@ -1118,7 +1112,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 {
                     "ad": self,
                 }
-            )
+            ).strip()
         else:
             ad_html = self.text
 

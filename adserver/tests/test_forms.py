@@ -25,7 +25,7 @@ class FormTests(TestCase):
             flight=self.flight,
             text="",  # New style ad
             headline="Old Headline",
-            body="Old Body",
+            content="Old Body",
             cta="Old CTA",
         )
         self.ad.ad_types.add(self.ad_type)
@@ -36,7 +36,7 @@ class FormTests(TestCase):
             flight=self.flight,
             text="This is a test",
             headline="",
-            body="",
+            content="",
             cta="",
         )
         self.old_style_ad.ad_types.add(self.ad_type)
@@ -56,7 +56,7 @@ class FormTests(TestCase):
             "image": None,
             "live": True,
             "headline": "Test Advertiser:",
-            "body": "Compelling Copy...",
+            "content": "Compelling Copy...",
             "cta": "Buy Stuff Today!",
             "ad_types": [self.ad_type.pk],
         }
@@ -131,11 +131,11 @@ class FormTests(TestCase):
 
         expected_text = "{} {} {}".format(
             self.ad_data["headline"],
-            self.ad_data["body"],
+            self.ad_data["content"],
             self.ad_data["cta"],
         )
         self.assertEquals(
-            form.errors["body"],
+            form.errors["content"],
             [
                 AdvertisementForm.messages["text_too_long"]
                 % {
@@ -184,11 +184,11 @@ class FormTests(TestCase):
 
         expected_text = "{} {} {}".format(
             self.ad_data["headline"],
-            self.ad_data["body"],
+            self.ad_data["content"],
             self.ad_data["cta"],
         )
         self.assertEquals(
-            form.errors["body"],
+            form.errors["content"],
             [
                 AdvertisementForm.messages["text_too_long"]
                 % {
@@ -256,12 +256,12 @@ class FormTests(TestCase):
 
         # Another with no need to rewrite the slug
         self.ad_data["name"] = "Test Campaign Third Test"
-        self.ad_data["body"] = "a test"
+        self.ad_data["content"] = "a test"
         form = AdvertisementForm(data=self.ad_data, flight=self.flight)
         self.assertTrue(form.is_valid(), form.errors)
         ad = form.save()
         self.assertEqual(ad.slug, "test-campaign-third-test")
-        self.assertEqual(ad.body, self.ad_data["body"])
+        self.assertEqual(ad.content, self.ad_data["content"])
 
     def test_ad_multiple_ad_types(self):
         self.ad_data["ad_types"] = [self.ad_type.pk, self.image_ad_type.pk]
@@ -282,7 +282,7 @@ class FormTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
 
     # Below are tests for old-style ads with a single text field instead of broken out
-    # headline, body, and CTA
+    # headline, content, and CTA
     def test_ad_form_add_link(self):
         text = self.old_style_ad_data["text"]
         form = AdvertisementForm(

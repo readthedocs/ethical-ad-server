@@ -314,7 +314,7 @@ class AdDecisionApiTests(BaseApiTest):
     def test_ad_response_fields(self):
         # Test a new style ad
         self.ad.headline = "Test headline"
-        self.ad.body = "Test ad body"
+        self.ad.content = "Test ad body"
         self.ad.cta = "Test CTA"
         self.ad.text = ""
         self.ad.save()
@@ -325,14 +325,23 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
-        self.assertEqual(resp_json["headline"], self.ad.headline)
-        self.assertEqual(resp_json["body"], self.ad.body)
-        self.assertEqual(resp_json["cta"], self.ad.cta)
-        self.assertTrue(self.ad.body in resp_json["text"])
+        self.assertTrue("copy" in resp_json)
+        self.assertEqual(resp_json["body"], "Test headline Test ad body Test CTA")
+        self.assertEqual(resp_json["copy"]["headline"], self.ad.headline)
+        self.assertEqual(resp_json["copy"]["cta"], self.ad.cta)
+        self.assertEqual(resp_json["copy"]["content"], self.ad.content)
+        self.assertTrue(self.ad.content in resp_json["text"])
+        self.assertTrue("</a>" in resp_json["text"])
+        self.assertTrue(
+            resp_json["text"].endswith(
+                "<strong>Test headline </strong><span>Test ad body</span><strong> Test CTA</strong></a>"
+            ),
+            resp_json["text"],
+        )
 
         # Test old style ad
         self.ad.headline = None
-        self.ad.body = None
+        self.ad.content = None
         self.ad.cta = None
         self.ad.text = "<a>This is only a test</a>"
         self.ad.save()
@@ -343,10 +352,14 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
-        self.assertEqual(resp_json["headline"], None)
+        self.assertTrue("copy" in resp_json)
         self.assertEqual(resp_json["body"], "This is only a test")
-        self.assertEqual(resp_json["cta"], None)
-        self.assertEqual(resp_json["text"], self.ad.text)
+        self.assertEqual(resp_json["copy"]["headline"], "")
+        self.assertEqual(resp_json["copy"]["cta"], "")
+        self.assertEqual(resp_json["copy"]["content"], "This is only a test")
+        self.assertTrue(
+            resp_json["text"].endswith("This is only a test</a>"), resp_json["text"]
+        )
 
     def test_force_ad(self):
         # Force ad on the unauthed client
