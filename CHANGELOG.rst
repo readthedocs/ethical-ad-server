@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.18.0
+---------------
+
+We made a change to make it a little easier for advertisers to have compelling ads.
+Advertisers can now declare a headline for an ad, a body, and a call to action
+and our default styles bold the headline and CTA.
+These fields are broken out in our JSON API as well for ads if publishers
+do custom integrations.
+No changes were made to existing ads in our system.
+
+:date: December 17, 2020
+
+ * @davidfischer: Break the ad headline and CTA from the body (#302)
+
+
 Version v0.17.0
 ---------------
 
