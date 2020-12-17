@@ -305,6 +305,12 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    exclude_publishers = models.ManyToManyField(
+        Publisher,
+        blank=True,
+        help_text=_("Ads for this campaign will not be shown on these publishers"),
+    )
+
     # Deprecated and scheduled for removal
     publishers = models.ManyToManyField(
         Publisher,
@@ -1412,40 +1418,6 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     def get_absolute_url(self):
         return self.url
 
-    @transaction.atomic
-    def refund(self):
-        """Refund this view or click."""
-        if self.is_refunded:
-            # Prevent double refunding
-            return False
-
-        # Update the denormalized aggregate impression object
-        impression = self.advertisement.impressions.get(
-            publisher=self.publisher, date=self.date.date()
-        )
-        AdImpression.objects.filter(pk=impression.pk).update(
-            **{self.impression_type: models.F(self.impression_type) - 1}
-        )
-
-        # Update the denormalized impressions on the Flight
-        if self.impression_type == VIEWS or (
-            self.impression_type == OFFERS and self.viewed
-        ):
-            Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                total_views=models.F("total_views") - 1
-            )
-        elif self.impression_type == CLICKS or (
-            self.impression_type == OFFERS and self.clicked
-        ):
-            Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                total_clicks=models.F("total_clicks") - 1
-            )
-
-        self.is_refunded = True
-        self.save()
-
-        return True
-
 
 class Click(AdBase):
 
@@ -1493,6 +1465,48 @@ class Offer(AdBase):
     uplifted = models.BooleanField(
         _("Attribute Offer to uplift"), default=None, null=True
     )
+
+    @transaction.atomic
+    def refund(self):
+        """
+        Refund this offer and any clicks/views derived from it.
+
+        This does not modify any denormalized index records (eg. GeoImpression, PlacementImpression)
+        except for AdImpression itself.
+        """
+        if self.is_refunded:
+            # Prevent double refunding
+            return False
+
+        # Update the denormalized aggregate impression object
+        impression = self.advertisement.impressions.get(
+            publisher=self.publisher, date=self.date.date()
+        )
+        AdImpression.objects.filter(pk=impression.pk).update(
+            **{self.impression_type: models.F(self.impression_type) - 1}
+        )
+
+        # Update the denormalized impressions on the Flight
+        # And the denormalized aggregate AdImpressions
+        if self.viewed:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_views=models.F("total_views") - 1
+            )
+            AdImpression.objects.filter(pk=impression.pk).update(
+                **{VIEWS: models.F(VIEWS) - 1}
+            )
+        if self.clicked:
+            Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                total_clicks=models.F("total_clicks") - 1
+            )
+            AdImpression.objects.filter(pk=impression.pk).update(
+                **{CLICKS: models.F(CLICKS) - 1}
+            )
+
+        self.is_refunded = True
+        self.save()
+
+        return True
 
     class Meta:
         # This is needed because we can't sort on pk to get the created ordering

@@ -191,19 +191,38 @@ class AdModelAdminTests(BaseAdModelsTestCase):
             response = self.client.get(url)
             self.assertTrue(response.status_code, 200)
 
-    def test_view_refund_action(self):
+    def test_offer_refund_action(self):
         request = self.factory.get("/")
-        offer = get(Offer, publisher=self.publisher)
 
-        view1 = self.ad1.track_view(request, self.publisher, offer=offer)
-        view2 = self.ad1.track_view(request, self.publisher, offer=offer)
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id="foo",
+            keywords=None,
+        )
+        offer1 = Offer.objects.get(pk=output["nonce"])
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id="foo",
+            keywords=None,
+        )
+        offer2 = Offer.objects.get(pk=output["nonce"])
+
+        view1 = self.ad1.track_view(request, self.publisher, offer=offer1)
+        view2 = self.ad1.track_view(request, self.publisher, offer=offer2)
+        self.ad1.invalidate_nonce(VIEWS, offer1.pk)
+        self.ad1.invalidate_nonce(VIEWS, offer2.pk)
+
         self.assertTrue(view1)
         self.assertTrue(view2)
 
-        url = reverse("admin:adserver_view_changelist")
+        url = reverse("admin:adserver_offer_changelist")
         data = {
             "action": "refund_impressions",
-            "_selected_action": [view1.pk, view2.pk],
+            "_selected_action": [offer1.pk, offer2.pk],
         }
 
         # Verify confirmation page
@@ -213,35 +232,9 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         # Bypass the confirmation page
         data["confirm"] = "yes"
         resp = self.client.post(url, data, follow=True)
-        self.assertContains(resp, "2 views refunded")
+        self.assertContains(resp, "2 offers refunded")
 
-        view1.refresh_from_db()
-        view2.refresh_from_db()
-        self.assertTrue(view1.is_refunded)
-        self.assertTrue(view2.is_refunded)
-
-    def test_click_refund_action(self):
-        request = self.factory.get("/")
-
-        offer = get(Offer, publisher=self.publisher)
-        click = self.ad1.track_click(request, self.publisher, offer=offer)
-        self.assertTrue(click)
-
-        url = reverse("admin:adserver_click_changelist")
-        data = {"action": "refund_impressions", "_selected_action": [click.pk]}
-
-        # Verify confirmation page
-        resp = self.client.post(url, data)
-        self.assertContains(resp, "Are you sure you want to refund")
-
-        # Bypass the confirmation page
-        data["confirm"] = "yes"
-        resp = self.client.post(url, data, follow=True)
-        self.assertContains(resp, "1 clicks refunded")
-
-        click.refresh_from_db()
-        self.assertTrue(click.is_refunded)
-
-        # Can't double refund
-        resp = self.client.post(url, data, follow=True)
-        self.assertContains(resp, "0 clicks refunded")
+        offer1.refresh_from_db()
+        offer2.refresh_from_db()
+        self.assertTrue(offer1.is_refunded)
+        self.assertTrue(offer2.is_refunded)
