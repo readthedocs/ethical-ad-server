@@ -49,6 +49,9 @@ class BaseAdModelsTestCase(TestCase):
             live=True,
             image=None,
             text="<b>Test</b>",
+            headline=None,
+            content=None,
+            cta=None,
             flight=self.flight,
         )
         self.ad2 = get(
@@ -61,6 +64,9 @@ class BaseAdModelsTestCase(TestCase):
                 name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
             ),
             text="<b>Test</b>",
+            headline=None,
+            content=None,
+            cta=None,
             flight=self.flight,
         )
 

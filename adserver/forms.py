@@ -77,7 +77,7 @@ class AdvertisementFormMixin:
             "(it is %(width)s * %(height)s)"
         ),
         "text_too_long": _(
-            "Text for '%(ad_type)s' ads must be %(ad_type_max_chars)s characters or less "
+            "Total text for '%(ad_type)s' ads must be %(ad_type_max_chars)s characters or less "
             "(it is %(text_len)s)"
         ),
     }
@@ -94,14 +94,21 @@ class AdvertisementFormMixin:
 
         ad_types = cleaned_data.get("ad_types")
         image = cleaned_data.get("image")
+
+        # Old ads
         text = cleaned_data.get("text")
+
+        # New ads
+        headline = cleaned_data.get("headline", "")
+        content = cleaned_data.get("content")
+        cta = cleaned_data.get("cta", "")
 
         if not ad_types:
             self.add_error(
                 "ad_types", forms.ValidationError(self.messages["ad_type_required"])
             )
-        else:
-            # Clean HTML tags - this requires at least one ad type
+        elif text:
+            # Clean HTML tags on `text` - this requires at least one ad type
             allowed_tags = set(ad_types[0].allowed_html_tags.split())
             for ad_type in ad_types:
                 allowed_tags = allowed_tags.intersection(
@@ -156,10 +163,14 @@ class AdvertisementFormMixin:
 
             # Check text length
             if ad_type.max_text_length:
-                stripped_text = bleach.clean(text, tags=[], strip=True)
+                if text:
+                    stripped_text = bleach.clean(text, tags=[], strip=True)
+                else:
+                    stripped_text = f"{headline} {content} {cta}"
+
                 if len(stripped_text) > ad_type.max_text_length:
                     self.add_error(
-                        "text",
+                        "text" if text else "content",
                         forms.ValidationError(
                             self.messages["text_too_long"],
                             params={
@@ -193,7 +204,6 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
-        self.helper.add_input(Submit("submit", _("Save advertisement")))
 
         self.fields["name"].help_text = _(
             "A helpful name for the ad which is not displayed to site visitors."
@@ -209,6 +219,38 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         else:
             adtype_queryset = AdType.objects.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
+
+        # Ads are now composed of `headline`, `content`, and `cta`
+        # but some older ads are just an HTML blob of `text`.
+        # Support legacy ads while making sure new ads follow the new convention
+        if not self.instance.pk or self.instance.content:
+            del self.fields["text"]
+            self.fields["content"].widget.attrs["rows"] = 3
+            ad_display_fields = ["headline", "content", "cta"]
+        else:
+            del self.fields["headline"]
+            del self.fields["content"]
+            del self.fields["cta"]
+            self.fields["text"].widget.attrs["rows"] = 3
+            ad_display_fields = ["text"]
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                "name",
+                "live",
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Advertisement display"),
+                "ad_types",
+                "link",
+                "image",
+                *ad_display_fields,
+                css_class="my-3",
+            ),
+            Submit("submit", _("Save advertisement")),
+        )
 
     def generate_slug(self):
         campaign_slug = self.flight.campaign.slug
@@ -232,7 +274,17 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
     class Meta:
         model = Advertisement
-        fields = ("name", "live", "ad_types", "image", "link", "text")
+        fields = (
+            "name",
+            "live",
+            "ad_types",
+            "image",
+            "link",
+            "text",
+            "headline",
+            "content",
+            "cta",
+        )
         widgets = {
             "image": forms.FileInput(),
             "ad_types": forms.CheckboxSelectMultiple(),

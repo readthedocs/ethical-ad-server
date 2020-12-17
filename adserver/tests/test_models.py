@@ -222,7 +222,42 @@ class TestAdModels(BaseAdModelsTestCase):
             div_id="foo",
             keywords=None,
         )
-        self.assertEqual(output["body"], "Call to Action & such!")
+        self.assertTrue("copy" in output)
+        self.assertDictEqual(
+            output["copy"],
+            {
+                "headline": "",
+                "content": "Call to Action & such!",
+                "cta": "",
+            },
+        )
+
+    def test_ad_fields_breakout(self):
+        self.ad1.text = ""
+        self.ad1.headline = "Sample Advertiser"
+        self.ad1.content = "Compelling body copy..."
+        self.ad1.cta = "Buy Stuff Today!"
+        self.ad1.save()
+        self.ad1.ad_types.add(self.text_ad_type)
+
+        request = self.factory.get("/")
+
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id="foo",
+            keywords=None,
+        )
+        self.assertTrue("copy" in output)
+        self.assertDictEqual(
+            output["copy"],
+            {
+                "headline": self.ad1.headline,
+                "content": self.ad1.content,
+                "cta": self.ad1.cta,
+            },
+        )
 
     def test_ad_country_click_breakdown(self):
         dt = timezone.now() - datetime.timedelta(days=30)

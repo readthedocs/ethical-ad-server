@@ -684,6 +684,9 @@ class AdType(TimeStampedModel, models.Model):
     max_text_length = models.PositiveIntegerField(
         blank=True, null=True, help_text=_("Max length does not include HTML tags")
     )
+
+    # Deprecated - new ads don't allow any HTML
+    # They are instead broken into a headline, body, and call to action
     allowed_html_tags = models.CharField(
         _("Allowed HTML tags"),
         blank=True,
@@ -751,11 +754,41 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Slug"), max_length=200)
+
+    # ad.text used to be a standalone field with certain HTML supported
+    # Now it is constructed from the headline, content, and call to action
+    # Headline, content, and CTA do not allow any HTML
     text = models.TextField(
         _("Text"),
         blank=True,
-        help_text=_("Different ad types have different text requirements"),
+        help_text=_("For most ad types, the text should be less than 100 characters."),
     )
+    headline = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text=_(
+            "An optional headline at the end of the ad usually displayed in bold"
+        ),
+    )
+    content = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "For most ad types, the combined length of the headline, body, and call to action "
+            "should be less than 100 characters."
+        ),
+    )
+    cta = models.CharField(
+        _("Call to action"),
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text=_(
+            "An optional call to action displayed at the end of the ad usually in bold"
+        ),
+    )
+
     # Supports simple variables like ${publisher} and ${advertisement}
     # using string.Template syntax
     link = models.URLField(_("Link URL"), max_length=255)
@@ -947,18 +980,22 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
         )
 
-        # This required unescaping HTML entities that bleach escapes,
-        # allowing it to be used outside of HTML contexts.
-        # https://github.com/mozilla/bleach/issues/192
-        body = html.unescape(bleach.clean(self.text, tags=[], strip=True))
+        text = self.render_links(click_url)
+        body = html.unescape(bleach.clean(text, tags=[], strip=True))
 
         return {
             "id": self.slug,
-            "text": self.text,
+            "text": text,
             "body": body,
             "html": self.render_ad(
                 ad_type, click_url=click_url, view_url=view_url, publisher=publisher
             ),
+            # Breakdown of the ad text into its component parts
+            "copy": {
+                "headline": self.headline or "",
+                "cta": self.cta or "",
+                "content": self.content or body,
+            },
             "image": self.image.url if self.image else None,
             "link": click_url,
             "view_url": view_url,
@@ -1075,10 +1112,18 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Does not include any callouts such as "ads served ethically"
         """
         url = link or self.link
+        if not self.text:
+            template = get_template("adserver/advertisement-body.html")
+            ad_html = template.render(
+                {
+                    "ad": self,
+                }
+            ).strip()
+        else:
+            ad_html = self.text
+
         return mark_safe(
-            self.text.replace(
-                "<a>", '<a href="%s" rel="nofollow" target="_blank">' % url
-            )
+            ad_html.replace("<a>", '<a href="%s" rel="nofollow" target="_blank">' % url)
         )
 
     def render_ad(self, ad_type, click_url=None, view_url=None, publisher=None):

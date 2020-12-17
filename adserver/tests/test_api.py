@@ -6,7 +6,6 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
 from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
@@ -311,6 +310,56 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json, {})
+
+    def test_ad_response_fields(self):
+        # Test a new style ad
+        self.ad.headline = "Test headline"
+        self.ad.content = "Test ad body"
+        self.ad.cta = "Test CTA"
+        self.ad.text = ""
+        self.ad.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertTrue("copy" in resp_json)
+        self.assertEqual(resp_json["body"], "Test headline Test ad body Test CTA")
+        self.assertEqual(resp_json["copy"]["headline"], self.ad.headline)
+        self.assertEqual(resp_json["copy"]["cta"], self.ad.cta)
+        self.assertEqual(resp_json["copy"]["content"], self.ad.content)
+        self.assertTrue(self.ad.content in resp_json["text"])
+        self.assertTrue("</a>" in resp_json["text"])
+        self.assertTrue(
+            resp_json["text"].endswith(
+                "<strong>Test headline </strong><span>Test ad body</span><strong> Test CTA</strong></a>"
+            ),
+            resp_json["text"],
+        )
+
+        # Test old style ad
+        self.ad.headline = None
+        self.ad.content = None
+        self.ad.cta = None
+        self.ad.text = "<a>This is only a test</a>"
+        self.ad.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertTrue("id" in resp_json)
+        self.assertTrue("copy" in resp_json)
+        self.assertEqual(resp_json["body"], "This is only a test")
+        self.assertEqual(resp_json["copy"]["headline"], "")
+        self.assertEqual(resp_json["copy"]["cta"], "")
+        self.assertEqual(resp_json["copy"]["content"], "This is only a test")
+        self.assertTrue(
+            resp_json["text"].endswith("This is only a test</a>"), resp_json["text"]
+        )
 
     def test_force_ad(self):
         # Force ad on the unauthed client
