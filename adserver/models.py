@@ -13,6 +13,7 @@ from django.core.validators import MinValueValidator
 from django.db import IntegrityError
 from django.db import models
 from django.db import transaction
+from django.db.models.constraints import UniqueConstraint
 from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
@@ -1227,6 +1228,14 @@ class AdImpression(BaseImpression):
     )
 
     class Meta:
+        # We must also constrain when the `advertisement` is null
+        constraints = (
+            UniqueConstraint(
+                fields=("publisher", "date"),
+                condition=models.Q(advertisement=None),
+                name="null_offer_unique",
+            ),
+        )
         ordering = ("-date",)
         unique_together = ("publisher", "advertisement", "date")
         verbose_name_plural = _("Ad impressions")
