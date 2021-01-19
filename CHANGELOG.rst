@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.18.1
+---------------
+
+This change included just a new constraint to prevent a DB race condition.
+Depending on your database, you may need to remove some records to apply the constraint.
+See the migration file for a query to get the records that need to be removed.
+
+:date: January 19, 2021
+
+ * @davidfischer: Add a null offer constraint (#306)
+
+
 Version v0.18.0
 ---------------
 
