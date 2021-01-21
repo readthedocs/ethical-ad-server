@@ -78,6 +78,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "allow_house_campaigns",
         "record_views",
     )
+    list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("publisher_group_list", "modified", "created")
     search_fields = ("name", "slug")
@@ -105,8 +106,10 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     actions = ["action_create_draft_invoice"]
     list_display = ("name", "report", "stripe_customer")
+    list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created", "stripe_customer")
+    search_fields = ("name", "slug", "stripe_customer_id")
 
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
@@ -592,6 +595,7 @@ class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "ecpm",
     )
     list_filter = ("campaign_type", "advertiser")
+    list_per_page = 500
     list_select_related = ("advertiser",)
     raw_id_fields = ("advertiser",)
     readonly_fields = ("campaign_report", "total_value", "modified", "created")
