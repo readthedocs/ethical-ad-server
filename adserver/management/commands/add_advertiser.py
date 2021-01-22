@@ -188,9 +188,7 @@ class Command(BaseCommand):
             email=user.email,
             description=f"Advertising @ {advertiser.name}",
         )
-        self.stdout.write(
-            self.style.SUCCESS(_("SuccessSuccessfully created Stripe customer"))
-        )
+        self.stdout.write(self.style.SUCCESS(_("Successfully created Stripe customer")))
         return stripe_customer
 
     def handle(self, *args, **kwargs):
