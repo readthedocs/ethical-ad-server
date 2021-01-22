@@ -769,7 +769,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         help_text=_(
-            "An optional headline at the end of the ad usually displayed in bold"
+            "An optional headline at the beginning of the ad usually displayed in bold"
         ),
     )
     content = models.TextField(
