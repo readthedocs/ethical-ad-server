@@ -44,7 +44,7 @@ django-countries==5.4
 analytical==0.0.1
 
 jsonfield==2.0.2
-bleach==3.1.4
+bleach==3.3.0
 
 # Security features
 django-enforce-host==1.0.1
