@@ -953,7 +953,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         log.debug("Not recording ad view.")
         return None
 
-    def offer_ad(self, request, publisher, ad_type_slug, div_id, keywords):
+    def offer_ad(
+        self, request, publisher, ad_type_slug, div_id, keywords, forced=False
+    ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
 
@@ -971,7 +973,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=ad_type_slug,
         )
 
-        nonce = offer.pk
+        if forced:
+            # Ad offers forced to a specific ad or campaign should never be billed
+            # By discarding the nonce, the ad view/click will never count
+            nonce = "forced"
+        else:
+            nonce = offer.pk
 
         view_url = generate_absolute_url(
             "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}

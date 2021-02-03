@@ -977,6 +977,36 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
+    def test_ad_views_for_forced_ads(self):
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            # When an ad is forced, it shouldn't count for billing views/clicks
+            "force_ad": self.ad.slug,
+        }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        nonce = data["nonce"]
+
+        self.assertEqual(nonce, "forced")
+
+        # Simulate an ad view and verify it was viewed
+        view_url = reverse(
+            "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+
+        resp = self.proxy_client.get(view_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Unknown offer")
+
+        # Verify an impression was written - but not considered viewed
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.offers, 1)
+        self.assertEqual(impression.views, 0)
+
     def test_ad_click_and_tracking(self):
         data = {
             "placements": self.placements,
