@@ -142,7 +142,7 @@ class AdDecisionView(GeoIpMixin, APIView):
     permission_classes = (AdDecisionPermission,)
     renderer_classes = (JSONRenderer, JSONPRenderer)
 
-    def _prepare_response(self, ad, placement, publisher, keywords):
+    def _prepare_response(self, ad, placement, publisher, keywords, forced=False):
         """
         Wrap `offer_ad` with the placement for the publisher.
 
@@ -171,6 +171,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             ad_type_slug=ad_type_slug,
             div_id=div_id,
             keywords=keywords,
+            forced=forced,
         )
         log.debug(
             "Offering ad. publisher=%s ad_type=%s div_id=%s keywords=%s",
@@ -236,6 +237,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :return: An add decision (JSON) or an empty JSON dict
         """
         serializer = AdDecisionSerializer(data=data)
+        forced = False
 
         if serializer.is_valid():
             publisher = serializer.validated_data["publisher"]
@@ -255,6 +257,11 @@ class AdDecisionView(GeoIpMixin, APIView):
             )
             ad, placement = backend.get_ad_and_placement()
 
+            if serializer.validated_data.get(
+                "force_ad"
+            ) or serializer.validated_data.get("force_campaign"):
+                forced = True
+
             return Response(
                 self._prepare_response(
                     ad=ad,
@@ -262,6 +269,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     publisher=publisher,
                     # We need backend.keywords here to get the combined publisher/user keywords
                     keywords=backend.keywords,
+                    forced=forced,
                 )
             )
 
