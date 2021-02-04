@@ -3,11 +3,10 @@ Installation
 
 The Ethical Ad Server is intended to be run on any host that can run a Dockerized application,
 such as Heroku, AWS Elastic Beanstalk, Azure App Service, or on your own infrastructure.
+It can also be run directly on virtual machines. It is intended to be run with:
 
-If you just want to use our built Docker image, it is available on `Docker Hub`_.
-Alternatively, for heavy customization, see the section on :ref:`install/installation:Building the Docker image`.
-
-.. _Docker Hub: https://hub.docker.com/repository/docker/readthedocs/ethicaladserver
+* PostgreSQL
+* Redis
 
 
 Configuring the ad server
