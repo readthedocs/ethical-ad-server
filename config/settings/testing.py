@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", message="No directory at", module="whitenoise.
 
 TESTING = True
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
-LOGGING["loggers"]["adserver"]["level"] = "ERROR"
+LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 
 # Whitenoise relies on the manifest being present.
 # Which may not be there in testing

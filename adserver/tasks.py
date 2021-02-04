@@ -6,6 +6,8 @@ import logging
 from celery.utils.iso8601 import parse_iso8601
 from django.db.models import Count
 from django.db.models import F
+from django.utils.timezone import is_naive
+from django.utils.timezone import utc
 
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
@@ -32,6 +34,8 @@ def _get_day(day):
             log.info("Converting day from string")
             day = parse_iso8601(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        if is_naive(start_date):
+            start_date = utc.localize(start_date)
     end_date = start_date + datetime.timedelta(days=1)
 
     return (start_date, end_date)

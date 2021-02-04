@@ -9,13 +9,12 @@ Example::
     # List all active payouts and show the email
     ./manage.py payouts --email
 """
-import datetime
-
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.template import Context
 from django.template import Template
+from django.utils import timezone
 
 from ...models import Publisher
 from ...utils import generate_publisher_payout_data
@@ -252,7 +251,7 @@ class Command(BaseCommand):
                     self.stdout.write("Skipping payout\n")
                 else:
                     publisher.payouts.create(
-                        date=datetime.datetime.utcnow(),
+                        date=timezone.now(),
                         method=publisher.payout_method,
                         amount=due_balance,
                         note=report_url,
