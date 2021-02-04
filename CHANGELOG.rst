@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.19.0
+---------------
+
+Most of these changes were minor quality of life improvements for managing the ad server.
+It did involve a small dependency bump so it is a minor version increase.
+
+:date: February 4, 2021
+
+ * @davidfischer: Minor testing changes (#315)
+ * @davidfischer: Don't count ad display when a particular ad is forced (#314)
+ * @dependabot[bot]: Bump bleach from 3.1.4 to 3.3.0 in /requirements (#313)
+ * @davidfischer: Show whats left on a flight always (#312)
+ * @davidfischer: Add a management command for creating advertisers (#311)
+ * @davidfischer: Fix a typo in the help text (#310)
+ * @davidfischer: Small admin improvements (#309)
+ * @davidfischer: Remove the link to DockerHub in the docs (#307)
+ * @davidfischer: Show top publishers for an ad flight (#172)
+
 Version v0.18.1
 ---------------
 
