@@ -1446,6 +1446,8 @@ class AllPublisherReportView(BaseReportView):
                 pass
 
         publishers_and_reports = []
+        report = None
+        sort_options = None
         for publisher in publishers:
             queryset = self.get_queryset(
                 publisher=publisher,
@@ -1459,13 +1461,14 @@ class AllPublisherReportView(BaseReportView):
                 publishers_and_reports.append((publisher, report))
 
         # Sort reports by revenue
-        sort_options = report.total.keys()
-        if sort and sort in sort_options:
-            publishers_and_reports = sorted(
-                publishers_and_reports,
-                key=lambda obj: obj[1].total[sort],
-                reverse=True,
-            )
+        if publishers_and_reports and report:
+            sort_options = report.total.keys()
+            if sort and sort in sort_options:
+                publishers_and_reports = sorted(
+                    publishers_and_reports,
+                    key=lambda obj: obj[1].total[sort],
+                    reverse=True,
+                )
 
         total_clicks = sum(
             report.total["clicks"] for _, report in publishers_and_reports
