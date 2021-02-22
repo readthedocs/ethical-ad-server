@@ -248,3 +248,23 @@ def daily_update_uplift(day=None):
             UpliftImpression.objects.filter(pk=impression.pk).update(
                 **{impression_type: values["total"]}
             )
+
+
+@app.task()
+def daily_update_all_reports(day=None):
+    """
+    Complete all report data for the previous day.
+
+    :arg day: An optional datetime object representing a day.
+    """
+    start_date, _ = _get_day(day)
+
+    # Do the previous day now that the day is complete
+    start_date -= datetime.timedelta(days=1)
+
+    # Do all reports
+    daily_update_geos(start_date)
+    daily_update_placements(start_date)
+    daily_update_impressions(start_date)
+    daily_update_keywords(start_date)
+    daily_update_uplift(start_date)
