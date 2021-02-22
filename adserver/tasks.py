@@ -251,7 +251,7 @@ def daily_update_uplift(day=None):
 
 
 @app.task()
-def daily_update_all_reports(day=None):
+def update_previous_day_reports(day=None):
     """
     Complete all report data for the previous day.
 

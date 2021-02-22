@@ -124,7 +124,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     # Run the previous days reports
     "every-day-generate-indexes-all-reports": {
-        "task": "adserver.tasks.daily_update_all_reports",
+        "task": "adserver.tasks.update_previous_day_reports",
         "schedule": crontab(hour="2", minute="0"),
     },
 }

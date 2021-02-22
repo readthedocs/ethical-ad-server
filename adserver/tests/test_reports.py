@@ -23,12 +23,12 @@ from ..models import Publisher
 from ..reports import AdvertiserReport
 from ..reports import PublisherGeoReport
 from ..reports import PublisherReport
-from ..tasks import daily_update_all_reports
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
 from ..tasks import daily_update_uplift
+from ..tasks import update_previous_day_reports
 from ..utils import calculate_ecpm
 from ..utils import get_ad_day
 
@@ -921,7 +921,7 @@ class TestReportTasks(TestReportsBase):
         ) as patched_placements, patch(
             "adserver.tasks.daily_update_uplift"
         ) as patched_uplift:
-            daily_update_all_reports()
+            update_previous_day_reports()
 
             yesterday = get_ad_day() - datetime.timedelta(days=1)
             patched_geos.assert_called_with(yesterday)
