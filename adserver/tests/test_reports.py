@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -27,7 +28,9 @@ from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
 from ..tasks import daily_update_uplift
+from ..tasks import update_previous_day_reports
 from ..utils import calculate_ecpm
+from ..utils import get_ad_day
 
 
 class TestReportsBase(TestCase):
@@ -907,3 +910,23 @@ class TestReportClasses(TestReportsBase):
         self.assertAlmostEqual(report.total["cost"], 2.0)
         self.assertAlmostEqual(report.total["ctr"], 100 * 1 / 4)
         self.assertAlmostEqual(report.total["ecpm"], calculate_ecpm(2.0, 4))
+
+
+class TestReportTasks(TestReportsBase):
+    def test_index_all_reports(self):
+        with patch("adserver.tasks.daily_update_geos") as patched_geos, patch(
+            "adserver.tasks.daily_update_keywords"
+        ) as patched_keywords, patch(
+            "adserver.tasks.daily_update_placements"
+        ) as patched_placements, patch(
+            "adserver.tasks.daily_update_uplift"
+        ) as patched_uplift:
+            update_previous_day_reports()
+
+            yesterday = get_ad_day() - datetime.timedelta(days=1)
+            patched_geos.assert_called_with(yesterday)
+
+            self.assertTrue(patched_geos.called)
+            self.assertTrue(patched_keywords.called)
+            self.assertTrue(patched_placements.called)
+            self.assertTrue(patched_uplift.called)
