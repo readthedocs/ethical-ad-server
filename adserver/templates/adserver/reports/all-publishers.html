@@ -18,7 +18,7 @@
 {% block additional_filters %}
 
 <div class="col-lg-2 col-md-4 mb-3">
-  <label class="col-form-label" for="id_campaign_type">{% trans 'Revenue Share' %}</label>
+  <label class="col-form-label" for="id_revenue_share_percentage">{% trans 'Revenue Share' %}</label>
   <select class="form-control" name="revenue_share_percentage" id="id_revenue_share_percentage">
     <option>All shares</option>
     {% for option in revshare_options %}
@@ -28,7 +28,7 @@
 </div>
 
 <div class="col-lg-2 col-md-4 mb-3">
-  <label class="col-form-label" for="id_campaign_type">{% trans 'Sort' %}</label>
+  <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
   <select class="form-control" name="sort" id="id_sort">
     <option value="name">Name</option>
     {% for option in sort_options %}
@@ -55,22 +55,31 @@
 {% endblock toc %}
 
 
+{# Summary block is overridden by all-publishers-uplift.html #}
 {% block summary %}
   <section>
     <div>
-      <h2>
-        {% trans 'Total results for all publishers' %}
-      </h2>
+      <div class="row">
+        <h2 class="col-md-8">{% block summary-heading %}{% trans 'Total results for all publishers' %}{% endblock summary-heading %}</h2>
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right d-print-none">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
+      </div>
       <table class="table table-hover">
         <thead>
           <tr>
             <th><strong>{% trans 'Time Period' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
+            <th class="text-right"><strong>{% block summary-total-views %}{% trans 'Total&nbsp;Views' %}{% endblock summary-total-views %}</strong></th>
+            <th class="text-right"><strong>{% block summary-total-clicks %}{% trans 'Total&nbsp;Clicks' %}{% endblock summary-total-clicks %}</strong></th>
             <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
             <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
             <th class="text-right"><strong>{% trans 'Total&nbsp;Revenue' %}</strong></th>
-            <th class="text-right"><strong>{% trans 'Our&nbsp;Revenue&nbsp;Share' %}</strong></th>
+            <th class="text-right"><strong>{% block summary-our-revenue %}{% trans 'Our&nbsp;Revenue&nbsp;Share' %}{% endblock summary-our-revenue %}</strong></th>
           </tr>
         </thead>
         <tbody>

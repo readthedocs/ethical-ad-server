@@ -27,3 +27,49 @@
   </p>
 </section>
 {% endblock explainer %}
+
+
+{% block toc %}{% endblock toc %}
+{% block summary-heading %}{% trans 'Total uplift results for all publishers' %}{% endblock summary-heading %}
+{% block summary-total-views %}{% trans 'Uplift&nbsp;Views' %}{% endblock summary-total-views %}
+{% block summary-total-clicks %}{% trans 'Uplift&nbsp;Clicks' %}{% endblock summary-total-clicks %}
+{% block summary-our-revenue %}{% trans 'Our&nbsp;Uplift&nbsp;Revenue' %}{% endblock summary-our-revenue %}
+
+
+{% block report %}
+  {% if publishers_and_reports %}
+  <section class="mt-5">
+    <h3>Publisher breakdown</h3>
+    <table class="table table-hover report">
+      <thead>
+        <tr>
+          <th><strong>{% trans 'Publisher' %}</strong></th>
+          <th class="text-right"><strong>{% trans 'Uplift&nbsp;Views' %}</strong></th>
+          <th class="text-right"><strong>{% trans 'Uplift&nbsp;Clicks' %}</strong></th>
+          <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+          <th class="text-right"><strong>{% trans 'Total&nbsp;Revenue' %}</strong></th>
+          <th class="text-right"><strong>{% trans 'Publisher&nbsp;Revenue' %}</strong></th>
+          {% if request.user.is_staff %}
+            <th class="text-right"><strong>{% trans 'Our&nbsp;Uplift&nbsp;Revenue' %}</strong></th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for publisher, report in publishers_and_reports %}
+        <tr>
+          <td>{{ publisher.name }}</td>
+          <td class="text-right">{{ report.total.views|intcomma }}</td>
+          <td class="text-right">{{ report.total.clicks|intcomma }}</td>
+          <td class="text-right">{{ report.total.ctr|floatformat:3 }}%</td>
+          <td class="text-right">${{ report.total.revenue|floatformat:2|intcomma }}</td>
+          <td class="text-right">${{ report.total.revenue_share|floatformat:2|intcomma }}</td>
+          {% if request.user.is_staff %}
+            <td class="text-right">${{ report.total.our_revenue|floatformat:2|intcomma }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+{% endblock report %}
