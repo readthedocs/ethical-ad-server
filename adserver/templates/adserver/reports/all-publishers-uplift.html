@@ -1,4 +1,4 @@
-{% extends "adserver/reports/all-publishers.html" %}
+{% extends "adserver/reports/publisher.html" %}
 {% load humanize %}
 {% load i18n %}
 
@@ -14,62 +14,38 @@
   <li class="breadcrumb-item active">{% trans 'Uplift Report' %}</li>
 {% endblock breadcrumbs %}
 
+
+{% block additional_filters %}
+  <div class="col-lg-2 col-md-4 mb-3">
+    <label class="col-form-label" for="id_revenue_share_percentage">{% trans 'Revenue Share' %}</label>
+    <select class="form-control" name="revenue_share_percentage" id="id_revenue_share_percentage">
+      <option>All shares</option>
+      {% for option in revshare_options %}
+        <option value="{{ option }}"{% if revenue_share_percentage == option %} selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-lg-2 col-md-4 mb-3">
+    <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
+    <select class="form-control" name="sort" id="id_sort">
+      {% for option in sort_options %}
+      <option value="{{ option }}" {% if sort == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endblock additional_filters %}
+
+
 {% block explainer %}
 <section class="mb-5">
   <h3>About this report</h3>
+  <p>This report shows the additional advertising data that we can attribute to Acceptable Ads.</p>
   <p>
-    This report shows the additional advertising data that we can attribute to Acceptable Ads.
-  </p>
-  <p>
-  <em>
-  This report shows all publishers and updates periodically. All previous days data is complete.
-  </em>
+    <em>This report shows all publishers and updates periodically. All previous days data is complete.</em>
   </p>
 </section>
 {% endblock explainer %}
 
 
-{% block toc %}{% endblock toc %}
 {% block summary-heading %}{% trans 'Total uplift results for all publishers' %}{% endblock summary-heading %}
-{% block summary-total-views %}{% trans 'Uplift&nbsp;Views' %}{% endblock summary-total-views %}
-{% block summary-total-clicks %}{% trans 'Uplift&nbsp;Clicks' %}{% endblock summary-total-clicks %}
-{% block summary-our-revenue %}{% trans 'Our&nbsp;Uplift&nbsp;Revenue' %}{% endblock summary-our-revenue %}
-
-
-{% block report %}
-  {% if publishers_and_reports %}
-  <section class="mt-5">
-    <h3>Publisher breakdown</h3>
-    <table class="table table-hover report">
-      <thead>
-        <tr>
-          <th><strong>{% trans 'Publisher' %}</strong></th>
-          <th class="text-right"><strong>{% trans 'Uplift&nbsp;Views' %}</strong></th>
-          <th class="text-right"><strong>{% trans 'Uplift&nbsp;Clicks' %}</strong></th>
-          <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-          <th class="text-right"><strong>{% trans 'Total&nbsp;Revenue' %}</strong></th>
-          <th class="text-right"><strong>{% trans 'Publisher&nbsp;Revenue' %}</strong></th>
-          {% if request.user.is_staff %}
-            <th class="text-right"><strong>{% trans 'Our&nbsp;Uplift&nbsp;Revenue' %}</strong></th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for publisher, report in publishers_and_reports %}
-        <tr>
-          <td>{{ publisher.name }}</td>
-          <td class="text-right">{{ report.total.views|intcomma }}</td>
-          <td class="text-right">{{ report.total.clicks|intcomma }}</td>
-          <td class="text-right">{{ report.total.ctr|floatformat:3 }}%</td>
-          <td class="text-right">${{ report.total.revenue|floatformat:2|intcomma }}</td>
-          <td class="text-right">${{ report.total.revenue_share|floatformat:2|intcomma }}</td>
-          {% if request.user.is_staff %}
-            <td class="text-right">${{ report.total.our_revenue|floatformat:2|intcomma }}</td>
-          {% endif %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-  {% endif %}
-{% endblock report %}

@@ -152,6 +152,11 @@ urlpatterns = [
         name="publisher_uplift_report",
     ),
     path(
+        r"publisher/all/report/uplift.csv",
+        UpliftReportView.as_view(export=True),
+        name="publisher_uplift_report_export",
+    ),
+    path(
         r"publisher/<slug:publisher_slug>/",
         PublisherMainView.as_view(),
         name="publisher_main",

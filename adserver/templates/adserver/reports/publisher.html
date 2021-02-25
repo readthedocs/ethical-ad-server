@@ -36,7 +36,7 @@
   <section>
     <div>
       <div class="row">
-        <h2 class="col-md-8">{% trans 'Advertising results' %}</h2>
+        <h2 class="col-md-8">{% block summary-heading %}{% trans 'Advertising results' %}{% endblock summary-heading %}</h2>
 
         {% if export_url %}
           <aside class="mb-3 col-md-4 text-right">

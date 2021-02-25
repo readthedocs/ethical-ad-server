@@ -616,6 +616,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         # Publisher filters
         if "publisher" in kwargs and kwargs["publisher"]:
             queryset = queryset.filter(publisher=kwargs["publisher"])
+        if "publishers" in kwargs and kwargs["publishers"]:
+            queryset = queryset.filter(publisher__in=kwargs["publishers"])
         if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
             queryset = queryset.filter(
                 advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
@@ -1536,14 +1538,71 @@ class AllPublisherReportView(BaseReportView):
         return context
 
 
-class UpliftReportView(AllPublisherReportView):
+class UpliftReportView(BaseReportView):
 
     """An uplift report for all publishers."""
 
+    export_view = "publisher_uplift_report_export"
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
     model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
     template_name = "adserver/reports/all-publishers-uplift.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sort = self.request.GET.get("sort", "")
+        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
+
+        # Get all publishers where an ad has a view or click in the specified date range
+        impressions = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
+        publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
+
+        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
+        if revenue_share_percentage:
+            try:
+                publishers = publishers.filter(
+                    revenue_share_percentage=float(revenue_share_percentage)
+                )
+            except ValueError:
+                pass
+
+        queryset = self.get_queryset(
+            publishers=publishers,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+        )
+
+        report = self.report(
+            queryset,
+            max_results=None,
+            force_revshare=force_revshare,
+            order=sort if sort else None,
+        )
+        report.generate()
+        sort_options = report.total.keys()
+
+        context.update(
+            {
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                # Make these strings to easily compare with GET args
+                "revshare_options": set(
+                    str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
+                ),
+                "revenue_share_percentage": revenue_share_percentage,
+                "sort": sort,
+                "sort_options": sort_options,
+                "export_url": self.get_export_url(),
+            }
+        )
+
+        return context
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
