@@ -99,9 +99,9 @@ class AdvertisementFormMixin:
         text = cleaned_data.get("text")
 
         # New ads
-        headline = cleaned_data.get("headline", "")
+        headline = cleaned_data.get("headline") or ""
         content = cleaned_data.get("content")
-        cta = cleaned_data.get("cta", "")
+        cta = cleaned_data.get("cta") or ""
 
         if not ad_types:
             self.add_error(
@@ -166,7 +166,7 @@ class AdvertisementFormMixin:
                 if text:
                     stripped_text = bleach.clean(text, tags=[], strip=True)
                 else:
-                    stripped_text = f"{headline} {content} {cta}"
+                    stripped_text = f"{headline}{content}{cta}"
 
                 if len(stripped_text) > ad_type.max_text_length:
                     self.add_error(

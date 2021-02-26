@@ -119,20 +119,30 @@ class FormTests(TestCase):
         )
         self.assertTrue(form.is_valid(), form.errors)
 
-        # Shorten the maximum allowed text to test text too long
-        self.ad_type.max_text_length = 10
-        self.ad_type.save()
+        data = self.ad_data.copy()
+        data["headline"] = ""
+        data["content"] = (
+            "This is precisely 100 characters if you count the number exactly. "
+            "I know it's true because I counted"
+        )
+        data["cta"] = ""
+
+        form = AdvertisementForm(
+            data=data, files={}, instance=self.ad, flight=self.flight
+        )
+        self.assertTrue(form.is_valid(), form.errors)
 
         # Invalid - text too long
+        data["headline"] = "1"
         form = AdvertisementForm(
-            data=self.ad_data, instance=self.ad, flight=self.flight
+            data=data, files={}, instance=self.ad, flight=self.flight
         )
         self.assertFalse(form.is_valid(), form.errors)
 
-        expected_text = "{} {} {}".format(
-            self.ad_data["headline"],
-            self.ad_data["content"],
-            self.ad_data["cta"],
+        expected_text = "{}{}{}".format(
+            data["headline"],
+            data["content"],
+            data["cta"],
         )
         self.assertEquals(
             form.errors["content"],
@@ -182,7 +192,7 @@ class FormTests(TestCase):
             ],
         )
 
-        expected_text = "{} {} {}".format(
+        expected_text = "{}{}{}".format(
             self.ad_data["headline"],
             self.ad_data["content"],
             self.ad_data["cta"],
