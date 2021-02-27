@@ -1555,13 +1555,9 @@ class UpliftReportView(BaseReportView):
         sort = self.request.GET.get("sort", "")
         force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
-        # Get all publishers where an ad has a view or click in the specified date range
-        impressions = self.get_queryset(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-        )
-        publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
+        publishers = Publisher.objects.all()
 
+        # Get all publishers where an ad has a view or click in the specified date range
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
         if revenue_share_percentage:
             try:
