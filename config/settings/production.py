@@ -114,14 +114,6 @@ if env.bool("REDIS_SSL", default=False):
     CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
 
 CELERY_BEAT_SCHEDULE = {
-    "every-hour-generate-geo-index": {
-        "task": "adserver.tasks.daily_update_geos",
-        "schedule": crontab(minute="15"),
-    },
-    "every-hour-generate-placement-index": {
-        "task": "adserver.tasks.daily_update_placements",
-        "schedule": crontab(minute="45"),
-    },
     # Run the previous days reports
     "every-day-generate-indexes-all-reports": {
         "task": "adserver.tasks.update_previous_day_reports",
