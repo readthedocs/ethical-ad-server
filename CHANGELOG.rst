@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.19.1
+---------------
+
+This release is primarily bug fixes and minor changes to when scheduled tasks are run.
+
+:date: March 3, 2021
+
+ * @davidfischer: Remove hourly report updates. (#321)
+ * @davidfischer: Fix off by 1 (actually 2) error in ad text size (#320)
+ * @davidfischer: Run previous days reports automatically (#318)
+ * @davidfischer: Fix a bug in the uplift report (#317)
+
+
 Version v0.19.0
 ---------------
 
