@@ -1,4 +1,4 @@
-{% extends "adserver/reports/all-publishers.html" %}
+{% extends "adserver/reports/publisher.html" %}
 {% load humanize %}
 {% load i18n %}
 
@@ -14,16 +14,38 @@
   <li class="breadcrumb-item active">{% trans 'Uplift Report' %}</li>
 {% endblock breadcrumbs %}
 
+
+{% block additional_filters %}
+  <div class="col-lg-2 col-md-4 mb-3">
+    <label class="col-form-label" for="id_revenue_share_percentage">{% trans 'Revenue Share' %}</label>
+    <select class="form-control" name="revenue_share_percentage" id="id_revenue_share_percentage">
+      <option>All shares</option>
+      {% for option in revshare_options %}
+        <option value="{{ option }}"{% if revenue_share_percentage == option %} selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-lg-2 col-md-4 mb-3">
+    <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
+    <select class="form-control" name="sort" id="id_sort">
+      {% for option in sort_options %}
+      <option value="{{ option }}" {% if sort == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endblock additional_filters %}
+
+
 {% block explainer %}
 <section class="mb-5">
   <h3>About this report</h3>
+  <p>This report shows the additional advertising data that we can attribute to Acceptable Ads.</p>
   <p>
-    This report shows the additional advertising data that we can attribute to Acceptable Ads.
-  </p>
-  <p>
-  <em>
-  This report shows all publishers and updates periodically. All previous days data is complete.
-  </em>
+    <em>This report shows all publishers and updates periodically. All previous days data is complete.</em>
   </p>
 </section>
 {% endblock explainer %}
+
+
+{% block summary-heading %}{% trans 'Total uplift results for all publishers' %}{% endblock summary-heading %}
