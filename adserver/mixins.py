@@ -61,6 +61,10 @@ class GeoReportMixin:
         if "country" in kwargs and kwargs["country"]:
             queryset = queryset.filter(country=kwargs["country"])
 
+        # Only filter this if we didn't pass a specific country
+        elif "countries" in kwargs and kwargs["countries"]:
+            queryset = queryset.filter(country__in=kwargs["countries"])
+
         return queryset
 
     def get_country_options(self, queryset):
