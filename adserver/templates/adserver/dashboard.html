@@ -16,6 +16,29 @@
 
   {% if publishers %}
     <h2>{% trans 'Publishers' %}</h2>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-3">
+            <span class="fa fa-eye">
+              {{ total.views }}
+              Views
+            </span>
+          </div>
+          <div class="col-md-3">
+            <span class="fa fa-mouse-pointer">
+            {{ total.clicks }}
+            Clicks
+            </span>
+          </div>
+          <div class="col-md-3">
+            <span class="fa fa-dollar">
+            {{ total.revenue_share }}
+            Revenue
+            </span>
+        </div>
+      </div>
+    </div>
+    <br>
     <ul>
       {% if request.user.is_staff %}
         <li><a href="{% url 'all_publishers_report' %}">{% trans 'All publishers' %}</a></li>

@@ -121,30 +121,6 @@ def do_not_track_policy(request):
     return render(request, "adserver/dnt-policy.txt", content_type="text/plain")
 
 
-@login_required
-def dashboard(request):
-    """The initial dashboard view."""
-    if request.user.is_staff:
-        publishers = Publisher.objects.all()
-        advertisers = Advertiser.objects.all()
-    else:
-        publishers = list(request.user.publishers.all())
-        advertisers = list(request.user.advertisers.all())
-
-        if not publishers and len(advertisers) == 1:
-            # This user has access to a single advertiser - redirect to it
-            return redirect(reverse("advertiser_main", args=[advertisers[0].slug]))
-        if not advertisers and len(publishers) == 1:
-            # This user has access to a single publisher - redirect to it
-            return redirect(reverse("publisher_main", args=[publishers[0].slug]))
-
-    return render(
-        request,
-        "adserver/dashboard.html",
-        {"advertisers": advertisers, "publishers": publishers},
-    )
-
-
 class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, RedirectView):
 
     """Should be (or redirect to) the main view for an advertiser that they see when first logging in."""
@@ -454,10 +430,7 @@ class BaseProxyView(View):
             log.log(self.log_level, self.success_message)
             advertisement.invalidate_nonce(self.impression_type, nonce)
             advertisement.track_impression(
-                request,
-                self.impression_type,
-                publisher=publisher,
-                offer=offer,
+                request, self.impression_type, publisher=publisher, offer=offer
             )
 
         message = ignore_reason or self.success_message
@@ -651,6 +624,41 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         return None
 
 
+class DashboardView(BaseReportView):
+    """The initial dashboard view."""
+
+    template_name = "adserver/dashboard.html"
+
+    def test_func(self):
+        return self.request.user.is_authenticated
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        total = collections.defaultdict(int)
+
+        if self.request.user.is_staff:
+            publishers = Publisher.objects.all()
+            advertisers = Advertiser.objects.all()
+        else:
+            publishers = list(self.request.user.publishers.all())
+            advertisers = list(self.request.user.advertisers.all())
+
+            for publisher in publishers:
+                queryset = self.get_queryset(publisher=publisher)
+                report = PublisherReport(queryset)
+                report.generate()
+                total["views"] += report.total["views"]
+                total["clicks"] += report.total["clicks"]
+                total["revenue_share"] += report.total["revenue_share"]
+
+        context.update(
+            {"advertisers": advertisers, "publishers": publishers, "total": total}
+        )
+
+        return context
+
+
 class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for one advertiser."""
@@ -840,10 +848,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
             .values_list("publisher")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
-            .values_list(
-                "publisher__slug",
-                "publisher__name",
-            )
+            .values_list("publisher__slug", "publisher__name")
             .distinct()[: self.LIMIT]
         )
 
@@ -872,8 +877,7 @@ class AllAdvertiserReportView(BaseReportView):
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
         impressions = self.get_queryset(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
+            start_date=context["start_date"], end_date=context["end_date"]
         )
         advertisers = Advertiser.objects.filter(
             id__in=Advertisement.objects.filter(
@@ -1433,8 +1437,7 @@ class AllPublisherReportView(BaseReportView):
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = self.get_queryset(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
+            start_date=context["start_date"], end_date=context["end_date"]
         )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
@@ -1507,11 +1510,7 @@ class AllPublisherReportView(BaseReportView):
                 )
 
         # Ensure the aggregated total is sorted
-        days = sorted(
-            days.values(),
-            key=lambda obj: obj["date"],
-            reverse=True,
-        )
+        days = sorted(days.values(), key=lambda obj: obj["date"], reverse=True)
 
         context.update(
             {

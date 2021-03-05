@@ -18,7 +18,7 @@ from .views import AllPublisherReportView
 from .views import ApiTokenCreateView
 from .views import ApiTokenDeleteView
 from .views import ApiTokenListView
-from .views import dashboard
+from .views import DashboardView
 from .views import do_not_track
 from .views import do_not_track_policy
 from .views import FlightDetailView
@@ -39,7 +39,7 @@ from .views import UpliftReportView
 
 
 urlpatterns = [
-    path("", dashboard, name="dashboard-home"),
+    path("", DashboardView.as_view(), name="dashboard-home"),
     # Robots.txt
     path(
         r"robots.txt",
