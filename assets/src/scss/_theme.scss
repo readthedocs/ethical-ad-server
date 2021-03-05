@@ -17,9 +17,15 @@ body {
     border: 1px solid $border-color;
   }
 
-  td {
-    font-family: $font-family-monospace;
+  .report {
+    td, th {
+      font-family: $font-family-monospace;
+    }
+    .staff-only {
+      color: $info;
+    }
   }
+
 
   /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
   .advertisement-preview {
