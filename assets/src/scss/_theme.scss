@@ -17,6 +17,10 @@ body {
     border: 1px solid $border-color;
   }
 
+  td {
+    font-family: monospace;
+  }
+
   /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
   .advertisement-preview {
     .ethical-callout {
