@@ -4,10 +4,10 @@
 <table class="table table-hover report">
   <thead>
     <tr>
-      <th><strong>{% trans 'Report Index' %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
-      <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+      <th><strong>{% trans 'Index' %}</strong></th>
+      <th class="text-right"><strong>{% trans 'Views' %}</strong></th>
+      <th class="text-right"><strong>{% trans 'Clicks' %}</strong></th>
+      <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
       <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
       {% if request.user.is_staff %}
         <th class="text-right"><!-- Staff split --></th>
