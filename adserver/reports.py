@@ -1,5 +1,6 @@
 """Advertising performance reports displayed to advertisers, publishers, and staff."""
 import collections
+import datetime
 import logging
 import operator
 
@@ -278,6 +279,15 @@ class PublisherReport(BaseReport):
         self.total["view_rate"] = calculate_ctr(
             self.total["views"], self.total["offers"]
         )
+
+    def get_index_display(self, index):
+        """
+        Handle making sure dates use the same 3 letter syntax as Django
+        """
+        if isinstance(index, datetime.date):
+            return index.strftime("%b %d, %Y")
+
+        return str(index)
 
 
 class PublisherGeoReport(PublisherReport):
