@@ -198,8 +198,8 @@ class PublisherReport(BaseReport):
             if index not in results:
                 results[index] = collections.defaultdict(int)
 
-            # Count decisions for all campaign types, even when filtered
-            # This is required to get an accurate fill rate
+            # Count offers for all paid campaigns
+            # This is required to get an accurate fill rate when house ads are on
             if (
                 impression.advertisement
                 and impression.advertisement.flight.campaign.campaign_type
