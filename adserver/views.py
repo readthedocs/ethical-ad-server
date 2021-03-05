@@ -1038,12 +1038,23 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
 
+        country_options = self.get_country_options(
+            self.get_queryset(
+                publisher=publisher,
+                campaign_type=context["campaign_type"],
+                start_date=context["start_date"],
+                end_date=context["end_date"],
+            )
+        )
+
         queryset = self.get_queryset(
             publisher=publisher,
             campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
             country=country,
+            # Don't iterate over countries that aren't in the output
+            countries=set(indx[0] for indx in country_options),
         )
 
         report = PublisherGeoReport(
@@ -1054,15 +1065,6 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
             max_results=None if country else self.LIMIT,
         )
         report.generate()
-
-        country_options = self.get_country_options(
-            self.get_queryset(
-                publisher=publisher,
-                campaign_type=context["campaign_type"],
-                start_date=context["start_date"],
-                end_date=context["end_date"],
-            )
-        )
 
         context.update(
             {
