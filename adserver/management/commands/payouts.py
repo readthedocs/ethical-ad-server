@@ -116,6 +116,13 @@ class Command(BaseCommand):
             required=False,
             action="store_true",
         )
+        parser.add_argument(
+            "-d",
+            "--debug",
+            help="Print debug output",
+            required=False,
+            action="store_true",
+        )
 
     def handle(self, *args, **kwargs):
         # pylint: disable=too-many-statements,too-many-branches
@@ -124,6 +131,7 @@ class Command(BaseCommand):
         create_payout = kwargs.get("payout")
         all_publishers = kwargs.get("all")
         publisher_slug = kwargs.get("publisher")
+        debug = kwargs.get("debug")
 
         self.stdout.write("Processing payouts. \n")
 
@@ -137,7 +145,10 @@ class Command(BaseCommand):
             report_url = data.get("due_report_url")
             if not report:
                 if not all_publishers:
-                    self.stdout.write(f"Skipping for no due report: {publisher.slug}\n")
+                    if debug:
+                        self.stdout.write(
+                            f"Skipping for no due report: {publisher.slug}\n"
+                        )
                     # Skip publishers without due money
                     continue
                 report = data.get("current_report")
@@ -148,9 +159,10 @@ class Command(BaseCommand):
             ctr = report["total"]["ctr"]
 
             if due_balance < float(50) and not all_publishers:
-                self.stdout.write(
-                    f"Skipping for low balance: {publisher.slug} owed {due_str}\n"
-                )
+                if debug:
+                    self.stdout.write(
+                        f"Skipping for low balance: {publisher.slug} owed {due_str}\n"
+                    )
                 continue
 
             self.stdout.write("\n\n###########\n")
@@ -182,7 +194,7 @@ class Command(BaseCommand):
                 if ctr < 0.08:
                     self.stdout.write("Include CTR callout?\n")
                     ctr_proceed = input("y/n?: ")
-                    if ctr_proceed:
+                    if ctr_proceed == "y":
                         context["ctr"] = ctr
 
                 email_html = (
@@ -213,7 +225,7 @@ class Command(BaseCommand):
                     "to": [user.email for user in publisher.user_set.all()],
                     "sender_name": "EthicalAds by Read the Docs",
                     "subject": f"EthicalAds Payout - {publisher.name}",
-                    "options": {"archive": False},
+                    "options": {"archive": True},
                     "body": email_html,
                 }
                 if author:
