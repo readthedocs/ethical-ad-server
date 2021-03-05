@@ -3,6 +3,7 @@ import collections
 import logging
 import operator
 
+from .constants import PAID_CAMPAIGN
 from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -175,7 +176,12 @@ class PublisherReport(BaseReport):
     model = AdImpression
     index = "date"
     order = "-date"
-    select_related_fields = ("publisher", "advertisement", "advertisement__flight")
+    select_related_fields = (
+        "publisher",
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+    )
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
@@ -191,6 +197,15 @@ class PublisherReport(BaseReport):
 
             if index not in results:
                 results[index] = collections.defaultdict(int)
+
+            # Count decisions for all campaign types, even when filtered
+            # This is required to get an accurate fill rate
+            if (
+                impression.advertisement
+                and impression.advertisement.flight.campaign.campaign_type
+                == PAID_CAMPAIGN
+            ):
+                results[index]["paid_offers"] += impression.offers
 
             results[index]["index"] = self.get_index_display(index)
             results[index][self.index] = self.get_index_display(index)
@@ -229,7 +244,7 @@ class PublisherReport(BaseReport):
                 results[index]["revenue"], results[index]["views"]
             )
             results[index]["fill_rate"] = calculate_ctr(
-                results[index]["offers"], results[index]["decisions"]
+                results[index]["paid_offers"], results[index]["decisions"]
             )
             results[index]["view_rate"] = calculate_ctr(
                 results[index]["views"], results[index]["offers"]
