@@ -281,9 +281,7 @@ class PublisherReport(BaseReport):
         )
 
     def get_index_display(self, index):
-        """
-        Handle making sure dates use the same 3 letter syntax as Django
-        """
+        """Handle making sure dates use the same 3 letter syntax as Django."""
         if isinstance(index, datetime.date):
             return index.strftime("%b %d, %Y")
 
