@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.20.0
+---------------
+
+This release made some small reporting updates primarily for performance reasons.
+
+:date: March 8, 2021
+
+ * @davidfischer: Remove refunded offers from aggregate reports (#329)
+ * @davidfischer: Total revenue report improvements (#328)
+ * @ericholscher: Make the Geo report a bit faster (#326)
+ * @ericholscher: Calculate Fill Rate against only paid offers (#325)
+ * @ericholscher: Add debug flag to payout command (#324)
+ * @ericholscher: Publisher report cleanup (#323)
+ * @davidfischer: Uplift report updates (#319)
+
+
 Version v0.19.1
 ---------------
 
