@@ -390,14 +390,6 @@ class TestReportViews(TestReportsBase):
             Offer,
             advertisement=self.ad1,
             publisher=self.publisher1,
-            country="US",
-            viewed=True,
-            is_refunded=True,  # Won't count
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
             country="FR",
             viewed=True,
             clicked=True,
@@ -461,13 +453,6 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher2,
             viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            viewed=True,
-            is_refunded=True,  # Won't count
         )
 
         # Update reporting
@@ -590,9 +575,6 @@ class TestReportViews(TestReportsBase):
         get(Offer, publisher=self.publisher1, div_id="p1", viewed=True)
         get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
         get(Offer, publisher=self.publisher1, div_id="p2", viewed=True)
-        get(
-            Offer, publisher=self.publisher1, div_id="p2", viewed=True, is_refunded=True
-        )
         get(Offer, publisher=self.publisher1, div_id="ad_23453464", viewed=True)
 
         # Update reporting
@@ -632,13 +614,6 @@ class TestReportViews(TestReportsBase):
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(
-            Offer,
-            publisher=self.publisher1,
-            country="US",
-            viewed=True,
-            is_refunded=True,
-        )
         get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
 
         # Update reporting
@@ -722,14 +697,6 @@ class TestReportViews(TestReportsBase):
             publisher=self.publisher1,
             keywords=["test"],
             viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            keywords=["test"],
-            viewed=True,
-            is_refunded=True,
         )
         get(
             Offer,

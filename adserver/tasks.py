@@ -46,7 +46,7 @@ def _default_filters(impression_type, start_date, end_date):
     queryset = Offer.objects.filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        is_refunded=False,
+        # is_refunded=False,  # This causes the query to be a filtered index and is much slower
     )
 
     if impression_type == CLICKS:
