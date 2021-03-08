@@ -4,19 +4,17 @@
 <table class="table table-hover report">
   <thead>
     <tr>
-      <th><strong>{% trans 'Report Index' %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Total&nbsp;Views' %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Total&nbsp;Clicks' %}</strong></th>
-      <th class="text-right"><strong>{% blocktrans %}Total&nbsp;<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+      <th><strong>{% trans 'Index' %}</strong></th>
+      <th class="text-right"><strong>{% trans 'Views' %}</strong></th>
+      <th class="text-right"><strong>{% trans 'Clicks' %}</strong></th>
+      <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+      <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
       {% if request.user.is_staff %}
-        <th class="text-right"><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
-        <th class="text-right"><strong>{% trans 'Fill Rate' %}</strong></th>
-        <th class="text-right"><strong>{% trans 'View Rate' %}</strong></th>
-      {% endif %}
-      <th class="text-right"><strong>{% trans 'Total&nbsp;Revenue' %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Your&nbsp;Revenue&nbsp;Share' %}</strong></th>
-      {% if request.user.is_staff %}
-        <th class="text-right"><strong>{% trans 'Our&nbsp;Revenue&nbsp;Share' %}</strong></th>
+        <th class="text-right staff-only"><strong>{% trans 'Our&nbsp;Rev' %}</strong></th>
+        <th class="text-right staff-only"><strong>{% trans 'Total&nbsp;Rev' %}</strong></th>
+        <th class="text-right staff-only"><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+        <th class="text-right staff-only"><strong>{% blocktrans %}<abbr title="% of traffic with a paid ad">Fill Rate</abbr>{% endblocktrans %}</strong></th>
+        <th class="text-right staff-only"><strong>{% blocktrans %}<abbr title="% of traffic that views ads we offered">View Rate</abbr>{% endblocktrans %}</strong></th>
       {% endif %}
     </tr>
   </thead>
@@ -28,15 +26,13 @@
         <td class="text-right">{{ result.views|intcomma }}</td>
         <td class="text-right">{{ result.clicks|intcomma }}</td>
         <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
-        {% if request.user.is_staff %}
-          <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
-          <td class="text-right">{{ result.fill_rate|floatformat:1 }}%</td>
-          <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
-        {% endif %}
-        <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
         <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
         {% if request.user.is_staff %}
           <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
+          <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
+          <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
+          <td class="text-right">{{ result.fill_rate|floatformat:1 }}%</td>
+          <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
         {% endif %}
       </tr>
       {% endif %}
@@ -46,15 +42,13 @@
       <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
-      {% if request.user.is_staff %}
-        <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
-        <td class="text-right"><strong>{{ report.total.fill_rate|floatformat:1 }}%</strong></td>
-        <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
-      {% endif %}
-      <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
       <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
       {% if request.user.is_staff %}
         <td class="text-right"><strong>${{ report.total.our_revenue|floatformat:2|intcomma }}</strong></td>
+        <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
+        <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
+        <td class="text-right"><strong>{{ report.total.fill_rate|floatformat:1 }}%</strong></td>
+        <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
       {% endif %}
     </tr>
   </tbody>
