@@ -181,11 +181,15 @@ class Command(BaseCommand):
 
         # Because the last day is inclusive, the delete query needs to delete after that day
         end_day += datetime.timedelta(days=1)
+        query = "DELETE FROM adserver_offer WHERE date >= %s AND date < %s"
+
+        self.stdout.write(_("- Executing SQL:"))
+        self.stdout.write(query % (start_day, end_day))
 
         with connection.cursor() as cursor:
             # Offers are normally immutable so the delete has to be run as raw sql
             cursor.execute(
-                "DELETE FROM adserver_offer WHERE date >= %s AND date < %s",
+                query,
                 [start_day, end_day],
             )
             deleted_offers = cursor.fetchone()
@@ -193,6 +197,9 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(_("Successfully removed %d offers.") % deleted_offers)
         )
+
+        # Update the DB stats if we removed offers
+        self.update_db_stats()
 
     def update_db_stats(self):
         """Updates DB stats after these changes."""
@@ -226,4 +233,3 @@ class Command(BaseCommand):
         self.copy_offer_dumps()
         if kwargs["delete_offers"]:
             self.delete_offers(kwargs["start_date"], kwargs["end_date"])
-        self.update_db_stats()
