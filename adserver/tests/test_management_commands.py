@@ -234,3 +234,78 @@ class TestPayouts(TestCase):
         )
         self.assertIn(self.publisher1.slug, output)
         self.assertIn("total=70.00", output)
+
+
+class TestArchiveOffers(TestCase):
+    def setUp(self):
+        self.out = io.StringIO()
+        self.err = io.StringIO()
+
+    def test_archive_offers_errors(self):
+        with self.assertRaises(management.CommandError):
+            management.call_command(
+                "archive_offers",
+                "-s",
+                "not-valid-date",
+                stdout=self.out,
+                stderr=self.err,
+            )
+
+        with self.assertRaises(management.CommandError):
+            management.call_command(
+                "archive_offers",
+                "-o",
+                "/tmp/does/not/exist/",
+                stdout=self.out,
+                stderr=self.err,
+            )
+
+    @patch("django.db.connection")
+    def test_archive_offers(self, conn_mock):
+        management.call_command(
+            "archive_offers",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue()
+
+        self.assertTrue("Successfully archived" in output)
+        self.assertTrue("Skipping copying offers" in output)
+        self.assertFalse("Skipping deleting archived offers" in output)
+
+        management.call_command(
+            "archive_offers",
+            "-d",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue()
+        self.assertTrue("Skipping deleting archived offers" in output)
+
+    @override_settings(BACKUPS_STORAGE="django.core.files.storage.FileSystemStorage")
+    @patch("django.db.connection")
+    def test_archive_offers_storage(self, conn_mock):
+        management.call_command(
+            "archive_offers",
+            "-d",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue()
+        self.assertFalse("Skipping deleting archived offers" in output)
+        self.assertTrue("Copying offer dumps to backups" in output)
+        self.assertTrue("Deleting archived offers" in output)
+        self.assertTrue("Successfully copied" in output)
+
+        management.call_command(
+            "archive_offers",
+            "-d",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue()
+        self.assertTrue("already exists in backups" in output)
