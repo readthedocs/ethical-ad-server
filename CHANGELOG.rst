@@ -5,6 +5,17 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.21.0
+---------------
+
+This release fixes a bug in report sorting and adds a management command to archive offers
+
+:date: March 8, 2021
+
+* @ericholscher: Sort indexes based on raw data vs. display (#333)
+* @davidfischer: Archive offers management command (#332)
+* @dependabot[bot]: Bump elliptic from 6.5.3 to 6.5.4 (#331)
+
 
 Version v0.20.0
 ---------------
