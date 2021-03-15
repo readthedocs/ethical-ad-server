@@ -41,3 +41,12 @@ class AzureCDNFileStorage(OverrideHostnameMixin, AzureStorage):
     """An Azure Storage backend that uses a CDN and custom hostname for media."""
 
     override_hostname = getattr(settings, "DEFAULT_FILE_STORAGE_HOSTNAME", None)
+
+
+class AzureBackupsStorage(AzureStorage):
+
+    """An Azure Storage backend for backups."""
+
+    azure_container = (
+        getattr(settings, "AZURE_BACKUPS_STORAGE_CONTAINER", None) or "backups"
+    )
