@@ -209,7 +209,7 @@ class PublisherReport(BaseReport):
                 results[index]["paid_offers"] += impression.offers
 
             results[index]["index"] = self.get_index_display(index)
-            results[index][self.index] = self.get_index_display(index)
+            results[index][self.index] = index
             results[index]["decisions"] += impression.decisions
             results[index]["offers"] += impression.offers
             results[index]["views"] += impression.views
@@ -285,7 +285,7 @@ class PublisherReport(BaseReport):
         if isinstance(index, datetime.date):
             return index.strftime("%b %d, %Y")
 
-        return str(index)
+        return super().get_index_display(index)
 
 
 class PublisherGeoReport(PublisherReport):
