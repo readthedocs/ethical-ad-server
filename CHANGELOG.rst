@@ -10,7 +10,7 @@ Version v0.21.0
 
 This release fixes a bug in report sorting and adds a management command to archive offers
 
-:date: March 8, 2021
+:date: March 15, 2021
 
 * @ericholscher: Sort indexes based on raw data vs. display (#333)
 * @davidfischer: Archive offers management command (#332)
