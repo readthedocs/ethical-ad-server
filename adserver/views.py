@@ -1293,7 +1293,7 @@ class PublisherStripeOauthConnectView(
 
         params = {
             "client_id": settings.STRIPE_CONNECT_CLIENT_ID,
-            "suggested_capabilities[]": "transfers",
+            # "suggested_capabilities[]": "transfers",
             "stripe_user[email]": self.request.user.email,
             "state": stripe_state,
             "redirect_uri": self.request.build_absolute_uri(
