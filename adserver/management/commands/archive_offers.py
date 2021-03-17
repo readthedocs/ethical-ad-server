@@ -4,7 +4,7 @@ Archives old offers to CSV files.
 The offers table can get very large
 and it's important for performance to keep it as small as possible.
 As a result, archiving old offers can have a good effect on performance.
-This management command archives old offers to CSV files, gzips them,
+This management command archives old offers to CSV files, zips them,
 can copy them to remote storage (settings.BACKUPS_STORAGE)
 and with a passed flag can delete the archives from the DB.
 """
@@ -81,7 +81,7 @@ class Command(BaseCommand):
     def handle_archive_day(self, day):
         """Archive a single day of offers to a file."""
         output_file = self.output_dir / f"{day:%Y-%m-%d}-offers.csv"
-        gzip_output_file = Path(str(output_file) + ".gz")
+        zipped_output_file = Path(str(output_file) + ".bz2")
         end_day = day + datetime.timedelta(days=1)
 
         self.stdout.write(_("Archiving %s to %s...") % (day, output_file))
@@ -111,7 +111,7 @@ class Command(BaseCommand):
         self.stdout.write(_("Compressing %s...") % output_file)
         self.stdout.write(
             subprocess.check_output(
-                ["gzip", str(output_file)],
+                ["bzip2", str(output_file)],
                 stderr=subprocess.STDOUT,
                 encoding="utf-8",
             )
@@ -120,10 +120,10 @@ class Command(BaseCommand):
         # Azure storage automatically stores the md5sum in the ContentMd5 header/property
         # You can verify it after copying with:
         #  echo -n MD5HEXSUM | xxd -p -r | base64
-        self.stdout.write(_("MD5 summing %s...") % gzip_output_file)
+        self.stdout.write(_("MD5 summing %s...") % zipped_output_file)
         self.stdout.write(
             subprocess.check_output(
-                ["md5sum", str(gzip_output_file)],
+                ["md5sum", str(zipped_output_file)],
                 stderr=subprocess.STDOUT,
                 encoding="utf-8",
             )
