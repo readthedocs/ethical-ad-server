@@ -2,6 +2,8 @@
 import logging
 from datetime import timedelta
 
+from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
@@ -20,6 +22,7 @@ from ..models import Flight
 from ..models import Publisher
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
+from ..utils import get_client_id
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
 from .permissions import AdDecisionPermission
@@ -148,42 +151,51 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
-        # Record a decision for every call to the API
-
         ad_type_slug = placement.get("ad_type")
         div_id = placement.get("div_id")
 
-        if not ad:
-            Advertisement.record_null_offer(
+        # Check if this client should get a sticky ad decision
+        cache_key = self._sticky_decision_cache_key(publisher, ad_type_slug)
+        data = cache.get(cache_key)
+
+        if not data:
+            # Record a decision for every non-sticky call to the API
+            if not ad:
+                Advertisement.record_null_offer(
+                    request=self.request,
+                    publisher=publisher,
+                    ad_type_slug=ad_type_slug,
+                    div_id=div_id,
+                    keywords=keywords,
+                )
+                return {}
+
+            ad.incr(impression_type=DECISIONS, publisher=publisher)
+
+            data = ad.offer_ad(
                 request=self.request,
                 publisher=publisher,
                 ad_type_slug=ad_type_slug,
                 div_id=div_id,
                 keywords=keywords,
+                forced=forced,
             )
-            return {}
-
-        ad.incr(impression_type=DECISIONS, publisher=publisher)
-
-        data = ad.offer_ad(
-            request=self.request,
-            publisher=publisher,
-            ad_type_slug=ad_type_slug,
-            div_id=div_id,
-            keywords=keywords,
-            forced=forced,
-        )
-        log.debug(
-            "Offering ad. publisher=%s ad_type=%s div_id=%s keywords=%s",
-            publisher,
-            ad_type_slug,
-            div_id,
-            keywords,
-        )
+            log.debug(
+                "Offering ad. publisher=%s ad_type=%s div_id=%s keywords=%s",
+                publisher,
+                ad_type_slug,
+                div_id,
+                keywords,
+            )
+            cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
 
         # The div where the ad is chosen to go is echoed back to the client
         data.update({"div_id": div_id})
         return data
+
+    def _sticky_decision_cache_key(self, publisher, ad_type):
+        client_id = get_client_id(self.request)
+        return f"{publisher.slug}-{ad_type}-{client_id}"
 
     def get(self, request):
         """

@@ -150,6 +150,9 @@ ADSERVER_CLICK_RATELIMITS = env.list(
     "ADSERVER_CLICK_RATELIMITS", default=["1/m", "3/10m", "10/h", "25/d"]
 )
 ADSERVER_VIEW_RATELIMITS = env.list("ADSERVER_VIEW_RATELIMITS", default=["5/5m"])
+ADSERVER_STICKY_DECISION_DURATION = env.int(
+    "ADSERVER_STICKY_DECISION_DURATION", default=30
+)
 
 # GeoIP settings
 # This directory should be the path to GeoLite2-City.mmdb and GeoLite2-Country.mmdb

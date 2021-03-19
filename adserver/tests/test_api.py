@@ -6,6 +6,7 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
 from django.test import Client
 from django.test import override_settings
 from django.test import TestCase
@@ -690,6 +691,33 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_sticky_decision(self):
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        nonce1 = resp.json()["nonce"]
+
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        nonce2 = resp.json()["nonce"]
+
+        # First test the default of no stickiness (in dev/test)
+        self.assertNotEqual(nonce1, nonce2)
+
+        with override_settings(ADSERVER_STICKY_DECISION_DURATION=5):
+            resp = self.client.get(self.url, self.query_params)
+            self.assertEqual(resp.status_code, 200)
+            nonce1 = resp.json()["nonce"]
+
+            resp = self.client.get(self.url, self.query_params)
+            self.assertEqual(resp.status_code, 200)
+            nonce2 = resp.json()["nonce"]
+
+            # With this setting, the response should be sticky (same nonce)
+            self.assertEqual(nonce1, nonce2)
+
+        # Clear the cache so this setting doesn't mess up the next test
+        cache.clear()
 
 
 class AdvertiserApiTests(BaseApiTest):

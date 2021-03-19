@@ -365,6 +365,7 @@ ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", defa
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
+ADSERVER_STICKY_DECISION_DURATION = 0
 
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
