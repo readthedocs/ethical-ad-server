@@ -101,6 +101,15 @@ This is ``False`` by default and can result in a bloated database and poor perfo
 It's ``True`` by default in development.
 This can be overridden on a per publisher basis by setting the ``Publisher.record_views`` flag.
 
+ADSERVER_STICKY_DECISION_DURATION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Duration in seconds to show the same ad to the same user if multiple ads are requested in short succession.
+This ad stickiness helps make sure that quick navigation doesn't result in wasted ad views
+and it ensures that the correct ad view is attributed to a clickthrough if it occurs.
+
+The default in production is 15 seconds.
+
 
 ALLOWED_HOSTS
 ~~~~~~~~~~~~~
