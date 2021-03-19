@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.22.1
+---------------
+
+This was a tweak to the stickiness feature that rolled out earlier today.
+
+:date: March 19, 2021
+
+ * @davidfischer: Tweaks to the new stickiness factor (#342)
+
+
 Version v0.22.0
 ---------------
 
