@@ -108,7 +108,7 @@ Duration in seconds to show the same ad to the same user if multiple ads are req
 This ad stickiness helps make sure that quick navigation doesn't result in wasted ad views
 and it ensures that the correct ad view is attributed to a clickthrough if it occurs.
 
-The default in production is 30 seconds.
+The default in production is 15 seconds.
 
 
 ALLOWED_HOSTS
