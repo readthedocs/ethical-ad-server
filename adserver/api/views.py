@@ -188,6 +188,12 @@ class AdDecisionView(GeoIpMixin, APIView):
                 keywords,
             )
             cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
+        else:
+            log.info(
+                "Using sticky ad decision. publisher=%s ad_type=%s",
+                publisher,
+                ad_type_slug,
+            )
 
         # The div where the ad is chosen to go is echoed back to the client
         data.update({"div_id": div_id})
