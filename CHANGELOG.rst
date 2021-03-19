@@ -5,6 +5,22 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.22.0
+---------------
+
+The main feature in this release was to make sticky ad decisions.
+This will make the same ad appear for the same user for a certain amount of time
+(default 15s) even if they load new pages.
+
+:date: March 19, 2021
+
+ * @dependabot[bot]: Bump pillow from 7.1.2 to 8.1.1 in /requirements (#340)
+ * @dependabot[bot]: Bump django from 2.2.13 to 2.2.18 in /requirements (#339)
+ * @davidfischer: Enable sticky ad decisions (#338)
+ * @davidfischer: Fix the geo report (#337)
+
+
 Version v0.21.0
 ---------------
 
