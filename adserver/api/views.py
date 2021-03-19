@@ -189,10 +189,13 @@ class AdDecisionView(GeoIpMixin, APIView):
             )
             cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
         else:
+            referrer = self.request.META.get("HTTP_REFERER")
             log.info(
-                "Using sticky ad decision. publisher=%s ad_type=%s",
-                publisher,
+                "Using sticky ad decision. publisher=%s ad_type=%s campaign_type=%s, referrer=%s",
+                publisher.slug,
                 ad_type_slug,
+                data.get("campaign_type"),
+                referrer,
             )
 
         # The div where the ad is chosen to go is echoed back to the client
