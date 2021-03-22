@@ -12,6 +12,6 @@ app_name = "api"
 urlpatterns = [path(r"decision/", AdDecisionView.as_view(), name="decision")]
 
 router = routers.SimpleRouter()
-router.register(r"advertisers", AdvertiserViewSet, base_name="advertisers")
-router.register(r"publishers", PublisherViewSet, base_name="publishers")
+router.register(r"advertisers", AdvertiserViewSet, basename="advertisers")
+router.register(r"publishers", PublisherViewSet, basename="publishers")
 urlpatterns += router.urls
