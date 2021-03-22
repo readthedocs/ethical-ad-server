@@ -13,10 +13,14 @@ RUN apk update \
   # Translations dependencies
   && apk add gettext \
   # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
-  && apk add postgresql-client
+  && apk add postgresql-client \
+  # Needed to build Python Cryptography on Alpine Linux
+  # https://cryptography.io/en/latest/installation.html#alpine
+  && apk add openssl-dev cargo
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
+RUN pip install --upgrade pip
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
 
