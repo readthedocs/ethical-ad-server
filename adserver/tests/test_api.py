@@ -1,6 +1,7 @@
 import datetime
 import json
 import re
+import urllib
 from unittest import mock
 
 from django.conf import settings
@@ -1400,32 +1401,42 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(
-            resp["Location"], "http://example.com?utm_source=test-publisher"
+            resp["Location"],
+            "http://example.com?utm_source=test-publisher&ea-publisher=test-publisher",
         )
 
         # invalid string replacement template
-        self.ad.link = "http://example.com?utm_source=$%7Btest%7Bpublisher&t=1"
+        base_url = "http://example.com"
+        query_params = {"utm_source": "${test}publisher", "t": 1}
+        self.ad.link = base_url + "?" + urllib.parse.urlencode(query_params)
         self.ad.save()
 
         resp = self.client.get(self.click_url)
 
         # Even with an invalid template, this should "work" without failing
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["Location"], self.ad.link)
+        query_params.update({"ea-publisher": "test-publisher"})
+        self.assertEqual(
+            resp["Location"], base_url + "?" + urllib.parse.urlencode(query_params)
+        )
 
     def test_click_tracking_valid(self):
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
         resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["Location"], self.ad.link)
+        self.assertEqual(
+            resp["Location"], self.ad.link + "?ea-publisher=test-publisher"
+        )
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
 
         # Don't track dupes
         resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["Location"], self.ad.link)
+        self.assertEqual(
+            resp["Location"], self.ad.link + "?ea-publisher=test-publisher"
+        )
         self.assertEqual(resp["X-Adserver-Reason"], "Old/Invalid nonce")
 
     @override_settings(ADSERVER_CLICK_RATELIMITS=["1/s", "1/m"])

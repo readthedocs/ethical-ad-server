@@ -792,7 +792,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     # Supports simple variables like ${publisher} and ${advertisement}
     # using string.Template syntax
-    link = models.URLField(_("Link URL"), max_length=255)
+    link = models.URLField(
+        _("Link URL"),
+        max_length=255,
+        help_text=_(
+            "URL of your landing page. "
+            "This may contain UTM parameters so you know the traffic came from us. "
+            "The publisher will be added in the 'ea-publisher' query parameter."
+        ),
+    )
     image = models.ImageField(
         _("Image"),
         max_length=255,

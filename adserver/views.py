@@ -529,6 +529,14 @@ class AdClickProxyView(BaseProxyView):
         url = template.safe_substitute(
             publisher=publisher_slug, advertisement=advertisement.slug
         )
+
+        # Append a query string param ?ea-publisher=${publisher}
+        url_parts = list(urllib.parse.urlparse(url))
+        query_params = dict(urllib.parse.parse_qsl(url_parts[4]))
+        query_params.update({"ea-publisher": publisher_slug})
+        url_parts[4] = urllib.parse.urlencode(query_params)
+        url = urllib.parse.urlunparse(url_parts)
+
         return HttpResponseRedirect(url)
 
 
