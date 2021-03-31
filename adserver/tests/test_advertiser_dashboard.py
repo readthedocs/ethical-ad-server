@@ -103,6 +103,32 @@ class TestAdvertiserDashboardViews(TestCase):
             get_user_model(), username="test-user", advertisers=[self.advertiser]
         )
 
+    def advertiser_overview(self):
+        url = reverse(
+            "advertiser_main", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.flight.live = False
+        self.flight.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "no active flights")
+
+        self.flight.live = True
+        self.flight.save()
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.flight.name)
+
     def test_flight_list_view(self):
         url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
 

@@ -12,7 +12,7 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item">{{ advertiser }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'advertiser_main' advertiser.slug %}">{{ advertiser }}</a></li>
   <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
   <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug advertisement.flight.slug %}">{{ advertisement.flight.name }}</a></li>
   <li class="breadcrumb-item active"><a href="{% url 'advertisement_detail' advertiser.slug advertisement.flight.slug advertisement.slug %}">{{ advertisement.name }}</a></li>

@@ -659,6 +659,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
         projected_value_views = float(self.sold_impressions * self.cpm) / 1000.0
         return projected_value_clicks + projected_value_views
 
+    def total_value(self):
+        """Total value ($) so far based on what's been delivered."""
+        value_clicks = float(self.total_clicks * self.cpc)
+        value_views = float(self.total_views * self.cpm) / 1000.0
+        return value_clicks + value_views
+
+    def percent_complete(self):
+        return self.total_value() / self.projected_total_value() * 100
+
 
 class AdType(TimeStampedModel, models.Model):
 
