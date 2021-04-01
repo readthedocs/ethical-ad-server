@@ -18,19 +18,19 @@
     <div>
       <form method="get">
         <div class="form-row">
-          <div class="col-lg-2 col-md-4 mb-3">
+          <div class="col-xl-3 col-md-6 col-12 mb-3">
             <label class="col-form-label" for="id_start_date">{% trans 'Start Date' %}</label>
             <input class="form-control" name="start_date" id="id_start_date" type="date" value="{{ start_date|date:"Y-m-d" }}" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
           </div>
 
-          <div class="col-lg-2 col-md-4 mb-3">
+          <div class="col-xl-3 col-md-6 col-12 mb-3">
             <label class="col-form-label" for="id_end_date">{% trans 'End Date' %}</label>
             <input class="form-control" name="end_date" id="id_end_date" type="date" value="{% if end_date %}{{ end_date|date:"Y-m-d" }}{% endif %}" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}">
           </div>
 
           {# Add filters when we have the data to show them #}
           {% if campaign_types %}
-          <div class="col-lg-2 col-md-4 mb-3">
+          <div class="col-xl-3 col-md-6 col-12 mb-3">
             <label class="col-form-label" for="id_campaign_type">{% trans 'Campaign type' %}</label>
             <select class="form-control" name="campaign_type" id="id_campaign_type">
               <option value="">All types</option>
