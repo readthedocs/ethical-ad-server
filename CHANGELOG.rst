@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.23.0
+---------------
+
+The big change in this release was to add overview screens for advertisers and publishers.
+Another change was to include a ``ea-publisher`` query parameter with ad clicks.
+This release also had some minor UX improvements to the reporting interface
+and a few other minor changes.
+
+:date: April 1, 2021
+
+ * @davidfischer: Reporting UX improvements (#351)
+ * @davidfischer: Advertiser/publisher overview screens (#350)
+ * @dependabot[bot]: Bump y18n from 4.0.0 to 4.0.1 (#349)
+ * @davidfischer: Add publisher query parameter to ad clicks (#348)
+ * @davidfischer: Changes needed now that cryptography requires rust (#346)
+ * @ericholscher: Tweaks payouts more (#345)
+ * @davidfischer: Advertiser overview page (#174)
+ * @davidfischer: Publisher overview page (#173)
+
+
 Version v0.22.1
 ---------------
 
