@@ -90,7 +90,7 @@ class TestPublisherDashboardViews(TestCase):
 
         self.client.force_login(self.staff_user)
         resp = self.client.get(url)
-        self.assertContains(resp, "Your CTR seems low")
+        self.assertContains(resp, "too small to draw conclusions")
 
     def test_publisher_embed_code(self):
         url = reverse("publisher_embed", args=[self.publisher1.slug])

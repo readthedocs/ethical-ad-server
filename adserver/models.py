@@ -666,7 +666,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return value_clicks + value_views
 
     def percent_complete(self):
-        return self.total_value() / self.projected_total_value() * 100
+        projected_total = self.projected_total_value()
+        if projected_total > 0:
+            return self.total_value() / projected_total * 100
+        return 0
 
 
 class AdType(TimeStampedModel, models.Model):

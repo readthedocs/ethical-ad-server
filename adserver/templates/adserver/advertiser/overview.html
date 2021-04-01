@@ -9,13 +9,20 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ advertiser }}</li>
+
+  {% url 'advertiser_main' advertiser.slug as advertiser_main_url %}
+
+  {% if request.path == advertiser_main_url %}
+    <li class="breadcrumb-item active">{{ advertiser }}</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ advertiser_main_url }}">{{ advertiser }}</a></li>
+  {% endif %}
 {% endblock breadcrumbs %}
 
 
 {% block content_container %}
   <section>
-    <h1>{% blocktrans %}{{ advertiser }}{% endblocktrans %}</h1>
+    <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ advertiser }} overview{% endblocktrans %}</h1>
     <p><small>Month to date overview for {{ advertiser }}.</small></p>
 
     <div class="row row-cols-1 row-cols-md-4">
