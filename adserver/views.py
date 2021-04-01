@@ -550,6 +550,8 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
 
     DEFAULT_REPORT_DAYS = 30
     LIMIT = 20
+    SESSION_KEY_START_DATE = "report_start_date"
+    SESSION_KEY_END_DATE = "report_end_date"
     export = False
     export_filename = "readthedocs-report.csv"
     export_view = None
@@ -643,20 +645,40 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         return None
 
     def get_start_date(self):
+        start_date = None
         if "start_date" in self.request.GET:
             start_date = self._parse_date_string(self.request.GET["start_date"])
-            if start_date:
-                return start_date
+        if not start_date and self.SESSION_KEY_START_DATE in self.request.session:
+            start_date = self._parse_date_string(
+                self.request.session[self.SESSION_KEY_START_DATE]
+            )
 
-        return get_ad_day() - timedelta(days=self.DEFAULT_REPORT_DAYS)
+        if not start_date:
+            start_date = get_ad_day() - timedelta(days=self.DEFAULT_REPORT_DAYS)
+
+        # Store date in the session
+        self.request.session[self.SESSION_KEY_START_DATE] = start_date.strftime(
+            "%Y-%m-%d"
+        )
+
+        return start_date
 
     def get_end_date(self):
+        end_date = None
         if "end_date" in self.request.GET:
             end_date = self._parse_date_string(self.request.GET["end_date"])
-            if end_date:
-                return end_date
+        if not end_date and self.SESSION_KEY_END_DATE in self.request.session:
+            end_date = self._parse_date_string(
+                self.request.session[self.SESSION_KEY_END_DATE]
+            )
 
-        return None
+        if end_date:
+            # Store date in the session
+            self.request.session[self.SESSION_KEY_END_DATE] = end_date.strftime(
+                "%Y-%m-%d"
+            )
+
+        return end_date
 
 
 class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
