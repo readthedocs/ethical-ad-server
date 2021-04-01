@@ -659,6 +659,18 @@ class Flight(TimeStampedModel, IndestructibleModel):
         projected_value_views = float(self.sold_impressions * self.cpm) / 1000.0
         return projected_value_clicks + projected_value_views
 
+    def total_value(self):
+        """Total value ($) so far based on what's been delivered."""
+        value_clicks = float(self.total_clicks * self.cpc)
+        value_views = float(self.total_views * self.cpm) / 1000.0
+        return value_clicks + value_views
+
+    def percent_complete(self):
+        projected_total = self.projected_total_value()
+        if projected_total > 0:
+            return self.total_value() / projected_total * 100
+        return 0
+
 
 class AdType(TimeStampedModel, models.Model):
 
@@ -792,7 +804,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     # Supports simple variables like ${publisher} and ${advertisement}
     # using string.Template syntax
-    link = models.URLField(_("Link URL"), max_length=255)
+    link = models.URLField(
+        _("Link URL"),
+        max_length=255,
+        help_text=_(
+            "URL of your landing page. "
+            "This may contain UTM parameters so you know the traffic came from us. "
+            "The publisher will be added in the 'ea-publisher' query parameter."
+        ),
+    )
     image = models.ImageField(
         _("Image"),
         max_length=255,

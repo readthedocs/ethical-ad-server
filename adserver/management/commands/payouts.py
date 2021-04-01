@@ -24,13 +24,13 @@ email_template = """
 {% autoescape off %}
 <p>
 Thanks for being one of the first publishers on our EthicalAds network.
-We aim to get payouts completed by the 15th of the month,
+We do payouts by the 15th of the month,
 as noted in our <a href="https://www.ethicalads.io/publisher-policy/">Publisher Policy</a>.
 If you haven't had a chance to look it over, please do,
 as it sets expectations around ad placements and payments.
 </p>
 
-{% if ctr < .06 %}
+{% if ctr < .07 %}
 
 <p>
 We generally expect all our publishers to maintain a CTR (click though rate) around or above .1%.
@@ -56,12 +56,13 @@ We need a few pieces of information from you in order to process a payment:
 <p>
 <ul>
 <li>The name of the person or organization that will be receiving the payment</li>
-<li>The address, including country, for the person/organization</li>
+<li>The address, including country, for the person or organization</li>
 <li>Fill out the payment information in the <a href="{{ settings_url }}">publisher settings</a></li>
 </ul>
 </p>
 
 <p>
+<strong>Please reply to this email with the name & address of the person or organization receiving this payment.</strong>
 Once we have this information, we will process the payment.
 These will show up in the <a href="{{ payouts_url }}">payouts dashboard</a>,
 once they have been started.
@@ -71,7 +72,7 @@ once they have been started.
 
 <p>
 Since we have already processed a payout for you,
-we should have all the information needed to move ahead.
+we should have all the information needed start the payout.
 You can always update your payout settings in the <a href="{{ settings_url }}">publisher settings</a>.
 Payouts will show up in the <a href="{{ payouts_url }}">payouts dashboard</a> for your records once processed.
 </p>
@@ -79,8 +80,7 @@ Payouts will show up in the <a href="{{ payouts_url }}">payouts dashboard</a> fo
 {% endif %}
 
 <p>
-Thanks again for being part of the EthicalAds network,
-and we look forward to many more months of payouts!
+Thanks again for being part of the EthicalAds network.
 </p>
 
 <p>
@@ -156,6 +156,7 @@ class Command(BaseCommand):
             due_balance = report["total"]["revenue_share"]
             due_str = "{:.2f}".format(due_balance)
             ctr = report["total"]["ctr"]
+            first = data.get("first")
 
             if due_balance < float(50) and not all_publishers:
                 if debug:
@@ -169,7 +170,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 "total={:.2f}".format(due_balance)
                 + " ctr={:.3f}".format(ctr)
-                + " first={}".format(data.get("first"))
+                + " first={}".format(first)
                 + "\n"
             )
             self.stdout.write(report_url + "\n")
@@ -241,7 +242,8 @@ class Command(BaseCommand):
                     requests.request("POST", url, json=payload, headers=headers)
                     # pprint(response.json())
 
-            if create_payout:
+            # Don't show payouts on first-time users unless we're specifically targeting them
+            if create_payout and (publisher_slug or not first):
                 self.stdout.write("Create Payout?\n")
 
                 if publisher.payout_method:
@@ -249,12 +251,16 @@ class Command(BaseCommand):
                         self.stdout.write(
                             f"Stripe: https://dashboard.stripe.com/connect/accounts/{publisher.stripe_connected_account_id}\n"
                         )
-                    if publisher.open_collective_name:
+                    elif publisher.open_collective_name:
                         self.stdout.write(
                             f"Open Collective: https://opencollective.com/{publisher.open_collective_name}\n"
                         )
-                    if publisher.paypal_email:
+                    elif publisher.paypal_email:
                         self.stdout.write(f"Paypal: {publisher.paypal_email}\n")
+                    else:
+                        self.stdout.write(
+                            f"Payment method: {publisher.payout_method}\n"
+                        )
                     self.stdout.write(due_str)
                     self.stdout.write(f"EthicalAds Payout - {publisher.name}\n")
 

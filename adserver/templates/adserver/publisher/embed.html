@@ -1,4 +1,4 @@
-{% extends "adserver/base.html" %}
+{% extends "adserver/publisher/overview.html" %}
 {% load i18n %}
 
 
@@ -7,7 +7,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
   <li class="breadcrumb-item active">{% trans 'Client Embed Code' %}</li>
 {% endblock breadcrumbs %}
 

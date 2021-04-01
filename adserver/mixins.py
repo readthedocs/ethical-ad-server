@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django_countries import countries
 
+from .constants import ALL_CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
 
@@ -49,6 +50,43 @@ class PublisherAccessMixin:
             self.request.user.is_staff
             or publisher in self.request.user.publishers.all()
         )
+
+
+class ReportQuerysetMixin:
+
+    """Mixin for getting a queryset of advertiser report data."""
+
+    # Subclasses must define one of these
+    impression_model = None
+
+    def get_queryset(self, **kwargs):
+        """Get the queryset (from ``impression_model``) used to generate the report."""
+        queryset = self.impression_model.objects.all()
+
+        if "start_date" in kwargs and kwargs["start_date"]:
+            queryset = queryset.filter(date__gte=kwargs["start_date"])
+        if "end_date" in kwargs and kwargs["end_date"]:
+            queryset = queryset.filter(date__lte=kwargs["end_date"])
+
+        # Advertiser filters
+        if "advertiser" in kwargs and kwargs["advertiser"]:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__advertiser=kwargs["advertiser"]
+            )
+        if "flight" in kwargs and kwargs["flight"]:
+            queryset = queryset.filter(advertisement__flight=kwargs["flight"])
+
+        # Publisher filters
+        if "publisher" in kwargs and kwargs["publisher"]:
+            queryset = queryset.filter(publisher=kwargs["publisher"])
+        if "publishers" in kwargs and kwargs["publishers"]:
+            queryset = queryset.filter(publisher__in=kwargs["publishers"])
+        if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
+            queryset = queryset.filter(
+                advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
+            )
+
+        return queryset
 
 
 class GeoReportMixin:

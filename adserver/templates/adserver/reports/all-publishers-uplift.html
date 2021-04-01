@@ -1,4 +1,4 @@
-{% extends "adserver/reports/publisher.html" %}
+{% extends "adserver/reports/base.html" %}
 {% load humanize %}
 {% load i18n %}
 
@@ -16,7 +16,7 @@
 
 
 {% block additional_filters %}
-  <div class="col-lg-2 col-md-4 mb-3">
+  <div class="col-xl-3 col-md-6 col-12 mb-3">
     <label class="col-form-label" for="id_revenue_share_percentage">{% trans 'Revenue Share' %}</label>
     <select class="form-control" name="revenue_share_percentage" id="id_revenue_share_percentage">
       <option>All shares</option>
@@ -26,7 +26,7 @@
     </select>
   </div>
 
-  <div class="col-lg-2 col-md-4 mb-3">
+  <div class="col-xl-3 col-md-6 col-12 mb-3">
     <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
     <select class="form-control" name="sort" id="id_sort">
       {% for option in sort_options %}
@@ -48,4 +48,23 @@
 {% endblock explainer %}
 
 
-{% block summary-heading %}{% trans 'Total uplift results for all publishers' %}{% endblock summary-heading %}
+{% block summary %}
+  <section>
+    <div>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Total uplift results for all publishers' %}</h2>
+
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
+      </div>
+
+      {% include "adserver/reports/includes/publisher-report-table.html" %}
+    </div>
+  </section>
+{% endblock summary %}

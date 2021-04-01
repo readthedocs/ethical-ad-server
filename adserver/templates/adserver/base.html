@@ -66,6 +66,12 @@
 
             <ul class="nav flex-column mb-2">
               <li class="nav-item">
+                <a class="nav-link" href="{% url 'advertiser_main' advertiser.slug %}">
+                  <span class="fa fa-binoculars fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Overview' %}</span>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" href="{% url 'flight_list' advertiser.slug %}">
                   <span class="fa fa-calendar fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Manage advertising' %}</span>
@@ -94,6 +100,13 @@
             <h6 class="text-muted">{{ publisher }}</h6>
 
             <ul class="nav flex-column mb-2">
+
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_main' publisher.slug %}">
+                  <span class="fa fa-binoculars fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Overview' %}</span>
+                </a>
+              </li>
 
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_report' publisher.slug %}">

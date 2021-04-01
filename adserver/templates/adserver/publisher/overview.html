@@ -1,0 +1,79 @@
+{% extends "adserver/base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Publisher overview' %} - {{ publisher }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+
+  {% url 'publisher_main' publisher.slug as publisher_main_url %}
+  {% if request.path == publisher_main_url %}
+    <li class="breadcrumb-item active">{{ publisher }}</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ publisher_main_url }}">{{ publisher }}</a></li>
+  {% endif %}
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ publisher }} overview{% endblocktrans %}</h1>
+    <p><small>Month to date overview for {{ publisher }}.</small></p>
+
+    {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
+
+    <div class="row row-cols-1 row-cols-md-4">
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">${{ report.total.revenue_share|floatformat:2|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Revenue' %}</h6>
+            {% url 'publisher_payouts' publisher.slug as publisher_payout_url %}
+            <p class="text-muted small text-center mb-0">{% blocktrans %}See all your <a href="{{ publisher_payout_url }}">payouts</a>.{% endblocktrans %}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.ctr|floatformat:3 }}%</h3>
+            <h6 class="text-muted text-center">{% trans 'CTR' %}</h6>
+            <p class="text-muted small text-center mb-0">
+              {% if report.total.views < 3000 %}
+                <!-- The sample is too small to draw conclusions -->
+              {% elif report.total.ctr >= 0.1 %}
+                <span>{% trans 'Your CTR looks good.' %}</span>
+              {% elif report.total.ctr >= 0.05 %}
+                <span>{% blocktrans with link='https://www.ethicalads.io/publishers/faq/#how-do-i-ensure-the-ads-will-perform-well-on-my-site' %}Your CTR is OK but could use <a href="{{ link }}" target="_blank">some improvement</a>.{% endblocktrans %}</span>
+              {% else %}
+                <span>{% blocktrans with link='https://www.ethicalads.io/publishers/faq/#how-do-i-ensure-the-ads-will-perform-well-on-my-site' %}Your CTR seems low. Perhaps the quality of the placement <a href="{{ link }}" target="_blank">needs improvement</a>.{% endblocktrans %}</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.views|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Views' %}</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.clicks|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Clicks' %}</h6>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="text-right mb-5"><a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
+
+  </section>
+{% endblock content_container %}

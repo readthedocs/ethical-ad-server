@@ -1,5 +1,4 @@
-{% extends "adserver/base.html" %}
-
+{% extends "adserver/advertiser/overview.html" %}
 {% load i18n %}
 {% load static %}
 {% load humanize %}
@@ -10,7 +9,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item">{{ advertiser }}</li>
   <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
   <li class="breadcrumb-item active">{{ flight.name }}</li>
 {% endblock breadcrumbs %}

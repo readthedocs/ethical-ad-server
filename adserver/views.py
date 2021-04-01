@@ -38,7 +38,6 @@ from django.views.generic.base import RedirectView
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
-from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
@@ -47,6 +46,7 @@ from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import GeoReportMixin
 from .mixins import PublisherAccessMixin
+from .mixins import ReportQuerysetMixin
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -145,14 +145,51 @@ def dashboard(request):
     )
 
 
-class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, RedirectView):
+class AdvertiserMainView(
+    AdvertiserAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
+):
 
     """Should be (or redirect to) the main view for an advertiser that they see when first logging in."""
 
-    permanent = False
+    advertiser = None
+    impression_model = AdImpression
+    model = Advertiser
+    template_name = "adserver/advertiser/overview.html"
 
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse("flight_list", kwargs=kwargs)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get the beginning of the month so we can show month-to-date stats
+        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+
+        queryset = self.get_queryset(
+            advertiser=self.advertiser,
+            start_date=start_date,
+        )
+        report = AdvertiserReport(queryset)
+        report.generate()
+
+        flights = (
+            Flight.objects.filter(campaign__advertiser=self.advertiser)
+            .filter(live=True)
+            .order_by("-live", "-end_date", "name")
+        )
+
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "report": report,
+                "flights": flights,
+                "start_date": start_date,
+            }
+        )
+        return context
+
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return self.advertiser
 
 
 class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
@@ -529,10 +566,18 @@ class AdClickProxyView(BaseProxyView):
         url = template.safe_substitute(
             publisher=publisher_slug, advertisement=advertisement.slug
         )
+
+        # Append a query string param ?ea-publisher=${publisher}
+        url_parts = list(urllib.parse.urlparse(url))
+        query_params = dict(urllib.parse.parse_qsl(url_parts[4]))
+        query_params.update({"ea-publisher": publisher_slug})
+        url_parts[4] = urllib.parse.urlencode(query_params)
+        url = urllib.parse.urlunparse(url_parts)
+
         return HttpResponseRedirect(url)
 
 
-class BaseReportView(UserPassesTestMixin, TemplateView):
+class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
     """
     A base report that other reports can extend.
@@ -542,11 +587,13 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
 
     DEFAULT_REPORT_DAYS = 30
     LIMIT = 20
+    SESSION_KEY_START_DATE = "report_start_date"
+    SESSION_KEY_END_DATE = "report_end_date"
     export = False
     export_filename = "readthedocs-report.csv"
     export_view = None
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
-    model = AdImpression
+    impression_model = AdImpression
     report = PublisherReport
 
     def test_func(self):
@@ -596,35 +643,6 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
             params=urllib.parse.urlencode(self.request.GET),
         )
 
-    def get_queryset(self, **kwargs):
-        """Get the queryset (from ``model``) used to generate the report."""
-        queryset = self.model.objects.all()
-
-        if "start_date" in kwargs and kwargs["start_date"]:
-            queryset = queryset.filter(date__gte=kwargs["start_date"])
-        if "end_date" in kwargs and kwargs["end_date"]:
-            queryset = queryset.filter(date__lte=kwargs["end_date"])
-
-        # Advertiser filters
-        if "advertiser" in kwargs and kwargs["advertiser"]:
-            queryset = queryset.filter(
-                advertisement__flight__campaign__advertiser=kwargs["advertiser"]
-            )
-        if "flight" in kwargs and kwargs["flight"]:
-            queryset = queryset.filter(advertisement__flight=kwargs["flight"])
-
-        # Publisher filters
-        if "publisher" in kwargs and kwargs["publisher"]:
-            queryset = queryset.filter(publisher=kwargs["publisher"])
-        if "publishers" in kwargs and kwargs["publishers"]:
-            queryset = queryset.filter(publisher__in=kwargs["publishers"])
-        if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
-            queryset = queryset.filter(
-                advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
-            )
-
-        return queryset
-
     def _parse_date_string(self, date_str):
         try:
             return timezone.make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
@@ -635,20 +653,40 @@ class BaseReportView(UserPassesTestMixin, TemplateView):
         return None
 
     def get_start_date(self):
+        start_date = None
         if "start_date" in self.request.GET:
             start_date = self._parse_date_string(self.request.GET["start_date"])
-            if start_date:
-                return start_date
+        if not start_date and self.SESSION_KEY_START_DATE in self.request.session:
+            start_date = self._parse_date_string(
+                self.request.session[self.SESSION_KEY_START_DATE]
+            )
 
-        return get_ad_day() - timedelta(days=self.DEFAULT_REPORT_DAYS)
+        if not start_date:
+            start_date = get_ad_day() - timedelta(days=self.DEFAULT_REPORT_DAYS)
+
+        # Store date in the session
+        self.request.session[self.SESSION_KEY_START_DATE] = start_date.strftime(
+            "%Y-%m-%d"
+        )
+
+        return start_date
 
     def get_end_date(self):
+        end_date = None
         if "end_date" in self.request.GET:
             end_date = self._parse_date_string(self.request.GET["end_date"])
-            if end_date:
-                return end_date
+        if not end_date and self.SESSION_KEY_END_DATE in self.request.session:
+            end_date = self._parse_date_string(
+                self.request.session[self.SESSION_KEY_END_DATE]
+            )
 
-        return None
+        if end_date:
+            # Store date in the session
+            self.request.session[self.SESSION_KEY_END_DATE] = end_date.strftime(
+                "%Y-%m-%d"
+            )
+
+        return end_date
 
 
 class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
@@ -749,7 +787,7 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
     """A report for an advertiser broken down by geo."""
 
     export_view = "advertiser_geo_report_export"
-    model = GeoImpression
+    impression_model = GeoImpression
     template_name = "adserver/reports/advertiser-geo.html"
 
     def get_context_data(self, **kwargs):
@@ -959,7 +997,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher broken down by placement (Div/ad type)."""
 
     export_view = "publisher_placement_report_export"
-    model = PlacementImpression
+    impression_model = PlacementImpression
     template_name = "adserver/reports/publisher-placement.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -1028,7 +1066,7 @@ class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportVie
     """A report for a single publisher."""
 
     export_view = "publisher_geo_report_export"
-    model = GeoImpression
+    impression_model = GeoImpression
     template_name = "adserver/reports/publisher-geo.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -1160,7 +1198,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
     """A report for a single publisher."""
 
     export_view = "publisher_keyword_report_export"
-    model = KeywordImpression
+    impression_model = KeywordImpression
     template_name = "adserver/reports/publisher-keyword.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
@@ -1550,7 +1588,7 @@ class UpliftReportView(BaseReportView):
 
     export_view = "publisher_uplift_report_export"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
-    model = UpliftImpression
+    impression_model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
     template_name = "adserver/reports/all-publishers-uplift.html"
@@ -1607,14 +1645,44 @@ class UpliftReportView(BaseReportView):
         return context
 
 
-class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
+class PublisherMainView(
+    PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
+):
 
     """Should be (or redirect to) the main view for a publisher that they see when first logging in."""
 
-    permanent = False
+    publisher = None
+    impression_model = AdImpression
+    model = Publisher
+    template_name = "adserver/publisher/overview.html"
 
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse("publisher_report", kwargs=kwargs)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get the beginning of the month so we can show month-to-date stats
+        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+
+        queryset = self.get_queryset(
+            publisher=self.publisher,
+            start_date=start_date,
+        )
+        report = PublisherReport(queryset)
+        report.generate()
+
+        context.update(
+            {
+                "publisher": self.publisher,
+                "report": report,
+                "start_date": start_date,
+            }
+        )
+        return context
+
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return self.publisher
 
 
 class ApiTokenMixin(LoginRequiredMixin):
