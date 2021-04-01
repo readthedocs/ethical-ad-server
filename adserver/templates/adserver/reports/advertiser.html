@@ -11,7 +11,14 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ advertiser }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'advertiser_main' advertiser.slug %}">{{ advertiser }}</a></li>
+
+  {% url 'advertiser_report' advertiser.slug as advertiser_report_url %}
+  {% if request.path == advertiser_report_url %}
+    <li class="breadcrumb-item active">{% trans 'Reports' %}</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ advertiser_report_url }}">{% trans 'Reports' %}</a></li>
+  {% endif %}
 {% endblock breadcrumbs %}
 
 

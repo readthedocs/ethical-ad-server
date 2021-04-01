@@ -1,4 +1,4 @@
-{% extends "adserver/base.html" %}
+{% extends "adserver/publisher/overview.html" %}
 {% load humanize %}
 {% load i18n %}
 
@@ -8,7 +8,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
   <li class="breadcrumb-item"><a href="{% url 'publisher_payouts' publisher.slug %}">{% trans 'Payouts' %}</a></li>
   <li class="breadcrumb-item active">{{ payout.date|date:"M j, Y" }}</li>
 {% endblock breadcrumbs %}

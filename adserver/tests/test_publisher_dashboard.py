@@ -80,6 +80,18 @@ class TestPublisherDashboardViews(TestCase):
             image=None,
         )
 
+    def test_publisher_overview(self):
+        url = reverse("publisher_main", args=[self.publisher1.slug])
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertContains(resp, "too small to draw conclusions")
+
     def test_publisher_embed_code(self):
         url = reverse("publisher_embed", args=[self.publisher1.slug])
 

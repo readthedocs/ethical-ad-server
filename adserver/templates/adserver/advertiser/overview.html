@@ -1,0 +1,108 @@
+{% extends "adserver/base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Advertiser Overview' %} - {{ advertiser }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+
+  {% url 'advertiser_main' advertiser.slug as advertiser_main_url %}
+
+  {% if request.path == advertiser_main_url %}
+    <li class="breadcrumb-item active">{{ advertiser }}</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ advertiser_main_url }}">{{ advertiser }}</a></li>
+  {% endif %}
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ advertiser }} overview{% endblocktrans %}</h1>
+    <p><small>Month to date overview for {{ advertiser }}.</small></p>
+
+    <div class="row row-cols-1 row-cols-md-4">
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.ctr|floatformat:3 }}%</h3>
+            <h6 class="text-muted text-center">{% trans 'CTR' %}</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.views|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Views' %}</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">{{ report.total.clicks|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Clicks' %}</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center">${{ report.total.cost|floatformat:2|intcomma }}</h3>
+            <h6 class="text-muted text-center">{% trans 'Spend' %}</h6>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="text-right mb-5"><a href="{% url 'advertiser_report' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
+
+    <div class="row row-cols-1">
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">{% trans 'Active flights' %}</h5>
+
+            {% if flights %}
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th><strong>{% trans 'Flight' %}</strong></th>
+                      <th><strong>{% trans 'End date' %}</strong></th>
+                      <th><strong>{% trans 'Progress' %}</strong></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for flight in flights %}
+                      <tr>
+                        <td>
+                          <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
+                        </td>
+                        <td>{{ flight.end_date }}</td>
+                        <td>
+                          <div class="progress" style="height: 1.5rem">
+                            <div class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: {{ flight.percent_complete|floatformat:0 }}%;" aria-valuenow="{{ flight.percent_complete|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                              ${{ flight.value_remaining|floatformat:2 }} / ${{ flight.projected_total_value|floatformat:2 }} remaining</div>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p>{% trans 'You have no active flights at this time' %}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="text-right mb-5"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'All flights' %} &raquo;</a></p>
+
+  </section>
+{% endblock content_container %}

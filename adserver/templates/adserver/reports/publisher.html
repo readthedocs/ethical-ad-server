@@ -10,7 +10,14 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item active">{{ publisher }}</li>
+  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
+
+  {% url 'publisher_report' publisher.slug as publisher_report_url %}
+  {% if request.path == publisher_report_url %}
+    <li class="breadcrumb-item active">{% trans 'Reports' %}</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ publisher_report_url }}">{% trans 'Reports' %}</a></li>
+  {% endif %}
 {% endblock breadcrumbs %}
 
 {% block additional_filters %}
