@@ -1,4 +1,4 @@
-{% extends "adserver/reports/publisher.html" %}
+{% extends "adserver/reports/base.html" %}
 {% load humanize %}
 {% load i18n %}
 
@@ -48,4 +48,23 @@
 {% endblock explainer %}
 
 
-{% block summary-heading %}{% trans 'Total uplift results for all publishers' %}{% endblock summary-heading %}
+{% block summary %}
+  <section>
+    <div>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Total uplift results for all publishers' %}</h2>
+
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
+      </div>
+
+      {% include "adserver/reports/includes/publisher-report-table.html" %}
+    </div>
+  </section>
+{% endblock summary %}

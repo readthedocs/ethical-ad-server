@@ -23,7 +23,7 @@
         <li>--</li>
       {% endif %}
       {% for publisher in publishers %}
-        <li><a href="{% url 'publisher_report' publisher.slug %}">{{ publisher.name }}</a></li>
+        <li><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher.name }}</a></li>
       {% endfor %}
     </ul>
   {% endif %}

@@ -1,4 +1,4 @@
-{% extends "adserver/base.html" %}
+{% extends "adserver/publisher/overview.html" %}
 {% load crispy_forms_tags %}
 {% load i18n %}
 
@@ -12,7 +12,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  <li class="breadcrumb-item"><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher }}</a></li>
   <li class="breadcrumb-item active">{% trans 'Settings' %}</li>
 {% endblock breadcrumbs %}
 

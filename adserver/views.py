@@ -180,6 +180,7 @@ class AdvertiserMainView(
                 "advertiser": self.advertiser,
                 "report": report,
                 "flights": flights,
+                "start_date": start_date,
             }
         )
         return context
@@ -1622,14 +1623,44 @@ class UpliftReportView(BaseReportView):
         return context
 
 
-class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, RedirectView):
+class PublisherMainView(
+    PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
+):
 
     """Should be (or redirect to) the main view for a publisher that they see when first logging in."""
 
-    permanent = False
+    publisher = None
+    impression_model = AdImpression
+    model = Publisher
+    template_name = "adserver/publisher/overview.html"
 
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse("publisher_report", kwargs=kwargs)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get the beginning of the month so we can show month-to-date stats
+        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+
+        queryset = self.get_queryset(
+            publisher=self.publisher,
+            start_date=start_date,
+        )
+        report = PublisherReport(queryset)
+        report.generate()
+
+        context.update(
+            {
+                "publisher": self.publisher,
+                "report": report,
+                "start_date": start_date,
+            }
+        )
+        return context
+
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        return self.publisher
 
 
 class ApiTokenMixin(LoginRequiredMixin):
