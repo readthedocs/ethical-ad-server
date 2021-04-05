@@ -296,9 +296,10 @@ class TestArchiveOffers(TestCase):
 
         output = self.out.getvalue()
         self.assertFalse("Skipping deleting archived offers" in output)
-        self.assertTrue("Copying offer dumps to backups" in output)
-        self.assertTrue("Deleting archived offers" in output)
+        self.assertTrue("Copying offers" in output)
         self.assertTrue("Successfully copied" in output)
+        self.assertTrue("Deleting archived offers" in output)
+        self.assertTrue("Updating database statistics" in output)
 
         management.call_command(
             "archive_offers",

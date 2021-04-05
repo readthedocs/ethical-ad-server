@@ -131,7 +131,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(_("Successfully archived %s.") % day))
 
-    def copy_offer_dumps(self):
+        return zipped_output_file
+
+    def copy_offer_dump(self, archive_filepath):
         """Copy offer CSV files to settings.BACKUPS_STORAGE."""
         if not hasattr(settings, "BACKUPS_STORAGE"):
             self.stdout.write(
@@ -143,31 +145,24 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write(_("Copying offer dumps to backups..."))
-
-        copied_file_count = 0
         storage = get_storage_class(settings.BACKUPS_STORAGE)()
 
-        for filepath in self.output_dir.iterdir():
-            storage_path = self.storage_output_dir + filepath.name
-            self.stdout.write(_("Copying %s to backups...") % filepath)
-            if storage.exists(storage_path):
-                self.stdout.write(
-                    self.style.WARNING(
-                        _("- %s already exists in backups") % storage_path
-                    )
-                )
-            with open(filepath, "rb") as fd:
-                storage.save(storage_path, fd)
-            copied_file_count += 1
+        storage_path = self.storage_output_dir + archive_filepath.name
+        self.stdout.write(_("Copying offers (%s) to backups...") % archive_filepath)
+        if storage.exists(storage_path):
+            self.stdout.write(
+                self.style.WARNING(_("- %s already exists in backups") % storage_path)
+            )
+        with open(archive_filepath, "rb") as fd:
+            storage.save(storage_path, fd)
 
         self.stdout.write(
             self.style.SUCCESS(
-                _("Successfully copied %d archives to backups.") % copied_file_count
+                _("Successfully copied %s to backups.") % archive_filepath
             )
         )
 
-    def delete_offers(self, start_day, end_day):
+    def delete_offers(self, day):
         """Deletes offers from the database (requires them to be copied to settings.BACKUPS_STORAGE)."""
         if not hasattr(settings, "BACKUPS_STORAGE"):
             self.stdout.write(
@@ -177,29 +172,25 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write(_("Deleting archived offers..."))
+        self.stdout.write(_("Deleting archived offers for %s...") % day)
 
-        # Because the last day is inclusive, the delete query needs to delete after that day
-        end_day += datetime.timedelta(days=1)
+        end_day = day + datetime.timedelta(days=1)
         query = "DELETE FROM adserver_offer WHERE date >= %s AND date < %s"
 
         self.stdout.write(_("- Executing SQL:"))
-        self.stdout.write(query % (start_day, end_day))
+        self.stdout.write(query % (day, end_day))
 
         with connection.cursor() as cursor:
             # Offers are normally immutable so the delete has to be run as raw sql
             cursor.execute(
                 query,
-                [start_day, end_day],
+                [day, end_day],
             )
             deleted_offers = cursor.fetchone()
 
         self.stdout.write(
             self.style.SUCCESS(_("Successfully removed %d offers.") % deleted_offers)
         )
-
-        # Update the DB stats if we removed offers
-        self.update_db_stats()
 
     def update_db_stats(self):
         """Updates DB stats after these changes."""
@@ -227,9 +218,13 @@ class Command(BaseCommand):
 
         day = kwargs["start_date"]
         while day <= kwargs["end_date"]:
-            self.handle_archive_day(day)
+            archive_filepath = self.handle_archive_day(day)
+            self.copy_offer_dump(archive_filepath)
+            if kwargs["delete_offers"]:
+                self.delete_offers(day)
+
             day += datetime.timedelta(days=1)
 
-        self.copy_offer_dumps()
         if kwargs["delete_offers"]:
-            self.delete_offers(kwargs["start_date"], kwargs["end_date"])
+            # Update DB stats if we deleted anything
+            self.update_db_stats()
