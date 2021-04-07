@@ -650,9 +650,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         # Keep values above 1, so we don't penalize the value for lower performance
         # but add value for higher performance
-        value = max(int(ctr_value), 1)
+        value = max(float(ctr_value), 1.0)
+        value = min(value, 10.0)
 
-        return impressions_needed * self.priority_multiplier * value
+        return int(impressions_needed * self.priority_multiplier * value)
 
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
