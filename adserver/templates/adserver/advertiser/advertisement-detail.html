@@ -48,7 +48,7 @@
       <dt>{% trans 'Flight' %}</dt>
       <dd>{{ advertisement.flight.name }}</dd>
       <dt>{% trans 'Display' %}</dt>
-      <dd>{{ advertisement.ad_types.all | join:", " }}</dd>
+      <dd>{{ advertisement.ad_types.all | join:"<br>" }}</dd>
       {% if advertisement.link %}
         <dt>{% trans 'Click-through link' %}</dt>
         <dd><small><a href="{{ advertisement.link }}">{{ advertisement.link|truncatechars:50 }}</a></small></dd>

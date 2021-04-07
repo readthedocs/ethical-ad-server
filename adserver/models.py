@@ -671,6 +671,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return self.total_value() / projected_total * 100
         return 0
 
+    def ctr(self):
+        clicks = self.total_clicks
+        views = self.total_views
+        return calculate_ctr(clicks, views)
+
 
 class AdType(TimeStampedModel, models.Model):
 
@@ -1114,7 +1119,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             return aggregate
         return 0
 
-    def total_click_ratio(self):
+    def ctr(self):
         return calculate_ctr(self.total_clicks(), self.total_views())
 
     def country_click_breakdown(self, start_date, end_date=None):

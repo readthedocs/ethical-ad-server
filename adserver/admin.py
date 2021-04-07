@@ -236,9 +236,7 @@ class AdvertisementMixin:
         return obj.num_views or 0
 
     def ctr(self, obj):
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
+        return "{:.3f}%".format(obj.ctr())
 
     def ecpm(self, obj):
         if not obj.flight:
@@ -368,9 +366,7 @@ class FlightMixin:
         return "${:.2f}".format(obj.projected_total_value())
 
     def ctr(self, obj):
-        clicks = obj.total_clicks
-        views = obj.total_views
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
+        return "{:.3f}%".format(obj.ctr())
 
     def ecpm(self, obj):
         clicks = obj.total_clicks
