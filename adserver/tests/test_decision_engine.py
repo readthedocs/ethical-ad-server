@@ -626,3 +626,41 @@ class DecisionEngineTests(TestCase):
 
         flights = self.probabilistic_backend.get_candidate_flights()
         self.assertFalse(flights.exists())
+
+    def test_cost_weighting(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        good_ctr = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=5,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=5,
+            total_views=1500,
+        )
+        bad_ctr = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=5,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=2,
+            total_views=5000,
+        )
+
+        # Add bonus probability for good performance
+        self.assertEqual(good_ctr.clicks_needed_today(), 28)
+        self.assertEqual(good_ctr.weighted_clicks_needed_today(), 224)
+
+        # Don't allow down-weighting for bad performance,
+        # only add bonus for good performance
+        self.assertEqual(bad_ctr.clicks_needed_today(), 31)
+        self.assertEqual(bad_ctr.weighted_clicks_needed_today(), 31)
