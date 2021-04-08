@@ -632,6 +632,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         Calculates clicks needed taking into account a flight's priority.
 
         For the purpose of clicks needed, 1000 impressions = 1 click (for CPM ads)
+        Takes into account value of the flight,
+        which causes higher paid and better CTR ads to be prioritized.
         """
         impressions_needed = 0
 
@@ -639,7 +641,19 @@ class Flight(TimeStampedModel, IndestructibleModel):
         impressions_needed += math.ceil(self.views_needed_today() / 1000.0)
         impressions_needed += self.clicks_needed_today()
 
-        return impressions_needed * self.priority_multiplier
+        # Cost should be a float from around .5-5, averaging 2
+        cost = float(self.cpm or self.cpc)
+
+        # CTR should be a float around .1
+        # Leading to a base value of $2 * 5 * .1 == 1.0
+        ctr_value = cost * 5.0 * float(self.ctr())
+
+        # Keep values between 1-10 so we don't penalize the value for lower performance
+        # but add value for higher performance without overweighting
+        value = max(float(ctr_value), 1.0)
+        value = min(value, 10.0)
+
+        return int(impressions_needed * self.priority_multiplier * value)
 
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
