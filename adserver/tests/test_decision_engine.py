@@ -658,7 +658,10 @@ class DecisionEngineTests(TestCase):
 
         # Add bonus probability for good performance
         self.assertEqual(good_ctr.clicks_needed_today(), 28)
-        self.assertEqual(good_ctr.weighted_clicks_needed_today(), 224)
+        weighting_boost = 5 * 5 * 0.333  # 5 (constant) * 5 (cpm) * 0.333 (ctr)
+        self.assertEqual(
+            good_ctr.weighted_clicks_needed_today(), int(28 * weighting_boost)
+        )
 
         # Don't allow down-weighting for bad performance,
         # only add bonus for good performance
