@@ -627,7 +627,7 @@ class DecisionEngineTests(TestCase):
         flights = self.probabilistic_backend.get_candidate_flights()
         self.assertFalse(flights.exists())
 
-    def test_cost_weighting(self):
+    def test_ctr_weighting(self):
         # Remove existing flights
         for flight in Flight.objects.all():
             flight.live = False
@@ -667,3 +667,75 @@ class DecisionEngineTests(TestCase):
         # only add bonus for good performance
         self.assertEqual(bad_ctr.clicks_needed_today(), 31)
         self.assertEqual(bad_ctr.weighted_clicks_needed_today(), 31)
+
+    def test_cpm_weighting(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        low_cost = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=1,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=5,
+            total_views=1500,
+        )
+        high_cost = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=5,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=5,
+            total_views=1500,
+        )
+
+        self.assertEqual(low_cost.clicks_needed_today(), 28)
+        self.assertEqual(low_cost.weighted_clicks_needed_today(), 46)
+
+        self.assertEqual(high_cost.clicks_needed_today(), 28)
+        self.assertEqual(high_cost.weighted_clicks_needed_today(), 233)
+
+    def test_weighting_bounds(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        super_low = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=1,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=0,
+            total_views=1500,
+        )
+        super_high = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=5,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=5,
+            total_views=100,
+        )
+
+        # 1x
+        self.assertEqual(super_low.clicks_needed_today(), 33)
+        self.assertEqual(super_low.weighted_clicks_needed_today(), 33)
+
+        # 10x
+        self.assertEqual(super_high.clicks_needed_today(), 28)
+        self.assertEqual(super_high.weighted_clicks_needed_today(), 280)

@@ -648,8 +648,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # Leading to a base value of $2 * 5 * .1 == 1.0
         ctr_value = cost * 5.0 * float(self.ctr())
 
-        # Keep values above 1, so we don't penalize the value for lower performance
-        # but add value for higher performance
+        # Keep values between 1-10 so we don't penalize the value for lower performance
+        # but add value for higher performance without overweighting
         value = max(float(ctr_value), 1.0)
         value = min(value, 10.0)
 
