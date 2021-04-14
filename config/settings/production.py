@@ -43,6 +43,15 @@ DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
 
 
+# Logging changes
+# --------------------------------------------------------------------------
+# Folks spam our site with random hosts all the time. Ignore these errors.
+LOGGING["loggers"]["django.security.DisallowedHost"] = {
+    "handlers": ["null"],
+    "propagate": False,
+}
+
+
 # Cache
 # https://docs.djangoproject.com/en/2.2/topics/cache/
 # https://niwinz.github.io/django-redis/

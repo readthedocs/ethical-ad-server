@@ -231,6 +231,9 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "succinct",
         },
+        "null": {
+            "class": "logging.NullHandler",
+        },
     },
     "loggers": {
         "": {"level": "INFO", "handlers": ["console"], "propagate": False},
