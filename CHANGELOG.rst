@@ -6,6 +6,25 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.24.0
+---------------
+
+In our reporting interface, we added some more summary and high level data
+on ad and flight performance from a CTR perspective.
+The other big change was a tweak to ad prioritization to prioritize
+higher eCPM ads when making an ad decision.
+
+:date: April 15, 2021
+
+ * @davidfischer: Mute the disallowed host logger in prod (#362)
+ * @dependabot[bot]: Bump django from 2.2.18 to 2.2.20 in /requirements (#361)
+ * @ericholscher: Add naive attempt at price targeting (#360)
+ * @davidfischer: Show CTR in summaries for ads and flights (#358)
+ * @davidfischer: Create security policy (#356)
+ * @davidfischer: Tweaks to the archive management command (#355)
+ * @davidfischer: Update JS dependencies (#347)
+
+
 Version v0.23.0
 ---------------
 
