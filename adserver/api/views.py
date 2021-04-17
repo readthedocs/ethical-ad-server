@@ -70,6 +70,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :<json array campaign_types: An optional ``|`` delimited string of campaign types (eg. ``paid|community|house``)
             which can be used to limit to just certain types of ads.
             Can only further reduce campaign types, not allow ones prohibited for the publisher.
+        :<json string url: The URL of the requesting page. This is where the ad will appear.
         :<json string format: Format can optionally be specified as ``jsonp`` to allow a callback.
         :<json string callback: The name of the callback for a JSONP request (default is ``callback``)
         :<json string force_ad: Limit results to a specific ad
@@ -145,7 +146,7 @@ class AdDecisionView(GeoIpMixin, APIView):
     permission_classes = (AdDecisionPermission,)
     renderer_classes = (JSONRenderer, JSONPRenderer)
 
-    def _prepare_response(self, ad, placement, publisher, keywords, forced=False):
+    def _prepare_response(self, ad, placement, publisher, keywords, url, forced=False):
         """
         Wrap `offer_ad` with the placement for the publisher.
 
@@ -167,6 +168,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     ad_type_slug=ad_type_slug,
                     div_id=div_id,
                     keywords=keywords,
+                    url=url,
                 )
                 return {}
 
@@ -178,6 +180,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 ad_type_slug=ad_type_slug,
                 div_id=div_id,
                 keywords=keywords,
+                url=url,
                 forced=forced,
             )
             log.debug(
@@ -189,7 +192,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             )
             cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
         else:
-            referrer = self.request.META.get("HTTP_REFERER")
+            referrer = url or self.request.META.get("HTTP_REFERER")
             log.info(
                 "Using sticky ad decision. publisher=%s ad_type=%s campaign_type=%s, referrer=%s",
                 publisher.slug,
@@ -264,6 +267,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             publisher = serializer.validated_data["publisher"]
             self.check_object_permissions(request, publisher)
             keywords = serializer.validated_data.get("keywords")
+            url = serializer.validated_data.get("url")
             backend = get_ad_decision_backend()(
                 # Required parameters
                 request=request,
@@ -272,6 +276,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 # Optional parameters
                 keywords=keywords,
                 campaign_types=serializer.validated_data.get("campaign_types"),
+                url=url,
                 # Debugging parameters
                 ad_slug=serializer.validated_data.get("force_ad"),
                 campaign_slug=serializer.validated_data.get("force_campaign"),
@@ -290,6 +295,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     publisher=publisher,
                     # We need backend.keywords here to get the combined publisher/user keywords
                     keywords=backend.keywords,
+                    url=url,
                     forced=forced,
                 )
             )

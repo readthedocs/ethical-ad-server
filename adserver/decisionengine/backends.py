@@ -80,6 +80,8 @@ class BaseAdDecisionBackend:
         ):
             self.campaign_types.append(HOUSE_CAMPAIGN)
 
+        self.url = kwargs.get("url") or ""
+
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")

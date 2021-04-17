@@ -1040,6 +1040,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         data = {
             "placements": self.placements,
             "publisher": self.publisher1.slug,
+            "url": self.page_url,
             "user_ip": self.ip_address,
             "user_ua": self.user_agent,
         }
@@ -1056,18 +1057,17 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.clicks, 0)
 
         # Ensure also that an offer object is written
-        self.assertEqual(
-            Offer.objects.filter(
-                advertisement=self.ad, publisher=self.publisher1
-            ).count(),
-            1,
-        )
+        offer = Offer.objects.filter(
+            advertisement=self.ad, publisher=self.publisher1
+        ).first()
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer.url, self.page_url)
 
         # Ad clicked without a view
         click_url = reverse(
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
         )
-        resp = self.proxy_client.get(click_url, HTTP_REFERER=self.page_url)
+        resp = self.proxy_client.get(click_url)
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Old/Invalid nonce")
 
@@ -1075,7 +1075,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         click_url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
         )
-        resp = self.proxy_client.get(click_url, HTTP_REFERER=self.page_url)
+        resp = self.proxy_client.get(click_url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
 
@@ -1083,7 +1083,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         click_url = reverse(
             "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
         )
-        resp = self.proxy_client.get(click_url, HTTP_REFERER=self.page_url)
+        resp = self.proxy_client.get(click_url)
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
 
@@ -1232,6 +1232,37 @@ class AdvertisingIntegrationTests(BaseApiTest):
             Offer.objects.filter(advertisement=None, publisher=self.publisher1).count(),
             1,
         )
+
+    def test_offer_url(self):
+        url1 = "http://example.com/path.html"
+        url2 = "http://example.com/altpath.html"
+
+        # Defaults to the referrer if no URL sent
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+            HTTP_REFERER=url1,
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer.url, url1)
+
+        # Passed URL overrides the referrer
+        self.data["url"] = url2
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+            HTTP_REFERER=url1,
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer.url, url2)
 
 
 class TestProxyViews(BaseApiTest):

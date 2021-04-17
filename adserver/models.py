@@ -902,7 +902,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 total_clicks=models.F("total_clicks") + 1
             )
 
-    def _record_base(self, request, model, publisher, keywords, div_id, ad_type_slug):
+    def _record_base(
+        self, request, model, publisher, keywords, url, div_id, ad_type_slug
+    ):
         """
         Save the actual AdBase model to the database.
 
@@ -914,7 +916,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
         country = get_client_country(request, ip_address)
-        url = request.META.get("HTTP_REFERER")
+        url = url or request.META.get("HTTP_REFERER")
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:
             # For compliance with DNT,
@@ -960,6 +962,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             model=Click,
             publisher=publisher,
             keywords=offer.keywords,
+            url=offer.url,
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
         )
@@ -985,6 +988,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 model=View,
                 publisher=publisher,
                 keywords=offer.keywords,
+                url=offer.url,
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
             )
@@ -993,7 +997,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return None
 
     def offer_ad(
-        self, request, publisher, ad_type_slug, div_id, keywords, forced=False
+        self, request, publisher, ad_type_slug, div_id, keywords, url=None, forced=False
     ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
@@ -1008,6 +1012,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             model=Offer,
             publisher=publisher,
             keywords=keywords,
+            url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
         )
@@ -1052,7 +1057,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         }
 
     @classmethod
-    def record_null_offer(cls, request, publisher, ad_type_slug, div_id, keywords):
+    def record_null_offer(cls, request, publisher, ad_type_slug, div_id, keywords, url):
         """
         Store null offers, so that we can keep track of our fill rate.
 
@@ -1066,6 +1071,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             model=Offer,
             publisher=publisher,
             keywords=keywords,
+            url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
         )

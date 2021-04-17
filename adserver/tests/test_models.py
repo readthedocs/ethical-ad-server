@@ -368,6 +368,39 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
 
+    def test_offer_ad(self):
+        request = self.factory.get("/")
+        request.ip_address = "1.1.1.1"
+        request.user_agent = (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/90.0.4430.72 Safari/537.36"
+        )
+
+        div_id = "foo"
+        url = "http://example.com/path.html"
+        keywords = ["python", "ruby"]
+
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id=div_id,
+            keywords=keywords,
+            url=url,
+        )
+        offer = Offer.objects.get(pk=output["nonce"])
+
+        self.assertEqual(offer.publisher, self.publisher)
+        self.assertEqual(offer.advertisement, self.ad1)
+        self.assertEqual(offer.div_id, div_id)
+        self.assertEqual(offer.url, url)
+        self.assertEqual(offer.ip, "1.1.0.0")  # anonymized
+        self.assertEqual(offer.os_family, "Linux")
+        self.assertEqual(offer.browser_family, "Chrome")
+        self.assertFalse(offer.viewed)
+        self.assertFalse(offer.clicked)
+        self.assertFalse(offer.uplifted)
+
     def test_refund(self):
         request = self.factory.get("/")
 
