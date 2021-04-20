@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.25.0
+---------------
+
+The big change here is that the ad decision API now supports
+sending the URL where the ad will appear.
+In the future, we can use this for some additional targeting
+and automated fraud checking.
+
+:date: April 20, 2021
+
+ * @dependabot[bot]: Bump ssri from 6.0.1 to 6.0.2 (#366)
+ * @davidfischer: Add an optional URL to the decision API (#365)
+ * @ericholscher: Add link to FAQ in CTR callout in payout email (#364)
+ * @davidfischer: Send URL with the ad request (#354)
+
+
 Version v0.24.0
 ---------------
 
