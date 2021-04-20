@@ -825,6 +825,7 @@ class TestReportClasses(TestReportsBase):
             ad_type_slug=self.ad_type1.slug,
             div_id="ad-id",
             keywords=[],
+            url=None,
         )
 
         report = PublisherReport(AdImpression.objects.filter(publisher=self.publisher1))

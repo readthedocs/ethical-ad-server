@@ -42,6 +42,9 @@ class AdDecisionSerializer(serializers.Serializer):
         child=serializers.CharField(), max_length=10, required=False
     )
 
+    # The URL where the ad will appear
+    url = serializers.URLField(required=False)
+
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
     user_ua = serializers.CharField(required=False)
