@@ -36,8 +36,9 @@ as it sets expectations around ad placements and payments.
 We generally expect all our publishers to maintain a CTR (click though rate) around or above .1%.
 Your CTR is currently {{ report.total.ctr|floatformat:3 }}%,
 which is below our current minimum.
-We're working on documenting some recommendations for improving CTR,
-but for now the primary thing is making sure your ads are displayed in a prominent place on your site.
+We have a few suggestions in our <a href="https://www.ethicalads.io/publishers/faq/">FAQ</a> around improving placements,
+but the main thing is just having the ad be on the screen in a visible place for long enough for users to see and click on it.
+
 </p>
 
 {% endif %}
