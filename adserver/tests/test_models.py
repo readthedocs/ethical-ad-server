@@ -400,6 +400,8 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertFalse(offer.viewed)
         self.assertFalse(offer.clicked)
         self.assertFalse(offer.uplifted)
+        self.assertTrue("python" in offer.keywords)
+        self.assertTrue("ruby" in offer.keywords)
 
     def test_refund(self):
         request = self.factory.get("/")

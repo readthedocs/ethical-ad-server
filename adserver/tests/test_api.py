@@ -1234,35 +1234,35 @@ class AdvertisingIntegrationTests(BaseApiTest):
         )
 
     def test_offer_url(self):
-        url1 = "http://example.com/path.html"
-        url2 = "http://example.com/altpath.html"
+        referrer_url = "http://example.com/path.html"
+        post_url = "http://example.com/altpath.html"
 
         # Defaults to the referrer if no URL sent
         resp = self.client.post(
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=url1,
+            HTTP_REFERER=referrer_url,
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
         offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
         self.assertIsNotNone(offer)
-        self.assertEqual(offer.url, url1)
+        self.assertEqual(offer.url, referrer_url)
 
         # Passed URL overrides the referrer
-        self.data["url"] = url2
+        self.data["url"] = post_url
         resp = self.client.post(
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=url1,
+            HTTP_REFERER=referrer_url,
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
         offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
         self.assertIsNotNone(offer)
-        self.assertEqual(offer.url, url2)
+        self.assertEqual(offer.url, post_url)
 
 
 class TestProxyViews(BaseApiTest):
