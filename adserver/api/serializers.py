@@ -1,4 +1,6 @@
 """De-serializers for the ad server APIs."""
+import logging
+
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from rest_framework import serializers
@@ -8,6 +10,9 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class AdPlacementSerializer(serializers.Serializer):
@@ -91,6 +96,7 @@ class AdDecisionSerializer(serializers.Serializer):
             validator(url)  # Throws ValidationError on invalid
             return url
         except ValidationError:
+            log.warning("Invalid ad decision referring URL: %s", url)
             return None
 
 
