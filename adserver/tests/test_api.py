@@ -1264,6 +1264,34 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertIsNotNone(offer)
         self.assertEqual(offer.url, post_url)
 
+        # Invalid URL
+        self.data["url"] = "invalid-url"
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
+
+        # Offer is accepted - URL is set to None
+        self.assertIsNotNone(offer)
+        self.assertIsNone(offer.url)
+
+        # Missing URL
+        del self.data["url"]
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        offer = Offer.objects.filter(id=resp.json()["nonce"]).first()
+
+        # Offer is accepted - URL is set to None
+        self.assertIsNotNone(offer)
+        self.assertIsNone(offer.url)
+
 
 class TestProxyViews(BaseApiTest):
     def setUp(self):

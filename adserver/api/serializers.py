@@ -1,4 +1,8 @@
 """De-serializers for the ad server APIs."""
+import logging
+
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
@@ -6,6 +10,9 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class AdPlacementSerializer(serializers.Serializer):
@@ -43,7 +50,8 @@ class AdDecisionSerializer(serializers.Serializer):
     )
 
     # The URL where the ad will appear
-    url = serializers.URLField(required=False)
+    # This purposefully doesn't use a URLField so we can disregard invalid values rather than rejecting them
+    url = serializers.CharField(max_length=256, required=False)
 
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
@@ -81,6 +89,15 @@ class AdDecisionSerializer(serializers.Serializer):
             keywords = [k.lower().strip() for k in keywords if k.strip()]
 
         return keywords
+
+    def validate_url(self, url):
+        validator = URLValidator()
+        try:
+            validator(url)  # Throws ValidationError on invalid
+            return url
+        except ValidationError:
+            log.warning("Invalid ad decision referring URL: %s", url)
+            return None
 
 
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
