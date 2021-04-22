@@ -141,10 +141,12 @@ if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
+    from sentry_sdk.integrations.logging import ignore_logger
 
     sentry_logging = LoggingIntegration(
         event_level=logging.WARNING  # Send warnings as events
     )
+    ignore_logger("django.security.DisallowedHost")
 
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
 
