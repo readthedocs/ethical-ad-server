@@ -30,6 +30,9 @@ from user_agents import parse
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import DECISIONS
+from .constants import FLIGHT_STATE_CURRENT
+from .constants import FLIGHT_STATE_PAST
+from .constants import FLIGHT_STATE_UPCOMING
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
@@ -479,10 +482,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def state(self):
         today = get_ad_day().date()
         if self.live and self.start_date <= today:
-            return _("Current")
+            return FLIGHT_STATE_CURRENT
         if self.end_date > today:
-            return _("Upcoming")
-        return _("Past")
+            return FLIGHT_STATE_UPCOMING
+        return FLIGHT_STATE_PAST
 
     def get_absolute_url(self):
         return reverse(
