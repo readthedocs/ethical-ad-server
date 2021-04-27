@@ -432,8 +432,7 @@ class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, Template
         )
 
     def copy_instance(self):
-        instance = self.source_advertisement
-        instance.__copy__()
+        instance = self.source_advertisement.__copy__()
         instance.flight = self.flight
         instance.save()  # Automatically gets a new slug
         return instance
