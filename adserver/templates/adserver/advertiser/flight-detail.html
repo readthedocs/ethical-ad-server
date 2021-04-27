@@ -45,10 +45,14 @@
   <div class="row">
     <h5 class="col-md-8">{% trans 'Advertisements' %}</h5>
 
-    <aside class="col-md-4 mb-3 text-right">
-      <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
+    <aside class="col-md-4 text-right">
+      <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
+      </a>
+      <a href="{% url 'advertisement_copy' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
+        <span class="fa fa-clone mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Copy existing ad' %}</span>
       </a>
     </aside>
   </div>

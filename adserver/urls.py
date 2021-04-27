@@ -4,6 +4,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 
 from .views import AdClickProxyView
+from .views import AdvertisementCopyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
 from .views import AdvertisementUpdateView
@@ -124,6 +125,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/report.csv",
         AdvertiserFlightReportView.as_view(export=True),
         name="flight_report_export",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/copy/",
+        AdvertisementCopyView.as_view(),
+        name="advertisement_copy",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/create/",

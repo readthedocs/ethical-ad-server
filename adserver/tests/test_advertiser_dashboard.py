@@ -261,6 +261,36 @@ class TestAdvertiserDashboardViews(TestCase):
             Advertisement.objects.filter(flight=self.flight, name="New Name").exists()
         )
 
+    def test_ad_copy_view(self):
+        url = reverse(
+            "advertisement_copy",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertContains(response, "Copy advertisement")
+        self.assertContains(response, self.ad1.name)
+
+        # Goes to the confirm screen
+        response = self.client.get(url, data={"source_advertisement": self.ad1.pk})
+        self.assertContains(response, "Copy advertisement")
+        self.assertContains(response, "Source advertisement")
+
+        # Perform the copy
+        count_ads = Advertisement.objects.all().count()
+        response = self.client.post(url, data={"source_advertisement": self.ad1.pk})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Advertisement.objects.all().count(), count_ads + 1)
+
     def test_deprecated_ad_type(self):
         url = reverse(
             "advertisement_create",

@@ -18,6 +18,7 @@ from django.template import engines
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -859,6 +860,28 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     class Meta:
         ordering = ("slug", "-live")
+
+    def __copy__(self):
+        """Duplicate an ad."""
+        # https://docs.djangoproject.com/en/2.2/topics/db/queries/#copying-model-instances
+        # Get a fresh reference so that "self" doesn't become the new copy
+        ad = Advertisement.objects.get(pk=self.pk)
+
+        # Get a slug that doesn't already exist
+        new_slug = ad.slug + "-copy"
+        while Advertisement.objects.filter(slug=new_slug).exists():
+            new_slug += "-" + get_random_string(3)
+
+        ad_types = ad.ad_types.all()
+
+        ad.pk = None
+        ad.name += " Copy"
+        ad.slug = new_slug
+        ad.live = False  # The new ad should always be non-live
+        ad.save()
+
+        ad.ad_types.set(ad_types)
+        return ad
 
     def __str__(self):
         """Simple override."""
