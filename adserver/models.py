@@ -95,7 +95,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     """
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Publisher Slug"), max_length=200)
+    slug = models.SlugField(_("Publisher Slug"), max_length=200, unique=True)
 
     revenue_share_percentage = models.FloatField(
         default=70.0,
@@ -225,7 +225,7 @@ class PublisherGroup(TimeStampedModel):
     name = models.CharField(
         _("Name"), max_length=200, help_text=_("Visible to advertisers")
     )
-    slug = models.SlugField(_("Publisher group slug"), max_length=200)
+    slug = models.SlugField(_("Publisher group slug"), max_length=200, unique=True)
 
     publishers = models.ManyToManyField(
         Publisher,
@@ -247,7 +247,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     """An advertiser who buys advertising from the ad server."""
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Advertiser Slug"), max_length=200)
+    slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
 
     stripe_customer_id = models.CharField(
         _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
@@ -279,7 +279,7 @@ class Campaign(TimeStampedModel, IndestructibleModel):
     """
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Campaign Slug"), max_length=200)
+    slug = models.SlugField(_("Campaign Slug"), max_length=200, unique=True)
 
     advertiser = models.ForeignKey(
         Advertiser,
@@ -376,7 +376,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     LOWEST_PRIORITY_MULTIPLIER = 1
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Flight Slug"), max_length=200)
+    slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
     start_date = models.DateField(
         _("Start Date"),
         default=datetime.date.today,
@@ -703,7 +703,7 @@ class AdType(TimeStampedModel, models.Model):
     """
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Slug"), max_length=200)
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
     # image specifications
     # image_height/width of null means it accepts any value (not recommended)
@@ -785,7 +785,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     """
 
     name = models.CharField(_("Name"), max_length=200)
-    slug = models.SlugField(_("Slug"), max_length=200)
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
     # ad.text used to be a standalone field with certain HTML supported
     # Now it is constructed from the headline, content, and call to action
