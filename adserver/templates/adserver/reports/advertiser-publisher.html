@@ -25,9 +25,19 @@
 <div class="col-xl-3 col-md-6 col-12 mb-3">
   <label class="col-form-label" for="id_publisher">{% trans 'Top Publishers' %}</label>
   <select class="form-control" name="publisher" id="id_publisher">
-    <option value="">All publishers</option>
+    <option value="">{% trans 'All publishers' %}</option>
     {% for slug, name in publisher_list %}
       <option value="{{ slug }}"{% if report_publisher.slug == slug %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="col-xl-3 col-md-6 col-12 mb-3">
+  <label class="col-form-label" for="id_flight">{% trans 'Flight' %}</label>
+  <select class="form-control" name="flight" id="id_flight">
+    <option value="">{% trans 'All flights' %}</option>
+    {% for flight in flights %}
+      <option value="{{ flight.slug }}"{% if flight.slug == request.GET.flight %} selected{% endif %}>{{ flight.name }}</option>
     {% endfor %}
   </select>
 </div>

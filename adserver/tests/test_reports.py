@@ -435,6 +435,27 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(export_url, {"country": "FR"})
         self.assertContains(response, "Total,1")
 
+        # Filter by flight
+        response = self.client.get(url, {"flight": self.flight1.slug})
+        self.assertContains(response, "France")
+
+        advertiser1_flight2 = get(
+            Flight,
+            name="Test Flight 2",
+            slug="advertiser1-test-flight-2",
+            campaign=self.campaign,
+            live=False,
+            cpm=1.0,
+            sold_impressions=1000,
+        )
+        response = self.client.get(url, {"flight": advertiser1_flight2.slug})
+        self.assertContains(response, advertiser1_flight2.name)
+        self.assertContains(
+            response,
+            f'<option value="{advertiser1_flight2.slug}" selected>{ advertiser1_flight2.name }</option>',
+        )
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
     def test_advertiser_publisher_report_contents(self):
         get(
             Offer,
