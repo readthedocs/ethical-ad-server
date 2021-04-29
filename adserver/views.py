@@ -10,6 +10,7 @@ from datetime import timedelta
 import stripe
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -42,6 +43,7 @@ from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import GeoReportMixin
@@ -954,6 +956,110 @@ class AllAdvertiserReportView(BaseReportView):
         )
 
         return context
+
+
+class AdvertiserAuthorizedUsersView(
+    AdvertiserAccessMixin, UserPassesTestMixin, ListView
+):
+
+    """Authorized users for an advertiser."""
+
+    model = get_user_model()
+    template_name = "adserver/advertiser/users.html"
+
+    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser, "users": self.object_list})
+        return context
+
+    def get_queryset(self):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs.get("advertiser_slug", "")
+        )
+        return self.advertiser.user_set.all()
+
+
+class AdvertiserAuthorizedUsersInviteView(
+    AdvertiserAccessMixin, UserPassesTestMixin, CreateView
+):
+
+    """Invite additional authorized users for an advertiser."""
+
+    form_class = InviteUserForm
+    model = get_user_model()
+    template_name = "adserver/advertiser/users-invite.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        self.object.advertisers.add(self.advertiser)
+        messages.success(
+            self.request,
+            _("Successfully invited %(user)s to %(advertiser)s")
+            % {"user": self.object.email, "advertiser": self.advertiser},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "advertiser_users", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+
+
+class AdvertiserAuthorizedUsersRemoveView(
+    AdvertiserAccessMixin, UserPassesTestMixin, TemplateView
+):
+
+    """
+    Remove authorized users for an advertiser.
+
+    This doesn't remove or deactivate the user - just removes them from the advertiser.
+    """
+
+    template_name = "adserver/advertiser/users-remove.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.user = get_object_or_404(
+            get_user_model(),
+            pk=self.kwargs["user_id"],
+            advertisers=self.advertiser,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if self.user == self.request.user:
+            messages.error(self.request, _("You cannot remove your own access"))
+        else:
+            self.user.advertisers.remove(self.advertiser)
+            messages.success(
+                self.request,
+                _("Successfully removed %(user)s from %(advertiser)s")
+                % {"user": self.user.email, "advertiser": self.advertiser},
+            )
+        return redirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser, "user": self.user})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "advertiser_users", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
 
 
 class PublisherReportView(PublisherAccessMixin, BaseReportView):

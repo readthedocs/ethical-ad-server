@@ -100,7 +100,16 @@ class TestAdvertiserDashboardViews(TestCase):
         self.ad3.ad_types.add(self.ad_type3)
 
         self.user = get(
-            get_user_model(), username="test-user", advertisers=[self.advertiser]
+            get_user_model(),
+            name="test user",
+            email="test@example.com",
+            advertisers=[self.advertiser],
+        )
+        self.staff_user = get(
+            get_user_model(),
+            is_staff=True,
+            name="Staff User",
+            email="staff@example.com",
         )
 
     def advertiser_overview(self):
@@ -298,3 +307,87 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad_type3.name)
+
+    def test_authorized_users(self):
+        url = reverse(
+            "advertiser_users",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.user.name)
+        self.assertContains(response, self.user.email)
+
+        self.user.advertisers.remove(self.advertiser)
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self.user.name)
+        self.assertContains(response, "There are no authorized users")
+
+    def test_authorized_users_remove(self):
+        url = reverse(
+            "advertiser_users_remove",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "user_id": self.user.id,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.user.name)
+        self.assertContains(response, self.user.email)
+
+        # Remove the user from the advertiser
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.user.advertisers.count(), 0)
+
+        # This user is no longer part of this advertiser
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_authorized_users_invite(self):
+        url = reverse(
+            "advertiser_users_invite",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invite user to")
+
+        response = self.client.post(
+            url,
+            data={"name": "Another User", "email": "another@example.com"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")

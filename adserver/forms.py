@@ -13,6 +13,7 @@ from crispy_forms.layout import Layout
 from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.images import get_image_dimensions
 from django.db.models import Q
 from django.urls import reverse
@@ -29,6 +30,7 @@ from .models import Publisher
 
 
 log = logging.getLogger(__name__)  # noqa
+User = get_user_model()
 
 
 class FlightAdminForm(forms.ModelForm):
@@ -391,4 +393,40 @@ class PublisherSettingsForm(forms.ModelForm):
             "allow_community_campaigns",
             "allow_house_campaigns",
             "record_placements",
+        ]
+
+
+class InviteUserForm(forms.ModelForm):
+
+    """Used to invite users to collaborate on an advertiser/publisher."""
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("name"),
+                Field("email", placeholder="user@yourdomain.com"),
+                css_class="my-3",
+            ),
+            Submit("submit", "Send invite"),
+        )
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        return User.objects.normalize_email(email)
+
+    def save(self, commit=True):
+        user = super().save(commit)
+        user.invite_user()
+        # You will need to add the user to the publisher/advertiser in the view
+        return user
+
+    class Meta:
+        model = User
+        fields = [
+            "name",
+            "email",
         ]
