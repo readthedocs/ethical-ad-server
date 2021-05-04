@@ -71,7 +71,7 @@ class ReportQuerysetMixin:
 
         # Advertiser filters
         if "advertiser" in kwargs and kwargs["advertiser"]:
-            if isinstance(kwargs["publisher"], Advertiser):
+            if isinstance(kwargs["advertiser"], Advertiser):
                 queryset = queryset.filter(
                     advertisement__flight__campaign__advertiser=kwargs["advertiser"]
                 )
@@ -165,6 +165,7 @@ class KeywordReportMixin:
 
 
 class AllReportMixin:
+
     """A mixin that handles the primary "view" logic for staff reports."""
 
     def get_context_data(self, **kwargs):
