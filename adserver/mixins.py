@@ -71,15 +71,25 @@ class ReportQuerysetMixin:
 
         # Advertiser filters
         if "advertiser" in kwargs and kwargs["advertiser"]:
-            queryset = queryset.filter(
-                advertisement__flight__campaign__advertiser=kwargs["advertiser"]
-            )
+            if isinstance(kwargs["publisher"], Advertiser):
+                queryset = queryset.filter(
+                    advertisement__flight__campaign__advertiser=kwargs["advertiser"]
+                )
+            else:
+                queryset = queryset.filter(
+                    advertisement__flight__campaign__advertiser__slug=kwargs[
+                        "advertiser"
+                    ]
+                )
         if "flight" in kwargs and kwargs["flight"]:
             queryset = queryset.filter(advertisement__flight=kwargs["flight"])
 
         # Publisher filters
         if "publisher" in kwargs and kwargs["publisher"]:
-            queryset = queryset.filter(publisher=kwargs["publisher"])
+            if isinstance(kwargs["publisher"], Publisher):
+                queryset = queryset.filter(publisher=kwargs["publisher"])
+            else:
+                queryset = queryset.filter(publisher__slug=kwargs["publisher"])
         if "publishers" in kwargs and kwargs["publishers"]:
             queryset = queryset.filter(publisher__in=kwargs["publishers"])
         if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
@@ -161,12 +171,12 @@ class AllReportMixin:
         sort = self.request.GET.get("sort", "")
         force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
-        arg_defined = False
+        filtered = ""
         kwargs = {}
-        for arg in ["keyword", "geo", "publisher"]:
+        for arg in ["keyword", "country", "publisher"]:
             if arg in self.request.GET:
                 kwargs[arg] = self.request.GET[arg]
-                arg_defined = True
+                filtered = arg
 
         queryset = self.get_queryset(
             start_date=context["start_date"],
@@ -180,7 +190,7 @@ class AllReportMixin:
             max_results=None,
             force_revshare=force_revshare,
             order=sort if sort else None,
-            index="date" if arg_defined else None,
+            index="date" if filtered else None,
         )
         report.generate()
         sort_options = report.total.keys()
@@ -192,6 +202,7 @@ class AllReportMixin:
                 "sort": sort,
                 "sort_options": sort_options,
                 "export_url": self.get_export_url(),
+                "filtered": filtered,
             }
         )
 

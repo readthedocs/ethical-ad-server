@@ -19,6 +19,11 @@
     <div>
       <div class="row">
         <h2 class="col-md-8">{% trans 'Results' %}</h2>
+        {% if filtered %}
+        <h5 class="col-md-8">
+         {% blocktrans %}filtered by <code>{{ filtered }}</code>{% endblocktrans %}
+        </h5>
+        {% endif %}
 
         {% if export_url %}
           <aside class="mb-3 col-md-4 text-right">

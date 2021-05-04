@@ -1679,7 +1679,7 @@ class UpliftReportView(AllReportMixin, BaseReportView):
     template_name = "adserver/reports/all-uplift.html"
 
 
-class AllKeywordReportView(AllReportMixin, BaseReportView):
+class AllKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
 
     """A keyword report for all publishers."""
 
