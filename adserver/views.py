@@ -886,11 +886,17 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
         advertiser_slug = kwargs.get("advertiser_slug", "")
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
 
+        flight_slug = self.request.GET.get("flight", "")
+        flight = Flight.objects.filter(
+            campaign__advertiser=advertiser, slug=flight_slug
+        ).first()
+
         queryset = self.get_queryset(
             advertiser=advertiser,
             start_date=context["start_date"],
             end_date=context["end_date"],
             country=country,
+            flight=flight,
         )
 
         report = AdvertiserGeoReport(
@@ -918,6 +924,9 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
                 "country": country,
                 "country_options": country_options,
                 "country_name": self.get_country_name(country),
+                "flights": Flight.objects.filter(
+                    campaign__advertiser=advertiser
+                ).order_by("-start_date"),
                 "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
@@ -941,9 +950,15 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
             slug=self.request.GET.get("publisher", "")
         ).first()
 
+        flight_slug = self.request.GET.get("flight", "")
+        flight = Flight.objects.filter(
+            campaign__advertiser=advertiser, slug=flight_slug
+        ).first()
+
         queryset = self.get_queryset(
             advertiser=advertiser,
             publisher=report_publisher,
+            flight=flight,
             start_date=context["start_date"],
             end_date=context["end_date"],
         )
@@ -980,6 +995,9 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
                 "report": report,
                 "report_publisher": report_publisher,
                 "publisher_list": publisher_list,
+                "flights": Flight.objects.filter(
+                    campaign__advertiser=advertiser
+                ).order_by("-start_date"),
                 "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
             }
         )
