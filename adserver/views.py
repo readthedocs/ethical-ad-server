@@ -964,12 +964,13 @@ class AdvertiserAuthorizedUsersView(
 
     """Authorized users for an advertiser."""
 
+    context_object_name = "users"
     model = get_user_model()
     template_name = "adserver/advertiser/users.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
         context = super().get_context_data(**kwargs)
-        context.update({"advertiser": self.advertiser, "users": self.object_list})
+        context.update({"advertiser": self.advertiser})
         return context
 
     def get_queryset(self):

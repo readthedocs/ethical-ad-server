@@ -40,7 +40,9 @@
                 <td>{{ user.name }}</td>
                 <td>{{ user.email }}</td>
                 <td>
-                  <a href="{% url 'advertiser_users_remove' advertiser.slug user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
+                  {% if request.user.id != user.id %}
+                    <a href="{% url 'advertiser_users_remove' advertiser.slug user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
+                  {% endif %}
                 </td>
               </tr>
             {% endfor %}
