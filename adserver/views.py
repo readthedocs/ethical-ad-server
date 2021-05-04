@@ -1692,7 +1692,7 @@ class AllKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
 
 class AllGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
-    """A keyword report for all publishers."""
+    """A geo report for all publishers."""
 
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
     impression_model = GeoImpression

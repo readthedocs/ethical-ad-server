@@ -165,13 +165,16 @@ class KeywordReportMixin:
 
 
 class AllReportMixin:
+    """A mixin that handles the primary "view" logic for staff reports."""
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         sort = self.request.GET.get("sort", "")
         force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
-        filtered = ""
+        # Handle filtering a larger subset of reports as needed
+        filtered = None
         kwargs = {}
         for arg in ["keyword", "country", "publisher"]:
             if arg in self.request.GET:
