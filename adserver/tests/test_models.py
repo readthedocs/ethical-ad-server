@@ -281,6 +281,18 @@ class TestAdModels(BaseAdModelsTestCase):
         report = self.ad1.country_click_breakdown(dt, timezone.now())
         self.assertDictEqual(report, {"Unknown": 3})
 
+    def test_ad_copy(self):
+        count_ads = Advertisement.objects.all().count()
+
+        self.ad1.ad_types.set([self.text_ad_type])
+        ad1_copy = self.ad1.__copy__()
+
+        # Should be one more ad than before
+        self.assertEqual(Advertisement.objects.all().count(), count_ads + 1)
+
+        self.assertNotEqual(ad1_copy, self.ad1)
+        self.assertTrue(self.text_ad_type in list(ad1_copy.ad_types.all()))
+
     def test_campaign_totals(self):
         self.assertAlmostEqual(self.campaign.total_value(), 0.0)
 

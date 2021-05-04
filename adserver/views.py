@@ -364,6 +364,94 @@ class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, Create
         )
 
 
+class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, TemplateView):
+
+    """Create a copy of an existing ad."""
+
+    template_name = "adserver/advertiser/advertisement-copy.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        self.source_advertisement = source_ad_id = None
+
+        if (
+            "source_advertisement" in request.GET
+            and request.GET["source_advertisement"].isdigit()
+        ):
+            source_ad_id = request.GET["source_advertisement"]
+        elif (
+            "source_advertisement" in request.POST
+            and request.POST["source_advertisement"].isdigit()
+        ):
+            source_ad_id = request.POST["source_advertisement"]
+
+        if source_ad_id:
+            self.source_advertisement = (
+                Advertisement.objects.filter(
+                    flight__campaign__advertiser=self.advertiser
+                )
+                .filter(pk=source_ad_id)
+                .first()
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if self.flight and self.source_advertisement:
+            new_ad = self.copy_instance()
+            messages.success(
+                self.request,
+                _("Successfully created %(ad)s from a copy.") % {"ad": new_ad},
+            )
+            return redirect(
+                reverse(
+                    "advertisement_update",
+                    kwargs={
+                        "advertiser_slug": self.advertiser.slug,
+                        "flight_slug": self.flight.slug,
+                        "advertisement_slug": new_ad.slug,
+                    },
+                )
+            )
+
+        # This should basically never be taken
+        return redirect(
+            reverse(
+                "flight_detail",
+                kwargs={
+                    "advertiser_slug": self.advertiser.slug,
+                    "flight_slug": self.flight.slug,
+                },
+            )
+        )
+
+    def copy_instance(self):
+        instance = self.source_advertisement.__copy__()
+        instance.flight = self.flight
+        instance.save()  # Automatically gets a new slug
+        return instance
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flight": self.flight,
+                "advertisements": Advertisement.objects.filter(
+                    flight__campaign__advertiser=self.advertiser
+                ).select_related(),
+                "source_advertisement": self.source_advertisement,
+            }
+        )
+        return context
+
+
 class BaseProxyView(View):
 
     """A base view for proxying ad views and clicks and collecting relevant metrics on clicks and views."""

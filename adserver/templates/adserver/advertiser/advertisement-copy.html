@@ -1,0 +1,111 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Copy advertisement' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Copy advertisement' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+
+
+<section>
+
+  <h1>{% block heading %}{% trans 'Copy advertisement' %}{% endblock heading %}</h1>
+  <p>{% blocktrans with flight_name=flight.name %}Re-use one of your previous ads in "{{ flight_name }}".{% endblocktrans %}</p>
+
+  {% if source_advertisement %}
+    {# Confirm the copy to this source #}
+    <div class="row">
+      {# Show the ad #}
+      <div class="col">
+        {% with advertisement=source_advertisement ad_type=source_advertisement.ad_types.first %}
+          {% include "adserver/includes/ad-preview.html" %}
+        {% endwith %}
+      </div>
+
+      {# Ad metadata #}
+      <div class="col">
+        <dl>
+          <dt>{% trans 'Source advertisement' %}</dt>
+          <dd>{{ source_advertisement.name }}</dd>
+          <dt>{% trans 'Source flight' %}</dt>
+          <dd>{{ source_advertisement.flight.name }}</dd>
+          <dt>{% trans 'Display' %}</dt>
+          <dd>{{ source_advertisement.ad_types.all | join:"<br>" }}</dd>
+          {% if source_advertisement.link %}
+            <dt>{% trans 'Click-through link' %}</dt>
+            <dd><small><a href="{{ source_advertisement.link }}">{{ source_advertisement.link|truncatechars:50 }}</a></small></dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="source_advertisement" value="{{ source_advertisement.pk }}">
+      <input type="Submit" class="btn btn-primary" value="{% trans 'Copy advertisement' %}">
+      <p class="form-text text-muted small">{% trans 'You will have a chance to edit the copy before it goes live.' %}</p>
+    </form>
+  {% elif advertisements %}
+    {# Choose an ad to copy #}
+    <form method="get">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th><!-- Intentionally blank --></th>
+              <th><strong>{% trans 'Name' %}</strong></th>
+              <th><strong>{% trans 'Flight' %}</strong></th>
+              <th><strong>{% trans 'Preview' %}</strong></th>
+              <th><strong>{% trans 'Ad types' %}</strong></th>
+              <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for advertisement in advertisements %}
+              <tr>
+                <td>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="source_advertisement" value="{{ advertisement.pk }}">
+                  </div>
+                </td>
+                <td>{{ advertisement.name }}</td>
+                <td>{{ advertisement.flight.name }}</td>
+                <td>
+                  <details>
+                    <summary>Preview</summary>
+                    {% with ad_type=advertisement.ad_types.first %}
+                      {% include "adserver/includes/ad-preview.html" %}
+                    {% endwith %}
+                  </details>
+                </td>
+                <td>{{ advertisement.ad_types.all | join:"<br>" }}</td>
+                <td>{{ advertisement.ctr|floatformat:3 }}%</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <input type="Submit" class="btn btn-primary" value="{% trans 'Review & copy advertisement' %}">
+      <p class="form-text text-muted small">{% trans 'You will have a chance to review before copying.' %}</p>
+    </form>
+  {% else %}
+    <p>{% trans 'You have no advertisements to copy.' %}</p>
+  {% endif %}
+
+</section>
+
+{% endblock content_container %}
