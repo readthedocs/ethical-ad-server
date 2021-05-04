@@ -1,0 +1,36 @@
+{% extends "adserver/reports/base.html" %}
+{% load humanize %}
+{% load i18n %}
+
+{% block additional_filters %}
+  <div class="col-xl-3 col-md-6 col-12 mb-3">
+    <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
+    <select class="form-control" name="sort" id="id_sort">
+      <option value="">Default Sort</option>
+      {% for option in sort_options %}
+      <option value="{{ option }}" {% if sort == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endblock additional_filters %}
+
+{% block summary %}
+  <section>
+    <div>
+      <div class="row">
+        <h2 class="col-md-8">{% trans 'Results' %}</h2>
+
+        {% if export_url %}
+          <aside class="mb-3 col-md-4 text-right">
+            <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-download mr-1" aria-hidden="true"></span>
+              <span>CSV Export</span>
+            </a>
+          </aside>
+        {% endif %}
+      </div>
+
+      {% include "adserver/reports/includes/publisher-report-table.html" %}
+    </div>
+  </section>
+{% endblock summary %}

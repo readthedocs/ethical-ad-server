@@ -44,7 +44,9 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
+from .mixins import AllReportMixin
 from .mixins import GeoReportMixin
+from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
 from .mixins import ReportQuerysetMixin
 from .models import AdImpression
@@ -162,10 +164,7 @@ class AdvertiserMainView(
         # Get the beginning of the month so we can show month-to-date stats
         start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
 
-        queryset = self.get_queryset(
-            advertiser=self.advertiser,
-            start_date=start_date,
-        )
+        queryset = self.get_queryset(advertiser=self.advertiser, start_date=start_date)
         report = AdvertiserReport(queryset)
         report.generate()
 
@@ -579,10 +578,7 @@ class BaseProxyView(View):
             log.log(self.log_level, self.success_message)
             advertisement.invalidate_nonce(self.impression_type, nonce)
             advertisement.track_impression(
-                request,
-                self.impression_type,
-                publisher=publisher,
-                offer=offer,
+                request, self.impression_type, publisher=publisher, offer=offer
             )
 
         message = ignore_reason or self.success_message
@@ -982,10 +978,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
             .values_list("publisher")
             .annotate(total_views=Sum("views"))
             .order_by("-total_views")
-            .values_list(
-                "publisher__slug",
-                "publisher__name",
-            )
+            .values_list("publisher__slug", "publisher__name")
             .distinct()[: self.LIMIT]
         )
 
@@ -1017,8 +1010,7 @@ class AllAdvertiserReportView(BaseReportView):
         # Get all advertisers where an ad for that advertiser has a view or click
         # in the specified date range
         impressions = self.get_queryset(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
+            start_date=context["start_date"], end_date=context["end_date"]
         )
         advertisers = Advertiser.objects.filter(
             id__in=Advertisement.objects.filter(
@@ -1299,7 +1291,9 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
+class PublisherKeywordReportView(
+    PublisherAccessMixin, KeywordReportMixin, BaseReportView
+):
 
     """A report for a single publisher."""
 
@@ -1332,18 +1326,16 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
         )
         report.generate()
 
-        # The order_by here is to enable distinct to work
-        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
-        keyword_list = (
-            self.get_queryset(
-                publisher=publisher,
-                start_date=context["start_date"],
-                end_date=context["end_date"],
+        keyword_options = list(
+            self.get_keyword_options(
+                # Don't pass the country so we get all countries
+                self.get_queryset(
+                    publisher=publisher,
+                    campaign_type=context["campaign_type"],
+                    start_date=context["start_date"],
+                    end_date=context["end_date"],
+                )
             )
-            .values_list("keyword", flat=True)
-            .annotate(total_views=Sum("views"))
-            .order_by("-total_views")
-            .distinct()[: self.LIMIT]
         )
 
         context.update(
@@ -1352,20 +1344,12 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "keyword": keyword,
-                "keyword_list": keyword_list,
+                "keyword_options": keyword_options,
                 "export_url": self.get_export_url(publisher_slug=publisher.slug),
             }
         )
 
         return context
-
-    def get_queryset(self, **kwargs):
-        queryset = super().get_queryset(**kwargs)
-
-        if "keyword" in kwargs and kwargs["keyword"]:
-            queryset = queryset.filter(keyword=kwargs["keyword"])
-
-        return queryset
 
 
 class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView):
@@ -1583,8 +1567,7 @@ class AllPublisherReportView(BaseReportView):
 
         # Get all publishers where an ad has a view or click in the specified date range
         impressions = self.get_queryset(
-            start_date=context["start_date"],
-            end_date=context["end_date"],
+            start_date=context["start_date"], end_date=context["end_date"]
         )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
@@ -1657,11 +1640,7 @@ class AllPublisherReportView(BaseReportView):
                 )
 
         # Ensure the aggregated total is sorted
-        days = sorted(
-            days.values(),
-            key=lambda obj: obj["date"],
-            reverse=True,
-        )
+        days = sorted(days.values(), key=lambda obj: obj["date"], reverse=True)
 
         context.update(
             {
@@ -1688,7 +1667,7 @@ class AllPublisherReportView(BaseReportView):
         return context
 
 
-class UpliftReportView(BaseReportView):
+class UpliftReportView(AllReportMixin, BaseReportView):
 
     """An uplift report for all publishers."""
 
@@ -1697,58 +1676,29 @@ class UpliftReportView(BaseReportView):
     impression_model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
-    template_name = "adserver/reports/all-publishers-uplift.html"
+    template_name = "adserver/reports/all-uplift.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
 
-        sort = self.request.GET.get("sort", "")
-        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
+class AllKeywordReportView(AllReportMixin, BaseReportView):
 
-        publishers = Publisher.objects.all()
+    """A keyword report for all publishers."""
 
-        # Get all publishers where an ad has a view or click in the specified date range
-        revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
-        if revenue_share_percentage:
-            try:
-                publishers = publishers.filter(
-                    revenue_share_percentage=float(revenue_share_percentage)
-                )
-            except ValueError:
-                pass
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
+    impression_model = KeywordImpression
+    force_revshare = 70.0
+    report = PublisherKeywordReport
+    template_name = "adserver/reports/all-keywords.html"
 
-        queryset = self.get_queryset(
-            publishers=publishers,
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-            campaign_type=context["campaign_type"],
-        )
 
-        report = self.report(
-            queryset,
-            max_results=None,
-            force_revshare=force_revshare,
-            order=sort if sort else None,
-        )
-        report.generate()
-        sort_options = report.total.keys()
+class AllGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
-        context.update(
-            {
-                "report": report,
-                "campaign_types": CAMPAIGN_TYPES,
-                # Make these strings to easily compare with GET args
-                "revshare_options": set(
-                    str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
-                ),
-                "revenue_share_percentage": revenue_share_percentage,
-                "sort": sort,
-                "sort_options": sort_options,
-                "export_url": self.get_export_url(),
-            }
-        )
+    """A keyword report for all publishers."""
 
-        return context
+    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
+    impression_model = GeoImpression
+    force_revshare = 70.0
+    report = PublisherGeoReport
+    template_name = "adserver/reports/all-geos.html"
 
 
 class PublisherMainView(
@@ -1768,19 +1718,12 @@ class PublisherMainView(
         # Get the beginning of the month so we can show month-to-date stats
         start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
 
-        queryset = self.get_queryset(
-            publisher=self.publisher,
-            start_date=start_date,
-        )
+        queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
         report = PublisherReport(queryset)
         report.generate()
 
         context.update(
-            {
-                "publisher": self.publisher,
-                "report": report,
-                "start_date": start_date,
-            }
+            {"publisher": self.publisher, "report": report, "start_date": start_date}
         )
         return context
 

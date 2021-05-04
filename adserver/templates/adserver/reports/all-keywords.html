@@ -1,0 +1,15 @@
+{% extends "adserver/reports/base-all.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'All Keyword Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'All Keyword Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'All Keyword Report' %}</li>
+{% endblock breadcrumbs %}

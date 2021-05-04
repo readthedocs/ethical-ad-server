@@ -15,6 +15,8 @@ from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
 from .views import AdViewProxyView
 from .views import AllAdvertiserReportView
+from .views import AllGeoReportView
+from .views import AllKeywordReportView
 from .views import AllPublisherReportView
 from .views import ApiTokenCreateView
 from .views import ApiTokenDeleteView
@@ -64,6 +66,23 @@ urlpatterns = [
         r"proxy/click/<int:advertisement_id>/<str:nonce>/",
         AdClickProxyView.as_view(),
         name="click-proxy",
+    ),
+    # Global reports
+    path(
+        r"all/report/keywords/",
+        AllKeywordReportView.as_view(),
+        name="all_keyword_report",
+    ),
+    path(r"all/report/geos/", AllGeoReportView.as_view(), name="all_geo_report"),
+    path(
+        r"all/report/uplift/",
+        UpliftReportView.as_view(),
+        name="publisher_uplift_report",
+    ),
+    path(
+        r"all/report/uplift.csv",
+        UpliftReportView.as_view(export=True),
+        name="publisher_uplift_report_export",
     ),
     # Advertiser management and reporting
     path(
@@ -151,16 +170,6 @@ urlpatterns = [
         r"publisher/all/report/",
         AllPublisherReportView.as_view(),
         name="all_publishers_report",
-    ),
-    path(
-        r"publisher/all/report/uplift/",
-        UpliftReportView.as_view(),
-        name="publisher_uplift_report",
-    ),
-    path(
-        r"publisher/all/report/uplift.csv",
-        UpliftReportView.as_view(export=True),
-        name="publisher_uplift_report_export",
     ),
     path(
         r"publisher/<slug:publisher_slug>/",

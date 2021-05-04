@@ -343,4 +343,4 @@ class PublisherUpliftReport(PublisherReport):
 
     model = UpliftImpression
     index = "publisher.name"
-    order = "index"
+    order = "-views"

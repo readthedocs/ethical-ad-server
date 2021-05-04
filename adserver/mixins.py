@@ -8,6 +8,7 @@ from django.utils.functional import cached_property
 from django_countries import countries
 
 from .constants import ALL_CAMPAIGN_TYPES
+from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
 
@@ -97,7 +98,7 @@ class GeoReportMixin:
         queryset = super().get_queryset(**kwargs)
 
         if "country" in kwargs and kwargs["country"]:
-            queryset = queryset.filter(country=kwargs["country"])
+            queryset = queryset.filter(country__iexact=kwargs["country"])
 
         # Only filter this if we didn't pass a specific country
         elif "countries" in kwargs and kwargs["countries"]:
@@ -122,6 +123,79 @@ class GeoReportMixin:
     def get_country_name(self, country):
         countries_dict = dict(countries)
         return countries_dict.get(country)
+
+
+class KeywordReportMixin:
+
+    """Provide keyword functionality. MUST be used with BaseReportView."""
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "keyword" in kwargs and kwargs["keyword"]:
+            queryset = queryset.filter(keyword__iexact=kwargs["keyword"])
+        # Only filter this if we didn't pass a specific country
+        elif "keywords" in kwargs and kwargs["keywords"]:
+            queryset = queryset.filter(keywords__in=kwargs["keywords"])
+
+        return queryset
+
+    def get_keyword_options(self, queryset):
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        keyword_options = (
+            queryset.values_list("keyword", flat=True)
+            .annotate(total_views=models.Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
+        )
+
+        return keyword_options
+
+
+class AllReportMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sort = self.request.GET.get("sort", "")
+        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
+
+        arg_defined = False
+        kwargs = {}
+        for arg in ["keyword", "geo", "publisher"]:
+            if arg in self.request.GET:
+                kwargs[arg] = self.request.GET[arg]
+                arg_defined = True
+
+        queryset = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            **kwargs,
+        )
+
+        report = self.report(
+            queryset,
+            max_results=None,
+            force_revshare=force_revshare,
+            order=sort if sort else None,
+            index="date" if arg_defined else None,
+        )
+        report.generate()
+        sort_options = report.total.keys()
+
+        context.update(
+            {
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "sort": sort,
+                "sort_options": sort_options,
+                "export_url": self.get_export_url(),
+            }
+        )
+
+        return context
 
 
 class EstimatedCountPaginator(Paginator):
