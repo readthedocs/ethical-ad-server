@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.26.0
+---------------
+
+This release included advertiser dashboard improvements.
+Advertisers can invite other users at their company to work with them on advertising.
+We also added some minor filtering and reporting improvements.
+There is also a migration to ensure certain fields are unique.
+
+:date: May 5, 2021
+
+ * @davidfischer: Allow filtering advertiser reports by flight (#374)
+ * @davidfischer: Allow advertisers to control their authorized users (#373)
+ * @davidfischer: Ensure slugs are unique (#372)
+ * @davidfischer: Copy/Re-use an existing ad (#371)
+ * @davidfischer: Show upcoming flights on the overview screen (#370)
+ * @davidfischer: Silence the disallowed host logger again (#369)
+ * @davidfischer: Don't reject invalid values in the URL field (#368)
+
 Version v0.25.0
 ---------------
 
