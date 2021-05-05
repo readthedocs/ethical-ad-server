@@ -193,7 +193,15 @@ class PublisherReport(BaseReport):
 
         results = {}
 
-        for impression in queryset:
+        for impression in queryset.only(
+            "advertisement__flight",
+            "publisher__revenue_share_percentage",
+            "decisions",
+            "offers",
+            "views",
+            "clicks",
+            self.index,
+        ):
             index = getter(impression)
 
             if index not in results:
