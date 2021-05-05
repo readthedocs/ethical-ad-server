@@ -174,8 +174,11 @@ class AllReportMixin:
         sort = self.request.GET.get("sort", "")
         force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
 
-        # Handle filtering a larger subset of reports as needed
+        order = None
+        index = None
         filtered = None
+
+        # Handle filtering a larger subset of reports as needed
         kwargs = {}
         for arg in ["keyword", "country", "publisher"]:
             if arg in self.request.GET:
@@ -189,12 +192,18 @@ class AllReportMixin:
             **kwargs,
         )
 
+        if filtered:
+            order = "-date"
+            index = "date"
+        elif sort:
+            order = f"-{sort}"
+
         report = self.report(
             queryset,
             max_results=None,
             force_revshare=force_revshare,
-            order=sort if sort else None,
-            index="date" if filtered else None,
+            order=order,
+            index=index,
         )
         report.generate()
         sort_options = report.total.keys()
