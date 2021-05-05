@@ -1,0 +1,31 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Authorized Users Remove Access' %} - {{ advertiser }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'advertiser_users' advertiser.slug %}">{% trans 'Authorized users' %}</a>
+  </li>
+  <li class="breadcrumb-item active">{% trans 'Remove' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% trans 'Remove user access' %}</h1>
+    <p class="mb-5">{% blocktrans with name=user.name email=user.email %}Remove {{ name }} ({{ email }}) from {{ advertiser }}{% endblocktrans %}</p>
+
+    <div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="submit" class="btn btn-danger" value="{% trans 'Remove user access' %}">
+        <p class="text-muted form-text">{% trans 'The user may still login but will no longer have access to this advertiser.' %}</p>
+      </form>
+    </div>
+  </section>
+{% endblock content_container %}

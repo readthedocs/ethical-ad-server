@@ -1,0 +1,30 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Authorized Users Invite' %} - {{ advertiser }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'advertiser_users' advertiser.slug %}">{% trans 'Authorized users' %}</a>
+  </li>
+  <li class="breadcrumb-item active">{% trans 'Invite' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% blocktrans %}Invite user to {{ advertiser }}{% endblocktrans %}</h1>
+
+    <div class="row">
+
+      <div class="col-md-6">
+        {% crispy form form.helper %}
+      </div>
+
+    </div>
+  </section>
+{% endblock content_container %}

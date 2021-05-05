@@ -8,6 +8,9 @@ from .views import AdvertisementCopyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
 from .views import AdvertisementUpdateView
+from .views import AdvertiserAuthorizedUsersInviteView
+from .views import AdvertiserAuthorizedUsersRemoveView
+from .views import AdvertiserAuthorizedUsersView
 from .views import AdvertiserFlightReportView
 from .views import AdvertiserGeoReportView
 from .views import AdvertiserMainView
@@ -145,6 +148,21 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/update/",
         AdvertisementUpdateView.as_view(),
         name="advertisement_update",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/users/",
+        AdvertiserAuthorizedUsersView.as_view(),
+        name="advertiser_users",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/users/invite/",
+        AdvertiserAuthorizedUsersInviteView.as_view(),
+        name="advertiser_users_invite",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/users/<int:user_id>/remove/",
+        AdvertiserAuthorizedUsersRemoveView.as_view(),
+        name="advertiser_users_remove",
     ),
     # Publisher management and reporting
     path(

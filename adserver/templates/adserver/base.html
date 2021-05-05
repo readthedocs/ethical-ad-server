@@ -95,6 +95,13 @@
                   <span>{% trans 'Publishers' %}</span>
                 </a>
               </li>
+
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'advertiser_users' advertiser.slug %}">
+                  <span class="fa fa-users fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Authorized users' %}</span>
+                </a>
+              </li>
             </ul>
           {% elif publisher %}
             <h6 class="text-muted">{{ publisher }}</h6>
