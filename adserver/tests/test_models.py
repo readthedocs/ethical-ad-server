@@ -5,6 +5,9 @@ from django.utils import timezone
 from django_dynamic_fixture import get
 
 from ..constants import CLICKS
+from ..constants import FLIGHT_STATE_CURRENT
+from ..constants import FLIGHT_STATE_PAST
+from ..constants import FLIGHT_STATE_UPCOMING
 from ..constants import VIEWS
 from ..models import AdImpression
 from ..models import AdType
@@ -330,6 +333,22 @@ class TestAdModels(BaseAdModelsTestCase):
         ad2.incr(VIEWS, self.publisher)
 
         self.assertAlmostEqual(self.campaign.total_value(), 4.3)
+
+    def test_flight_state(self):
+        self.assertEqual(self.flight.state, FLIGHT_STATE_CURRENT)
+
+        self.flight.live = False
+        self.assertEqual(self.flight.state, FLIGHT_STATE_UPCOMING)
+
+        self.flight.live = True
+        self.flight.start_date = timezone.now().date() - datetime.timedelta(days=50)
+        self.flight.end_date = timezone.now().date() - datetime.timedelta(days=20)
+
+        # Still current because it's still live
+        self.assertEqual(self.flight.state, FLIGHT_STATE_CURRENT)
+
+        self.flight.live = False
+        self.assertEqual(self.flight.state, FLIGHT_STATE_PAST)
 
     def test_flight_value_remaining(self):
         self.assertAlmostEqual(self.flight.value_remaining(), 1000 * 2)

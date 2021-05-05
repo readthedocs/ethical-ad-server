@@ -25,6 +25,9 @@ CAMPAIGN_TYPES = (
     (COMMUNITY_CAMPAIGN, _("Community")),
     (HOUSE_CAMPAIGN, _("House")),
 )
+FLIGHT_STATE_CURRENT = _("Current")
+FLIGHT_STATE_UPCOMING = _("Upcoming")
+FLIGHT_STATE_PAST = _("Past")
 
 PAYOUT_STRIPE = "stripe"
 PAYOUT_PAYPAL = "paypal"

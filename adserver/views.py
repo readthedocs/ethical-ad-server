@@ -1,4 +1,5 @@
 """Ad server views."""
+import calendar
 import collections
 import csv
 import logging
@@ -15,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -41,6 +42,8 @@ from user_agents import parse as parse_user_agent
 
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
+from .constants import FLIGHT_STATE_CURRENT
+from .constants import FLIGHT_STATE_UPCOMING
 from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import InviteUserForm
@@ -161,8 +164,11 @@ class AdvertiserMainView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get the beginning of the month so we can show month-to-date stats
+        # Get the beginning/end of the month so we can show month-to-date stats
         start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        end_date = start_date.replace(
+            day=calendar.monthrange(start_date.year, start_date.month)[1]
+        )
 
         queryset = self.get_queryset(
             advertiser=self.advertiser,
@@ -171,11 +177,15 @@ class AdvertiserMainView(
         report = AdvertiserReport(queryset)
         report.generate()
 
-        flights = (
-            Flight.objects.filter(campaign__advertiser=self.advertiser)
-            .filter(live=True)
-            .order_by("-live", "-end_date", "name")
-        )
+        flights = [
+            f
+            for f in (
+                Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
+                    "-live", "-end_date", "name"
+                )
+            )
+            if f.state in (FLIGHT_STATE_UPCOMING, FLIGHT_STATE_CURRENT)
+        ]
 
         context.update(
             {
@@ -183,6 +193,7 @@ class AdvertiserMainView(
                 "report": report,
                 "flights": flights,
                 "start_date": start_date,
+                "end_date": end_date,
             }
         )
         return context
@@ -982,7 +993,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
                 end_date=context["end_date"],
             )
             .values_list("publisher")
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .values_list(
                 "publisher__slug",
@@ -1247,7 +1258,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 end_date=context["end_date"],
             )
             .values_list("div_id", flat=True)
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
         )
@@ -1382,7 +1393,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
             )
             .filter(advertisement__isnull=False)
             .values_list("advertisement__flight__campaign__advertiser")
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .values_list(
                 "advertisement__flight__campaign__advertiser__slug",
@@ -1448,7 +1459,7 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
                 end_date=context["end_date"],
             )
             .values_list("keyword", flat=True)
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
         )
