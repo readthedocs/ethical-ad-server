@@ -1,4 +1,5 @@
 """Ad server views."""
+import calendar
 import collections
 import csv
 import logging
@@ -10,11 +11,12 @@ from datetime import timedelta
 import stripe
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
@@ -40,8 +42,11 @@ from user_agents import parse as parse_user_agent
 
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
+from .constants import FLIGHT_STATE_CURRENT
+from .constants import FLIGHT_STATE_UPCOMING
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import AllReportMixin
@@ -161,18 +166,25 @@ class AdvertiserMainView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get the beginning of the month so we can show month-to-date stats
+        # Get the beginning/end of the month so we can show month-to-date stats
         start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        end_date = start_date.replace(
+            day=calendar.monthrange(start_date.year, start_date.month)[1]
+        )
 
         queryset = self.get_queryset(advertiser=self.advertiser, start_date=start_date)
         report = AdvertiserReport(queryset)
         report.generate()
 
-        flights = (
-            Flight.objects.filter(campaign__advertiser=self.advertiser)
-            .filter(live=True)
-            .order_by("-live", "-end_date", "name")
-        )
+        flights = [
+            f
+            for f in (
+                Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
+                    "-live", "-end_date", "name"
+                )
+            )
+            if f.state in (FLIGHT_STATE_UPCOMING, FLIGHT_STATE_CURRENT)
+        ]
 
         context.update(
             {
@@ -180,6 +192,7 @@ class AdvertiserMainView(
                 "report": report,
                 "flights": flights,
                 "start_date": start_date,
+                "end_date": end_date,
             }
         )
         return context
@@ -976,7 +989,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
                 end_date=context["end_date"],
             )
             .values_list("publisher")
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .values_list("publisher__slug", "publisher__name")
             .distinct()[: self.LIMIT]
@@ -1052,6 +1065,111 @@ class AllAdvertiserReportView(BaseReportView):
         )
 
         return context
+
+
+class AdvertiserAuthorizedUsersView(
+    AdvertiserAccessMixin, UserPassesTestMixin, ListView
+):
+
+    """Authorized users for an advertiser."""
+
+    context_object_name = "users"
+    model = get_user_model()
+    template_name = "adserver/advertiser/users.html"
+
+    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_queryset(self):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs.get("advertiser_slug", "")
+        )
+        return self.advertiser.user_set.all()
+
+
+class AdvertiserAuthorizedUsersInviteView(
+    AdvertiserAccessMixin, UserPassesTestMixin, CreateView
+):
+
+    """Invite additional authorized users for an advertiser."""
+
+    form_class = InviteUserForm
+    model = get_user_model()
+    template_name = "adserver/advertiser/users-invite.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        self.object.advertisers.add(self.advertiser)
+        messages.success(
+            self.request,
+            _("Successfully invited %(user)s to %(advertiser)s")
+            % {"user": self.object.email, "advertiser": self.advertiser},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "advertiser_users", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+
+
+class AdvertiserAuthorizedUsersRemoveView(
+    AdvertiserAccessMixin, UserPassesTestMixin, TemplateView
+):
+
+    """
+    Remove authorized users for an advertiser.
+
+    This doesn't remove or deactivate the user - just removes them from the advertiser.
+    """
+
+    template_name = "adserver/advertiser/users-remove.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.user = get_object_or_404(
+            get_user_model(),
+            pk=self.kwargs["user_id"],
+            advertisers=self.advertiser,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if self.user == self.request.user:
+            messages.error(self.request, _("You cannot remove your own access"))
+        else:
+            self.user.advertisers.remove(self.advertiser)
+            messages.success(
+                self.request,
+                _("Successfully removed %(user)s from %(advertiser)s")
+                % {"user": self.user.email, "advertiser": self.advertiser},
+            )
+        return redirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser, "user": self.user})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "advertiser_users", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
 
 
 class PublisherReportView(PublisherAccessMixin, BaseReportView):
@@ -1132,7 +1250,7 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
                 end_date=context["end_date"],
             )
             .values_list("div_id", flat=True)
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .distinct()[: self.LIMIT]
         )
@@ -1267,7 +1385,7 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
             )
             .filter(advertisement__isnull=False)
             .values_list("advertisement__flight__campaign__advertiser")
-            .annotate(total_views=Sum("views"))
+            .annotate(total_views=models.Sum("views"))
             .order_by("-total_views")
             .values_list(
                 "advertisement__flight__campaign__advertiser__slug",

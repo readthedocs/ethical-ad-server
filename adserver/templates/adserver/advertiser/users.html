@@ -1,0 +1,56 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Authorized Users' %} - {{ advertiser }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Authorized users' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% blocktrans %}Authorized users for {{ advertiser }}{% endblocktrans %}</h1>
+    <p class="mb-5">{% trans 'These are users who have access to manage ads and view reports.' %}</p>
+
+    <aside class="mb-3 text-right">
+      <a href="{% url 'advertiser_users_invite' advertiser.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
+        <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Invite user' %}</span>
+      </a>
+    </aside>
+
+    {% if users %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th><strong>{% trans 'Name' %}</strong></th>
+              <th><strong>{% trans 'Email' %}</strong></th>
+              <th><strong>{% trans 'Options' %}</strong></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr>
+                <td>{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  {% if request.user.id != user.id %}
+                    <a href="{% url 'advertiser_users_remove' advertiser.slug user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-center">{% trans 'There are no authorized users for this advertiser.' %}</p>
+    {% endif %}
+  </section>
+{% endblock content_container %}
