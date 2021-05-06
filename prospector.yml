@@ -28,7 +28,6 @@ pylint:
   disable:
     - too-many-arguments
     - too-many-locals
-    - missing-function-docstring
 
 mccabe:
   run: true
