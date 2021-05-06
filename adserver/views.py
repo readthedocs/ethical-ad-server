@@ -1675,7 +1675,8 @@ class AllPublisherReportView(BaseReportView):
 
     """A report for all publishers."""
 
-    force_revshare = None
+    # Report should always show our revenue for all publishers
+    force_revshare = 70.0
     template_name = "adserver/reports/all-publishers.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals

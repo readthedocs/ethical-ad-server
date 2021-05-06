@@ -179,6 +179,7 @@ class AllReportMixin:
         filtered = None
 
         # Handle filtering a larger subset of reports as needed
+        # TODO: Backport similar logic to the base report class?
         kwargs = {}
         for arg in ["keyword", "country", "publisher"]:
             if arg in self.request.GET:
@@ -192,6 +193,8 @@ class AllReportMixin:
             **kwargs,
         )
 
+        # Sort by date when filtering a specific value,
+        # otherwise handle sorting via the users input
         if filtered:
             order = "-date"
             index = "date"
