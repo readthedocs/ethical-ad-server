@@ -1,4 +1,5 @@
 {% extends "adserver/reports/base.html" %}
+{# Base report for Staff reports #}
 {% load humanize %}
 {% load i18n %}
 
@@ -13,6 +14,17 @@
     </select>
   </div>
 {% endblock additional_filters %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>About this report</h3>
+  <p>
+  <em>
+  This is a staff-only report. "Our Rev" reports 70% for all publishers in these views.
+  </em>
+  </p>
+</section>
+{% endblock explainer %}
 
 {% block summary %}
   <section>
