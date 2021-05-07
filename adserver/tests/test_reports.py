@@ -197,8 +197,8 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, self.publisher1.name)
         self.assertContains(response, self.publisher2.name)
 
-    def test_all_advertiser_report_access(self):
-        url = reverse("all_advertisers_report")
+    def test_staff_advertiser_report_access(self):
+        url = reverse("staff_advertisers_report")
 
         # Anonymous
         response = self.client.get(url)
@@ -215,8 +215,8 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_all_publishers_report_access(self):
-        url = reverse("all_publishers_report")
+    def test_staff_publishers_report_access(self):
+        url = reverse("staff_publishers_report")
 
         # Anonymous
         response = self.client.get(url)
@@ -862,7 +862,7 @@ class TestReportViews(TestReportsBase):
         daily_update_keywords()
 
         self.client.force_login(self.staff_user)
-        url = reverse("all_keyword_report")
+        url = reverse("staff_keyword_report")
 
         # All reports
         response = self.client.get(url)
@@ -895,7 +895,7 @@ class TestReportViews(TestReportsBase):
         daily_update_geos()
 
         self.client.force_login(self.staff_user)
-        url = reverse("all_geo_report")
+        url = reverse("staff_geo_report")
 
         # All reports
         response = self.client.get(url)
