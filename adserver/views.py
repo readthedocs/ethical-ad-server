@@ -1015,7 +1015,7 @@ class StaffAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""
 
-    template_name = "adserver/reports/all-advertisers.html"
+    template_name = "adserver/reports/staff-advertisers.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1677,7 +1677,7 @@ class StaffPublisherReportView(BaseReportView):
 
     # Report should always show our revenue for all publishers
     force_revshare = 70.0
-    template_name = "adserver/reports/all-publishers.html"
+    template_name = "adserver/reports/staff-publishers.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
         context = super().get_context_data(**kwargs)
@@ -1795,7 +1795,7 @@ class StaffUpliftReportView(AllReportMixin, BaseReportView):
     impression_model = UpliftImpression
     force_revshare = 70.0
     report = PublisherUpliftReport
-    template_name = "adserver/reports/all-uplift.html"
+    template_name = "adserver/reports/staff-uplift.html"
 
 
 class StaffKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
@@ -1806,7 +1806,7 @@ class StaffKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView)
     impression_model = KeywordImpression
     force_revshare = 70.0
     report = PublisherKeywordReport
-    template_name = "adserver/reports/all-keywords.html"
+    template_name = "adserver/reports/staff-keywords.html"
 
 
 class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
@@ -1817,7 +1817,7 @@ class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
     impression_model = GeoImpression
     force_revshare = 70.0
     report = PublisherGeoReport
-    template_name = "adserver/reports/all-geos.html"
+    template_name = "adserver/reports/staff-geos.html"
 
 
 class PublisherMainView(
