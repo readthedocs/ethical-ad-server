@@ -20,10 +20,10 @@
       {% trans 'Reports only visible to staff users.' %}
     </p>
     <ul>
-        <li><a href="{% url 'all_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a></li>
-        <li><a href="{% url 'all_publishers_report' %}">{% trans 'Staff Publisher Report' %}</a></li>
-        <li><a href="{% url 'all_keyword_report' %}">{% trans 'Staff Keyword Report' %}</a></li>
-        <li><a href="{% url 'all_geo_report' %}">{% trans 'Staff Geo Report' %}</a></li>
+        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a></li>
+        <li><a href="{% url 'staff_publishers_report' %}">{% trans 'Staff Publisher Report' %}</a></li>
+        <li><a href="{% url 'staff_keyword_report' %}">{% trans 'Staff Keyword Report' %}</a></li>
+        <li><a href="{% url 'staff_geo_report' %}">{% trans 'Staff Geo Report' %}</a></li>
         <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Staff Uplift Report' %}</a></li>
       </ul>
   {% endif %}

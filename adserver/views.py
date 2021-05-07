@@ -1011,7 +1011,7 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
         return context
 
 
-class AllAdvertiserReportView(BaseReportView):
+class StaffAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""
 
@@ -1671,7 +1671,7 @@ class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, Detai
         return context
 
 
-class AllPublisherReportView(BaseReportView):
+class StaffPublisherReportView(BaseReportView):
 
     """A report for all publishers."""
 
@@ -1786,7 +1786,7 @@ class AllPublisherReportView(BaseReportView):
         return context
 
 
-class UpliftReportView(AllReportMixin, BaseReportView):
+class StaffUpliftReportView(AllReportMixin, BaseReportView):
 
     """An uplift report for all publishers."""
 
@@ -1798,7 +1798,7 @@ class UpliftReportView(AllReportMixin, BaseReportView):
     template_name = "adserver/reports/all-uplift.html"
 
 
-class AllKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
+class StaffKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
 
     """A keyword report for all publishers."""
 
@@ -1809,7 +1809,7 @@ class AllKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
     template_name = "adserver/reports/all-keywords.html"
 
 
-class AllGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
+class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
     """A geo report for all publishers."""
 
