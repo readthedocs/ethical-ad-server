@@ -14,14 +14,26 @@
 
 {% block content_container %}
 
+  {% if request.user.is_staff %}
+    <h2>{% trans 'Staff Reports' %}</h2>
+    <p>
+      {% trans 'Reports only visible to staff users.' %}
+    </p>
+    <ul>
+        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a></li>
+        <li><a href="{% url 'staff_publishers_report' %}">{% trans 'Staff Publisher Report' %}</a></li>
+        <li><a href="{% url 'staff_keyword_report' %}">{% trans 'Staff Keyword Report' %}</a></li>
+        <li><a href="{% url 'staff_geo_report' %}">{% trans 'Staff Geo Report' %}</a></li>
+        <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Staff Uplift Report' %}</a></li>
+      </ul>
+  {% endif %}
+
   {% if publishers %}
     <h2>{% trans 'Publishers' %}</h2>
+    <p>
+      {% trans 'Reports for your publisher accounts.' %}
+    </p>
     <ul>
-      {% if request.user.is_staff %}
-        <li><a href="{% url 'all_publishers_report' %}">{% trans 'All publishers' %}</a></li>
-        <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Uplift report' %}</a></li>
-        <li>--</li>
-      {% endif %}
       {% for publisher in publishers %}
         <li><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher.name }}</a></li>
       {% endfor %}
@@ -30,10 +42,10 @@
 
   {% if advertisers %}
     <h2>{% trans 'Advertisers' %}</h2>
+    <p>
+      {% trans 'Reports for your advertiser accounts.' %}
+    </p>
     <ul>
-      {% if request.user.is_staff %}
-        <li><a href="{% url 'all_advertisers_report' %}">{% trans 'All advertisers' %}</a></li>
-      {% endif %}
       {% for advertiser in advertisers %}
         <li><a href="{% url 'advertiser_main' advertiser.slug %}">{{ advertiser.name }}</a></li>
       {% endfor %}

@@ -17,8 +17,6 @@ from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
 from .views import AdViewProxyView
-from .views import AllAdvertiserReportView
-from .views import AllPublisherReportView
 from .views import ApiTokenCreateView
 from .views import ApiTokenDeleteView
 from .views import ApiTokenListView
@@ -39,7 +37,11 @@ from .views import PublisherPlacementReportView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
 from .views import PublisherStripeOauthConnectView
-from .views import UpliftReportView
+from .views import StaffAdvertiserReportView
+from .views import StaffGeoReportView
+from .views import StaffKeywordReportView
+from .views import StaffPublisherReportView
+from .views import StaffUpliftReportView
 
 
 urlpatterns = [
@@ -68,12 +70,35 @@ urlpatterns = [
         AdClickProxyView.as_view(),
         name="click-proxy",
     ),
-    # Advertiser management and reporting
+    # Global reports
+    # TODO: Change these URL's to staff/ -- keeping for backwards compat for now
     path(
         r"advertiser/all/report/",
-        AllAdvertiserReportView.as_view(),
-        name="all_advertisers_report",
+        StaffAdvertiserReportView.as_view(),
+        name="staff_advertisers_report",
     ),
+    path(
+        r"publisher/all/report/",
+        StaffPublisherReportView.as_view(),
+        name="staff_publishers_report",
+    ),
+    path(
+        r"staff/report/keywords/",
+        StaffKeywordReportView.as_view(),
+        name="staff_keyword_report",
+    ),
+    path(r"staff/report/geos/", StaffGeoReportView.as_view(), name="staff_geo_report"),
+    path(
+        r"staff/report/uplift/",
+        StaffUpliftReportView.as_view(),
+        name="publisher_uplift_report",
+    ),
+    path(
+        r"staff/report/uplift.csv",
+        StaffUpliftReportView.as_view(export=True),
+        name="publisher_uplift_report_export",
+    ),
+    # Advertiser management and reporting
     path(
         r"advertiser/<slug:advertiser_slug>/",
         AdvertiserMainView.as_view(),
@@ -165,21 +190,6 @@ urlpatterns = [
         name="advertiser_users_remove",
     ),
     # Publisher management and reporting
-    path(
-        r"publisher/all/report/",
-        AllPublisherReportView.as_view(),
-        name="all_publishers_report",
-    ),
-    path(
-        r"publisher/all/report/uplift/",
-        UpliftReportView.as_view(),
-        name="publisher_uplift_report",
-    ),
-    path(
-        r"publisher/all/report/uplift.csv",
-        UpliftReportView.as_view(export=True),
-        name="publisher_uplift_report_export",
-    ),
     path(
         r"publisher/<slug:publisher_slug>/",
         PublisherMainView.as_view(),

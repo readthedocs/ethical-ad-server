@@ -197,8 +197,8 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, self.publisher1.name)
         self.assertContains(response, self.publisher2.name)
 
-    def test_all_advertiser_report_access(self):
-        url = reverse("all_advertisers_report")
+    def test_staff_advertiser_report_access(self):
+        url = reverse("staff_advertisers_report")
 
         # Anonymous
         response = self.client.get(url)
@@ -215,8 +215,8 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_all_publishers_report_access(self):
-        url = reverse("all_publishers_report")
+    def test_staff_publishers_report_access(self):
+        url = reverse("staff_publishers_report")
 
         # Anonymous
         response = self.client.get(url)
@@ -826,6 +826,98 @@ class TestReportViews(TestReportsBase):
         self.assertNotContains(
             response, '<td class="text-right"><strong>3</strong></td>'
         )
+
+    def test_global_keyword_report_contents(self):
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["test"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["awesome"],
+            viewed=True,
+            clicked=True,
+        )
+
+        # Update reporting
+        daily_update_keywords()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_keyword_report")
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "test")
+
+        # Filter reports
+        response = self.client.get(url, {"keyword": "test"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"keyword": "awesome"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"keyword": "foobar"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Disabled for now
+        self.assertNotContains(response, "CSV Export")
+
+    def test_global_geo_report_contents(self):
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
+
+        # Update reporting
+        daily_update_geos()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_geo_report")
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "France")
+        self.assertNotContains(response, "Belgium")
+
+        # Filter reports
+        response = self.client.get(url, {"country": "US"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"country": "FR"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"country": "foobar"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Disabled for now
+        self.assertNotContains(response, "CSV Export")
 
 
 class TestReportClasses(TestReportsBase):

@@ -1,0 +1,15 @@
+{% extends "adserver/reports/base-staff.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Staff Keyword Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'Staff Keyword Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Staff Keyword Report' %}</li>
+{% endblock breadcrumbs %}

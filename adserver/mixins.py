@@ -8,6 +8,7 @@ from django.utils.functional import cached_property
 from django_countries import countries
 
 from .constants import ALL_CAMPAIGN_TYPES
+from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
 
@@ -70,15 +71,25 @@ class ReportQuerysetMixin:
 
         # Advertiser filters
         if "advertiser" in kwargs and kwargs["advertiser"]:
-            queryset = queryset.filter(
-                advertisement__flight__campaign__advertiser=kwargs["advertiser"]
-            )
+            if isinstance(kwargs["advertiser"], Advertiser):
+                queryset = queryset.filter(
+                    advertisement__flight__campaign__advertiser=kwargs["advertiser"]
+                )
+            else:
+                queryset = queryset.filter(
+                    advertisement__flight__campaign__advertiser__slug=kwargs[
+                        "advertiser"
+                    ]
+                )
         if "flight" in kwargs and kwargs["flight"]:
             queryset = queryset.filter(advertisement__flight=kwargs["flight"])
 
         # Publisher filters
         if "publisher" in kwargs and kwargs["publisher"]:
-            queryset = queryset.filter(publisher=kwargs["publisher"])
+            if isinstance(kwargs["publisher"], Publisher):
+                queryset = queryset.filter(publisher=kwargs["publisher"])
+            else:
+                queryset = queryset.filter(publisher__slug=kwargs["publisher"])
         if "publishers" in kwargs and kwargs["publishers"]:
             queryset = queryset.filter(publisher__in=kwargs["publishers"])
         if "campaign_type" in kwargs and kwargs["campaign_type"] in ALL_CAMPAIGN_TYPES:
@@ -97,7 +108,7 @@ class GeoReportMixin:
         queryset = super().get_queryset(**kwargs)
 
         if "country" in kwargs and kwargs["country"]:
-            queryset = queryset.filter(country=kwargs["country"])
+            queryset = queryset.filter(country__iexact=kwargs["country"])
 
         # Only filter this if we didn't pass a specific country
         elif "countries" in kwargs and kwargs["countries"]:
@@ -122,6 +133,96 @@ class GeoReportMixin:
     def get_country_name(self, country):
         countries_dict = dict(countries)
         return countries_dict.get(country)
+
+
+class KeywordReportMixin:
+
+    """Provide keyword functionality. MUST be used with BaseReportView."""
+
+    def get_queryset(self, **kwargs):
+        queryset = super().get_queryset(**kwargs)
+
+        if "keyword" in kwargs and kwargs["keyword"]:
+            queryset = queryset.filter(keyword__iexact=kwargs["keyword"])
+        # Only filter this if we didn't pass a specific country
+        elif "keywords" in kwargs and kwargs["keywords"]:
+            queryset = queryset.filter(keywords__in=kwargs["keywords"])
+
+        return queryset
+
+    def get_keyword_options(self, queryset):
+
+        # The order_by here is to enable distinct to work
+        # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
+        keyword_options = (
+            queryset.values_list("keyword", flat=True)
+            .annotate(total_views=models.Sum("views"))
+            .order_by("-total_views")
+            .distinct()[: self.LIMIT]
+        )
+
+        return keyword_options
+
+
+class AllReportMixin:
+
+    """A mixin that handles the primary "view" logic for staff reports."""
+
+    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
+        context = super().get_context_data(**kwargs)
+
+        sort = self.request.GET.get("sort", "")
+        force_revshare = self.request.GET.get("force_revshare", self.force_revshare)
+
+        order = None
+        index = None
+        filtered = None
+
+        # Handle filtering a larger subset of reports as needed
+        # TODO: Backport similar logic to the base report class?
+        kwargs = {}
+        for arg in ["keyword", "country", "publisher"]:
+            if arg in self.request.GET:
+                kwargs[arg] = self.request.GET[arg]
+                filtered = arg
+
+        queryset = self.get_queryset(
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+            campaign_type=context["campaign_type"],
+            **kwargs,
+        )
+
+        # Sort by date when filtering a specific value,
+        # otherwise handle sorting via the users input
+        if filtered:
+            order = "-date"
+            index = "date"
+        elif sort:
+            order = f"-{sort}"
+
+        report = self.report(
+            queryset,
+            max_results=None,
+            force_revshare=force_revshare,
+            order=order,
+            index=index,
+        )
+        report.generate()
+        sort_options = report.total.keys()
+
+        context.update(
+            {
+                "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
+                "sort": sort,
+                "sort_options": sort_options,
+                "export_url": self.get_export_url(),
+                "filtered": filtered,
+            }
+        )
+
+        return context
 
 
 class EstimatedCountPaginator(Paginator):

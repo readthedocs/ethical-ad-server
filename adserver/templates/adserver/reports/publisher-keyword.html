@@ -25,7 +25,7 @@
   <label class="col-form-label" for="id_keyword">{% trans 'Top Keywords' %}</label>
   <select class="form-control" name="keyword" id="id_keyword">
     <option value="">All keywords</option>
-    {% for slug in keyword_list %}
+    {% for slug in keyword_options %}
       <option value="{{ slug }}"{% if keyword == slug %} selected{% endif %}>{{ slug }}</option>
     {% endfor %}
   </select>
