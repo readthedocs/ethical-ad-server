@@ -38,7 +38,7 @@
       {% endif %}
     {% endfor %}
     <tr>
-      <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
+      <td class="text-nowrap"><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
       <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
