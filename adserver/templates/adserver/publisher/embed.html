@@ -15,8 +15,6 @@
   <section>
     <h1>{% blocktrans %}Publisher Embed for {{ publisher }}{% endblocktrans %}</h1>
 
-    {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
-
     <p>
       This code will allow you to get started with showing ads on your site.
       You publisher Id is <strong>{{ publisher.slug }}</strong>,

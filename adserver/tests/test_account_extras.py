@@ -84,7 +84,12 @@ class TestSupportView(TestCase):
 
         resp = self.client.post(
             self.support_view,
-            {"body": "My Message", "subject": "My Subject"},
+            {
+                "body": "My Message",
+                "subject": "My Subject",
+                "name": "name",
+                "email": "a@b.co",
+            },
             follow=True,
         )
         self.assertEqual(resp.status_code, 200)
@@ -102,7 +107,12 @@ class TestSupportView(TestCase):
         with override_settings(ADSERVER_SUPPORT_TO_EMAIL=to_email):
             resp = self.client.post(
                 self.support_view,
-                {"body": "My Message", "subject": "My Subject"},
+                {
+                    "body": "My Message",
+                    "subject": "My Subject",
+                    "name": "name",
+                    "email": "a@b.co",
+                },
                 follow=True,
             )
         self.assertEqual(resp.status_code, 200)

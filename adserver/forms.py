@@ -447,9 +447,22 @@ class SupportForm(forms.Form):
     subject = forms.CharField(max_length=255)
     body = forms.CharField(label=_("Message"), widget=forms.Textarea)
 
+    # These are always populated from the request
+    name = forms.CharField(widget=forms.HiddenInput)
+    email = forms.CharField(widget=forms.HiddenInput)
+
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
         self.request = kwargs.pop("request")  # Request is required
+
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        kwargs["initial"].update(
+            {
+                "name": self.request.user.get_full_name(),
+                "email": self.request.user.email,
+            }
+        )
 
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -461,6 +474,8 @@ class SupportForm(forms.Form):
         self.helper.layout = Layout(
             Fieldset(
                 "",
+                Field("name"),
+                Field("email"),
                 Field("subject", placeholder=_("Your message subject")),
                 Field("body", placeholder=_("Your message")),
                 css_class="my-3",
@@ -485,6 +500,10 @@ class SupportForm(forms.Form):
 
         subject = self.cleaned_data["subject"]
         body = self.cleaned_data["body"]
+
+        # Even though the user name and email are submitted with the form,
+        # always use the server value
+        # Don't trust the POST data if you don't have to
         user = self.request.user
 
         email = EmailMessage(
