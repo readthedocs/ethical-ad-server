@@ -28,9 +28,15 @@
               </a>
               <div class="dropdown-divider"></div>
             {% endif %}
+
             <a class="dropdown-item" href="{% url 'api_token_list' %}">
               <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
               <span>{% trans 'API token' %}</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{% url 'support' %}">
+              <span class="fa fa-envelope fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'Support' %}</span>
             </a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="{% url 'account_change_password' %}">

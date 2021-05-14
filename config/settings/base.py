@@ -370,5 +370,10 @@ ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 ADSERVER_STICKY_DECISION_DURATION = 0
 
+# For customer support emails
+ADSERVER_SUPPORT_FROM_EMAIL = env("ADSERVER_SUPPORT_FROM_EMAIL", default=SERVER_EMAIL)
+ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
+ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
+
 with open(os.path.join(BASE_DIR, "package.json")) as fd:
     ADSERVER_VERSION = json.load(fd)["version"]

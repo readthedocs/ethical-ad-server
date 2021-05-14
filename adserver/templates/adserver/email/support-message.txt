@@ -1,0 +1,4 @@
+{% load i18n %}{% blocktrans with email=user.email user_display=user.get_full_name %}Support message from {{ user_display }} <{{ email }}>:
+
+{{ body }}
+{% endblocktrans %}
