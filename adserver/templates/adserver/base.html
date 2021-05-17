@@ -28,9 +28,15 @@
               </a>
               <div class="dropdown-divider"></div>
             {% endif %}
+
             <a class="dropdown-item" href="{% url 'api_token_list' %}">
               <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
               <span>{% trans 'API token' %}</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{% url 'support' %}">
+              <span class="fa fa-envelope fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'Support' %}</span>
             </a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="{% url 'account_change_password' %}">
@@ -182,6 +188,7 @@
         </nav>
         <main class="main col-lg-9 ml-sm-auto px-4">
           {% include 'includes/messages.html' %}
+          {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
 
           {% block content_container %}{% endblock content_container %}
         </main>
@@ -196,6 +203,11 @@
         <li class="list-inline-item small">
           <span class="text-muted">© {% now "Y" %} Read the Docs, Inc.</span>
         </li>
+        {% if request.user.is_authenticated %}
+          <li class="list-inline-item small">
+            <a href="{% url 'support' %}" target="_blank">{% trans 'Support' %}</a>
+          </li>
+        {% endif %}
         {% if adserver_privacy_policy %}
           <li class="list-inline-item small">
             <a href="{{ adserver_privacy_policy }}" target="_blank">{% trans 'Privacy Policy' %}</a>

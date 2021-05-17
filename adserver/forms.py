@@ -14,8 +14,11 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.images import get_image_dimensions
+from django.core.mail import EmailMessage
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
@@ -430,3 +433,87 @@ class InviteUserForm(forms.ModelForm):
             "name",
             "email",
         ]
+
+
+class SupportForm(forms.Form):
+
+    """
+    Form used to contact the support team.
+
+    By default, this uses email but can be configured to submit to a remote URL
+    for services that handle support (eg. Front).
+    """
+
+    subject = forms.CharField(max_length=255)
+    body = forms.CharField(label=_("Message"), widget=forms.Textarea)
+
+    # These are always populated from the request
+    name = forms.CharField(widget=forms.HiddenInput)
+    email = forms.CharField(widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        self.request = kwargs.pop("request")  # Request is required
+
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        kwargs["initial"].update(
+            {
+                "name": self.request.user.get_full_name(),
+                "email": self.request.user.email,
+            }
+        )
+
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        if settings.ADSERVER_SUPPORT_FORM_ACTION:
+            # Set a custom form action - where the form submits to
+            # This can be used to submit the form to an external help desk
+            self.helper.form_action = settings.ADSERVER_SUPPORT_FORM_ACTION
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("name"),
+                Field("email"),
+                Field("subject", placeholder=_("Your message subject")),
+                Field("body", placeholder=_("Your message")),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Send support message")),
+            HTML(
+                "<p class='form-text small text-muted'>"
+                + str(_("Typical turnaround time is 1-2 business days"))
+                + "</p>"
+            ),
+        )
+
+    def save(self):
+        """Construct the message (with metadata) and send the support message."""
+        to_email = settings.ADSERVER_SUPPORT_TO_EMAIL
+        if not to_email:
+            site = get_current_site(request=self.request)
+            to_email = f"support@{site.domain}"
+            log.warning(
+                "Using the default support email address because ADSERVER_SUPPORT_TO_EMAIL is not configured"
+            )
+
+        subject = self.cleaned_data["subject"]
+        body = self.cleaned_data["body"]
+
+        # Even though the user name and email are submitted with the form,
+        # always use the server value
+        # Don't trust the POST data if you don't have to
+        user = self.request.user
+
+        email = EmailMessage(
+            subject,
+            render_to_string(
+                "adserver/email/support-message.txt",
+                {"subject": subject, "body": body, "user": user},
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            [to_email],
+            reply_to=[user.email],
+        )
+        email.send()

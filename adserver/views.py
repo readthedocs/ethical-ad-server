@@ -33,6 +33,7 @@ from django.views import View
 from django.views.generic import CreateView
 from django.views.generic import DeleteView
 from django.views.generic import DetailView
+from django.views.generic import FormView
 from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
@@ -48,6 +49,7 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
+from .forms import SupportForm
 from .mixins import AdvertiserAccessMixin
 from .mixins import AllReportMixin
 from .mixins import GeoReportMixin
@@ -1851,6 +1853,58 @@ class PublisherMainView(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
         return self.publisher
+
+
+class AccountSupportView(LoginRequiredMixin, FormView):
+
+    """
+    View for submitting a support request.
+
+    This view can accept query parameters (?success=true OR ?error=true)
+    which will cause a message to be displayed and the user redirected.
+    These are useful when handling support messages with an external
+    help desk (eg. Front).
+    """
+
+    form_class = SupportForm
+    template_name = "adserver/accounts/support.html"
+    success_url = reverse_lazy("dashboard-home")
+
+    message_success = _(
+        "Thanks, we got your message and we will get back to you as soon as we can."
+    )
+    message_error = _("There was a problem sending your message.")
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(
+            self.request,
+            self.message_success,
+        )
+        return super().form_valid(form)
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("success") == "true":
+            messages.success(
+                self.request,
+                self.message_success,
+            )
+            return redirect(reverse("support"))
+        if request.GET.get("error") == "true":
+            messages.error(
+                self.request,
+                self.message_error,
+            )
+            # Note: Front (and possibly other help desks?) send error reasons in query params
+            log.warning("Error submitting support request form: %s", request.GET)
+            return redirect(reverse("support"))
+
+        return super().get(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
 
 
 class ApiTokenMixin(LoginRequiredMixin):

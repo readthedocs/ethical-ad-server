@@ -24,8 +24,6 @@
     <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ publisher }} overview{% endblocktrans %}</h1>
     <p><small>Month to date overview for {{ publisher }}.</small></p>
 
-    {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
-
     <div class="row row-cols-1 row-cols-md-4">
       <div class="col mb-3">
         <div class="card">

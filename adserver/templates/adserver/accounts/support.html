@@ -1,0 +1,38 @@
+{% extends "adserver/dashboard.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans "Support" %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
+</li>
+<li class="breadcrumb-item active">{% trans 'Support' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans "Support" %}{% endblock heading %}</h1>
+
+<p>{% trans 'If you have any questions or issues, please get in touch with our team and we will get back to you as soon as we can.' %}</p>
+
+<div class="row">
+  <div class="col col-md-8">
+
+    <div class="form-group">
+      <label>{% trans 'From' %}</label>
+      <p>{{ request.user.get_full_name }}</p>
+    </div>
+
+    {% crispy form form.helper %}
+  </div>
+</div>
+
+{% endblock content_container %}

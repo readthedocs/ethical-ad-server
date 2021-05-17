@@ -111,6 +111,20 @@ and it ensures that the correct ad view is attributed to a clickthrough if it oc
 The default in production is 5 seconds.
 
 
+ADSERVER_SUPPORT_TO_EMAIL
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An email address where support email should go to.
+By default, it sends to ``support@`` followed by the domain configured on the ``SITE_ID`` (usually site #1).
+
+
+ADSERVER_SUPPORT_FORM_ACTION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If set, the support form will submit to this external URL instead of sending email.
+This can be used to connect the support form to an external help desk.
+
+
 ALLOWED_HOSTS
 ~~~~~~~~~~~~~
 
