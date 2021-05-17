@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.27.0
+---------------
+
+This release added some additional staff-only reports to understand advertising data.
+It also included a support form for advertisers and publishers to get in touch.
+
+:date: May 17, 2021
+
+ * @davidfischer: The reports sometimes wrap the date ranges awkwardly (#382)
+ * @davidfischer: Setup a support form (#381)
+ * @davidfischer: I missed this when adding CTR to advertiser reports (#380)
+ * @dependabot[bot]: Bump hosted-git-info from 2.8.8 to 2.8.9 (#379)
+ * @dependabot[bot]: Bump lodash from 4.17.19 to 4.17.21 (#378)
+ * @ericholscher: Add geo & keyword staff reports (#375)
+
 Version v0.26.0
 ---------------
 
