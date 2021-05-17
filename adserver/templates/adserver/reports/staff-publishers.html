@@ -97,7 +97,7 @@
             {% endif %}
           {% endfor %}
           <tr>
-            <td><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
+            <td class="text-nowrap"><strong>{{ start_date|date:"M j, Y" }} - {{ end_date|date:"M j, Y" }}</strong></td>
             <td class="text-right"><strong>{{ total_views|intcomma }}</strong></td>
             <td class="text-right"><strong>{{ total_clicks|intcomma }}</strong></td>
             <td class="text-right"><strong>${{ total_ecpm|floatformat:2 }}</strong></td>
