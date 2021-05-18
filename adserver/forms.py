@@ -470,6 +470,11 @@ class SupportForm(forms.Form):
             # Set a custom form action - where the form submits to
             # This can be used to submit the form to an external help desk
             self.helper.form_action = settings.ADSERVER_SUPPORT_FORM_ACTION
+            self.helper.disable_csrf = True
+            self.helper.attrs = {
+                "accept_charset": "utf-8",
+                "enctype": "multipart/form-data",
+            }
 
         self.helper.layout = Layout(
             Fieldset(
