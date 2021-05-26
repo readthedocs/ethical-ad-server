@@ -317,7 +317,7 @@ def generate_client_id(ip_address, user_agent):
     hash_id.update(force_bytes(settings.SECRET_KEY))
     hash_id.update(salt)
     if ip_address:
-        hash_id.update(force_bytes(ip_address))
+        hash_id.update(force_bytes(anonymize_ip_address(ip_address)))
     if user_agent:
         hash_id.update(force_bytes(user_agent))
 

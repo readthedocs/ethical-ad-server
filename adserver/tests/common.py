@@ -82,6 +82,10 @@ class BaseAdModelsTestCase(TestCase):
             template=None,
         )
 
+        self.ad1.ad_types.add(self.text_ad_type)
+        self.ad2.ad_types.add(self.text_ad_type)
+        self.ad2.ad_types.add(self.image_ad_type)
+
         self.staff_user = get(
             get_user_model(),
             is_staff=True,

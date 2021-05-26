@@ -1462,10 +1462,11 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     )
 
     # User Data
-    ip = models.GenericIPAddressField(_("Ip Address"))  # should be anonymized
+    ip = models.GenericIPAddressField(_("Ip Address"))  # anonymized
     user_agent = models.CharField(
         _("User Agent"), max_length=1000, blank=True, null=True
     )
+    # Client IDs are used primarily for fraud and short term (sub-day) frequency capping
     client_id = models.CharField(_("Client ID"), max_length=1000, blank=True, null=True)
     country = CountryField(null=True)
     url = models.CharField(_("Page URL"), max_length=10000, blank=True, null=True)
