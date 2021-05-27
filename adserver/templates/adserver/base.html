@@ -70,7 +70,7 @@
           {% if advertiser %}
             <h6 class="text-muted">{{ advertiser }}</h6>
 
-            <ul class="nav flex-column mb-2">
+            <ul class="nav flex-column mb-5">
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'advertiser_main' advertiser.slug %}">
                   <span class="fa fa-binoculars fa-fw mr-2 text-muted" aria-hidden="true"></span>
@@ -112,7 +112,7 @@
           {% elif publisher %}
             <h6 class="text-muted">{{ publisher }}</h6>
 
-            <ul class="nav flex-column mb-2">
+            <ul class="nav flex-column mb-5">
 
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_main' publisher.slug %}">
@@ -180,6 +180,21 @@
                 <a class="nav-link" href="{% url 'publisher_settings' publisher.slug %}">
                   <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Settings' %}</span>
+                </a>
+              </li>
+
+            </ul>
+          {% endif %}
+
+          {% if request.user.is_staff %}
+            <h6 class="text-muted">{% trans 'Administrator Actions' %}</h6>
+
+            <ul class="nav flex-column mb-5">
+
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'create-advertiser' %}">
+                  <span class="fa fa-plus-circle fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Add advertiser' %}</span>
                 </a>
               </li>
 
