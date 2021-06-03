@@ -60,6 +60,8 @@ urlpatterns = [
     path(r".well-known/dnt-policy.txt", do_not_track_policy, name="dnt-policy"),
     # Ad API
     path(r"api/v1/", include("adserver.api.urls")),
+    # Staff interface
+    path(r"staff/", include("adserver.staff.urls")),
     # View & Click proxies
     path(
         r"proxy/view/<int:advertisement_id>/<str:nonce>/",

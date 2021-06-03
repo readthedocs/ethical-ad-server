@@ -117,39 +117,6 @@ class TestAddPublisher(TestCase):
         self.assertEqual(publisher.keywords, ["python", "django"])
 
 
-class TestAddAdvertiser(TestCase):
-    def setUp(self):
-        self.out = io.StringIO()
-        self.err = io.StringIO()
-
-    def test_add_advertiser_and_user(self):
-        email = "advertiser@example.com"
-        user_name = "Joe Advertiser"
-        advertiser_name = "Test Advertiser"
-        management.call_command(
-            "add_advertiser",
-            "-e",
-            email,
-            "-n",
-            user_name,
-            "-a",
-            advertiser_name,
-            stdout=self.out,
-            stderr=self.err,
-        )
-
-        user = User.objects.filter(email=email).first()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.advertisers.count(), 1)
-
-        advertiser = Advertiser.objects.filter(name=advertiser_name).first()
-        self.assertIsNotNone(advertiser)
-        self.assertEqual(Campaign.objects.filter(advertiser=advertiser).count(), 1)
-        self.assertEqual(
-            Flight.objects.filter(campaign__advertiser=advertiser).count(), 1
-        )
-
-
 class TestPayouts(TestCase):
     def setUp(self):
         TestPublisherDashboardViews.setUp(self)

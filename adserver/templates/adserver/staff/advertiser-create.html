@@ -1,0 +1,24 @@
+{% extends "adserver/staff/base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Create advertiser' %}{% endblock title %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Create advertiser' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <h1>{% block heading %}{% trans "Create advertiser" %}{% endblock heading %}</h1>
+
+  <div class="row">
+
+    <div class="col-md-8">
+      {% crispy form form.helper %}
+    </div>
+
+  </div>
+{% endblock content_container %}
