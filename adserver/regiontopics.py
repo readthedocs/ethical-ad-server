@@ -1,3 +1,6 @@
+"""
+Our targeting data for topics & regions
+"""
 data_science = [
     "data-science",
     "datascience",
