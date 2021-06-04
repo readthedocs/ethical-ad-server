@@ -26,7 +26,6 @@ from .regiontopics import blockchain
 from .regiontopics import data_science
 from .regiontopics import devops
 from .regiontopics import eu_aus_nz
-from .regiontopics import exclude
 from .regiontopics import frontend_web
 from .regiontopics import game_dev
 from .regiontopics import latin_america
@@ -234,7 +233,7 @@ def daily_update_keywords(day=None):
 
 
 @app.task()
-def daily_update_regiontopic(day=None):
+def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
     """
     Update the RegionTopicImpression index each day.
 
@@ -309,7 +308,6 @@ def daily_update_regiontopic(day=None):
                 elif keyword in game_dev:
                     topic = "game-dev"
                 else:
-                    log.debug(f"Sold keyword not in topic: {keyword}")
                     topic = "other"
                     if keyword in unsold:
                         unsold[keyword] += 1
@@ -320,7 +318,6 @@ def daily_update_regiontopic(day=None):
             if not matched_keywords:
                 # No matched keywords
                 for keyword in publisher_keywords:
-                    log.debug(f"Untargeted ad for keyword: {keyword}")
                     if keyword in no_keywords:
                         no_keywords[keyword] += 1
                     else:
@@ -353,6 +350,8 @@ def daily_update_regiontopic(day=None):
                 RegionTopicImpression.objects.filter(pk=impression.pk).update(
                     **{impression_type: F(impression_type) + values["total"]}
                 )
+        log.debug("Other topics: %s", unsold)
+        log.debug("No keywords: %s", no_keywords)
 
 
 @app.task()

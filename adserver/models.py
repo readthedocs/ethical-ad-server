@@ -1469,8 +1469,7 @@ class RegionTopicImpression(BaseImpression):
 
     def __str__(self):
         """Simple override."""
-        return f"RegionTopic Impression ({self.region}:{self.topic})"
-        " of {self.advertisement} on {self.date}"
+        return f"RegionTopic Impression ({self.region}:{self.topic}) of {self.advertisement} on {self.date}"
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):
