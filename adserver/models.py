@@ -1443,6 +1443,36 @@ class UpliftImpression(BaseImpression):
         return "Uplift of %s on %s" % (self.advertisement, self.date)
 
 
+class RegionTopicImpression(BaseImpression):
+
+    """
+    Create an index combining aggregated keywords & geos.
+
+    Indexed one per region/topic/ad/publisher per day.
+    """
+
+    region = models.CharField(_("Region"), max_length=100)
+    topic = models.CharField(_("Topic"), max_length=100)
+    publisher = models.ForeignKey(
+        Publisher, related_name="regiontopic_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="regiontopic_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "region", "topic")
+
+    def __str__(self):
+        """Simple override."""
+        return f"RegionTopic Impression ({self.region}:{self.topic})"
+        " of {self.advertisement} on {self.date}"
+
+
 class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
