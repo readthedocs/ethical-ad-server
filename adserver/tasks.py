@@ -268,3 +268,16 @@ def update_previous_day_reports(day=None):
     daily_update_impressions(start_date)
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
+
+
+@app.task()
+def remove_old_client_ids(days=90):
+    """Remove old Client IDs which are used for short periods for fraud prevention."""
+    old_cutoff = get_ad_day() - datetime.timedelta(days=days)
+    while True:
+        offer_ids = Offer.objects.filter(
+            date__lt=old_cutoff, client_id__isnull=False
+        ).values("pk")[:1000]
+        offers_changed = Offer.objects.filter(pk__in=offer_ids).update(client_id=None)
+        if not offers_changed:
+            break
