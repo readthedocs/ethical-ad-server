@@ -254,43 +254,29 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
     for impression_type in ["views"]:
         queryset = _default_filters(impression_type, start_date, end_date)
 
-        unsold = {}
-        no_keywords = {}
+        uncategorized = {}
 
         for values in (
-            queryset.values("publisher", "advertisement", "keywords", "country")
+            queryset.values("publisher", "keywords", "country")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
             .values(
                 "publisher",
-                "advertisement",
                 "keywords",
                 "country",
-                "advertisement__flight__targeting_parameters",
                 "total",
             )
         ):
-            if not (
-                values["keywords"]
-                and values["country"]
-                and values["advertisement__flight__targeting_parameters"]
-            ):
+            if not (values["keywords"] and values["country"]):
                 continue
 
             keywords = json.loads(values["keywords"])
             country = values["country"]
             publisher_keywords = set(keywords)
 
-            flight_targeting = json.loads(
-                values["advertisement__flight__targeting_parameters"]
-            )
-            flight_keywords = set(flight_targeting.get("include_keywords", {}))
-
-            matched_keywords = publisher_keywords & flight_keywords
-
             topics = set()
-            for keyword in matched_keywords:
+            for keyword in publisher_keywords:
                 if keyword in data_science:
                     topic = "data-science"
                 elif keyword in backend_web:
@@ -307,21 +293,8 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
                     topic = "blockchain"
                 elif keyword in game_dev:
                     topic = "game-dev"
-                else:
-                    topic = "other"
-                    if keyword in unsold:
-                        unsold[keyword] += 1
-                    else:
-                        unsold[keyword] = 1
-                topics.add(topic)
 
-            if not matched_keywords:
-                # No matched keywords
-                for keyword in publisher_keywords:
-                    if keyword in no_keywords:
-                        no_keywords[keyword] += 1
-                    else:
-                        no_keywords[keyword] = 1
+                topics.add(topic)
 
             if country in us_ca:
                 region = "us-ca"
@@ -340,7 +313,6 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
                 impression, _ = RegionTopicImpression.objects.get_or_create(
                     date=start_date,
                     publisher_id=values["publisher"],
-                    advertisement_id=values["advertisement"],
                     region=region,
                     topic=topic,
                 )
@@ -350,8 +322,6 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
                 RegionTopicImpression.objects.filter(pk=impression.pk).update(
                     **{impression_type: F(impression_type) + values["total"]}
                 )
-        log.debug("Other topics: %s", unsold)
-        log.debug("No keywords: %s", no_keywords)
 
 
 @app.task()
