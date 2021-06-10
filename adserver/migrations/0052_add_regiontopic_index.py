@@ -25,11 +25,10 @@ class Migration(migrations.Migration):
                 ('clicks', models.PositiveIntegerField(default=0, help_text='Number of times the ad was legitimately clicked', verbose_name='Clicks')),
                 ('region', models.CharField(max_length=100, verbose_name='Region')),
                 ('topic', models.CharField(max_length=100, verbose_name='Topic')),
-                ('publisher', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='regiontopic_impressions', to='adserver.Publisher')),
             ],
             options={
                 'ordering': ('-date',),
-                'unique_together': {('publisher', 'date', 'region', 'topic')},
+                'unique_together': {('date', 'region', 'topic')},
             },
         ),
     ]
