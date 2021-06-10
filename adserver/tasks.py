@@ -382,3 +382,4 @@ def update_previous_day_reports(day=None):
     daily_update_impressions(start_date)
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
+    daily_update_regiontopic(start_date)
