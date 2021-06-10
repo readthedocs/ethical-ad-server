@@ -187,9 +187,9 @@ class PublisherReport(BaseReport):
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
-
         # Allow more custom getter functions for multi-dimensional indexes
         if not hasattr(self, "getter"):
+            # This allows us to use `.` in the report_index to span relations
             self.getter = operator.attrgetter(self.index)
 
         queryset = self.queryset.select_related(*self.select_related_fields)
@@ -351,13 +351,13 @@ class PublisherUpliftReport(PublisherReport):
 
 class PublisherRegionTopicReport(PublisherReport):
 
-    """Report to breakdown publisher performance by keyword."""
+    """Report to breakdown publisher performance by region & topic."""
 
     model = RegionTopicImpression
     index = "topic"
     order = "-views"
     select_related_fields = ()
 
-    def getter(self, data):
-        """Show both region & topic in the index"""
+    def getter(self, data):  # pylint: disable=method-hidden
+        """Show both region & topic in the index."""
         return f"{data.region}:{data.topic}"

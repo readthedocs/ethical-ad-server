@@ -27,6 +27,7 @@ from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
+from ..tasks import daily_update_regiontopic
 from ..tasks import daily_update_uplift
 from ..tasks import update_previous_day_reports
 from ..utils import calculate_ecpm
@@ -915,6 +916,52 @@ class TestReportViews(TestReportsBase):
         # Invalid country
         response = self.client.get(url, {"country": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Disabled for now
+        self.assertNotContains(response, "CSV Export")
+
+    def staff_keyword_report_contents(self):
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["javascript"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["javascript"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["javascript"],
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            keywords=["python"],
+            viewed=True,
+            clicked=True,
+        )
+
+        # Update reporting
+        daily_update_regiontopic()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_regiontopic_report")
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "frontend")
+        self.assertContains(response, "python")
 
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
