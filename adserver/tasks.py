@@ -2,6 +2,7 @@
 import datetime
 import json
 import logging
+from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
 from django.db.models import Count
@@ -251,18 +252,17 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
         date__lt=end_date,
     ).delete()
 
-    for impression_type in ["views"]:
+    for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
 
-        uncategorized = {}
+        topic_mapping = defaultdict(int)
 
         for values in (
-            queryset.values("publisher", "keywords", "country")
+            queryset.values("keywords", "country")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
             .values(
-                "publisher",
                 "keywords",
                 "country",
                 "total",
@@ -293,6 +293,8 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
                     topic = "blockchain"
                 elif keyword in game_dev:
                     topic = "game-dev"
+                else:
+                    continue
 
                 topics.add(topic)
 
@@ -309,19 +311,25 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             else:
                 region = "global"
 
+            # Aggregate data into topic_mapping to save doing queries until we have everything counted
+            # This is important because we can't query on keywords, so we have a lot of records that increment
+            # the total count on the region & topic.
             for topic in topics:
-                impression, _ = RegionTopicImpression.objects.get_or_create(
-                    date=start_date,
-                    publisher_id=values["publisher"],
-                    region=region,
-                    topic=topic,
-                )
-                # These are a Sum because we can't query for specific keywords from Postgres,
-                # so a specific publisher and advertisement set could return the same keyword:
-                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-                RegionTopicImpression.objects.filter(pk=impression.pk).update(
-                    **{impression_type: F(impression_type) + values["total"]}
-                )
+                topic_mapping[f"{region}:{topic}"] += values["total"]
+
+        for region_topic, value in topic_mapping.items():
+            region, topic = region_topic.split(":")
+            impression, _ = RegionTopicImpression.objects.get_or_create(
+                date=start_date,
+                region=region,
+                topic=topic,
+            )
+            # These are a Sum because we can't query for specific keywords from Postgres,
+            # so a specific publisher and advertisement set could return the same keyword:
+            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
+            RegionTopicImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: F(impression_type) + value}
+            )
 
 
 @app.task()

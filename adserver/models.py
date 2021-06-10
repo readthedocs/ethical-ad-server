@@ -1453,17 +1453,14 @@ class RegionTopicImpression(BaseImpression):
 
     region = models.CharField(_("Region"), max_length=100)
     topic = models.CharField(_("Topic"), max_length=100)
-    publisher = models.ForeignKey(
-        Publisher, related_name="regiontopic_impressions", on_delete=models.PROTECT
-    )
 
     class Meta:
         ordering = ("-date",)
-        unique_together = ("publisher", "date", "region", "topic")
+        unique_together = ("date", "region", "topic")
 
     def __str__(self):
         """Simple override."""
-        return f"RegionTopic Impression ({self.region}:{self.topic}) of {self.publisher} on {self.date}"
+        return f"RegionTopic Impression ({self.region}:{self.topic}) on {self.date}"
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):

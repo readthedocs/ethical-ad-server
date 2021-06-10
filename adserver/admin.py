@@ -30,6 +30,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherPayout
+from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .models import View
 from .stripe_utils import get_customer_url
@@ -856,6 +857,20 @@ class PublisherGroupAdmin(admin.ModelAdmin):
     readonly_fields = ("modified", "created")
 
 
+class RegionTopicAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "__str__",
+        "date",
+        "views",
+        "clicks",
+        "offers",
+        "decisions",
+        "modified",
+        "created",
+    )
+    list_display = readonly_fields
+
+
 admin.site.register(Publisher, PublisherAdmin)
 admin.site.register(PublisherPayout, PublisherPayoutAdmin)
 admin.site.register(PublisherGroup, PublisherGroupAdmin)
@@ -863,12 +878,16 @@ admin.site.register(Advertiser, AdvertiserAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Click, ClickAdmin)
 admin.site.register(Offer, OfferAdmin)
-admin.site.register(AdImpression, AdImpressionsAdmin)
-admin.site.register(UpliftImpression, AdImpressionsAdmin)
-admin.site.register(GeoImpression, GeoImpressionAdmin)
-admin.site.register(PlacementImpression, PlacementImpressionAdmin)
-admin.site.register(KeywordImpression, KeywordImpressionAdmin)
 admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)
 admin.site.register(Flight, FlightAdmin)
 admin.site.register(Campaign, CampaignAdmin)
+
+# Don't register Impression Admin's outside dev, since they will just 502 from too much data.
+if settings.DEBUG:
+    admin.site.register(AdImpression, AdImpressionsAdmin)
+    admin.site.register(UpliftImpression, AdImpressionsAdmin)
+    admin.site.register(GeoImpression, GeoImpressionAdmin)
+    admin.site.register(PlacementImpression, PlacementImpressionAdmin)
+    admin.site.register(KeywordImpression, KeywordImpressionAdmin)
+    admin.site.register(RegionTopicImpression, RegionTopicAdmin)
