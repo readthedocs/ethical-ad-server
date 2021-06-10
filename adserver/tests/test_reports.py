@@ -920,7 +920,7 @@ class TestReportViews(TestReportsBase):
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
 
-    def staff_regiontopic_report_contents(self):
+    def test_staff_regiontopic_report_contents(self):
         get(
             Offer,
             advertisement=self.ad1,
@@ -964,8 +964,8 @@ class TestReportViews(TestReportsBase):
         # All reports
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
-        self.assertContains(response, "frontend")
-        self.assertContains(response, "python")
+        self.assertContains(response, "us-ca:frontend")
+        self.assertContains(response, "us-ca:python")
 
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
