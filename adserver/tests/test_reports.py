@@ -926,6 +926,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["javascript"],
+            country="US",
             viewed=True,
         )
         get(
@@ -933,6 +934,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["javascript"],
+            country="US",
             viewed=True,
         )
         get(
@@ -940,6 +942,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["javascript"],
+            country="US",
             viewed=True,
         )
         get(
@@ -947,6 +950,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["python"],
+            country="US",
             viewed=True,
             clicked=True,
         )
