@@ -1,5 +1,5 @@
 # Django itself and its requirements (pytz)
-Django==2.2.20
+Django==2.2.24
 pytz==2019.2
 
 # Asynchronous tasks
@@ -9,7 +9,7 @@ celery[redis]<5.0
 whitenoise==4.1.2
 
 # Handling and processing uploaded images
-Pillow==8.1.1
+Pillow==8.2.0
 
 # Our API
 djangorestframework==3.11.2
