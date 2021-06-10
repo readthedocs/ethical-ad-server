@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.28.0
+---------------
+
+The biggest new changes here are a task to null out some old data periodically
+and a staff actions interface.
+
+:date: June 10, 2021
+
+ * @dependabot[bot]: Bump django from 2.2.20 to 2.2.24 in /requirements (#392)
+ * @dependabot[bot]: Bump django from 2.2.20 to 2.2.22 in /requirements (#391)
+ * @dependabot[bot]: Bump pillow from 8.1.1 to 8.2.0 in /requirements (#390)
+ * @dependabot[bot]: Bump django from 2.2.20 to 2.2.21 in /requirements (#389)
+ * @davidfischer: Move the add advertiser interface to a staff action (#387)
+ * @davidfischer: Null out old client IDs (#386)
+ * @dependabot[bot]: Bump browserslist from 4.6.6 to 4.16.6 (#385)
+ * @davidfischer: Front form tweaks (#384)
+
+
 Version v0.27.0
 ---------------
 
