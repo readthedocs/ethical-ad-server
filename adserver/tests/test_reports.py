@@ -920,7 +920,7 @@ class TestReportViews(TestReportsBase):
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
 
-    def staff_keyword_report_contents(self):
+    def staff_regiontopic_report_contents(self):
         get(
             Offer,
             advertisement=self.ad1,
