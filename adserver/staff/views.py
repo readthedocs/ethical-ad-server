@@ -1,15 +1,22 @@
 """Views for the administrator actions."""
 import logging
 
+import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.template.loader import get_template
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView
 from django.views.generic import TemplateView
 
+from ..constants import EMAILED
 from ..models import Advertiser
+from ..models import Publisher
 from .forms import CreateAdvertiserForm
+from .forms import StartPublisherPayoutForm
 from adserver.utils import generate_absolute_url
 from adserver.utils import generate_publisher_payout_data
 
@@ -46,8 +53,9 @@ class CreateAdvertiserView(StaffUserMixin, FormView):
 
 
 class PublisherPayoutView(StaffUserMixin, TemplateView):
+
     """
-    A view listing all the payouts that are due in the upcoming month
+    A view listing all the payouts that are due in the upcoming month.
 
     Has the following arguments:
     * all: Show all publishers, not just folks with payouts due
@@ -55,7 +63,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     * limit: Show only up to ``limit`` publishers, mostly for testing & debugging
     """
 
-    template_name = "adserver/staff/publisher-payout.html"
+    template_name = "adserver/staff/publisher-payout-list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -64,11 +72,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         all_publishers = self.request.GET.get("all")
         publisher_slug = self.request.GET.get("publisher")
 
-        queryset = self.get_queryset()
+        queryset = Publisher.objects.all()
         if publisher_slug:
-            queryset = queryset.filter(slug=publisher_slug)
-        if not all_publishers:
-            queryset = queryset.filter(payouts__isnull=False, allow_paid_campaigns=True)
+            queryset = queryset.filter(slug__startswith=publisher_slug)
 
         payouts = {}
 
@@ -98,8 +104,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 "publisher_settings", kwargs={"publisher_slug": publisher.slug}
             )
             payout_context = dict(
-                report=report,
-                report_url=report_url,
                 payouts_url=payouts_url,
                 settings_url=settings_url,
                 publisher=publisher,
@@ -107,6 +111,59 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 ctr=ctr_str,
                 **data,
             )
+            payout_context["email_html"] = (
+                get_template("adserver/email/publisher-payout.html")
+                .render(payout_context)
+                .replace("\n\n", "\n")
+            )
             payouts[publisher.slug] = payout_context
         context["payouts"] = payouts
         return context
+
+
+class PublisherStartPayoutView(StaffUserMixin, FormView):
+
+    """
+    Start a payout for a publisher
+    """
+
+    form_class = StartPublisherPayoutForm
+    template_name = "adserver/staff/publisher-payout-detail.html"
+
+    def get_initial(self):
+        """
+        Returns the initial data to use for forms on this view.
+        """
+        initial = super().get_initial()
+        publisher_slug = self.kwargs.get("publisher_slug")
+        self.publisher = Publisher.objects.get(slug=publisher_slug)
+        data = generate_publisher_payout_data(self.publisher)
+        email_html = (
+            get_template("adserver/email/publisher-payout.html")
+            .render(data)
+            .replace("\n\n", "\n")
+        )
+        initial["sender"] = "EthicalAds by Read the Docs"
+        initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
+        initial["body"] = email_html
+        initial["data"] = data
+        return initial
+
+    def form_valid(self, form):
+        self.object = form.save()
+        result = super().form_valid(form)
+        messages.success(
+            self.request,
+            _("Successfully emailed %(publisher)s")
+            % {"publisher": self.publisher.name},
+        )
+        return result
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        publisher_slug = self.kwargs.get("publisher_slug")
+        kwargs["publisher"] = Publisher.objects.get(slug=publisher_slug)
+        return kwargs
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()

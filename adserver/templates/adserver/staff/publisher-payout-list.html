@@ -14,27 +14,35 @@
 {% block content_container %}
 
   <div class="row">
-
-    <div class="col-md-8">
     <table class="table table-hover">
       <thead>
         <tr>
           <th><strong>{% trans 'Publisher' %}</strong></th>
+          <th><strong>{% trans 'Since' %}</strong></th>
           <th><strong>{% trans 'Amount' %}</strong></th>
           <th><strong>{% trans 'CTR' %}</strong></th>
           <th><strong>{% trans 'First' %}</strong></th>
+          <th><strong>{% trans 'Status' %}</strong></th>
+          <th><strong>{% trans 'Email' %}</strong></th>
         </tr>
       </thead>
       <tbody>
         {% for publisher, payout in payouts.items %}
           <tr>
-            <td><a href="{{ payout.report_url }}">{{ publisher }}</a></td>
+            <td><a href="{{ payout.due_report_url }}">{{ publisher }}</a></td>
+            <td>{{ payout.start_date|date }}</td>
             <td>${{ payout.total }}</td>
             <td>{{ payout.ctr }}</td>
             <td>{{ payout.first }}</td>
+            {% if payout.status %}
+            <td>{{ payout.status }}</td>
+            {% else %}
+            <td><a href="{% url "publisher-start-payout" publisher %}">{% trans "Start Payout" %}</a></td>
+            {% endif %}
+            <td width="75%"> {{ payout.email_html|safe }} </td>
           </tr>
         {% endfor %}
-    </div>
-
-  </div>
+      </tbody>
+    </table>
+</div>
 {% endblock content_container %}

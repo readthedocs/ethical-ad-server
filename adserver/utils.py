@@ -357,18 +357,18 @@ def generate_publisher_payout_data(publisher):
     from .reports import PublisherReport  # pylint: disable=cyclic-import
 
     today = timezone.now()
-    last_day_last_month = today.replace(day=1) - timedelta(days=1)
+    end_date = today.replace(day=1) - timedelta(days=1)
     last_payout = publisher.payouts.last()
 
     if last_payout:
         first = False
         # First of the month of the month the payout was for.
         # TODO: Store this data on the model, instead of hacking it.
-        last_payout_date = last_payout.date.replace(day=1)
+        start_date = last_payout.date.replace(day=1)
     else:
         first = True
         # Fake a payout to make the logic work.
-        last_payout_date = publisher.created
+        start_date = publisher.created
 
     report_url = generate_absolute_url(
         "publisher_report", kwargs={"publisher_slug": publisher.slug}
@@ -398,10 +398,10 @@ def generate_publisher_payout_data(publisher):
     due_report_url = None
 
     # Handle cases where a publisher has just joined this month
-    if last_payout_date.month != today.month:
+    if start_date.month != today.month:
         due_queryset = publisher.adimpression_set.filter(
-            date__gte=last_payout_date,
-            date__lte=last_day_last_month,
+            date__gte=start_date,
+            date__lte=end_date,
             advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
         )
         due_report = PublisherReport(due_queryset)
@@ -412,8 +412,8 @@ def generate_publisher_payout_data(publisher):
             + "?"
             + urlencode(
                 {
-                    "start_date": last_payout_date.strftime("%Y-%m-%d"),
-                    "end_date": last_day_last_month.strftime("%Y-%m-%d"),
+                    "start_date": start_date.strftime("%Y-%m-%d"),
+                    "end_date": end_date.strftime("%Y-%m-%d"),
                     "campaign_type": PAID_CAMPAIGN,
                 }
             )
@@ -421,8 +421,8 @@ def generate_publisher_payout_data(publisher):
 
     return dict(
         first=first,
-        last_payout_date=last_payout_date,
-        last_day_last_month=last_day_last_month,
+        start_date=start_date,
+        end_date=end_date,
         today=today,
         due_report={
             "total": due_report.total,

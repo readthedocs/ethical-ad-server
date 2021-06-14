@@ -1,0 +1,66 @@
+{% autoescape off %}
+<p>
+  Thanks for being one of our publishers on the EthicalAds network.
+  We do payouts by the 15th of the month,
+  as noted in our <a href="https://www.ethicalads.io/publisher-policy/">Publisher Policy</a>.
+  If you haven't had a chance to look it over, please do,
+  as it sets expectations around ad placements, payments, and more.
+</p>
+
+{% if due_report.total.ctr < .07 %} {# Only warn is a good deal below .1 #}
+<p>
+  We generally expect all our publishers to maintain a CTR (click though rate) around or above .1%.
+  Your CTR is currently <strong>{{ due_report.total.ctr|floatformat:3 }}%</strong>,
+  which is below our current minimum.
+  We have a few suggestions in our <a href="https://www.ethicalads.io/publisher-guide/">Publisher Guide</a> around improving placements,
+  but the main thing is just having the ad be on the screen in a visible place for long enough for users to see and click on it.
+</p>
+{% endif %}
+
+<p>
+We are now processing payments for <strong>{{ today|date:"F" }} {{ today|date:"Y" }}</strong>,
+and you made a total of <strong>${{ due_report.total.revenue_share|floatformat:2 }}</strong> for ads displayed between <strong>{{ start_date|date:"F j" }}-{{ end_date|date:"F j" }}</strong>.
+You can find the full report for this billing cycle on our <a href="{{ due_report_url }}">revenue report</a>.
+</p>
+
+{% if first %}
+<p>
+We need a few pieces of information from you in order to process a payment:
+</p>
+
+<p>
+  <ul>
+    <li>The name of the person or organization that will be receiving the payment</li>
+    <li>The address, including country, for the person or organization</li>
+    <li>Fill out the payment information in the <a href="{{ settings_url }}">publisher settings</a></li>
+  </ul>
+</p>
+
+<p>
+  <strong>Please reply to this email with the name & address of the person or organization receiving this payment.</strong>
+  Once we have this information, we will process the payment.
+  These will show up in the <a href="{{ payouts_url }}">payouts dashboard</a>,
+  once they have been started.
+</p>
+{% else %}
+<p>
+  Since we have already processed a payout for you,
+  we should have all the information needed start the payout.
+  You can always update your payout settings in the <a href="{{ settings_url }}">publisher settings</a>.
+  Payouts will show up in the <a href="{{ payouts_url }}">payouts dashboard</a> for your records once processed.
+</p>
+{% endif %}
+
+<p>
+  Thanks again for being part of the EthicalAds network.
+  If you are enjoying EthicalAds,
+  we'd love to ask you to recommend us to a friend.
+  We are looking to grow our publisher network,
+  and are always on the look out for other developer-focused publishers.
+</p>
+
+<p>
+  Cheers,<br>
+  EthicalAds Team
+</p>
+{% endautoescape %}

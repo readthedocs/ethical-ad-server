@@ -1,0 +1,22 @@
+{% extends "adserver/staff/base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Publisher Payout' %} - {{ publisher.slug }}{% endblock title %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Publisher Payout' %} - {{ publisher.slug }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+<h1>{% block heading %}{% trans 'Send Email' %}{% endblock heading %}</h1>
+<div class="row">
+  <div class="col-md">
+    {% crispy form form.helper %}
+  </div>
+</div>
+
+{% endblock content_container %}
