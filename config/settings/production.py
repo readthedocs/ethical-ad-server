@@ -129,10 +129,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.update_previous_day_reports",
         "schedule": crontab(hour="2", minute="0"),
     },
-    "every-day-clear-old-clientids": {
-        "task": "adserver.tasks.remove_old_client_ids",
-        "schedule": crontab(hour="3", minute="0"),
-    },
     "every-day-calculate-publisher-ctrs": {
         "task": "adserver.tasks.calculate_publisher_ctrs",
         "schedule": crontab(hour="3", minute="30"),
