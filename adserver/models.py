@@ -179,6 +179,14 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    # Denormalized fields
+    sampled_ctr = models.FloatField(
+        default=0.0,
+        help_text=_(
+            "A periodically calculated CTR from a sample of ads on this publisher."
+        ),
+    )
+
     class Meta:
         ordering = ("name",)
 
@@ -631,13 +639,14 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return self.clicks_remaining()
 
-    def weighted_clicks_needed_today(self):
+    def weighted_clicks_needed_today(self, publisher=None):
         """
         Calculates clicks needed taking into account a flight's priority.
 
         For the purpose of clicks needed, 1000 impressions = 1 click (for CPM ads)
         Takes into account value of the flight,
         which causes higher paid and better CTR ads to be prioritized.
+        Uses the passed publisher for a better CTR estimate if passed.
         """
         impressions_needed = 0
 
@@ -645,19 +654,27 @@ class Flight(TimeStampedModel, IndestructibleModel):
         impressions_needed += math.ceil(self.views_needed_today() / 1000.0)
         impressions_needed += self.clicks_needed_today()
 
-        # Cost should be a float from around .5-5, averaging 2
-        cost = float(self.cpm or self.cpc)
+        # Use the publisher CTR if available
+        # Otherwise, use this flight's average CTR
+        estimated_ctr = float(self.ctr())
+        if publisher and publisher.sampled_ctr > 0.01:
+            estimated_ctr = publisher.sampled_ctr
 
-        # CTR should be a float around .1
-        # Leading to a base value of $2 * 5 * .1 == 1.0
-        ctr_value = cost * 5.0 * float(self.ctr())
+        estimated_ecpm = float(self.cpm)
+        if self.cpc:
+            # Note: CTR is in percent (eg. 0.1 means 0.1% not 0.001)
+            estimated_ecpm = float(self.cpc) * estimated_ctr * 10
+
+        # This prioritizes an ad with estimated eCPM=$1 at the normal rate
+        # An ad with estimated eCPM=$2 at 2x the normal rate, eCPM=$3 => 3x normal
+        price_priority_value = estimated_ecpm
 
         # Keep values between 1-10 so we don't penalize the value for lower performance
         # but add value for higher performance without overweighting
-        value = max(float(ctr_value), 1.0)
-        value = min(value, 10.0)
+        price_priority_value = max(float(price_priority_value), 1.0)
+        price_priority_value = min(price_priority_value, 10.0)
 
-        return int(impressions_needed * self.priority_multiplier * value)
+        return int(impressions_needed * self.priority_multiplier * price_priority_value)
 
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
