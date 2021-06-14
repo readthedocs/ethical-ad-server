@@ -637,7 +637,7 @@ class DecisionEngineTests(TestCase):
             Flight,
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
-            cpm=5,
+            cpc=2.5,
             campaign=self.campaign,
             live=True,
             sold_clicks=1000,
@@ -648,25 +648,25 @@ class DecisionEngineTests(TestCase):
             Flight,
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
-            cpm=5,
+            cpc=5,
             campaign=self.campaign,
             live=True,
             sold_clicks=1000,
-            total_clicks=2,
+            total_clicks=0,
             total_views=5000,
         )
 
         # Add bonus probability for good performance
         self.assertEqual(good_ctr.clicks_needed_today(), 28)
-        weighting_boost = 5 * 5 * 0.333  # 5 (constant) * 5 (cpm) * 0.333 (ctr)
+        weighting_boost = 10 * 2.5 * 0.333  # 10 (constant) * 2.5 (cpc) * 0.333 (ctr)
         self.assertEqual(
             good_ctr.weighted_clicks_needed_today(), int(28 * weighting_boost)
         )
 
         # Don't allow down-weighting for bad performance,
         # only add bonus for good performance
-        self.assertEqual(bad_ctr.clicks_needed_today(), 31)
-        self.assertEqual(bad_ctr.weighted_clicks_needed_today(), 31)
+        self.assertEqual(bad_ctr.clicks_needed_today(), 33)
+        self.assertEqual(bad_ctr.weighted_clicks_needed_today(), 33)
 
     def test_cpm_weighting(self):
         # Remove existing flights
@@ -697,11 +697,55 @@ class DecisionEngineTests(TestCase):
             total_views=1500,
         )
 
+        self.publisher.sampled_ctr = 0.2
+
         self.assertEqual(low_cost.clicks_needed_today(), 28)
-        self.assertEqual(low_cost.weighted_clicks_needed_today(), 46)
+        self.assertEqual(low_cost.weighted_clicks_needed_today(), 28)
+        # Publisher CTR has no effect
+        self.assertEqual(low_cost.weighted_clicks_needed_today(self.publisher), 28)
 
         self.assertEqual(high_cost.clicks_needed_today(), 28)
-        self.assertEqual(high_cost.weighted_clicks_needed_today(), 233)
+        self.assertEqual(high_cost.weighted_clicks_needed_today(), 28 * high_cost.cpm)
+        # Publisher CTR has no effect
+        self.assertEqual(
+            high_cost.weighted_clicks_needed_today(self.publisher), 28 * high_cost.cpm
+        )
+
+    def test_publisher_weighting_bonus(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        flight = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpc=2.25,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=0,
+            total_views=1500,
+        )
+
+        self.assertEqual(flight.clicks_needed_today(), 33)
+        self.assertEqual(flight.weighted_clicks_needed_today(), 33)
+
+        # Check publisher weighting
+        self.publisher.sampled_ctr = 0.2
+        weighting_bonus = 0.2 * 2.25 * 10  # (ctr) * (cpc) * (constant)
+        self.assertEqual(
+            flight.weighted_clicks_needed_today(self.publisher),
+            int(33 * weighting_bonus),
+        )
+
+        self.publisher.sampled_ctr = 2  # VERY high CTR
+        weighting_bonus = 10  # capped at 10
+        self.assertEqual(
+            flight.weighted_clicks_needed_today(self.publisher),
+            int(33 * weighting_bonus),
+        )
 
     def test_weighting_bounds(self):
         # Remove existing flights
@@ -720,11 +764,22 @@ class DecisionEngineTests(TestCase):
             total_clicks=0,
             total_views=1500,
         )
+        high = get(
+            Flight,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            cpm=2.5,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=1000,
+            total_clicks=5,
+            total_views=100,
+        )
         super_high = get(
             Flight,
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
-            cpm=5,
+            cpm=15,
             campaign=self.campaign,
             live=True,
             sold_clicks=1000,
@@ -734,8 +789,14 @@ class DecisionEngineTests(TestCase):
 
         # 1x
         self.assertEqual(super_low.clicks_needed_today(), 33)
-        self.assertEqual(super_low.weighted_clicks_needed_today(), 33)
+        self.assertEqual(super_low.weighted_clicks_needed_today(), 33 * super_low.cpm)
+
+        # 2.5x
+        self.assertEqual(high.clicks_needed_today(), 28)
+        self.assertEqual(high.weighted_clicks_needed_today(), int(28 * high.cpm))
 
         # 10x
         self.assertEqual(super_high.clicks_needed_today(), 28)
-        self.assertEqual(super_high.weighted_clicks_needed_today(), 280)
+        self.assertEqual(
+            super_high.weighted_clicks_needed_today(), 28 * 10
+        )  # maxed out
