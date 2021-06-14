@@ -13,12 +13,14 @@ from django.utils.timezone import utc
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
+from .constants import PAID_CAMPAIGN
 from .constants import VIEWS
 from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
+from .models import Publisher
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .regiontopics import africa
@@ -34,6 +36,7 @@ from .regiontopics import python
 from .regiontopics import security_privacy
 from .regiontopics import us_ca
 from .regiontopics import wider_apac
+from .reports import PublisherReport
 from .utils import get_ad_day
 from config.celery_app import app
 
@@ -396,3 +399,21 @@ def remove_old_client_ids(days=90):
         offers_changed = Offer.objects.filter(pk__in=offer_ids).update(client_id=None)
         if not offers_changed:
             break
+
+
+@app.task()
+def calculate_publisher_ctrs(days=7):
+    """Calculate average CTRs for paid ads on a publisher for the last X days."""
+    sample_cutoff = get_ad_day() - datetime.timedelta(days=days)
+
+    for publisher in Publisher.objects.all():
+        queryset = AdImpression.objects.filter(
+            date__gte=sample_cutoff,
+            publisher=publisher,
+            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+        )
+        report = PublisherReport(queryset)
+        report.generate()
+
+        publisher.sampled_ctr = report.total["ctr"]
+        publisher.save()

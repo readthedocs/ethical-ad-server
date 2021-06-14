@@ -8,7 +8,7 @@ from django.db import models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0051_unique_slugs'),
+        ('adserver', '0052_publisher_ctr_sample'),
     ]
 
     operations = [
