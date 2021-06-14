@@ -325,6 +325,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     )
                 ):
                     # NOTE: takes into account views for CPM ads
+                    # Takes eCPM (CTR * CPC for CPC ads) into account
                     weighted_clicks_needed_today = flight.weighted_clicks_needed_today(
                         self.publisher
                     )

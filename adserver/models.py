@@ -654,16 +654,18 @@ class Flight(TimeStampedModel, IndestructibleModel):
         impressions_needed += math.ceil(self.views_needed_today() / 1000.0)
         impressions_needed += self.clicks_needed_today()
 
-        # Use the publisher CTR if available
-        # Otherwise, use this flight's average CTR
-        estimated_ctr = float(self.ctr())
-        if publisher and publisher.sampled_ctr > 0.01:
-            estimated_ctr = publisher.sampled_ctr
-
-        estimated_ecpm = float(self.cpm)
         if self.cpc:
+            # Use the publisher CTR if available
+            # Otherwise, use this flight's average CTR
+            estimated_ctr = float(self.ctr())
+            if publisher and publisher.sampled_ctr > 0.01:
+                estimated_ctr = publisher.sampled_ctr
+
             # Note: CTR is in percent (eg. 0.1 means 0.1% not 0.001)
             estimated_ecpm = float(self.cpc) * estimated_ctr * 10
+        else:
+            # CPM ads
+            estimated_ecpm = float(self.cpm)
 
         # This prioritizes an ad with estimated eCPM=$1 at the normal rate
         # An ad with estimated eCPM=$2 at 2x the normal rate, eCPM=$3 => 3x normal
