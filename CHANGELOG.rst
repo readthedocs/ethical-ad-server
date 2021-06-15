@@ -1,3 +1,4 @@
+
 CHANGELOG
 =========
 
@@ -5,6 +6,23 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.29.0
+---------------
+
+This release improves payouts in the adserver,
+adds a RegionTopic index for improved reporting,
+and starts weighting CPC ads to publishers with higher CTR.
+
+:date: June 15, 2021
+
+ * @davidfischer: This process is consuming the server (#396)
+ * @davidfischer: Updates the weighting algorithm (#395)
+ * @ericholscher: Add initial Staff Payouts view (#394)
+ * @davidfischer: Release v0.28.0 (#393)
+ * @dependabot[bot]: Bump django from 2.2.20 to 2.2.24 in /requirements (#392)
+ * @dependabot[bot]: Bump django from 2.2.20 to 2.2.22 in /requirements (#391)
+ * @dependabot[bot]: Bump pillow from 8.1.1 to 8.2.0 in /requirements (#390)
+ * @ericholscher: Add RegionTopic index modeling (#388)
 
 Version v0.28.0
 ---------------
