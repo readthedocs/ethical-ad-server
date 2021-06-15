@@ -26,6 +26,7 @@ from django_countries import countries
 from django_countries.fields import CountryField
 from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
+from simple_history.models import HistoricalRecords
 from user_agents import parse
 
 from .constants import CAMPAIGN_TYPES
@@ -190,6 +191,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ("name",)
 
@@ -258,6 +261,8 @@ class PublisherGroup(TimeStampedModel):
         help_text=_("A group of publishers that can be targeted by advertisers"),
     )
 
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ("name",)
 
@@ -276,6 +281,8 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     stripe_customer_id = models.CharField(
         _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("name",)
@@ -345,6 +352,8 @@ class Campaign(TimeStampedModel, IndestructibleModel):
             "Ads for this campaign are eligible for display on these publishers"
         ),
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("name",)
@@ -455,6 +464,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
     total_clicks = models.PositiveIntegerField(
         default=0, help_text=_("Clicks across all ads in this flight")
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("name",)
@@ -791,6 +802,8 @@ class AdType(TimeStampedModel, models.Model):
         ),
     )
 
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ("order", "name")
 
@@ -891,6 +904,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         blank=True,
         help_text=_("Possible ways this ad will be displayed"),
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ("slug", "-live")
@@ -1699,6 +1714,8 @@ class PublisherPayout(TimeStampedModel):
         default=PENDING,
         help_text=_("Status of this payout"),
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         # This is 'date' instead of '-date' to make `first()` and `last()` work properly

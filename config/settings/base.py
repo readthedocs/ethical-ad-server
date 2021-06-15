@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
+    "simple_history",
 ]
 
 MIDDLEWARE = [
@@ -75,6 +76,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "adserver.middleware.XForwardedForMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [

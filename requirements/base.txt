@@ -30,6 +30,9 @@ django-environ==0.4.5
 # For rate limiting advertising clicks
 django-ratelimit==2.0.0
 
+# For tracking historical changes
+django-simple-history==3.0.0
+
 # Parsing browser user agents
 user-agents==2.0
 
