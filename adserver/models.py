@@ -36,7 +36,10 @@ from .constants import FLIGHT_STATE_PAST
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
+from .constants import PAID
 from .constants import PAID_CAMPAIGN
+from .constants import PAYOUT_STATUS
+from .constants import PENDING
 from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
 from .utils import anonymize_ip_address
@@ -222,12 +225,21 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     def total_payout_sum(self):
         """The total amount ever paid out to this publisher."""
-        total = self.payouts.all().aggregate(
+        total = self.payouts.filter(status=PAID).aggregate(
             total=models.Sum("amount", output_field=models.DecimalField())
         )["total"]
         if total:
             return total
         return 0
+
+    def payout_url(self):
+        if self.stripe_connected_account_id:
+            return f"https://dashboard.stripe.com/connect/accounts/{self.stripe_connected_account_id}"
+        if self.open_collective_name:
+            return f"https://opencollective.com/{self.open_collective_name}"
+        if self.paypal_email:
+            return "https://www.paypal.com/myaccount/transfer/homepage/pay"
+        return ""
 
 
 class PublisherGroup(TimeStampedModel):
@@ -1670,6 +1682,22 @@ class PublisherPayout(TimeStampedModel):
         blank=True,
         null=True,
         help_text=_("A publisher-visible attachment such as a receipt"),
+    )
+    start_date = models.DateField(
+        _("Start Date"),
+        help_text=_("First day of paid period"),
+        null=True,
+    )
+    end_date = models.DateField(
+        _("End Date"),
+        help_text=_("Last day of paid period"),
+        null=True,
+    )
+    status = models.CharField(
+        max_length=50,
+        choices=PAYOUT_STATUS,
+        default=PENDING,
+        help_text=_("Status of this payout"),
     )
 
     class Meta:

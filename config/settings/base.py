@@ -365,6 +365,7 @@ ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
     "ADSERVER_BLOCKLISTED_USER_AGENTS", default=[]
 )
 ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", default=[])
+ADSERVER_MINIMUM_PAYOUT = env.int("ADSERVER_MINIMUM_PAYOUT", default=50)
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups

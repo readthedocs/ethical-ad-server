@@ -39,3 +39,14 @@ PUBLISHER_PAYOUT_METHODS = (
     (PAYOUT_OPENCOLLECTIVE, _("Open Collective")),
     (PAYOUT_OTHER, _("Other")),
 )
+
+PENDING = "pending"
+HOLD = "hold"
+EMAILED = "emailed"
+PAID = "paid"
+PAYOUT_STATUS = (
+    (PENDING, _("Pending")),
+    (HOLD, _("On hold")),
+    (EMAILED, _("Email sent")),
+    (PAID, _("Payment sent")),
+)

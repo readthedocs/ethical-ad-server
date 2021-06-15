@@ -1,4 +1,7 @@
 """Views for the administrator actions."""
+import logging
+
+import requests
 import stripe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field
@@ -9,14 +12,17 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 
+from ..constants import EMAILED
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import PublisherGroup
 
+log = logging.getLogger(__name__)  # noqa
 
 User = get_user_model()
 
@@ -170,3 +176,64 @@ class CreateAdvertiserForm(forms.Form):
         user.advertisers.add(advertiser)
 
         return advertiser
+
+
+class StartPublisherPayoutForm(forms.Form):
+
+    """Start a publisher payout with an email."""
+
+    # Advertiser information
+    sender = forms.CharField(label=_("Sender"), max_length=200)
+    subject = forms.CharField(label=_("Subject"), max_length=200)
+    body = forms.CharField(label=_("body"), widget=forms.Textarea)
+    amount = forms.CharField(label=_("Amount"), disabled=True)
+    archive = forms.BooleanField(label=_("Archive after sending?"), initial=True)
+    # TODO: Allow people to create drafts, instead of immediately sending.
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        self.publisher = kwargs.pop("publisher")
+        self.amount = kwargs.pop("amount")
+        self.start_date = kwargs.pop("start_date")
+        self.end_date = kwargs.pop("end_date")
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit("submit", "Send email"))
+
+    def _send_email(self):
+        token = getattr(settings, "FRONT_TOKEN")
+        channel = getattr(settings, "FRONT_CHANNEL")
+        author = getattr(settings, "FRONT_AUTHOR")
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            # "to": ['eric@ericholscher.com'], # For testing
+            "to": [user.email for user in self.publisher.user_set.all()],
+            "sender_name": self.cleaned_data["sender"],
+            "subject": self.cleaned_data["subject"],
+            "options": {"archive": self.cleaned_data["archive"]},
+            "body": self.cleaned_data["body"],
+        }
+        if author:
+            payload["author_id"] = author
+        url = f"https://api2.frontapp.com/channels/{channel}/messages"
+        log.info("Sending email")
+        requests.request("POST", url, json=payload, headers=headers)
+
+    def save(self):
+        """Do the work to save the payout."""
+        self._send_email()
+
+        payout = self.publisher.payouts.create(
+            date=timezone.now(),
+            method=self.publisher.payout_method,
+            amount=self.amount,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            status=EMAILED,
+        )
+        return payout

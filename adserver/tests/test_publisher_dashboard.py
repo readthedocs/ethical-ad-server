@@ -217,11 +217,11 @@ class TestPublisherDashboardViews(TestCase):
         self.assertContains(resp, "Balance for this month")
         self.assertContains(resp, "1.40")
 
-        get(PublisherPayout, amount=2.5, publisher=self.publisher1)
-        get(PublisherPayout, amount=2.0, publisher=self.publisher1)
+        get(PublisherPayout, amount=2.5, publisher=self.publisher1, status="paid")
+        get(PublisherPayout, amount=2.0, publisher=self.publisher1, status="paid")
 
         # separate publisher
-        get(PublisherPayout, amount=5.2, publisher=self.publisher2)
+        get(PublisherPayout, amount=5.2, publisher=self.publisher2, status="paid")
 
         # Test payout display
         resp = self.client.get(url)
@@ -239,6 +239,7 @@ class TestPublisherDashboardViews(TestCase):
             publisher=self.publisher1,
             note="this is a test",
             method="paypal",
+            status="paid",
         )
 
         url = payout.get_absolute_url()

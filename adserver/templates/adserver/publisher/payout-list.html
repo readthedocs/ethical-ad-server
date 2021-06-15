@@ -27,6 +27,7 @@
         <tr>
           <th><strong>{% trans 'Date' %}</strong></th>
           <th><strong>{% trans 'Amount' %}</strong></th>
+          <th><strong>{% trans 'Status' %}</strong></th>
         </tr>
       </thead>
       <tbody>
@@ -36,15 +37,17 @@
               <a href="{% url 'publisher_payout' publisher.slug payout.pk %}">{{ payout.date|date:"M j, Y" }}</a>
             </td>
             <td>${{ payout.amount|floatformat:2|intcomma }}</td>
+            <td>{{ payout.get_status_display }}</td>
           </tr>
         {% endfor %}
 
         {% if due_report %}
           <tr>
             <td>
-              <a href="{{ due_report_url }}">Balance from {{ last_payout_date|date:"F j" }}-{{ last_day_last_month|date:"F j" }}</a>
+              <a href="{{ due_report_url }}">Balance from {{ start_date|date:"F j" }}-{{ end_date|date:"F j" }}</a>
             </td>
             <td>${{ due_report.total.revenue_share|floatformat:2|intcomma }}</td>
+            <td>{% trans "Pending" %}</td>
           </tr>
         {% endif %}
 
@@ -53,12 +56,14 @@
               <a href="{{ current_report_url }}">Balance for this month</a>
             </td>
             <td>${{ current_report.total.revenue_share|floatformat:2|intcomma }}</td>
+            <td>{% trans "Upcoming" %}</td>
           </tr>
       </tbody>
       <tfoot>
         <tr>
           <td><strong>{% trans 'Total' %}</strong> </td>
           <td><strong>${{ total_balance|floatformat:2|intcomma }}</strong></td>
+          <td><!-- Not applicable --></td>
         </tr>
       </tfoot>
     </table>
@@ -66,8 +71,8 @@
 
   <h3> Payout status</h3>
   <p>
-  {% if due_report.total.revenue_share > 50 %}
-    You are eligable for a payout because your previous month balance is over $50.
+  {% if due_report.total.revenue_share > ADSERVER_MINIMUM_PAYOUT %}
+    You are eligable for a payout because your previous month balance is over ${{ ADSERVER_MINIMUM_PAYOUT }}.
     We will contact you soon to process the payout on this account.
   {% else %}
     You are <strong>not currently eligable</strong> for a payout because your previous month's balance is below $50.
