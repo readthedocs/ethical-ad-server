@@ -12,7 +12,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
-from ..models import Publisher
+from ..models import PublisherPayout
 from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import StartPublisherPayoutForm
 from ..tasks import daily_update_impressions
@@ -162,3 +162,27 @@ class PublisherPayoutTests(TestCase):
             mock_request.call_args[0],
             ("POST", "https://api2.frontapp.com/channels/test/messages"),
         )
+
+    def test_finish_view(self):
+        self.client.force_login(self.staff_user)
+
+        self.payout = get(
+            PublisherPayout, status="emailed", publisher=self.publisher1, amount=55
+        )
+
+        self.assertEqual(self.payout.status, "emailed")
+
+        # Start payout
+        finish_url = reverse(
+            "staff-finish-publisher-payout",
+            kwargs=dict(publisher_slug=self.publisher1.slug),
+        )
+        start_response = self.client.get(finish_url)
+        self.assertEqual(start_response.status_code, 200)
+        self.assertContains(start_response, self.payout.get_status_display())
+        self.assertContains(start_response, "$55")
+
+        post_response = self.client.post(finish_url)
+        self.assertEqual(post_response.status_code, 302)
+        # requery to get new object
+        self.assertEqual(PublisherPayout.objects.get(pk=self.payout.pk).status, "paid")

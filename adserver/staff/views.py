@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.template.loader import get_template
@@ -183,7 +184,9 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        self.payout = self.publisher.payouts.first()
+        self.payout = self.publisher.payouts.exclude(status=PAID).first()
+        if not self.payout:
+            raise Http404("No payout found")
         return self.payout
 
     def get_context_data(self, **kwargs):
