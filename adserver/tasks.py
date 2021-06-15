@@ -2,6 +2,7 @@
 import datetime
 import json
 import logging
+from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
 from django.db.models import Count
@@ -20,7 +21,21 @@ from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import RegionTopicImpression
 from .models import UpliftImpression
+from .regiontopics import africa
+from .regiontopics import backend_web
+from .regiontopics import blockchain
+from .regiontopics import data_science
+from .regiontopics import devops
+from .regiontopics import eu_aus_nz
+from .regiontopics import frontend_web
+from .regiontopics import game_dev
+from .regiontopics import latin_america
+from .regiontopics import python
+from .regiontopics import security_privacy
+from .regiontopics import us_ca
+from .regiontopics import wider_apac
 from .reports import PublisherReport
 from .utils import get_ad_day
 from config.celery_app import app
@@ -222,6 +237,105 @@ def daily_update_keywords(day=None):
 
 
 @app.task()
+def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
+    """
+    Update the RegionTopicImpression index each day.
+
+    Each data point will have one region, but multiple possible topics.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = _get_day(day)
+
+    log.info("Updating RegionTopic's for %s-%s", start_date, end_date)
+
+    # Remove all old impressions, because they are cumulative
+    RegionTopicImpression.objects.filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
+
+    for impression_type in IMPRESSION_TYPES:
+        queryset = _default_filters(impression_type, start_date, end_date)
+
+        topic_mapping = defaultdict(int)
+
+        for values in (
+            queryset.values("keywords", "country")
+            .annotate(total=Count("country"))
+            .filter(total__gt=0)
+            .order_by("-total")
+            .values(
+                "keywords",
+                "country",
+                "total",
+            )
+        ):
+            if not (values["keywords"] and values["country"]):
+                continue
+
+            keywords = json.loads(values["keywords"])
+            country = values["country"]
+            publisher_keywords = set(keywords)
+
+            topics = set()
+            for keyword in publisher_keywords:
+                if keyword in data_science:
+                    topic = "data-science"
+                elif keyword in backend_web:
+                    topic = "backend-web"
+                elif keyword in frontend_web:
+                    topic = "frontend-web"
+                elif keyword in security_privacy:
+                    topic = "security-privacy"
+                elif keyword in devops:
+                    topic = "devops"
+                elif keyword in python:
+                    topic = "python"
+                elif keyword in blockchain:
+                    topic = "blockchain"
+                elif keyword in game_dev:
+                    topic = "game-dev"
+                else:
+                    continue
+
+                topics.add(topic)
+
+            if country in us_ca:
+                region = "us-ca"
+            elif country in eu_aus_nz:
+                region = "eu-aus-nz"
+            elif country in wider_apac:
+                region = "wider-apac"
+            elif country in latin_america:
+                region = "latin-america"
+            elif country in africa:
+                region = "africa"
+            else:
+                region = "global"
+
+            # Aggregate data into topic_mapping to save doing queries until we have everything counted
+            # This is important because we can't query on keywords, so we have a lot of records that increment
+            # the total count on the region & topic.
+            for topic in topics:
+                topic_mapping[f"{region}:{topic}"] += values["total"]
+
+        for region_topic, value in topic_mapping.items():
+            region, topic = region_topic.split(":")
+            impression, _ = RegionTopicImpression.objects.get_or_create(
+                date=start_date,
+                region=region,
+                topic=topic,
+            )
+            # These are a Sum because we can't query for specific keywords from Postgres,
+            # so a specific publisher and advertisement set could return the same keyword:
+            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
+            RegionTopicImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: F(impression_type) + value}
+            )
+
+
+@app.task()
 def daily_update_uplift(day=None):
     """
     Generate the daily index of UpliftImpressions.
@@ -271,6 +385,7 @@ def update_previous_day_reports(day=None):
     daily_update_impressions(start_date)
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
+    daily_update_regiontopic(start_date)
 
 
 @app.task()

@@ -67,6 +67,7 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .reports import AdvertiserGeoReport
 from .reports import AdvertiserPublisherReport
@@ -75,6 +76,7 @@ from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
 from .reports import PublisherPlacementReport
+from .reports import PublisherRegionTopicReport
 from .reports import PublisherReport
 from .reports import PublisherUpliftReport
 from .utils import analytics_event
@@ -1145,9 +1147,7 @@ class AdvertiserAuthorizedUsersRemoveView(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
         self.user = get_object_or_404(
-            get_user_model(),
-            pk=self.kwargs["user_id"],
-            advertisers=self.advertiser,
+            get_user_model(), pk=self.kwargs["user_id"], advertisers=self.advertiser
         )
         return super().dispatch(request, *args, **kwargs)
 
@@ -1822,6 +1822,17 @@ class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
     template_name = "adserver/reports/staff-geos.html"
 
 
+class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
+
+    """An uplift report for all publishers."""
+
+    fieldnames = ["index", "views", "clicks", "ctr"]
+    impression_model = RegionTopicImpression
+    force_revshare = 70.0
+    report = PublisherRegionTopicReport
+    template_name = "adserver/reports/staff-regiontopics.html"
+
+
 class PublisherMainView(
     PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
 ):
@@ -1877,24 +1888,15 @@ class AccountSupportView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         form.save()
-        messages.success(
-            self.request,
-            self.message_success,
-        )
+        messages.success(self.request, self.message_success)
         return super().form_valid(form)
 
     def get(self, request, *args, **kwargs):
         if request.GET.get("success") == "true":
-            messages.success(
-                self.request,
-                self.message_success,
-            )
+            messages.success(self.request, self.message_success)
             return redirect(reverse("support"))
         if request.GET.get("error") == "true":
-            messages.error(
-                self.request,
-                self.message_error,
-            )
+            messages.error(self.request, self.message_error)
             # Note: Front (and possibly other help desks?) send error reasons in query params
             log.warning("Error submitting support request form: %s", request.GET)
             return redirect(reverse("support"))

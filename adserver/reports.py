@@ -9,6 +9,7 @@ from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
+from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -186,15 +187,17 @@ class PublisherReport(BaseReport):
 
     def generate(self):
         """Generate/calculate the report from the queryset by the index."""
-        queryset = self.queryset.select_related(*self.select_related_fields)
+        # Allow more custom getter functions for multi-dimensional indexes
+        if not hasattr(self, "getter"):
+            # This allows us to use `.` in the report_index to span relations
+            self.getter = operator.attrgetter(self.index)
 
-        # This allows us to use `.` in the report_index to span relations
-        getter = operator.attrgetter(self.index)
+        queryset = self.queryset.select_related(*self.select_related_fields)
 
         results = {}
 
         for impression in queryset:
-            index = getter(impression)
+            index = self.getter(impression)
 
             if index not in results:
                 results[index] = collections.defaultdict(int)
@@ -202,7 +205,7 @@ class PublisherReport(BaseReport):
             # Count offers for all paid campaigns
             # This is required to get an accurate fill rate when house ads are on
             if (
-                impression.advertisement
+                getattr(impression, "advertisement", None)
                 and impression.advertisement.flight.campaign.campaign_type
                 == PAID_CAMPAIGN
             ):
@@ -217,7 +220,7 @@ class PublisherReport(BaseReport):
 
             # Calculate our revenue if the offer resulted in an ad impression
             # There's no revenue for offers with no views/clicks
-            if impression.advertisement:
+            if getattr(impression, "advertisement", None):
                 results[index]["revenue"] += (
                     impression.clicks * float(impression.advertisement.flight.cpc)
                 ) + (
@@ -344,3 +347,17 @@ class PublisherUpliftReport(PublisherReport):
     model = UpliftImpression
     index = "publisher.name"
     order = "-views"
+
+
+class PublisherRegionTopicReport(PublisherReport):
+
+    """Report to breakdown publisher performance by region & topic."""
+
+    model = RegionTopicImpression
+    index = "topic"
+    order = "-views"
+    select_related_fields = ()
+
+    def getter(self, data):  # pylint: disable=method-hidden
+        """Show both region & topic in the index."""
+        return f"{data.region}:{data.topic}"

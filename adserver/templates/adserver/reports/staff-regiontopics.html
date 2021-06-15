@@ -1,0 +1,31 @@
+{% extends "adserver/reports/base-staff.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Staff Region & Topic Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'Staff Region & Topic Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Staff Region & Topic Report' %}</li>
+{% endblock breadcrumbs %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>{% trans 'About this report' %}</h3>
+  <p>
+  <em>
+  {% trans 'This is a staff-only report. "Our Rev" reports 70% for all publishers.' %}
+  </em>
+  </p>
+  <p>
+    <strong>
+      {% trans 'This report shows more than 100% of all traffic. Each publisher decision will be added into each topic that it has a matching keyword for. This report effectively gives us the "total possible targeting for a topic for each region", not anything about availability or how much is currently sold.' %}
+    </strong>
+  </p>
+</section>
+{% endblock explainer %}
