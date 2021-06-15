@@ -1,8 +1,11 @@
 import datetime
 
 from django.contrib.auth.models import AnonymousUser
+from django_dynamic_fixture import get
 
 from ..models import Offer
+from ..tasks import calculate_publisher_ctrs
+from ..tasks import daily_update_impressions
 from ..tasks import remove_old_client_ids
 from .common import BaseAdModelsTestCase
 
@@ -37,3 +40,28 @@ class TasksTest(BaseAdModelsTestCase):
         # Offer's client_id is nulled out
         offer.refresh_from_db()
         self.assertIsNone(offer.client_id)
+
+    def test_calculate_publisher_ctrs(self):
+        calculate_publisher_ctrs()
+
+        self.publisher.refresh_from_db()
+        self.assertEqual(self.publisher.sampled_ctr, 0.0)
+
+        # Add some views and clicks
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+        )
+
+        daily_update_impressions()
+        calculate_publisher_ctrs()
+
+        self.publisher.refresh_from_db()
+        self.assertEqual(self.publisher.sampled_ctr, 20)
