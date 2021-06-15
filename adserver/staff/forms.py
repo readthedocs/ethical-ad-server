@@ -180,22 +180,22 @@ class CreateAdvertiserForm(forms.Form):
 
 class StartPublisherPayoutForm(forms.Form):
 
-    """
-    Start a publisher payout with an email
-
-    """
+    """Start a publisher payout with an email."""
 
     # Advertiser information
     sender = forms.CharField(label=_("Sender"), max_length=200)
     subject = forms.CharField(label=_("Subject"), max_length=200)
     body = forms.CharField(label=_("body"), widget=forms.Textarea)
+    amount = forms.CharField(label=_("Amount"), disabled=True)
     archive = forms.BooleanField(label=_("Archive after sending?"), initial=True)
     # TODO: Allow people to create drafts, instead of immediately sending.
 
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
         self.publisher = kwargs.pop("publisher")
-        self.data = kwargs.pop("data")
+        self.amount = kwargs.pop("amount")
+        self.start_date = kwargs.pop("start_date")
+        self.end_date = kwargs.pop("end_date")
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit("submit", "Send email"))
@@ -204,7 +204,6 @@ class StartPublisherPayoutForm(forms.Form):
         token = getattr(settings, "FRONT_TOKEN")
         channel = getattr(settings, "FRONT_CHANNEL")
         author = getattr(settings, "FRONT_AUTHOR")
-        publisher = self.publisher
 
         headers = {
             "Authorization": f"Bearer {token}",
@@ -216,7 +215,6 @@ class StartPublisherPayoutForm(forms.Form):
             "to": [user.email for user in self.publisher.user_set.all()],
             "sender_name": self.cleaned_data["sender"],
             "subject": self.cleaned_data["subject"],
-            "subject": f"EthicalAds Payout - {publisher.name}",
             "options": {"archive": self.cleaned_data["archive"]},
             "body": self.cleaned_data["body"],
         }
@@ -228,15 +226,14 @@ class StartPublisherPayoutForm(forms.Form):
 
     def save(self):
         """Do the work to save the payout."""
-
         self._send_email()
 
-        self.publisher.payouts.create(
+        payout = self.publisher.payouts.create(
             date=timezone.now(),
             method=self.publisher.payout_method,
-            amount=self.data["due_report"]["total"]["revenue_share"],
-            note=self.data["due_report_url"],
-            start_date=self.data["start_date"],
-            end_date=self.data["end_date"],
+            amount=self.amount,
+            start_date=self.start_date,
+            end_date=self.end_date,
             status=EMAILED,
         )
+        return payout

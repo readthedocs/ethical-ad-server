@@ -230,7 +230,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return f"https://opencollective.com/{self.open_collective_name}"
         elif self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
-        return ""
+        else:
+            return ""
 
 
 class PublisherGroup(TimeStampedModel):

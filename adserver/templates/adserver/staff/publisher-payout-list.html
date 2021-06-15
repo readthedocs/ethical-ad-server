@@ -37,7 +37,7 @@
             {% if payout.status %}
             <td>{{ payout.status }}</td>
             {% else %}
-            <td><a href="{% url "publisher-start-payout" publisher %}">{% trans "Start Payout" %}</a></td>
+            <td><a href="{% url "staff-start-publisher-payout" publisher %}">{% trans "Start Payout" %}</a></td>
             {% endif %}
             <td width="75%"> {{ payout.email_html|safe }} </td>
           </tr>

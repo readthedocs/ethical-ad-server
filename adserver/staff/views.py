@@ -1,18 +1,15 @@
 """Views for the administrator actions."""
 import logging
 
-import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.template.loader import get_template
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView
 from django.views.generic import TemplateView
 
-from ..constants import EMAILED
 from ..models import Advertiser
 from ..models import Publisher
 from .forms import CreateAdvertiserForm
@@ -68,7 +65,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        limit = self.request.GET.get("limit", 50)
+        limit = int(self.request.GET.get("limit", 50))
         all_publishers = self.request.GET.get("all")
         publisher_slug = self.request.GET.get("publisher")
 
@@ -81,20 +78,21 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         for publisher in queryset[:limit]:
             data = generate_publisher_payout_data(publisher)
             report = data.get("due_report")
-            report_url = data.get("due_report_url")
             if not report:
                 if not all_publishers:
                     # Skip publishers without due money
                     continue
                 report = data.get("current_report")
-                report_url = data.get("current_report_url")
 
             due_balance = report["total"]["revenue_share"]
             due_str = "{:.2f}".format(due_balance)
             ctr = report["total"]["ctr"]
             ctr_str = "{:.2f}".format(ctr)
 
-            if due_balance < float(50) and not all_publishers:
+            if (
+                due_balance < float(settings.ADSERVER_MINIMUM_PAYOUT)
+                and not all_publishers
+            ):
                 continue
 
             payouts_url = generate_absolute_url(
@@ -123,30 +121,26 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
 
 class PublisherStartPayoutView(StaffUserMixin, FormView):
 
-    """
-    Start a payout for a publisher
-    """
+    """Start a payout for a publisher."""
 
     form_class = StartPublisherPayoutForm
     template_name = "adserver/staff/publisher-payout-detail.html"
 
     def get_initial(self):
-        """
-        Returns the initial data to use for forms on this view.
-        """
+        """Returns the initial data to use for forms on this view."""
         initial = super().get_initial()
         publisher_slug = self.kwargs.get("publisher_slug")
         self.publisher = Publisher.objects.get(slug=publisher_slug)
-        data = generate_publisher_payout_data(self.publisher)
+        self.data = generate_publisher_payout_data(self.publisher)
         email_html = (
             get_template("adserver/email/publisher-payout.html")
-            .render(data)
+            .render(self.data)
             .replace("\n\n", "\n")
         )
         initial["sender"] = "EthicalAds by Read the Docs"
         initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
         initial["body"] = email_html
-        initial["data"] = data
+        initial["amount"] = self.data["due_report"]["total"]["revenue_share"]
         return initial
 
     def form_valid(self, form):
@@ -163,6 +157,9 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         kwargs = super().get_form_kwargs()
         publisher_slug = self.kwargs.get("publisher_slug")
         kwargs["publisher"] = Publisher.objects.get(slug=publisher_slug)
+        kwargs["amount"] = self.data["due_report"]["total"]["revenue_share"]
+        kwargs["start_date"] = self.data["start_date"]
+        kwargs["end_date"] = self.data["end_date"]
         return kwargs
 
     def get_success_url(self):

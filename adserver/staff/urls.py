@@ -20,6 +20,6 @@ urlpatterns = [
     path(
         r"publisher-start-payout/<slug:publisher_slug>/",
         PublisherStartPayoutView.as_view(),
-        name="publisher-start-payout",
+        name="staff-start-publisher-payout",
     ),
 ]

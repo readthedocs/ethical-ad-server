@@ -1640,6 +1640,7 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
                 "publisher": self.publisher,
                 "payouts": payouts,
                 "total_balance": total_balance,
+                "ADSERVER_MINIMUM_PAYOUT": settings.ADSERVER_MINIMUM_PAYOUT,
             }
         )
 
