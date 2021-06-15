@@ -2,6 +2,7 @@
 from django.urls import path
 
 from .views import CreateAdvertiserView
+from .views import PublisherFinishPayoutView
 from .views import PublisherPayoutView
 from .views import PublisherStartPayoutView
 
@@ -21,5 +22,10 @@ urlpatterns = [
         r"publisher-start-payout/<slug:publisher_slug>/",
         PublisherStartPayoutView.as_view(),
         name="staff-start-publisher-payout",
+    ),
+    path(
+        r"publisher-finish-payout/<slug:publisher_slug>/",
+        PublisherFinishPayoutView.as_view(),
+        name="staff-finish-publisher-payout",
     ),
 ]

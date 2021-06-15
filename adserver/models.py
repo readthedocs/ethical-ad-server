@@ -36,6 +36,7 @@ from .constants import FLIGHT_STATE_PAST
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
+from .constants import PAID
 from .constants import PAID_CAMPAIGN
 from .constants import PAYOUT_STATUS
 from .constants import PENDING
@@ -216,7 +217,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
     def total_payout_sum(self):
         """The total amount ever paid out to this publisher."""
-        total = self.payouts.all().aggregate(
+        total = self.payouts.filter(status=PAID).aggregate(
             total=models.Sum("amount", output_field=models.DecimalField())
         )["total"]
         if total:
@@ -226,12 +227,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     def payout_url(self):
         if self.stripe_connected_account_id:
             return f"https://dashboard.stripe.com/connect/accounts/{self.stripe_connected_account_id}"
-        elif self.open_collective_name:
+        if self.open_collective_name:
             return f"https://opencollective.com/{self.open_collective_name}"
-        elif self.paypal_email:
+        if self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
-        else:
-            return ""
+        return ""
 
 
 class PublisherGroup(TimeStampedModel):

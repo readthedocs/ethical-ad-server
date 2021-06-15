@@ -19,27 +19,37 @@
         <tr>
           <th><strong>{% trans 'Publisher' %}</strong></th>
           <th><strong>{% trans 'Since' %}</strong></th>
+          <th><strong>{% trans 'First' %}</strong></th>
           <th><strong>{% trans 'Amount' %}</strong></th>
           <th><strong>{% trans 'CTR' %}</strong></th>
-          <th><strong>{% trans 'First' %}</strong></th>
           <th><strong>{% trans 'Status' %}</strong></th>
-          <th><strong>{% trans 'Email' %}</strong></th>
+          <th><strong>{% trans 'Action' %}</strong></th>
         </tr>
       </thead>
       <tbody>
-        {% for publisher, payout in payouts.items %}
+        {% for publisher, payout_data in payouts.items %}
           <tr>
-            <td><a href="{{ payout.due_report_url }}">{{ publisher }}</a></td>
-            <td>{{ payout.start_date|date }}</td>
-            <td>${{ payout.total }}</td>
-            <td>{{ payout.ctr }}</td>
-            <td>{{ payout.first }}</td>
-            {% if payout.status %}
-            <td>{{ payout.status }}</td>
+            <td><a href="{{ payout_data.due_report_url }}">{{ publisher.slug }}</a></td>
+            <td>{{ payout_data.start_date|date }}</td>
+            <td>{{ payout_data.first }}</td>
+            <td>${{ payout_data.total }}</td>
+            <td>{{ payout_data.ctr }}%</td>
+            <td>
+            {% if payout_data.payout %}
+            {{ payout_data.payout.get_status_display }}
             {% else %}
-            <td><a href="{% url "staff-start-publisher-payout" publisher %}">{% trans "Start Payout" %}</a></td>
+            {% trans "Not started" %}
             {% endif %}
-            <td width="75%"> {{ payout.email_html|safe }} </td>
+            </td>
+            <td>
+            {% if payout_data.payout and payout_data.payout.status == "paid" %}
+            No action required
+            {% elif payout_data.payout and payout_data.payout.status == "emailed" %}
+            <a href="{% url "staff-finish-publisher-payout" publisher.slug %}">{% trans "Finish Payout" %}</a>
+            {% else %}
+            <a href="{% url "staff-start-publisher-payout" publisher.slug %}">{% trans "Start Payout" %}</a>
+            {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>

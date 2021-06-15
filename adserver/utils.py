@@ -25,6 +25,7 @@ from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
 
+from .constants import PAID
 from .constants import PAID_CAMPAIGN
 
 
@@ -358,7 +359,7 @@ def generate_publisher_payout_data(publisher):
 
     today = timezone.now()
     end_date = today.replace(day=1) - timedelta(days=1)
-    last_payout = publisher.payouts.last()
+    last_payout = publisher.payouts.filter(status=PAID).last()
 
     if last_payout:
         first = False

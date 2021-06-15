@@ -4,12 +4,17 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.template.loader import get_template
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.views.generic import DetailView
 from django.views.generic import FormView
 from django.views.generic import TemplateView
 
+from ..constants import PAID
 from ..models import Advertiser
 from ..models import Publisher
 from .forms import CreateAdvertiserForm
@@ -109,12 +114,14 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 ctr=ctr_str,
                 **data,
             )
-            payout_context["email_html"] = (
-                get_template("adserver/email/publisher-payout.html")
-                .render(payout_context)
-                .replace("\n\n", "\n")
-            )
-            payouts[publisher.slug] = payout_context
+            current_payout = publisher.payouts.filter(
+                date__month=timezone.now().month
+            ).first()
+            if current_payout:
+                payout_context["payout"] = current_payout
+
+            payouts[publisher] = payout_context
+
         context["payouts"] = payouts
         return context
 
@@ -124,7 +131,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
     """Start a payout for a publisher."""
 
     form_class = StartPublisherPayoutForm
-    template_name = "adserver/staff/publisher-payout-detail.html"
+    template_name = "adserver/staff/publisher-payout-start.html"
 
     def get_initial(self):
         """Returns the initial data to use for forms on this view."""
@@ -163,4 +170,30 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         return kwargs
 
     def get_success_url(self):
-        return self.object.get_absolute_url()
+        return reverse("staff-publisher-payouts")
+
+
+class PublisherFinishPayoutView(StaffUserMixin, DetailView):
+
+    """Start a payout for a publisher."""
+
+    template_name = "adserver/staff/publisher-payout-finish.html"
+
+    def get_object(self, queryset=None):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        self.payout = self.publisher.payouts.first()
+        return self.payout
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"payout": self.payout})
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.get_object()
+        self.payout.status = PAID
+        self.payout.save()
+        messages.success(self.request, _("Successfully updated payout to paid status"))
+        return redirect(reverse("staff-publisher-payouts"))

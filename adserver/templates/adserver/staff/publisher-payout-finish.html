@@ -1,0 +1,51 @@
+{% extends "adserver/staff/base.html" %}
+{% load humanize %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Publisher Payout' %} - {{ payout.publisher.slug }}{% endblock title %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Publisher Payout' %} - {{ payout.publisher.slug }}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+<h1>{% block heading %}{% trans 'Finish Payout' %}{% endblock heading %}</h1>
+
+<dl>
+  <dt>{% trans 'Publisher' %}</dt>
+  <dd>{{ payout.publisher }}</dd>
+
+  <dt>{% trans 'Method' %}</dt>
+  <dd>{{ payout.publisher.payout_method }}</dd>
+
+  <dt>{% trans 'Status' %}</dt>
+  <dd>{{ payout.get_status_display }}</dd>
+
+  <dt>{% trans 'Subject' %}</dt>
+  <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
+
+  <dt>{% trans 'Amount' %}</dt>
+  <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+
+  <dt>{% trans 'Action' %}</dt>
+  <dd>
+  {% if payout.status == 'emailed' %}
+  <a href="{{ payout.publisher.payout_url }}" class="button">{% trans "Send Money" %}</a>
+  {% endif %}
+  </dd>
+
+</dl>
+
+<div id="content" class="colM delete-confirmation">
+  <form method="post">
+    {% csrf_token %}
+    <input type="submit" value="{% trans "Finish payout" %}">
+    <p class="small">{% trans "This will mark the payout as paid" %}</p>
+  </form>
+</div>
+
+{% endblock content_container %}

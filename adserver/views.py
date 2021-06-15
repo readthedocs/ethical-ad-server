@@ -45,6 +45,7 @@ from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
+from .constants import PAID
 from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import InviteUserForm
@@ -1650,7 +1651,7 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        return self.publisher.payouts.order_by("-date")
+        return self.publisher.payouts.filter(status=PAID).order_by("-date")
 
 
 class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
