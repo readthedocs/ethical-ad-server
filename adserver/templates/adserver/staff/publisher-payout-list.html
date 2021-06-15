@@ -51,6 +51,8 @@
             {% endif %}
             </td>
           </tr>
+        {% empty %}
+          <td colspan="7">{% trans 'No pending payouts' %}</td>
         {% endfor %}
       </tbody>
     </table>
