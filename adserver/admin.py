@@ -12,6 +12,7 @@ from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from simple_history.admin import SimpleHistoryAdmin
 
 from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
@@ -53,7 +54,7 @@ class RemoveDeleteMixin:
         return False
 
 
-class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for publishers."""
 
@@ -101,7 +102,7 @@ class PublisherAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         )
 
 
-class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisers."""
 
@@ -195,7 +196,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return None
 
 
-class AdTypeAdmin(admin.ModelAdmin):
+class AdTypeAdmin(SimpleHistoryAdmin):
 
     """Django admin configuration for ad types."""
 
@@ -264,7 +265,7 @@ class AdvertisementMixin:
         return queryset
 
 
-class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, admin.ModelAdmin):
+class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisements."""
 
@@ -376,7 +377,7 @@ class FlightMixin:
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
 
-class FlightAdmin(RemoveDeleteMixin, FlightMixin, admin.ModelAdmin):
+class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
     """Django admin admin configuration for ad Flights."""
 
@@ -570,7 +571,7 @@ class FlightsInline(FlightMixin, admin.TabularInline):
         return False  # pragma: no cover
 
 
-class CampaignAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for ad campaigns."""
 
@@ -832,7 +833,7 @@ class ViewAdmin(AdBaseAdmin):
     model = View
 
 
-class PublisherPayoutAdmin(admin.ModelAdmin):
+class PublisherPayoutAdmin(SimpleHistoryAdmin):
     list_display = (
         "pk",
         "amount",
@@ -849,7 +850,7 @@ class PublisherPayoutAdmin(admin.ModelAdmin):
     search_fields = ("publisher__name",)
 
 
-class PublisherGroupAdmin(admin.ModelAdmin):
+class PublisherGroupAdmin(SimpleHistoryAdmin):
     list_display = ("name", "slug", "modified", "created")
     list_filter = ("publishers",)
     model = PublisherGroup

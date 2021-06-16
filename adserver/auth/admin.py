@@ -2,12 +2,13 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
+from simple_history.admin import SimpleHistoryAdmin
 
 from .models import User
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(SimpleHistoryAdmin):
 
     """Django admin configuration for users."""
 

@@ -11,6 +11,7 @@ from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.translation import ugettext as _
+from simple_history.models import HistoricalRecords
 
 from ..models import Advertiser
 from ..models import Publisher
@@ -86,6 +87,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []  # email is required already
     objects = AdServerUserManager()
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("user")

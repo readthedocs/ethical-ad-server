@@ -25,6 +25,7 @@ from django.utils.html import format_html
 from django.utils.text import slugify
 from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
+from simple_history.utils import update_change_reason
 
 from .models import AdType
 from .models import Advertisement
@@ -424,6 +425,10 @@ class InviteUserForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit)
         user.invite_user()
+
+        # Track who added this user
+        update_change_reason(user, "Invited via authorized users view")
+
         # You will need to add the user to the publisher/advertiser in the view
         return user
 

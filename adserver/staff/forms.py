@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
+from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
 from ..models import Advertiser
@@ -74,6 +75,9 @@ class CreateAdvertiserForm(forms.Form):
     user_name = forms.CharField(label=_("Name"), max_length=200)
     user_email = forms.EmailField(label=_("Email"))
 
+    # Used to track historical changes
+    message = "Added via staff interface"
+
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
         super().__init__(*args, **kwargs)
@@ -117,6 +121,7 @@ class CreateAdvertiserForm(forms.Form):
         user_name = self.cleaned_data["user_name"].strip()
         user_email = self.cleaned_data["user_email"]
         user = User.objects.create_user(name=user_name, email=user_email, password="")
+        update_change_reason(user, self.message)
         if hasattr(user, "invite_user"):
             user.invite_user()
         return user
@@ -137,7 +142,7 @@ class CreateAdvertiserForm(forms.Form):
             campaign.publisher_groups.add(pub_group)
 
         flight_name = f"{advertiser_name} Initial Flight"
-        Flight.objects.create(
+        flight = Flight.objects.create(
             campaign=campaign,
             name=flight_name,
             slug=slugify(flight_name),
@@ -147,6 +152,10 @@ class CreateAdvertiserForm(forms.Form):
                 "include_countries": self.DEFAULT_COUNTRY_TARGETING,
             },
         )
+
+        update_change_reason(advertiser, self.message)
+        update_change_reason(campaign, self.message)
+        update_change_reason(flight, self.message)
 
         return advertiser
 
@@ -236,4 +245,7 @@ class StartPublisherPayoutForm(forms.Form):
             end_date=self.end_date,
             status=EMAILED,
         )
+
+        update_change_reason(payout, "Payout via staff interface")
+
         return payout
