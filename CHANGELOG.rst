@@ -1,10 +1,23 @@
-
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.30.0
+---------------
+
+This release added change tracking to most models
+and minor payout workflow improvements.
+
+:date: June 17, 2021
+
+ * @ericholscher: Clean up a number of payout workflow issues (#400)
+ * @davidfischer: Track historical changes to select models (#399)
+ * @dependabot[bot]: Bump postcss from 7.0.17 to 7.0.36 (#398)
+
 
 Version v0.29.0
 ---------------
