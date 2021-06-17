@@ -286,7 +286,8 @@ class PublisherReport(BaseReport):
     def get_index_display(self, index):
         """Handle making sure dates use the same 3 letter syntax as Django."""
         if isinstance(index, datetime.date):
-            return index.strftime("%b %d, %Y")
+            # %a is the day of week, so you know which are weekends
+            return index.strftime("%b %d, %Y (%a)")
 
         return super().get_index_display(index)
 

@@ -24,6 +24,15 @@
   <dt>{% trans 'Date' %}</dt>
   <dd>{{ payout.date|date:"M j, Y" }}</dd>
 
+  {% if payout.start_date %}
+  <dt>{% trans 'Payout Time' %}</dt>
+  <dd>
+  <a href="{% url 'publisher_report' payout.publisher.slug %}?start_date={{ payout.start_date|date:'Y-m-d' }}&end_date={{ payout.end_date|date:'Y-m-d' }}&campaign_type=paid">
+  {{ payout.start_date|date:"M j, Y" }} - {{ payout.end_date|date:"M j, Y" }}
+  </a>
+</dd>
+  {% endif %}
+
   <dt>{% trans 'Amount' %}</dt>
   <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
 

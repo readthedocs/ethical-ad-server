@@ -120,6 +120,17 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             ).first()
             if current_payout:
                 payout_context["payout"] = current_payout
+            last_payout = (
+                publisher.payouts.filter(status=PAID)
+                .exclude(date__month=timezone.now().month)
+                .last()
+            )
+            if last_payout:
+                change_percent = (
+                    (float(due_balance) - float(last_payout.amount))
+                    / float(last_payout.amount)
+                ) * 100
+                payout_context["change"] = change_percent
 
             payouts[publisher] = payout_context
 
@@ -171,7 +182,17 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         return kwargs
 
     def get_success_url(self):
-        return reverse("staff-publisher-payouts")
+        return reverse(
+            "staff-finish-publisher-payout",
+            kwargs={
+                "publisher_slug": self.publisher.slug,
+            },
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher})
+        return context
 
 
 class PublisherFinishPayoutView(StaffUserMixin, DetailView):
@@ -191,7 +212,7 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"payout": self.payout})
+        context.update({"payout": self.payout, "publisher": self.publisher})
         return context
 
     def post(self, request, *args, **kwargs):
@@ -199,4 +220,4 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         self.payout.status = PAID
         self.payout.save()
         messages.success(self.request, _("Successfully updated payout to paid status"))
-        return redirect(reverse("staff-publisher-payouts"))
+        return redirect(self.payout.get_absolute_url())

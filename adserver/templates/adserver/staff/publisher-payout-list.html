@@ -21,6 +21,7 @@
           <th><strong>{% trans 'Since' %}</strong></th>
           <th><strong>{% trans 'First' %}</strong></th>
           <th><strong>{% trans 'Amount' %}</strong></th>
+          <th><strong>{% trans '% Change' %}</strong></th>
           <th><strong>{% trans 'CTR' %}</strong></th>
           <th><strong>{% trans 'Status' %}</strong></th>
           <th><strong>{% trans 'Action' %}</strong></th>
@@ -33,6 +34,7 @@
             <td>{{ payout_data.start_date|date }}</td>
             <td>{{ payout_data.first }}</td>
             <td>${{ payout_data.total }}</td>
+            <td>{{ payout_data.change|floatformat:2 }}%</td>
             <td>{{ payout_data.ctr }}%</td>
             <td>
             {% if payout_data.payout %}

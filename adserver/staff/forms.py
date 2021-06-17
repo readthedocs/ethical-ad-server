@@ -196,8 +196,10 @@ class StartPublisherPayoutForm(forms.Form):
     subject = forms.CharField(label=_("Subject"), max_length=200)
     body = forms.CharField(label=_("body"), widget=forms.Textarea)
     amount = forms.CharField(label=_("Amount"), disabled=True)
-    archive = forms.BooleanField(label=_("Archive after sending?"), initial=True)
-    # TODO: Allow people to create drafts, instead of immediately sending.
+    archive = forms.BooleanField(
+        label=_("Archive after sending?"), initial=True, required=False
+    )
+    draft = forms.BooleanField(label=_("Create draft, don't send."), required=False)
 
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
@@ -212,7 +214,6 @@ class StartPublisherPayoutForm(forms.Form):
     def _send_email(self):
         token = getattr(settings, "FRONT_TOKEN")
         channel = getattr(settings, "FRONT_CHANNEL")
-        author = getattr(settings, "FRONT_AUTHOR")
 
         headers = {
             "Authorization": f"Bearer {token}",
@@ -220,18 +221,28 @@ class StartPublisherPayoutForm(forms.Form):
         }
 
         payload = {
-            # "to": ['eric@ericholscher.com'], # For testing
             "to": [user.email for user in self.publisher.user_set.all()],
             "sender_name": self.cleaned_data["sender"],
             "subject": self.cleaned_data["subject"],
             "options": {"archive": self.cleaned_data["archive"]},
             "body": self.cleaned_data["body"],
         }
-        if author:
-            payload["author_id"] = author
+
         url = f"https://api2.frontapp.com/channels/{channel}/messages"
-        log.info("Sending email")
-        requests.request("POST", url, json=payload, headers=headers)
+        if self.cleaned_data["draft"]:
+            url = f"https://api2.frontapp.com/channels/{channel}/drafts"
+            # Allow the team to see the draft
+            payload["mode"] = "shared"
+            # Author is required on drafts..
+            payload["author_id"] = getattr(settings, "FRONT_AUTHOR")
+
+        log.info(
+            "Sending email draft=%s archive=%s",
+            self.cleaned_data["draft"],
+            self.cleaned_data["archive"],
+        )
+        response = requests.request("POST", url, json=payload, headers=headers)
+        log.info("Response: %s", response.status_code)
 
     def save(self):
         """Do the work to save the payout."""

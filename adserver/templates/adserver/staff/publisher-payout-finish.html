@@ -20,7 +20,12 @@
   <dd>{{ payout.publisher }}</dd>
 
   <dt>{% trans 'Method' %}</dt>
-  <dd>{{ payout.publisher.payout_method }}</dd>
+  <dd>
+  {{ payout.publisher.get_payout_method_display }}
+  {% if payout.publisher.paypal_email %}
+  ({{ payout.publisher.paypal_email }})
+  {% endif %}
+  </dd>
 
   <dt>{% trans 'Status' %}</dt>
   <dd>{{ payout.get_status_display }}</dd>
