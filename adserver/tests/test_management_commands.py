@@ -89,34 +89,6 @@ class TestImporterManagementCommand(TestCase):
         )
 
 
-class TestAddPublisher(TestCase):
-    def setUp(self):
-        self.out = io.StringIO()
-
-    def test_publisher_plus_user(self):
-        email = "testuser@example-pub.com"
-        publisher_name = "example-pub.com"
-        keywords = "Python, Django"
-        management.call_command(
-            "add_publisher",
-            "-e",
-            email,
-            "-s",
-            publisher_name,
-            "-k",
-            keywords,
-            stdout=self.out,
-        )
-
-        user = User.objects.filter(email=email).first()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.publishers.count(), 1)
-
-        publisher = user.publishers.all().first()
-        self.assertEqual(publisher.name, publisher_name)
-        self.assertEqual(publisher.keywords, ["python", "django"])
-
-
 class TestArchiveOffers(TestCase):
     def setUp(self):
         self.out = io.StringIO()

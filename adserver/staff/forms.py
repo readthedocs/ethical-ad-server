@@ -21,6 +21,7 @@ from ..constants import EMAILED
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
+from ..models import Publisher
 from ..models import PublisherGroup
 
 log = logging.getLogger(__name__)  # noqa
@@ -185,6 +186,104 @@ class CreateAdvertiserForm(forms.Form):
         user.advertisers.add(advertiser)
 
         return advertiser
+
+
+class CreatePublisherForm(forms.Form):
+
+    """
+    Creates a publisher.
+
+    This isn't a simple model form because it creates a few additional objects as well
+    """
+
+    DEFAULT_GROUP = "ethicalads-network"
+
+    # Advertiser information
+    site = forms.CharField(label=_("Publisher site"), max_length=200)
+
+    # User information
+    user_name = forms.CharField(label=_("User Name"), max_length=200)
+    user_email = forms.EmailField(label=_("User Email"))
+
+    # Publisher Info
+    keywords = forms.CharField(
+        label=_("Default Keywords"), max_length=200, required=False
+    )
+
+    # Used to track historical changes
+    message = "Added via staff interface"
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+
+        self.helper.layout = Layout(
+            Fieldset(
+                _("Publisher information"),
+                Field("site", placeholder=_("example.com")),
+                Field("keywords", placeholder=_("frontend,javascript,gaming")),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Managing user"),
+                Field("user_name"),
+                Field("user_email", placeholder="publisher@email.com"),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Create publisher")),
+            HTML(
+                "<p class='form-text small text-muted'>"
+                + str(_("Creates a publisher and sends user an invitation email."))
+                + "</p>"
+            ),
+        )
+
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip()
+
+        if Publisher.objects.filter(name=name).exists():
+            raise forms.ValidationError(_("Publisher already exists"))
+
+        return name
+
+    def create_user(self):
+        """Create the user account and send an invite email."""
+        user_name = self.cleaned_data["user_name"].strip()
+        user_email = self.cleaned_data["user_email"]
+        user = User.objects.create_user(name=user_name, email=user_email, password="")
+        update_change_reason(user, self.message)
+        if hasattr(user, "invite_user"):
+            user.invite_user()
+        return user
+
+    def create_publisher(self):
+        """Create the publisher."""
+        site = self.cleaned_data["site"].strip()
+        keywords = self.cleaned_data["keywords"].strip()
+
+        publisher = Publisher.objects.create(
+            name=site,
+            slug=slugify(site),
+            default_keywords=keywords,
+        )
+
+        # TODO: Allow configuring of publisher groups in form
+        group_obj = PublisherGroup.objects.filter(slug=self.DEFAULT_GROUP).first()
+        if group_obj:
+            group_obj.publishers.add(publisher)
+
+        update_change_reason(publisher, self.message)
+
+        return publisher
+
+    def save(self):
+        """Create the publisher and associated objects. Send the invitation to the user account."""
+        publisher = self.create_publisher()
+        user = self.create_user()
+        user.publishers.add(publisher)
+
+        return publisher
 
 
 class StartPublisherPayoutForm(forms.Form):
