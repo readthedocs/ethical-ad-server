@@ -159,7 +159,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         initial["sender"] = "EthicalAds by Read the Docs"
         initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
         initial["body"] = email_html
-        initial["amount"] = self.data["due_report"]["total"]["revenue_share"]
+        initial["amount"] = "%.2f" % self.data["due_report"]["total"]["revenue_share"]
         return initial
 
     def form_valid(self, form):
@@ -176,7 +176,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         kwargs = super().get_form_kwargs()
         publisher_slug = self.kwargs.get("publisher_slug")
         kwargs["publisher"] = Publisher.objects.get(slug=publisher_slug)
-        kwargs["amount"] = self.data["due_report"]["total"]["revenue_share"]
+        kwargs["amount"] = "%.2f" % self.data["due_report"]["total"]["revenue_share"]
         kwargs["start_date"] = self.data["start_date"]
         kwargs["end_date"] = self.data["end_date"]
         return kwargs

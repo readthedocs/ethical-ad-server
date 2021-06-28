@@ -195,7 +195,9 @@ class StartPublisherPayoutForm(forms.Form):
     sender = forms.CharField(label=_("Sender"), max_length=200)
     subject = forms.CharField(label=_("Subject"), max_length=200)
     body = forms.CharField(label=_("body"), widget=forms.Textarea)
-    amount = forms.CharField(label=_("Amount"), disabled=True)
+    amount = forms.DecimalField(
+        label=_("Amount"), disabled=True, max_digits=8, decimal_places=2
+    )
     archive = forms.BooleanField(
         label=_("Archive after sending?"), initial=True, required=False
     )
