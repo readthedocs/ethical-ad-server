@@ -20,3 +20,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 # This will ensure that the test suite matches what's run in CI
 # There will be no IP geolocation done in testing
 GEOIP_PATH = os.path.join(BASE_DIR, "geoip-noexists")
+
+# By setting a testing backend, this allows verifying these messages
+# from unit tests
+# https://django-slack.readthedocs.io/#testing
+SLACK_BACKEND = "django_slack.backends.TestBackend"
+SLACK_TOKEN = "this-is-a-test-token"

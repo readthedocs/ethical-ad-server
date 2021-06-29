@@ -1097,11 +1097,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             nonce = offer.pk
 
         view_url = generate_absolute_url(
-            "view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            reverse("view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce})
         )
 
         click_url = generate_absolute_url(
-            "click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            reverse("click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce})
         )
 
         text = self.render_links(click_url)

@@ -1,0 +1,6 @@
+{% extends django_slack %}
+
+
+{% block text %}
+Flight {{ flight }} for {{ flight.campaign.advertiser }} wrapped up today: {{ flight_url }}
+{% endblock %}

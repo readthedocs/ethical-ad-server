@@ -133,6 +133,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.calculate_publisher_ctrs",
         "schedule": crontab(hour="3", minute="30"),
     },
+    "every-day-notify-completed-flights": {
+        "task": "adserver.tasks.notify_of_completed_flights",
+        "schedule": crontab(hour="0", minute="0"),
+    },
 }
 
 

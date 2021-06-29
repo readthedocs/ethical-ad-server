@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "adserver",
     "adserver.auth",
     "simple_history",
+    "django_slack",
 ]
 
 MIDDLEWARE = [
@@ -334,6 +335,16 @@ STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
 stripe.api_key = STRIPE_SECRET_KEY
 stripe.api_version = "2020-03-02"
 
+
+# Slack
+# Sending slack notifications
+# By default, Slack notifications are only sent when DEBUG=False
+# and when SLACK_TOKEN is set
+# https://django-slack.readthedocs.io/
+# --------------------------------------------------------------------------
+SLACK_TOKEN = env("SLACK_TOKEN", default=None)
+SLACK_CHANNEL = env("SLACK_CHANNEL", default="#ads-notifications")
+SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
 
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
