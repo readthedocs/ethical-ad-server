@@ -198,7 +198,7 @@ class CreatePublisherForm(forms.Form):
 
     DEFAULT_GROUP = "ethicalads-network"
 
-    # Advertiser information
+    # Publisher information - this isn't a URLField because we just want the domain
     site = forms.CharField(label=_("Publisher site"), max_length=200)
 
     # User information
