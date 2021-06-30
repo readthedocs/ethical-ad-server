@@ -2,10 +2,12 @@ import datetime
 
 from django.contrib.auth.models import AnonymousUser
 from django_dynamic_fixture import get
+from django_slack.utils import get_backend
 
 from ..models import Offer
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_impressions
+from ..tasks import notify_of_completed_flights
 from ..tasks import remove_old_client_ids
 from .common import BaseAdModelsTestCase
 
@@ -65,3 +67,33 @@ class TasksTest(BaseAdModelsTestCase):
 
         self.publisher.refresh_from_db()
         self.assertEqual(self.publisher.sampled_ctr, 20)
+
+    def test_notify_completed_flights(self):
+        backend = get_backend()
+
+        notify_of_completed_flights()
+        messages = backend.retrieve_messages()
+
+        # Shouldn't be any completed flight messages
+        self.assertEqual(len(messages), 0)
+
+        # "Complete" the flight
+        self.flight.sold_clicks = 1
+        self.flight.total_views = 1
+        self.flight.total_clicks = 1
+        self.flight.save()
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+        )
+        daily_update_impressions()
+
+        backend.reset_messages()
+        notify_of_completed_flights()
+
+        # Should be one message for the completed flight now
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1)

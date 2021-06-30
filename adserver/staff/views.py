@@ -126,10 +126,10 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 continue
 
             payouts_url = generate_absolute_url(
-                "publisher_payouts", kwargs={"publisher_slug": publisher.slug}
+                reverse("publisher_payouts", kwargs={"publisher_slug": publisher.slug})
             )
             settings_url = generate_absolute_url(
-                "publisher_settings", kwargs={"publisher_slug": publisher.slug}
+                reverse("publisher_settings", kwargs={"publisher_slug": publisher.slug})
             )
             payout_context = dict(
                 payouts_url=payouts_url,

@@ -52,5 +52,8 @@ bleach==3.3.0
 # Security features
 django-enforce-host==1.0.1
 
+# For Slack notifications and possibly for logging errors to Slack
+django-slack==5.16.2
+
 # Stripe for payments
 stripe>=2.48.0,<3.0

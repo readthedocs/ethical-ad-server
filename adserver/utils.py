@@ -331,9 +331,9 @@ def generate_client_id(ip_address, user_agent):
     return hash_id.hexdigest()
 
 
-def generate_absolute_url(view, kwargs):
+def generate_absolute_url(url):
     """
-    Generate a fully qualified URL for a view on our site.
+    Generate a fully qualified URL for a path on our site.
 
     This will look like ``https://server.ethicalads.io/foo/``.
     """
@@ -343,9 +343,7 @@ def generate_absolute_url(view, kwargs):
     if settings.ADSERVER_HTTPS:
         scheme = "https"
 
-    url = "{scheme}://{domain}{url}".format(
-        scheme=scheme, domain=domain, url=reverse(view, kwargs=kwargs)
-    )
+    url = "{scheme}://{domain}{url}".format(scheme=scheme, domain=domain, url=url)
     return url
 
 
@@ -372,7 +370,7 @@ def generate_publisher_payout_data(publisher):
         start_date = publisher.created
 
     report_url = generate_absolute_url(
-        "publisher_report", kwargs={"publisher_slug": publisher.slug}
+        reverse("publisher_report", kwargs={"publisher_slug": publisher.slug})
     )
 
     current_queryset = publisher.adimpression_set.filter(

@@ -5,10 +5,12 @@ import logging
 from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
+from django.conf import settings
 from django.db.models import Count
 from django.db.models import F
 from django.utils.timezone import is_naive
 from django.utils.timezone import utc
+from django_slack import slack_message
 
 from .constants import CLICKS
 from .constants import IMPRESSION_TYPES
@@ -16,6 +18,7 @@ from .constants import OFFERS
 from .constants import PAID_CAMPAIGN
 from .constants import VIEWS
 from .models import AdImpression
+from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
@@ -37,6 +40,7 @@ from .regiontopics import security_privacy
 from .regiontopics import us_ca
 from .regiontopics import wider_apac
 from .reports import PublisherReport
+from .utils import generate_absolute_url
 from .utils import get_ad_day
 from config.celery_app import app
 
@@ -417,3 +421,29 @@ def calculate_publisher_ctrs(days=7):
 
         publisher.sampled_ctr = report.total["ctr"]
         publisher.save()
+
+
+@app.task()
+def notify_of_completed_flights():
+    """Send a notification about flights which completed in the last day."""
+    cutoff = get_ad_day() - datetime.timedelta(days=1)
+    for flight in Flight.objects.filter(live=True).filter():
+        if (
+            flight.clicks_remaining() == 0
+            and flight.views_remaining() == 0
+            and AdImpression.objects.filter(
+                date__gte=cutoff,
+                advertisement__flight=flight,
+            ).exists()
+        ):
+            log.info("Flight %s finished in the last day.", flight)
+
+            # Send notification about this flight
+            if settings.SLACK_TOKEN:
+                slack_message(
+                    "adserver/slack/flight-complete.slack",
+                    {
+                        "flight": flight,
+                        "flight_url": generate_absolute_url(flight.get_absolute_url()),
+                    },
+                )
