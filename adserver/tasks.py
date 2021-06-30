@@ -5,6 +5,7 @@ import logging
 from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
+from django.conf import settings
 from django.db.models import Count
 from django.db.models import F
 from django.utils.timezone import is_naive
@@ -438,10 +439,11 @@ def notify_of_completed_flights():
             log.info("Flight %s finished in the last day.", flight)
 
             # Send notification about this flight
-            slack_message(
-                "adserver/slack/flight-complete.slack",
-                {
-                    "flight": flight,
-                    "flight_url": generate_absolute_url(flight.get_absolute_url()),
-                },
-            )
+            if settings.SLACK_TOKEN:
+                slack_message(
+                    "adserver/slack/flight-complete.slack",
+                    {
+                        "flight": flight,
+                        "flight_url": generate_absolute_url(flight.get_absolute_url()),
+                    },
+                )
