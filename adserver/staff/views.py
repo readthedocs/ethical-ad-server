@@ -19,6 +19,7 @@ from ..constants import PAID
 from ..models import Advertiser
 from ..models import Publisher
 from .forms import CreateAdvertiserForm
+from .forms import CreatePublisherForm
 from .forms import StartPublisherPayoutForm
 from adserver.utils import generate_absolute_url
 from adserver.utils import generate_publisher_payout_data
@@ -51,6 +52,29 @@ class CreateAdvertiserView(StaffUserMixin, FormView):
             "advertiser_main",
             kwargs={
                 "advertiser_slug": self.object.slug,
+            },
+        )
+
+
+class CreatePublisherView(StaffUserMixin, FormView):
+    form_class = CreatePublisherForm
+    model = Publisher
+    template_name = "adserver/staff/publisher-create.html"
+
+    def form_valid(self, form):
+        self.object = form.save()
+        result = super().form_valid(form)
+        messages.success(
+            self.request,
+            _("Successfully created %(object)s") % {"object": self.object.name},
+        )
+        return result
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_main",
+            kwargs={
+                "publisher_slug": self.object.slug,
             },
         )
 

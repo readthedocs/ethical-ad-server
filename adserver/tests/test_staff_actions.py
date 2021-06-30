@@ -12,8 +12,11 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
+from ..models import Publisher
+from ..models import PublisherGroup
 from ..models import PublisherPayout
 from ..staff.forms import CreateAdvertiserForm
+from ..staff.forms import CreatePublisherForm
 from ..staff.forms import StartPublisherPayoutForm
 from ..tasks import daily_update_impressions
 from .test_publisher_dashboard import TestPublisherDashboardViews
@@ -87,6 +90,75 @@ class CreateAdvertiserTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
         self.assertTrue(Advertiser.objects.filter(name=advertiser_name).exists())
+
+
+class CreatePublisherTest(TestCase):
+    def setUp(self):
+        CreateAdvertiserTest.setUp(self)
+        # So there's a group to add, and test against
+        get(
+            PublisherGroup,
+            slug=CreatePublisherForm.DEFAULT_GROUP,
+        )
+
+    def test_form(self):
+        site = "foo.com"
+        user_name = "User Name"
+        user_email = "user@example.com"
+        keywords = "frontend,bar"
+        data = {
+            "site": site,
+            "user_name": user_name,
+            "user_email": user_email,
+            "keywords": keywords,
+        }
+        form = CreatePublisherForm(data=data)
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.assertTrue(Publisher.objects.filter(name=site).exists())
+        publisher = Publisher.objects.filter(name=site).first()
+        self.assertEqual(publisher.keywords, keywords.split(","))
+        self.assertEqual(
+            publisher.publisher_groups.first().slug, CreatePublisherForm.DEFAULT_GROUP
+        )
+
+        user = User.objects.filter(email=user_email).first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.publishers.count(), 1)
+
+    def test_view(self):
+        url = reverse("create-publisher")
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        # Non-staff - Forbidden
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        # Staff user
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        site = "foo.com"
+        user_name = "User Name"
+        user_email = "user@example.com"
+        keywords = "frontend,bar"
+        data = {
+            "site": site,
+            "user_name": user_name,
+            "user_email": user_email,
+            "keywords": keywords,
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.assertTrue(Publisher.objects.filter(name=site).exists())
 
 
 class PublisherPayoutTests(TestCase):
