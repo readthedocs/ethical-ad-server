@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.31.0
+---------------
+
+This release adds a new staff-only interface to manage publishers.
+It also adds the ability to notify via Slack when a campaign completes.
+Currently, these notifications are just for staff but in the future
+we could allow notifications for advertisers as well.
+
+:date: June 30, 2021
+
+ * @davidfischer: Send Slack notifications on completed flights (#407)
+ * @dependabot[bot]: Bump color-string from 1.5.3 to 1.5.5 (#406)
+ * @ericholscher: Add Staff Add Publisher View (#405)
+ * @ericholscher: Fix float data in payout form (#404)
+ * @dependabot[bot]: Bump set-getter from 0.1.0 to 0.1.1 (#403)
+ * @dependabot[bot]: Bump striptags from 3.1.1 to 3.2.0 (#402)
+
+
 Version v0.30.0
 ---------------
 
