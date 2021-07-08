@@ -48,6 +48,7 @@ from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import FlightForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .forms import SupportForm
@@ -57,6 +58,7 @@ from .mixins import GeoReportMixin
 from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
 from .mixins import ReportQuerysetMixin
+from .mixins import StaffAccessMixin
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -255,6 +257,47 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
             Flight,
             campaign__advertiser=self.advertiser,
             slug=self.kwargs["flight_slug"],
+        )
+
+
+class FlightUpdateView(StaffAccessMixin, UserPassesTestMixin, UpdateView):
+
+    """Update view for flights."""
+
+    form_class = FlightForm
+    model = Flight
+    template_name = "adserver/advertiser/flight-update.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+        messages.success(
+            self.request, _("Successfully updated %(flight)s") % {"flight": flight}
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return get_object_or_404(
+            Flight,
+            campaign__advertiser=self.advertiser,
+            slug=self.kwargs["flight_slug"],
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
         )
 
 

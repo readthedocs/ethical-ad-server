@@ -13,6 +13,14 @@ from .models import Advertiser
 from .models import Publisher
 
 
+class StaffAccessMixin:
+
+    """Mixin requiring staff access."""
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
 class AdvertiserAccessMixin:
 
     """Mixin for checking advertiser access that works with the ``UserPassesTestMixin``."""

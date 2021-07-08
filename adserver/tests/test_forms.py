@@ -6,6 +6,7 @@ from django_dynamic_fixture import get
 
 from ..forms import AdvertisementForm
 from ..forms import FlightAdminForm
+from ..forms import FlightForm
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Campaign
@@ -76,7 +77,7 @@ class FormTests(TestCase):
             "ad_types": [self.ad_type.pk],
         }
 
-    def test_flight_form(self):
+    def test_admin_flight_form(self):
         data = {
             "name": "Test Flight",
             "slug": "test-flight",
@@ -100,6 +101,42 @@ class FormTests(TestCase):
         data["cpc"] = 0.0
         form = FlightAdminForm(data=data)
         self.assertTrue(form.is_valid())
+
+    def test_flight_form(self):
+        data = {
+            "cpc": 1.0,
+            "cpm": 1.0,
+            "sold_clicks": 100,
+            "sold_impressions": 100_000,
+            "live": True,
+            "start_date": get_ad_day().date(),
+            "end_date": get_ad_day().date() + datetime.timedelta(days=2),
+            "include_countries": "",
+            "exclude_countries": "",
+            "include_keywords": "",
+        }
+        form = FlightForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertEquals(
+            form.errors["__all__"], ["A flight cannot have both CPC & CPM"]
+        )
+
+        # A flight can't have both a CPC & CPM
+        data["cpc"] = 0.0
+        form = FlightForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        # Invalid country code
+        data["include_countries"] = "US, YY"
+        form = FlightForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertEquals(
+            form.errors["include_countries"], ["YY is not a valid country code"]
+        )
+
+        data["include_countries"] = "US ,  CN"
+        form = FlightForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
 
     def test_ad_type_required(self):
         self.ad_data["ad_types"] = []

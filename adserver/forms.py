@@ -31,13 +31,40 @@ from .models import AdType
 from .models import Advertisement
 from .models import Flight
 from .models import Publisher
+from .regiontopics import africa
+from .regiontopics import backend_web
+from .regiontopics import data_science
+from .regiontopics import devops
+from .regiontopics import eu_aus_nz
+from .regiontopics import exclude
+from .regiontopics import frontend_web
+from .regiontopics import latin_america
+from .regiontopics import python
+from .regiontopics import security_privacy
+from .regiontopics import us_ca
+from .regiontopics import wider_apac
+from .validators import TargetingParametersValidator
 
 
 log = logging.getLogger(__name__)  # noqa
 User = get_user_model()
 
 
-class FlightAdminForm(forms.ModelForm):
+class FlightMixin:
+
+    """Ensure the flight can't have both CPC and CPM."""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cpc = cleaned_data.get("cpc")
+        cpm = cleaned_data.get("cpm")
+        if cpc > 0 and cpm > 0:
+            raise forms.ValidationError(_("A flight cannot have both CPC & CPM"))
+
+        return cleaned_data
+
+
+class FlightAdminForm(FlightMixin, forms.ModelForm):
 
     """The form for flights used by the Django Admin."""
 
@@ -60,13 +87,231 @@ class FlightAdminForm(forms.ModelForm):
             "targeting_parameters",
         )
 
-    def clean(self):
-        cpc = self.cleaned_data.get("cpc")
-        cpm = self.cleaned_data.get("cpm")
-        if cpc > 0 and cpm > 0:
-            raise forms.ValidationError(_("A flight cannot have both CPC & CPM"))
 
-        return self.cleaned_data
+class FlightForm(FlightMixin, forms.ModelForm):
+
+    """The form for flights used in a staff interface."""
+
+    include_countries = forms.CharField(
+        max_length=1024,
+        required=False,
+        help_text=_("A comma separated list of country codes"),
+    )
+    exclude_countries = forms.CharField(
+        max_length=1024,
+        required=False,
+        help_text=_("A comma separated list of country codes"),
+    )
+    include_keywords = forms.CharField(
+        max_length=1024,
+        required=False,
+        help_text=_("A comma separated list of keywords"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Set the flight form helper and initial data."""
+        super().__init__(*args, **kwargs)
+
+        if self.instance.pk:
+            self.fields["include_countries"].initial = ", ".join(
+                self.instance.included_countries
+            )
+            self.fields["exclude_countries"].initial = ", ".join(
+                self.instance.excluded_countries
+            )
+            self.fields["include_keywords"].initial = ", ".join(
+                self.instance.included_keywords
+            )
+
+        self.helper = FormHelper()
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Div(
+                    Div("start_date", css_class="form-group col-lg-6"),
+                    Div("end_date", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                "live",
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Per impression (CPM) flights"),
+                Div(
+                    Div("cpm", css_class="form-group col-lg-6"),
+                    Div("sold_impressions", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Per click (CPC) flights"),
+                Div(
+                    Div("cpc", css_class="form-group col-lg-6"),
+                    Div("sold_clicks", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Flight targeting"),
+                Div(
+                    "include_countries",
+                    Div(
+                        HTML(
+                            format_html(
+                                """
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">US / Canada</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">EU / AU / NZ</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">APAC</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">Latin America</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">Africa</a></li>
+                                </ul>
+                            """,
+                                ", ".join(us_ca),
+                                ", ".join(eu_aus_nz),
+                                ", ".join(wider_apac),
+                                ", ".join(latin_america),
+                                ", ".join(africa),
+                            )
+                        ),
+                        css_class="small",
+                    ),
+                ),
+                Div(
+                    "exclude_countries",
+                    Div(
+                        HTML(
+                            format_html(
+                                """
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">US / Canada</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">EU / AU / NZ</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">APAC</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Latin America</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Africa</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Exclude</a></li>
+                                </ul>
+                            """,
+                                ", ".join(us_ca),
+                                ", ".join(eu_aus_nz),
+                                ", ".join(wider_apac),
+                                ", ".join(latin_america),
+                                ", ".join(africa),
+                                ", ".join(exclude),
+                            )
+                        ),
+                        css_class="small",
+                    ),
+                ),
+                Div(
+                    "include_keywords",
+                    Div(
+                        HTML(
+                            format_html(
+                                """
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">data science/machine learning</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">security/privacy</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">devops</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">frontend</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">backend</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">python</a></li>
+                                </ul>
+                            """,
+                                ", ".join(data_science),
+                                ", ".join(security_privacy),
+                                ", ".join(devops),
+                                ", ".join(frontend_web),
+                                ", ".join(backend_web),
+                                ", ".join(python),
+                            )
+                        ),
+                        css_class="small",
+                    ),
+                ),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Update flight")),
+        )
+
+    def clean_include_countries(self):
+        data = self.cleaned_data["include_countries"]
+        include_countries = [
+            cc.strip() for cc in data.split(",") if len(cc.strip()) > 0
+        ]
+        if include_countries:
+            TargetingParametersValidator()({"include_countries": include_countries})
+        return data
+
+    def clean_exclude_countries(self):
+        data = self.cleaned_data["exclude_countries"]
+        exclude_countries = [
+            cc.strip() for cc in data.split(",") if len(cc.strip()) > 0
+        ]
+        if exclude_countries:
+            TargetingParametersValidator()({"exclude_countries": exclude_countries})
+        return data
+
+    def clean_include_keywords(self):
+        data = self.cleaned_data["include_keywords"]
+        include_keywords = [kw.strip() for kw in data.split(",") if len(kw.strip()) > 0]
+        if include_keywords:
+            TargetingParametersValidator()({"include_keywords": include_keywords})
+        return data
+
+    def save(self, commit=True):
+        self.instance.targeting_parameters["include_countries"] = [
+            cc.strip()
+            for cc in self.cleaned_data["include_countries"].split(",")
+            if len(cc.strip()) > 0
+        ]
+        self.instance.targeting_parameters["exclude_countries"] = [
+            cc.strip()
+            for cc in self.cleaned_data["exclude_countries"].split(",")
+            if len(cc.strip()) > 0
+        ]
+        self.instance.targeting_parameters["include_keywords"] = [
+            kw.strip()
+            for kw in self.cleaned_data["include_keywords"].split(",")
+            if len(kw.strip()) > 0
+        ]
+
+        # TODO: handle rare targeting options (state/provinces, metro codes, exclude keywords, mobile traffic)
+        # If a flight has one of these rare targeting options already, saving the form won't affect it
+
+        # Handle when targeting is totally removed
+        if not self.instance.targeting_parameters["include_countries"]:
+            del self.instance.targeting_parameters["include_countries"]
+        if not self.instance.targeting_parameters["exclude_countries"]:
+            del self.instance.targeting_parameters["exclude_countries"]
+        if not self.instance.targeting_parameters["include_keywords"]:
+            del self.instance.targeting_parameters["include_keywords"]
+
+        return super().save(commit)
+
+    class Meta:
+        model = Flight
+
+        fields = (
+            "start_date",
+            "end_date",
+            "live",
+            "cpc",
+            "sold_clicks",
+            "cpm",
+            "sold_impressions",
+        )
+        widgets = {
+            "start_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+            "end_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+        }
 
 
 class AdvertisementFormMixin:
