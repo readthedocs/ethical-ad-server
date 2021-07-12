@@ -347,7 +347,9 @@ def generate_absolute_url(url):
     return url
 
 
-def generate_publisher_payout_data(publisher):
+def generate_publisher_payout_data(
+    publisher, include_current_report=True, include_due_report=True
+):
     """
     Generate the amount due at next payout and current month payout data.
 
@@ -373,31 +375,34 @@ def generate_publisher_payout_data(publisher):
         reverse("publisher_report", kwargs={"publisher_slug": publisher.slug})
     )
 
-    current_queryset = publisher.adimpression_set.filter(
-        date__gte=today.replace(day=1),
-        date__lte=today,
-        advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
-    )
-    current_report = PublisherReport(current_queryset)
-    current_report.generate()
-
-    current_report_url = (
-        report_url
-        + "?"
-        + urlencode(
-            {
-                "start_date": today.strftime("%Y-%m-01"),
-                "end_date": today.strftime("%Y-%m-%d"),
-                "campaign_type": PAID_CAMPAIGN,
-            }
-        )
-    )
-
+    current_report = None
+    current_report_url = None
     due_report = None
     due_report_url = None
 
+    if include_current_report:
+        current_queryset = publisher.adimpression_set.filter(
+            date__gte=today.replace(day=1),
+            date__lte=today,
+            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+        )
+        current_report = PublisherReport(current_queryset)
+        current_report.generate()
+
+        current_report_url = (
+            report_url
+            + "?"
+            + urlencode(
+                {
+                    "start_date": today.strftime("%Y-%m-01"),
+                    "end_date": today.strftime("%Y-%m-%d"),
+                    "campaign_type": PAID_CAMPAIGN,
+                }
+            )
+        )
+
     # Handle cases where a publisher has just joined this month
-    if start_date.month != today.month:
+    if start_date.month != today.month and include_due_report:
         due_queryset = publisher.adimpression_set.filter(
             date__gte=start_date,
             date__lte=end_date,
@@ -433,7 +438,9 @@ def generate_publisher_payout_data(publisher):
         current_report={
             "total": current_report.total,
             "results": current_report.results,
-        },
+        }
+        if current_report
+        else None,
         current_report_url=current_report_url,
     )
 
