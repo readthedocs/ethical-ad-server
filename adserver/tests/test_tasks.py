@@ -4,10 +4,12 @@ from django.contrib.auth.models import AnonymousUser
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
+from ..models import AdImpression
 from ..models import Offer
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_impressions
 from ..tasks import notify_of_completed_flights
+from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
 from .common import BaseAdModelsTestCase
 
@@ -97,3 +99,79 @@ class TasksTest(BaseAdModelsTestCase):
         # Should be one message for the completed flight now
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
+
+    def test_notify_of_publisher_changes(self):
+        # Publisher changes only apply to paid campaigns
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.save()
+
+        backend = get_backend()
+        messages = backend.retrieve_messages()
+        notify_of_publisher_changes()
+
+        # Shouldn't be any publisher changes yet
+        self.assertEqual(len(messages), 0)
+
+        # Add some views and clicks
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        offer = get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+        )
+
+        # Add some impressions from a week ago
+        eight_days_ago = offer.date - datetime.timedelta(days=8)
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=eight_days_ago,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=eight_days_ago,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=eight_days_ago,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=eight_days_ago,
+            viewed=True,
+            clicked=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=eight_days_ago,
+            viewed=True,
+            clicked=True,
+        )
+
+        daily_update_impressions()
+        daily_update_impressions(eight_days_ago)
+
+        # Ensure the ad impressions (used in the reports) are generated
+        self.assertTrue(AdImpression.objects.filter(publisher=self.publisher).exists())
+
+        backend.reset_messages()
+        notify_of_publisher_changes()
+
+        # Should be 1 message: one for views with CTR being within the threshold
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1, messages)
