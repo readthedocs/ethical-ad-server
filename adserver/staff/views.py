@@ -1,4 +1,5 @@
 """Views for the administrator actions."""
+import datetime
 import logging
 
 from django.conf import settings
@@ -151,16 +152,22 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 ctr=ctr_str,
                 **data,
             )
+
             current_payout = publisher.payouts.filter(
-                date__month=timezone.now().month
+                date__month=timezone.now().month,
+                date__year=timezone.now().year,
             ).first()
             if current_payout:
                 payout_context["payout"] = current_payout
-            last_payout = (
-                publisher.payouts.filter(status=PAID)
-                .exclude(date__month=timezone.now().month)
-                .last()
-            )
+
+            last_payout = publisher.payouts.filter(
+                status=PAID,
+                # Janky way to find last month..
+                date__month=(
+                    timezone.now().replace(day=1) - datetime.timedelta(days=1)
+                ).month,
+                date__year=timezone.now().year,
+            ).first()
             if last_payout:
                 change_percent = (
                     (float(due_balance) - float(last_payout.amount))
