@@ -27,7 +27,6 @@ from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 from simple_history.utils import update_change_reason
 
-from .models import AdType
 from .models import Advertisement
 from .models import Flight
 from .models import Publisher
@@ -203,9 +202,10 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
-        self.flight = None
         if "flight" in kwargs:
             self.flight = kwargs.pop("flight")
+        else:
+            raise RuntimeError("'flight' is required for the ad form")
 
         super().__init__(*args, **kwargs)
 
@@ -217,13 +217,16 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         self.fields["live"].help_text = _("Uncheck to disable this advertisement")
         self.fields["ad_types"].label = _("Display types")
 
+        # Get global ad types and ad types that are specific to the publishers targeted by the campaign
+        adtype_queryset = self.flight.campaign.allowed_ad_types()
+
         # Remove deprecated ad types unless the passed ad has those ad types
         if self.instance.pk:
-            adtype_queryset = AdType.objects.filter(
+            adtype_queryset = adtype_queryset.filter(
                 Q(deprecated=False) | Q(pk__in=self.instance.ad_types.values("pk"))
             )
         else:
-            adtype_queryset = AdType.objects.exclude(deprecated=True)
+            adtype_queryset = adtype_queryset.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
 
         # Ads are now composed of `headline`, `content`, and `cta`
