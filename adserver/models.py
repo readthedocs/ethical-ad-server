@@ -175,7 +175,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     record_placements = models.BooleanField(
         default=False, help_text=_("Record placement impressions for this publisher")
     )
-    # TODO: Move this to default=False, so new publishers have to request custom integrations
+    # This defaults to False, so publishers have to ask for it.
     render_pixel = models.BooleanField(
         default=False,
         help_text=_(
