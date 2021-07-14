@@ -1,8 +1,10 @@
 """Views for the administrator actions."""
+import datetime
 import logging
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.cache import cache
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -86,11 +88,13 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     """
 
     template_name = "adserver/staff/publisher-payout-list.html"
+    # Two hours should be enough to run most payouts
+    CACHE_SECONDS = 7200
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        limit = int(self.request.GET.get("limit", 50))
+        limit = int(self.request.GET.get("limit", 0))
         all_publishers = self.request.GET.get("all")
         publisher_slug = self.request.GET.get("publisher")
 
@@ -98,16 +102,25 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
 
+        if limit:
+            queryset = queryset[:limit]
+
         payouts = {}
 
-        for publisher in queryset[:limit]:
-            data = generate_publisher_payout_data(publisher)
+        for publisher in queryset:
+            data = generate_publisher_payout_data(
+                publisher, include_current_report=False
+            )
+
+            # Cache payout data to make running payouts faster
+            data = cache.get(f"payout-{publisher.pk}")
+            if not data:
+                data = generate_publisher_payout_data(publisher)
+                cache.set(f"payout-{publisher.pk}", data, self.CACHE_SECONDS)
+
             report = data.get("due_report")
             if not report:
-                if not all_publishers:
-                    # Skip publishers without due money
-                    continue
-                report = data.get("current_report")
+                continue
 
             due_balance = report["total"]["revenue_share"]
             due_str = "{:.2f}".format(due_balance)
@@ -134,16 +147,22 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 ctr=ctr_str,
                 **data,
             )
+
             current_payout = publisher.payouts.filter(
-                date__month=timezone.now().month
+                date__month=timezone.now().month,
+                date__year=timezone.now().year,
             ).first()
             if current_payout:
                 payout_context["payout"] = current_payout
-            last_payout = (
-                publisher.payouts.filter(status=PAID)
-                .exclude(date__month=timezone.now().month)
-                .last()
-            )
+
+            last_payout = publisher.payouts.filter(
+                status=PAID,
+                # Janky way to find last month..
+                date__month=(
+                    timezone.now().replace(day=1) - datetime.timedelta(days=1)
+                ).month,
+                date__year=timezone.now().year,
+            ).first()
             if last_payout:
                 change_percent = (
                     (float(due_balance) - float(last_payout.amount))

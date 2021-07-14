@@ -447,3 +447,63 @@ def notify_of_completed_flights():
                         "flight_url": generate_absolute_url(flight.get_absolute_url()),
                     },
                 )
+
+
+@app.task()
+def notify_of_publisher_changes():
+    """Send a notification when a publisher's main metrics change week to week."""
+    a_week_ago = get_ad_day() - datetime.timedelta(days=7)
+    two_weeks_ago = a_week_ago - datetime.timedelta(days=7)
+
+    difference_threshold = 0.25  # Notify of differences larger than this (0.25 = 25%)
+
+    for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
+        # Generate a report for the last week
+        queryset = AdImpression.objects.filter(
+            date__gte=a_week_ago,
+            publisher=publisher,
+            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+        )
+        last_week_report = PublisherReport(queryset)
+        last_week_report.generate()
+
+        # Generate the previous week for comparison
+        queryset = AdImpression.objects.filter(
+            date__gte=two_weeks_ago,
+            date__lte=a_week_ago,
+            publisher=publisher,
+            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+        )
+        previous_week_report = PublisherReport(queryset)
+        previous_week_report.generate()
+
+        for metric in ("views", "ctr"):
+            last_week_value = last_week_report.total[metric]
+            previous_week_value = previous_week_report.total[metric]
+            if last_week_value > 0 and previous_week_value > 0:
+                metric_diff = abs((last_week_value / previous_week_value) - 1)
+                perc_diff = (last_week_value / previous_week_value) * 100
+                if metric_diff > difference_threshold:
+                    log.info(
+                        "Publisher %s: %s was %s last week and %s the previous week.",
+                        publisher,
+                        metric,
+                        last_week_value,
+                        previous_week_value,
+                    )
+
+                    # Send notification to Slack about this publisher
+                    if settings.SLACK_TOKEN:
+                        slack_message(
+                            "adserver/slack/publisher-metric.slack",
+                            {
+                                "publisher": publisher,
+                                "metric": metric,
+                                "last_week_value": last_week_value,
+                                "previous_week_value": previous_week_value,
+                                "percent_diff": perc_diff,
+                                "report_url": generate_absolute_url(
+                                    publisher.get_absolute_url()
+                                ),
+                            },
+                        )

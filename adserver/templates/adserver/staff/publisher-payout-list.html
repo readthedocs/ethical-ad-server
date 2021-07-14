@@ -34,7 +34,13 @@
             <td>{{ payout_data.start_date|date }}</td>
             <td>{{ payout_data.first }}</td>
             <td>${{ payout_data.total }}</td>
-            <td>{{ payout_data.change|floatformat:2 }}%</td>
+            <td>
+            {% if payout_data.change %}
+            {{ payout_data.change|floatformat:2 }}%
+            {% else %}
+            {% trans "N/A" %}
+            {% endif %}
+            </td>
             <td>{{ payout_data.ctr }}%</td>
             <td>
             {% if payout_data.payout %}
