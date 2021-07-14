@@ -23,7 +23,6 @@ from ..models import Publisher
 from .forms import CreateAdvertiserForm
 from .forms import CreatePublisherForm
 from .forms import StartPublisherPayoutForm
-from adserver.utils import generate_absolute_url
 from adserver.utils import generate_publisher_payout_data
 
 
