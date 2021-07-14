@@ -58,7 +58,7 @@ from .mixins import GeoReportMixin
 from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
 from .mixins import ReportQuerysetMixin
-from .mixins import StaffAccessMixin
+from .mixins import StaffUserMixin
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -260,7 +260,7 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
         )
 
 
-class FlightUpdateView(StaffAccessMixin, UserPassesTestMixin, UpdateView):
+class FlightUpdateView(StaffUserMixin, UpdateView):
 
     """Update view for flights."""
 

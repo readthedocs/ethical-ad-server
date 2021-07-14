@@ -1,5 +1,6 @@
 """Mixins for advertiser and publisher views."""
 from django.conf import settings
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db import models
@@ -13,7 +14,7 @@ from .models import Advertiser
 from .models import Publisher
 
 
-class StaffAccessMixin:
+class StaffUserMixin(UserPassesTestMixin):
 
     """Mixin requiring staff access."""
 
