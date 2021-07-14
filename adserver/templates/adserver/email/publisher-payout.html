@@ -1,7 +1,20 @@
 {% autoescape off %}
 
+{% comment %}
+TODO: Find a way to make this non-EA specific,
+but for now I think we can't avoid it because of linking to content on our marketing pages.
+{% endcomment %}
+
 <p>
   Hello,
+</p>
+
+<p>
+  <strong>New:</strong>
+  We have launched a <a href="https://www.ethicalads.io/blog/2021/07/publisher-referral-offer/">referral program</a> for our existing publishers.
+  We're offering bonus cash for both you and the person you refer to EthicalAds on their first payout.
+  If you know anyone who would be a good fit for EthicalAds, now would be a great time to refer them.
+  You can use this link: <a href="https://ethicalads.io/publishers/?referral=Publisher:{{ publisher.slug }}">https://ethicalads.io/publishers/?referral=Publisher:{{ publisher.slug }}</a> to ensure you get credit for the referral.
 </p>
 
 <p>

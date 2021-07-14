@@ -23,7 +23,6 @@ from ..models import Publisher
 from .forms import CreateAdvertiserForm
 from .forms import CreatePublisherForm
 from .forms import StartPublisherPayoutForm
-from adserver.utils import generate_absolute_url
 from adserver.utils import generate_publisher_payout_data
 
 
@@ -138,16 +137,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             ):
                 continue
 
-            payouts_url = generate_absolute_url(
-                reverse("publisher_payouts", kwargs={"publisher_slug": publisher.slug})
-            )
-            settings_url = generate_absolute_url(
-                reverse("publisher_settings", kwargs={"publisher_slug": publisher.slug})
-            )
             payout_context = dict(
-                payouts_url=payouts_url,
-                settings_url=settings_url,
-                publisher=publisher,
                 total=due_str,
                 ctr=ctr_str,
                 **data,

@@ -423,6 +423,13 @@ def generate_publisher_payout_data(
             )
         )
 
+    payouts_url = generate_absolute_url(
+        reverse("publisher_payouts", kwargs={"publisher_slug": publisher.slug})
+    )
+    settings_url = generate_absolute_url(
+        reverse("publisher_settings", kwargs={"publisher_slug": publisher.slug})
+    )
+
     return dict(
         first=first,
         start_date=start_date,
@@ -442,6 +449,9 @@ def generate_publisher_payout_data(
         if current_report
         else None,
         current_report_url=current_report_url,
+        payouts_url=payouts_url,
+        settings_url=settings_url,
+        publisher=publisher,
     )
 
 
