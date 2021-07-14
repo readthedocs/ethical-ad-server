@@ -4,7 +4,6 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.cache import cache
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -18,6 +17,7 @@ from django.views.generic import FormView
 from django.views.generic import TemplateView
 
 from ..constants import PAID
+from ..mixins import StaffUserMixin
 from ..models import Advertiser
 from ..models import Publisher
 from .forms import CreateAdvertiserForm
@@ -27,11 +27,6 @@ from adserver.utils import generate_publisher_payout_data
 
 
 log = logging.getLogger(__name__)  # noqa
-
-
-class StaffUserMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_staff
 
 
 class CreateAdvertiserView(StaffUserMixin, FormView):

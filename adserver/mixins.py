@@ -1,5 +1,6 @@
 """Mixins for advertiser and publisher views."""
 from django.conf import settings
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db import models
@@ -11,6 +12,14 @@ from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
+
+
+class StaffUserMixin(UserPassesTestMixin):
+
+    """Mixin requiring staff access."""
+
+    def test_func(self):
+        return self.request.user.is_staff
 
 
 class AdvertiserAccessMixin:

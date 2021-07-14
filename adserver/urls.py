@@ -26,6 +26,7 @@ from .views import do_not_track
 from .views import do_not_track_policy
 from .views import FlightDetailView
 from .views import FlightListView
+from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
 from .views import PublisherEmbedView
@@ -152,6 +153,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/",
         FlightDetailView.as_view(),
         name="flight_detail",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/update/",
+        FlightUpdateView.as_view(),
+        name="flight_update",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/report/",

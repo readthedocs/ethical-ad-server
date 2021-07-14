@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -10,6 +12,7 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
+from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
 
 
@@ -180,6 +183,59 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
+
+    def test_flight_update_view(self):
+        url = reverse(
+            "flight_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        # Regular user - no access
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        # Staff user required
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.flight.name)
+
+        data = {
+            "cpc": 2.5,
+            "cpm": 0,
+            "sold_clicks": 250,
+            "sold_impressions": 0,
+            "live": False,
+            "start_date": get_ad_day().date(),
+            "end_date": get_ad_day().date() + datetime.timedelta(days=2),
+            "include_countries": "US  ,  CN",
+            "exclude_countries": "",
+            "include_keywords": "python, django",
+        }
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 302)
+
+        # Verify the DB was updated
+        self.flight.refresh_from_db()
+        self.assertFalse(self.flight.live)
+        self.assertAlmostEqual(self.flight.cpc, 2.5)
+        self.assertEqual(self.flight.sold_clicks, 250)
+        self.assertEqual(self.flight.included_countries, ["US", "CN"])
+        self.assertEqual(self.flight.excluded_countries, [])
+        self.assertEqual(self.flight.included_keywords, ["python", "django"])
+
+        # Ensure we didn't overwrite the metro and state/province targeting
+        self.assertEqual(self.flight.included_state_provinces, ["CA", "NY"])
+        self.assertEqual(self.flight.included_metro_codes, [205])
 
     def test_ad_detail_view(self):
         url = reverse(
