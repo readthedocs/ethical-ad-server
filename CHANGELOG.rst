@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.32.0
+---------------
+
+Mostly we added some new staff additions to help with payouts and help manage targeting.
+We also added some callouts to help refer publishers.
+Lastly, we did add a task to send Slack notifications to staff
+when publisher metrics change significantly week to week.
+
+:date: July 15, 2021
+
+ * @ericholscher: Add a more obvious callout for the publisher referral in payouts (#413)
+ * @ericholscher: Add some payout optimizations to make it faster (#411)
+ * @davidfischer: Notify when publisher metrics change (#410)
+ * @davidfischer: Initial staff interface for flight targeting and size updates (#409)
+
 Version v0.31.0
 ---------------
 
