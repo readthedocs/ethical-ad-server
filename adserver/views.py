@@ -52,6 +52,7 @@ from .forms import FlightForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .forms import SupportForm
+from .mixins import AdvertisementValidateLinkMixin
 from .mixins import AdvertiserAccessMixin
 from .mixins import AllReportMixin
 from .mixins import GeoReportMixin
@@ -324,7 +325,12 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
         )
 
 
-class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
+class AdvertisementUpdateView(
+    AdvertiserAccessMixin,
+    UserPassesTestMixin,
+    AdvertisementValidateLinkMixin,
+    UpdateView,
+):
 
     """Update view for advertisements."""
 
@@ -370,7 +376,12 @@ class AdvertisementUpdateView(AdvertiserAccessMixin, UserPassesTestMixin, Update
         )
 
 
-class AdvertisementCreateView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
+class AdvertisementCreateView(
+    AdvertiserAccessMixin,
+    UserPassesTestMixin,
+    AdvertisementValidateLinkMixin,
+    CreateView,
+):
 
     """Create view for advertisements."""
 
