@@ -1074,7 +1074,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         if view_time > Offer.MAX_VIEW_TIME:
             # Set a maximum allowed view time so averages aren't thrown off
             view_time = Offer.MAX_VIEW_TIME
-        if offer.viewed and not offer.view_time and view_time > 0:
+        if (
+            not offer.is_old()
+            and offer.viewed
+            and not offer.view_time
+            and view_time > 0
+        ):
             Offer.objects.filter(pk=offer.pk).update(view_time=view_time)
 
     def offer_ad(
@@ -1164,8 +1169,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         A nonce is valid if it was generated recently (hasn't timed out)
         and hasn't already been used.
         """
-        four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
-        if offer.date < four_hours_ago:
+        if offer.is_old():
             return False
 
         if impression_type == VIEWS:
@@ -1680,6 +1684,13 @@ class Offer(AdBase):
         self.save()
 
         return True
+
+    def is_old(self):
+        """Checks if this offer is "old" meaning not for a currently running ad."""
+        four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
+        if four_hours_ago > self.date:
+            return True
+        return False
 
     class Meta:
         # This is needed because we can't sort on pk to get the created ordering
