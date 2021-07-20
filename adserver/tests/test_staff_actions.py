@@ -239,7 +239,25 @@ class PublisherPayoutTests(TestCase):
         self.client.force_login(self.staff_user)
 
         self.payout = get(
-            PublisherPayout, status="emailed", publisher=self.publisher1, amount=55
+            PublisherPayout,
+            status="emailed",
+            publisher=self.publisher1,
+            amount=55,
+            date=timezone.now() - timedelta(days=3),
+        )
+        self.payout2 = get(
+            PublisherPayout,
+            status="emailed",
+            publisher=self.publisher1,
+            amount=77,
+            date=timezone.now() - timedelta(days=2),
+        )
+        self.payout3 = get(
+            PublisherPayout,
+            status="emailed",
+            publisher=self.publisher1,
+            amount=99,
+            date=timezone.now() - timedelta(days=1),
         )
 
         self.assertEqual(self.payout.status, "emailed")
@@ -249,12 +267,12 @@ class PublisherPayoutTests(TestCase):
             "staff-finish-publisher-payout",
             kwargs=dict(publisher_slug=self.publisher1.slug),
         )
-        start_response = self.client.get(finish_url)
-        self.assertEqual(start_response.status_code, 200)
-        self.assertContains(start_response, self.payout.get_status_display())
-        self.assertContains(start_response, "$55")
+        finish_response = self.client.get(finish_url)
+        self.assertEqual(finish_response.status_code, 200)
+        self.assertContains(finish_response, self.payout3.get_status_display())
+        self.assertContains(finish_response, "$99")
 
         post_response = self.client.post(finish_url)
         self.assertEqual(post_response.status_code, 302)
         # requery to get new object
-        self.assertEqual(PublisherPayout.objects.get(pk=self.payout.pk).status, "paid")
+        self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")

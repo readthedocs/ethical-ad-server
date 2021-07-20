@@ -233,7 +233,9 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        self.payout = self.publisher.payouts.exclude(status=PAID).first()
+        # Get the last payout, which is the one we actually want to pay out,
+        # since there could be multiple with status=EMAILED from previous months.
+        self.payout = self.publisher.payouts.exclude(status=PAID).last()
         if not self.payout:
             raise Http404("No payout found")
         return self.payout
