@@ -1248,7 +1248,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_html = self.text
 
         return mark_safe(
-            ad_html.replace("<a>", '<a href="%s" rel="nofollow" target="_blank">' % url)
+            ad_html.replace(
+                "<a>", '<a href="%s" rel="nofollow noopener" target="_blank">' % url
+            )
         )
 
     def render_ad(self, ad_type, click_url=None, view_url=None, publisher=None):
