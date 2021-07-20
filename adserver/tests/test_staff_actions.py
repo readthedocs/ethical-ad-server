@@ -241,6 +241,12 @@ class PublisherPayoutTests(TestCase):
         self.payout = get(
             PublisherPayout, status="emailed", publisher=self.publisher1, amount=55
         )
+        self.payout2 = get(
+            PublisherPayout, status="emailed", publisher=self.publisher1, amount=77
+        )
+        self.payout3 = get(
+            PublisherPayout, status="emailed", publisher=self.publisher1, amount=99
+        )
 
         self.assertEqual(self.payout.status, "emailed")
 
@@ -252,7 +258,7 @@ class PublisherPayoutTests(TestCase):
         start_response = self.client.get(finish_url)
         self.assertEqual(start_response.status_code, 200)
         self.assertContains(start_response, self.payout.get_status_display())
-        self.assertContains(start_response, "$55")
+        self.assertContains(start_response, "$99")
 
         post_response = self.client.post(finish_url)
         self.assertEqual(post_response.status_code, 302)
