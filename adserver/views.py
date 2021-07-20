@@ -646,7 +646,7 @@ class BaseProxyView(View):
                 view_time = int(request.GET["view_time"])
                 advertisement.track_view_time(offer, view_time)
             except ValueError:
-                log.info("Invalid view time %s", request.GET["view_time"])
+                log.info("Invalid view time. view_time=%s", request.GET["view_time"])
 
         message = ignore_reason or self.success_message
         response = self.get_response(request, advertisement, publisher)
