@@ -1217,6 +1217,42 @@ class AdvertisingIntegrationTests(BaseApiTest):
             ).exists()
         )
 
+    def test_view_time(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        nonce = resp.json()["nonce"]
+
+        # Simulate an ad view and verify it was viewed
+        view_url = reverse(
+            "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
+
+        # Tracks the ad view but without any view time attached
+        resp = self.proxy_client.get(view_url)
+        self.assertEqual(resp.status_code, 200)
+
+        offer = Offer.objects.filter(
+            advertisement=self.ad,
+            publisher=self.publisher1,
+            viewed=True,
+        ).first()
+        self.assertIsNotNone(offer)
+        self.assertIsNone(offer.view_time)
+
+        time_viewed = 55
+        resp = self.proxy_client.get(view_url, {"view_time": time_viewed})
+        self.assertEqual(resp.status_code, 200)
+        offer = Offer.objects.filter(
+            advertisement=self.ad,
+            publisher=self.publisher1,
+            viewed=True,
+        ).first()
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer.view_time, time_viewed)
+
     def test_nullable_offers(self):
         self.ad.live = False
         self.ad.save()

@@ -1068,6 +1068,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         log.debug("Not recording ad view.")
         return None
 
+    def track_view_time(self, offer, view_time):
+        """Store the time the ad was in view."""
+        # Don't overwrite the Offer object here, it might have changed prior to our writing
+        if view_time > Offer.MAX_VIEW_TIME:
+            # Set a maximum allowed view time so averages aren't thrown off
+            view_time = Offer.MAX_VIEW_TIME
+        if offer.viewed and not offer.view_time and view_time > 0:
+            Offer.objects.filter(pk=offer.pk).update(view_time=view_time)
+
     def offer_ad(
         self, request, publisher, ad_type_slug, div_id, keywords, url=None, forced=False
     ):
@@ -1599,6 +1608,8 @@ class Offer(AdBase):
 
     """Contains data on ad views."""
 
+    MAX_VIEW_TIME = 5 * 60  # seconds
+
     # Use an ok user-facing pk value
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -1620,6 +1631,12 @@ class Offer(AdBase):
     # This uplifted boolean is where we track that on Offers.
     uplifted = models.BooleanField(
         _("Attribute Offer to uplift"), default=None, null=True
+    )
+
+    view_time = models.PositiveIntegerField(
+        _("Seconds that the ad was in view"),
+        default=None,
+        null=True,
     )
 
     @transaction.atomic

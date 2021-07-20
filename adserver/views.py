@@ -641,6 +641,12 @@ class BaseProxyView(View):
             advertisement.track_impression(
                 request, self.impression_type, publisher=publisher, offer=offer
             )
+        elif self.impression_type == VIEWS and "view_time" in request.GET:
+            try:
+                view_time = int(request.GET["view_time"])
+                advertisement.track_view_time(offer, view_time)
+            except ValueError:
+                log.info("Invalid view time %s", request.GET["view_time"])
 
         message = ignore_reason or self.success_message
         response = self.get_response(request, advertisement, publisher)
