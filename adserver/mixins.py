@@ -1,11 +1,14 @@
 """Mixins for advertiser and publisher views."""
+import requests
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
+from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 
 from .constants import ALL_CAMPAIGN_TYPES
@@ -60,6 +63,54 @@ class PublisherAccessMixin:
             self.request.user.is_staff
             or publisher in self.request.user.publishers.all()
         )
+
+
+class AdvertisementValidateLinkMixin:
+
+    """
+    Mixin for validating the landing page returns a 200.
+
+    Raises a warning otherwise.
+    Should only be used on a FormView.
+    """
+
+    TIMEOUT = 2  # seconds (2 seconds for reading, 2 seconds for DNS)
+
+    VALIDATE_LINK_MESSAGES = {
+        "error": _(
+            "Your link returned an error with status %s. "
+            "Unless your landing page is not live yet, this is probably a mistake."
+        ),
+        "redirect": _(
+            "Your link redirected to a page (%s) that did successfully load. "
+            "Double check that this redirect is intentional."
+        ),
+        "other_error": _(
+            "There was an error validating your landing page. "
+            "Double check that the landing page loads correctly."
+        ),
+    }
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ad = self.object
+
+        try:
+            resp = requests.get(ad.link, timeout=self.TIMEOUT)
+
+            if not resp.ok:
+                messages.warning(
+                    self.request,
+                    self.VALIDATE_LINK_MESSAGES["error"] % resp.status_code,
+                )
+            elif resp.history:
+                messages.warning(
+                    self.request, self.VALIDATE_LINK_MESSAGES["redirect"] % resp.url
+                )
+        except requests.exceptions.RequestException:
+            messages.warning(self.request, self.VALIDATE_LINK_MESSAGES["other_error"])
+
+        return result
 
 
 class ReportQuerysetMixin:
