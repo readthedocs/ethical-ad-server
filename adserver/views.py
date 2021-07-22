@@ -140,8 +140,8 @@ def do_not_track_policy(request):
 def dashboard(request):
     """The initial dashboard view."""
     if request.user.is_staff:
-        publishers = Publisher.objects.all()
-        advertisers = Advertiser.objects.all()
+        publishers = Publisher.objects.order_by("-created")
+        advertisers = Advertiser.objects.order_by("-created")
     else:
         publishers = list(request.user.publishers.all())
         advertisers = list(request.user.advertisers.all())
@@ -1748,6 +1748,9 @@ class StaffPublisherReportView(BaseReportView):
         )
         publishers = Publisher.objects.filter(id__in=impressions.values("publisher"))
 
+        if sort == "created":
+            publishers = publishers.order_by("-created")
+
         revenue_share_percentage = self.request.GET.get("revenue_share_percentage", "")
         if revenue_share_percentage:
             try:
@@ -1774,13 +1777,15 @@ class StaffPublisherReportView(BaseReportView):
 
         # Sort reports by revenue
         if publishers_and_reports and report:
-            sort_options = report.total.keys()
+            sort_options = list(report.total.keys())
             if sort and sort in sort_options:
                 publishers_and_reports = sorted(
                     publishers_and_reports,
                     key=lambda obj: obj[1].total[sort],
                     reverse=True,
                 )
+            # Add created later so we can show it in the UI, but not filter on it here
+            sort_options.append("created")
 
         total_clicks = sum(
             report.total["clicks"] for _, report in publishers_and_reports
