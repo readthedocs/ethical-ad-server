@@ -9,7 +9,7 @@
       <th class="text-right"><strong>{% trans 'Clicks' %}</strong></th>
       <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
       <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
-      {% if request.user.is_staff %}
+      {% if "adserver.staff_publisher_fields" in perms %}
         <th class="text-right staff-only"><strong>{% trans 'Our&nbsp;Rev' %}</strong></th>
         <th class="text-right staff-only"><strong>{% trans 'Total&nbsp;Rev' %}</strong></th>
         <th class="text-right staff-only"><strong>{% blocktrans %}<abbr title="Effective cost per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
@@ -27,7 +27,7 @@
         <td class="text-right">{{ result.clicks|intcomma }}</td>
         <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
         <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
-        {% if request.user.is_staff %}
+        {% if "adserver.staff_publisher_fields" in perms %}
           <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
@@ -43,7 +43,7 @@
       <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
       <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
-      {% if request.user.is_staff %}
+      {% if "adserver.staff_publisher_fields" in perms %}
         <td class="text-right"><strong>${{ report.total.our_revenue|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>

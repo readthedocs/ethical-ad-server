@@ -2,6 +2,8 @@ import datetime
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
@@ -302,6 +304,19 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, self.flight2.name)
         self.assertContains(response, self.flight3.name)
 
+        # Check staff fields not present since the permission wasn't configured
+        self.assertNotContains(response, "eCPM")
+
+        # Add the permission
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="staff_advertiser_fields",
+                content_type=ContentType.objects.get_for_model(Advertiser),
+            )
+        )
+        response = self.client.get(url)
+        self.assertContains(response, "eCPM")
+
     def test_advertiser_report_export(self):
         self.client.force_login(self.staff_user)
 
@@ -589,6 +604,19 @@ class TestReportViews(TestReportsBase):
 
         # Verify the export URL is configured
         self.assertContains(response, "CSV Export")
+
+        # Check staff fields not present since the permission wasn't configured
+        self.assertNotContains(response, "eCPM")
+
+        # Add the permission
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="staff_publisher_fields",
+                content_type=ContentType.objects.get_for_model(Publisher),
+            )
+        )
+        response = self.client.get(url)
+        self.assertContains(response, "eCPM")
 
     def test_publisher_placement_report_contents(self):
         self.client.force_login(self.staff_user)
