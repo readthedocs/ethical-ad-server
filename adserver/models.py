@@ -196,6 +196,10 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     class Meta:
         ordering = ("name",)
 
+        permissions = [
+            ("staff_publisher_fields", "Can view staff publisher fields in reports"),
+        ]
+
     def __str__(self):
         """Simple override."""
         return self.name
@@ -286,6 +290,10 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     class Meta:
         ordering = ("name",)
+
+        permissions = [
+            ("staff_advertiser_fields", "Can view staff advertiser fields in reports"),
+        ]
 
     def __str__(self):
         """Simple override."""
