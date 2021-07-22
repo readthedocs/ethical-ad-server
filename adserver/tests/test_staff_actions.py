@@ -38,6 +38,19 @@ class CreateAdvertiserTest(TestCase):
             email="staff@example.com",
         )
 
+        self.pub_group_rtd = get(
+            PublisherGroup,
+            slug="readthedocs",
+        )
+        self.pub_group_ea = get(
+            PublisherGroup,
+            slug="ethicalads-network",
+        )
+        self.pub_group_other = get(
+            PublisherGroup,
+            slug="other",
+        )
+
     def test_form(self):
         advertiser_name = "Test Advertiser"
         user_name = "User Name"
@@ -89,17 +102,25 @@ class CreateAdvertiserTest(TestCase):
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 302)
 
-        self.assertTrue(Advertiser.objects.filter(name=advertiser_name).exists())
+        # Check that an advertiser was created
+        advertiser = Advertiser.objects.filter(name=advertiser_name).first()
+        self.assertIsNotNone(advertiser)
+
+        # Check that a campaign was created for the advertiser
+        campaign = Campaign.objects.filter(advertiser=advertiser).first()
+        self.assertIsNotNone(campaign)
+
+        # Check that the campaign targets the two pub groups (readthedocs and ethicalads-network)
+        for slug in CreateAdvertiserForm.DEFAULT_TARGETED_GROUPS:
+            self.assertTrue(campaign.publisher_groups.filter(slug=slug).exists())
+        self.assertFalse(
+            campaign.publisher_groups.filter(pk=self.pub_group_other.pk).exists()
+        )
 
 
 class CreatePublisherTest(TestCase):
     def setUp(self):
         CreateAdvertiserTest.setUp(self)
-        # So there's a group to add, and test against
-        get(
-            PublisherGroup,
-            slug=CreatePublisherForm.DEFAULT_GROUP,
-        )
 
     def test_form(self):
         site = "foo.com"

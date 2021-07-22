@@ -365,6 +365,18 @@ class Campaign(TimeStampedModel, IndestructibleModel):
     def ad_count(self):
         return Advertisement.objects.filter(flight__campaign=self).count()
 
+    def allowed_ad_types(self, exclude_deprecated=False):
+        """Get the valid ad types for this campaign."""
+        queryset = AdType.objects.filter(
+            models.Q(publisher_groups=None)
+            | models.Q(  # Global ad types across all publishers
+                publisher_groups__id__in=self.publisher_groups.all().values("pk")
+            )
+        )
+        if exclude_deprecated:
+            queryset = queryset.exclude(deprecated=True)
+        return queryset
+
     def total_value(self):
         """Calculate total cost/revenue for all ads/flights in this campaign."""
         # Check for a cached value that would come from an annotated queryset
@@ -799,6 +811,16 @@ class AdType(TimeStampedModel, models.Model):
         default=False,
         help_text=_(
             "Users cannot select deprecated ad types unless an ad is already that type."
+        ),
+    )
+
+    publisher_groups = models.ManyToManyField(
+        PublisherGroup,
+        related_name="adtypes",
+        blank=True,
+        help_text=_(
+            "This is used for ad types specific to certain publishers. "
+            "By default, an ad type is global for all publishers.",
         ),
     )
 
