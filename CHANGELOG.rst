@@ -6,6 +6,25 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.33.0
+---------------
+
+We added ``noopener`` to our ad links as a security precaution.
+The other big change was to allow ad types to be publisher (group) specific.
+We already have publisher specific ad types as Read the Docs
+has a compatible but slightly different ad format from EthicalAds.
+Some possible new publishers also expressed interest.
+
+:date: July 22, 2021
+
+ * @davidfischer: Add permissions to see staff-only report fields (#419)
+ * @ericholscher: Use the right payout objects when finishing (#417)
+ * @davidfischer: Add noopener to external links (#416)
+ * @davidfischer: Raise a warning after validating landing pages (#415)
+ * @davidfischer: Publisher (group) specific ad types (#412)
+ * @davidfischer: Validate ad landing page gives a 200 (#175)
+
+
 Version v0.32.0
 ---------------
 
