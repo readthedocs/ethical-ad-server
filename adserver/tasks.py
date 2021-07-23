@@ -450,12 +450,15 @@ def notify_of_completed_flights():
 
 
 @app.task()
-def notify_of_publisher_changes():
-    """Send a notification when a publisher's main metrics change week to week."""
+def notify_of_publisher_changes(difference_threshold=0.25, min_views=1000):
+    """
+    Send a notification when a publisher's main metrics change week to week.
+
+    :param difference_threshold: Notify of differences larger than this (0.25 = 25%)
+    :param min_views: Don't notify unless there's at least this many views (between both weeks)
+    """
     a_week_ago = get_ad_day() - datetime.timedelta(days=7)
     two_weeks_ago = a_week_ago - datetime.timedelta(days=7)
-
-    difference_threshold = 0.25  # Notify of differences larger than this (0.25 = 25%)
 
     for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
         # Generate a report for the last week
@@ -478,12 +481,15 @@ def notify_of_publisher_changes():
         previous_week_report.generate()
 
         for metric in ("views", "ctr"):
+            total_views = (
+                last_week_report.total["views"] + previous_week_report.total["views"]
+            )
             last_week_value = last_week_report.total[metric]
             previous_week_value = previous_week_report.total[metric]
             if last_week_value > 0 and previous_week_value > 0:
                 metric_diff = abs((last_week_value / previous_week_value) - 1)
-                perc_diff = (last_week_value / previous_week_value) * 100
-                if metric_diff > difference_threshold:
+                perc_diff = ((last_week_value / previous_week_value) - 1) * 100
+                if metric_diff > difference_threshold and total_views >= min_views:
                     log.info(
                         "Publisher %s: %s was %s last week and %s the previous week.",
                         publisher,
