@@ -354,7 +354,7 @@ class FlightCreateForm(forms.ModelForm):
 
         while Flight.objects.filter(slug=slug).exists():
             random_char = get_random_string(1)
-            slug = slugify(f"{slug}{random_char}")
+            slug = slugify(f"{slug}-{random_char}")
 
         return slug
 
