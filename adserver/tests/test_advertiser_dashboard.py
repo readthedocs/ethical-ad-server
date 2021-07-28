@@ -216,7 +216,7 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, 302)
 
-        self.assertTrue(Flight.objects.filter(name=name).exists())
+        self.assertTrue(self.campaign.flights.filter(name=name).exists())
 
     def test_flight_update_view(self):
         url = reverse(
