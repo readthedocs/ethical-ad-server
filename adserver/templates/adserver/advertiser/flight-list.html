@@ -18,6 +18,16 @@
 <h1>{% block heading %}{% trans "Manage advertising flights" %}{% endblock heading %}</h1>
 
 
+<aside class="col text-right">
+  {% if request.user.is_staff %}
+    <a href="{% url 'flight_create' advertiser.slug %}" class="btn btn-sm btn-outline-secondary mb-3" role="button" aria-pressed="true">
+      <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+      <span>{% trans 'Create flight' %}</span>
+    </a>
+  {% endif %}
+</aside>
+
+
 {% if flights %}
   {% regroup flights by state as flight_groups %}
   {% for state, flight_list in flight_groups %}

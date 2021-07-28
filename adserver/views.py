@@ -48,6 +48,7 @@ from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID
 from .constants import VIEWS
 from .forms import AdvertisementForm
+from .forms import FlightCreateForm
 from .forms import FlightForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
@@ -258,6 +259,48 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
             Flight,
             campaign__advertiser=self.advertiser,
             slug=self.kwargs["flight_slug"],
+        )
+
+
+class FlightCreateView(StaffUserMixin, CreateView):
+
+    """Create a new flight for an advertiser."""
+
+    form_class = FlightCreateForm
+    model = Flight
+    template_name = "adserver/advertiser/flight-create.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["advertiser"] = self.advertiser
+        return kwargs
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+        messages.success(
+            self.request, _("Successfully create %(flight)s") % {"flight": flight}
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "flight_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
         )
 
 

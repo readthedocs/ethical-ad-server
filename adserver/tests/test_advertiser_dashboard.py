@@ -184,6 +184,40 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
 
+    def test_flight_create_view(self):
+        url = reverse(
+            "flight_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        # Regular user - no access
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        # Staff user required
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.advertiser.name)
+
+        name = "My new test flight"
+        data = {
+            "name": name,
+            "campaign": self.campaign.pk,
+        }
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 302)
+
+        self.assertTrue(Flight.objects.filter(name=name).exists())
+
     def test_flight_update_view(self):
         url = reverse(
             "flight_update",

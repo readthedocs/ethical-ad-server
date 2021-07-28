@@ -28,6 +28,7 @@ from django.utils.translation import ugettext_lazy as _
 from simple_history.utils import update_change_reason
 
 from .models import Advertisement
+from .models import Campaign
 from .models import Flight
 from .models import Publisher
 from .regiontopics import africa
@@ -311,6 +312,64 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
             ),
         }
+
+
+class FlightCreateForm(forms.ModelForm):
+
+    """Create a new flight for this advertiser."""
+
+    def __init__(self, *args, **kwargs):
+        """Set the flight form helper and initial data for creating a flight."""
+        if "advertiser" in kwargs:
+            self.advertiser = kwargs.pop("advertiser")
+        else:
+            raise RuntimeError("'advertiser' is required for the flight create form")
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["campaign"].queryset = Campaign.objects.filter(
+            advertiser=self.advertiser
+        )
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                "name",
+                "campaign",
+                css_class="my-3",
+            ),
+            Submit("submit", _("Create flight")),
+            HTML(
+                "<p class='form-text small text-muted'>"
+                + str(_("You will be able to edit details on the next screen"))
+                + "</p>"
+            ),
+        )
+
+    def generate_slug(self):
+        campaign_slug = self.instance.campaign.slug
+        slug = slugify(self.instance.name)
+        if not slug.startswith(campaign_slug):
+            slug = slugify(f"{campaign_slug}-{slug}")
+
+        while Flight.objects.filter(slug=slug).exists():
+            random_char = get_random_string(1)
+            slug = slugify(f"{slug}{random_char}")
+
+        return slug
+
+    def save(self, commit=True):
+        self.instance.advertiser = self.advertiser
+        self.instance.slug = self.generate_slug()
+        return super().save(commit)
+
+    class Meta:
+        model = Flight
+
+        fields = (
+            "name",
+            "campaign",
+        )
 
 
 class AdvertisementFormMixin:
