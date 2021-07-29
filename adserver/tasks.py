@@ -40,6 +40,7 @@ from .regiontopics import security_privacy
 from .regiontopics import us_ca
 from .regiontopics import wider_apac
 from .reports import PublisherReport
+from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from config.celery_app import app
@@ -488,7 +489,7 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=1000):
             previous_week_value = previous_week_report.total[metric]
             if last_week_value > 0 and previous_week_value > 0:
                 metric_diff = abs((last_week_value / previous_week_value) - 1)
-                perc_diff = ((last_week_value / previous_week_value) - 1) * 100
+                perc_diff = calculate_percent_diff(last_week_value, previous_week_value)
                 if metric_diff > difference_threshold and total_views >= min_views:
                     log.info(
                         "Publisher %s: %s was %s last week and %s the previous week.",

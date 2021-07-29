@@ -93,6 +93,14 @@ def calculate_ctr(clicks, views):
     return 0.0
 
 
+def calculate_percent_diff(value, previous):
+    """Return the percent difference [0.0, 100.0] of the given value over the previous."""
+    if previous > 0:
+        return (value / previous - 1) * 100
+
+    return 0.0
+
+
 def get_client_ip(request):
     """
     Gets the real IP based on a request object.
