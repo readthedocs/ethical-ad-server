@@ -1,6 +1,8 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -184,6 +186,49 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
 
+    def test_flight_create_view(self):
+        url = reverse(
+            "flight_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        # Regular user - no access
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        # Staff user still requires permission
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="add_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.advertiser.name)
+
+        name = "My new test flight"
+        data = {
+            "name": name,
+            "campaign": self.campaign.pk,
+        }
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 302)
+
+        self.assertTrue(self.campaign.flights.filter(name=name).exists())
+
     def test_flight_update_view(self):
         url = reverse(
             "flight_update",
@@ -203,8 +248,17 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        # Staff user required
+        # Staff user still requires permission
         self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="change_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.flight.name)

@@ -24,6 +24,7 @@ from .views import ApiTokenListView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
+from .views import FlightCreateView
 from .views import FlightDetailView
 from .views import FlightListView
 from .views import FlightUpdateView
@@ -148,6 +149,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/",
         FlightListView.as_view(),
         name="flight_list",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/create/",
+        FlightCreateView.as_view(),
+        name="flight_create",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/",
