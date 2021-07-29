@@ -37,8 +37,8 @@
       <span>{% trans 'See full report' %}</span>
     </a>
     {% if "adserver.change_flight" in perms %}
-    <a href="{% url 'flight_update' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
-      <span class="fa fa-pencil mr-1" aria-hidden="true"></span>
+    <a href="{% url 'flight_update' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">
+      <span class="fa fa-lock mr-1" aria-hidden="true"></span>
       <span>{% trans 'Edit flight' %}</span>
     </a>
     {% endif %}
