@@ -113,55 +113,36 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertEqual(len(messages), 0)
 
         # Add some views and clicks
-        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
-        get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
-        offer = get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            viewed=True,
-            clicked=True,
-        )
+        for _ in range(50):
+            get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        for _ in range(5):
+            offer = get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher,
+                viewed=True,
+                clicked=True,
+            )
 
         # Add some impressions from a week ago
         eight_days_ago = offer.date - datetime.timedelta(days=8)
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            date=eight_days_ago,
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            date=eight_days_ago,
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            date=eight_days_ago,
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            date=eight_days_ago,
-            viewed=True,
-            clicked=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher,
-            date=eight_days_ago,
-            viewed=True,
-            clicked=True,
-        )
+        for _ in range(100):
+            get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher,
+                date=eight_days_ago,
+                viewed=True,
+            )
+        for _ in range(11):
+            get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher,
+                date=eight_days_ago,
+                viewed=True,
+                clicked=True,
+            )
 
         daily_update_impressions()
         daily_update_impressions(eight_days_ago)
@@ -170,8 +151,19 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertTrue(AdImpression.objects.filter(publisher=self.publisher).exists())
 
         backend.reset_messages()
-        notify_of_publisher_changes()
+        notify_of_publisher_changes(min_views=100)
 
         # Should be 1 message: one for views with CTR being within the threshold
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1, messages)
+        self.assertTrue(
+            '"views" was 55 last week and 111 the previous week (-50.45%)'
+            in messages[0]["text"]
+        )
+
+        backend.reset_messages()
+
+        # No messages because it's below the minimum views
+        notify_of_publisher_changes(min_views=1000)
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
