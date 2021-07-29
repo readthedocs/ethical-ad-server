@@ -36,7 +36,7 @@
       <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
       <span>{% trans 'See full report' %}</span>
     </a>
-    {% if request.user.is_staff %}
+    {% if "adserver.change_flight" in perms %}
     <a href="{% url 'flight_update' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
       <span class="fa fa-pencil mr-1" aria-hidden="true"></span>
       <span>{% trans 'Edit flight' %}</span>

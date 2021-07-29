@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -60,7 +61,6 @@ from .mixins import GeoReportMixin
 from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
 from .mixins import ReportQuerysetMixin
-from .mixins import StaffUserMixin
 from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
@@ -262,12 +262,13 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
         )
 
 
-class FlightCreateView(StaffUserMixin, CreateView):
+class FlightCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
     """Create a new flight for an advertiser."""
 
     form_class = FlightCreateForm
     model = Flight
+    permission_required = "adserver.add_flight"
     template_name = "adserver/advertiser/flight-create.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -304,12 +305,13 @@ class FlightCreateView(StaffUserMixin, CreateView):
         )
 
 
-class FlightUpdateView(StaffUserMixin, UpdateView):
+class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
     """Update view for flights."""
 
     form_class = FlightForm
     model = Flight
+    permission_required = "adserver.change_flight"
     template_name = "adserver/advertiser/flight-update.html"
 
     def form_valid(self, form):

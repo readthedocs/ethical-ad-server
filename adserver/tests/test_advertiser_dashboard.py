@@ -1,6 +1,8 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -202,8 +204,17 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        # Staff user required
+        # Staff user still requires permission
         self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="add_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.advertiser.name)
@@ -237,8 +248,17 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        # Staff user required
+        # Staff user still requires permission
         self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="change_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.flight.name)

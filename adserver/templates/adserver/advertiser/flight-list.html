@@ -19,7 +19,7 @@
 
 
 <aside class="col text-right">
-  {% if request.user.is_staff %}
+  {% if "adserver.add_flight" in perms %}
     <a href="{% url 'flight_create' advertiser.slug %}" class="btn btn-sm btn-outline-secondary mb-3" role="button" aria-pressed="true">
       <span class="fa fa-plus mr-1" aria-hidden="true"></span>
       <span>{% trans 'Create flight' %}</span>
