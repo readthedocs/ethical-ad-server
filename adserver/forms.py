@@ -56,8 +56,8 @@ class FlightMixin:
 
     def clean(self):
         cleaned_data = super().clean()
-        cpc = cleaned_data.get("cpc")
-        cpm = cleaned_data.get("cpm")
+        cpc = cleaned_data.get("cpc") or 0
+        cpm = cleaned_data.get("cpm") or 0
         if cpc > 0 and cpm > 0:
             raise forms.ValidationError(_("A flight cannot have both CPC & CPM"))
 

@@ -291,6 +291,15 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(self.flight.included_state_provinces, ["CA", "NY"])
         self.assertEqual(self.flight.included_metro_codes, [205])
 
+        # Test the no existing targeting case
+        self.flight.targeting_parameters = None
+        self.flight.save()
+        data["include_countries"] = "US,CA"
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 302)
+        self.flight.refresh_from_db()
+        self.assertEqual(self.flight.included_countries, ["US", "CA"])
+
     def test_ad_detail_view(self):
         url = reverse(
             "advertisement_detail",
