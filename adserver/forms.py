@@ -56,8 +56,8 @@ class FlightMixin:
 
     def clean(self):
         cleaned_data = super().clean()
-        cpc = cleaned_data.get("cpc")
-        cpm = cleaned_data.get("cpm")
+        cpc = cleaned_data.get("cpc") or 0
+        cpm = cleaned_data.get("cpm") or 0
         if cpc > 0 and cpm > 0:
             raise forms.ValidationError(_("A flight cannot have both CPC & CPM"))
 
@@ -263,6 +263,10 @@ class FlightForm(FlightMixin, forms.ModelForm):
         return data
 
     def save(self, commit=True):
+        if not self.instance.targeting_parameters:
+            # This can happen if the flight was setup with no targeting at all
+            self.instance.targeting_parameters = {}
+
         self.instance.targeting_parameters["include_countries"] = [
             cc.strip()
             for cc in self.cleaned_data["include_countries"].split(",")
