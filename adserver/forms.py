@@ -263,6 +263,10 @@ class FlightForm(FlightMixin, forms.ModelForm):
         return data
 
     def save(self, commit=True):
+        if not self.instance.targeting_parameters:
+            # This can happen if the flight was setup with no targeting at all
+            self.instance.targeting_parameters = {}
+
         self.instance.targeting_parameters["include_countries"] = [
             cc.strip()
             for cc in self.cleaned_data["include_countries"].split(",")
