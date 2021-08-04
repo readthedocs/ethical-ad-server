@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.34.0
+---------------
+
+This release had no significant user-facing changes.
+All the changes involved staff interfaces, staff notifications,
+or documentation.
+
+:date: August 4, 2021
+
+ * @davidfischer: Fix form submission for flights with no targeting (#429)
+ * @davidfischer: Note that the prod dockerfile is unmaintained (#428)
+ * @decaffeinatedio: Update GeoIP Links (#427)
+ * @decaffeinatedio: Error when running `make dockerprod` (#426)
+ * @davidfischer: Interface to create a new flight (#425)
+ * @davidfischer: Improve difference notifications (#422)
+ * @ericholscher: Add option of `created` sort on Staff publisher report (#421)
+
+
 Version v0.33.0
 ---------------
 
