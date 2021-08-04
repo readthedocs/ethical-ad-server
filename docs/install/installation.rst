@@ -36,6 +36,11 @@ This URL is used to create links to the ad server when clicking or viewing ads.
 Building the Docker image
 -------------------------
 
+.. admonition:: Production Docker support
+
+    The process of setting up your own production installation is not supported by us.
+    The Docker image is provided as a template for your setup.
+
 Building the Docker image is only necessary if you need to heavily customize the ad server.
 To build this, you'll need to have Docker installed and you'll probably want the GeoIP database
 command ``geoipupdate`` installed and configured so that the ad server
