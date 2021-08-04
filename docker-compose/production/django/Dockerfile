@@ -1,3 +1,8 @@
+# Production Docker setup
+#
+# This Dockerfile is not currently used or maintained
+# but may be useful in setting up your own adserver instance.
+
 FROM python:3.6-alpine
 MAINTAINER Read the Docs, Inc. <support@readthedocs.org>
 
@@ -18,7 +23,10 @@ RUN apk update \
   # Add Node dependencies for building static files
   && apk add nodejs npm \
   # Ensure git is on the system - some dependencies may rely on it
-  && apk add git
+  && apk add git \
+  # Needed to build Python Cryptography on Alpine Linux
+  # https://cryptography.io/en/latest/installation.html#alpine
+  && apk add openssl-dev cargo
 
 RUN addgroup -S django \
     && adduser -S -G django django
