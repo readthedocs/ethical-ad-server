@@ -241,8 +241,8 @@ class AllReportMixin:
         # Handle filtering a larger subset of reports as needed
         # TODO: Backport similar logic to the base report class?
         kwargs = {}
-        for arg in ["keyword", "country", "publisher"]:
-            if arg in self.request.GET:
+        for arg in ["keyword", "country", "publisher", "region"]:
+            if arg in self.request.GET and self.request.GET[arg]:
                 kwargs[arg] = self.request.GET[arg]
                 filtered = arg
 

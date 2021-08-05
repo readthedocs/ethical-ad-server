@@ -24,6 +24,7 @@ from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .regiontopics import africa
@@ -83,15 +84,28 @@ def _default_filters(impression_type, start_date, end_date):
 
 
 @app.task()
-def daily_update_geos(day=None):
+def daily_update_geos(day=None, geo=True, region=True):
     """
-    Update the Geo index each day.
+    Update the Geo & region index each day.
 
     :arg day: An optional datetime object representing a day
     """
     start_date, end_date = _get_day(day)
 
-    log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
+    if not geo and not region:
+        log.error("geo or region required, please pass one as True")
+        return
+
+    if geo:
+        log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
+
+    if region:
+        log.info("Updating RegionImpressions for %s-%s", start_date, end_date)
+        # Delete all previous Region impressions
+        RegionImpression.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+        ).delete()
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
@@ -101,15 +115,42 @@ def daily_update_geos(day=None):
             .filter(total__gt=0)
             .order_by("-total")
         ):
-            impression, _ = GeoImpression.objects.get_or_create(
-                publisher_id=values["publisher"],
-                advertisement_id=values["advertisement"],
-                country=values["country"],
-                date=start_date,
-            )
-            GeoImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: values["total"]}
-            )
+            country = values["country"]
+            if geo:
+                impression, _ = GeoImpression.objects.get_or_create(
+                    publisher_id=values["publisher"],
+                    advertisement_id=values["advertisement"],
+                    country=country,
+                    date=start_date,
+                )
+                GeoImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: values["total"]}
+                )
+
+            if region:
+
+                if country in us_ca:
+                    _region = "us-ca"
+                elif country in eu_aus_nz:
+                    _region = "eu-aus-nz"
+                elif country in wider_apac:
+                    _region = "wider-apac"
+                elif country in latin_america:
+                    _region = "latin-america"
+                elif country in africa:
+                    _region = "africa"
+                else:
+                    _region = "global"
+
+                impression, _ = RegionImpression.objects.get_or_create(
+                    publisher_id=values["publisher"],
+                    advertisement_id=values["advertisement"],
+                    region=_region,
+                    date=start_date,
+                )
+                RegionImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: F(impression_type) + values["total"]}
+                )
 
 
 @app.task()

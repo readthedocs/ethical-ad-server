@@ -72,8 +72,10 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
+from .regiontopics import regions
 from .reports import AdvertiserGeoReport
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
@@ -81,6 +83,7 @@ from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
 from .reports import PublisherPlacementReport
+from .reports import PublisherRegionReport
 from .reports import PublisherRegionTopicReport
 from .reports import PublisherReport
 from .reports import PublisherUpliftReport
@@ -1944,7 +1947,7 @@ class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
 class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
 
-    """An uplift report for all publishers."""
+    """An region & topic report for all publishers."""
 
     fieldnames = ["index", "views", "clicks", "ctr"]
     impression_model = RegionTopicImpression
@@ -1959,6 +1962,26 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
         # and therefore doesn't know about campaign types
         if "campaign_types" in context:
             del context["campaign_types"]
+
+        return context
+
+
+class StaffRegionReportView(AllReportMixin, BaseReportView):
+
+    """An region report for all publishers."""
+
+    fieldnames = ["index", "views", "clicks", "ctr"]
+    impression_model = RegionImpression
+    force_revshare = 70.0
+    report = PublisherRegionReport
+    template_name = "adserver/reports/staff-regions.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["regions"] = regions
+        region = self.request.GET.get("region", "")
+        context["region"] = region
 
         return context
 

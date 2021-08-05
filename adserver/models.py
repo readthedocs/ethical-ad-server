@@ -1490,6 +1490,34 @@ class GeoImpression(BaseImpression):
         return "Geo %s of %s on %s" % (self.country, self.advertisement, self.date)
 
 
+class RegionImpression(BaseImpression):
+
+    """
+    Create an index of region geo targeting for ads.
+
+    Indexed one per ad/publisher/region per day.
+    """
+
+    region = models.CharField(_("Region"), max_length=100)
+    publisher = models.ForeignKey(
+        Publisher, related_name="region_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="region_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date", "region")
+
+    def __str__(self):
+        """Simple override."""
+        return "Region %s of %s on %s" % (self.region, self.advertisement, self.date)
+
+
 class KeywordImpression(BaseImpression):
 
     """

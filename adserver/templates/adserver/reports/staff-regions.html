@@ -1,0 +1,46 @@
+{% extends "adserver/reports/base-staff.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Staff Region Report' %}{% endblock %}
+
+
+{% block heading %}{% trans 'Staff Region Report' %}{% endblock heading %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Staff Region Report' %}</li>
+{% endblock breadcrumbs %}
+
+{% block additional_filters %}
+{{ block.super }}
+
+<div class="col-xl-3 col-md-6 col-12 mb-3">
+  <label class="col-form-label" for="id_region">{% trans 'Region' %}</label>
+  <select class="form-control" name="region" id="id_region">
+    <option value="">All Regions</option>
+    {% for name in regions %}
+      <option value="{{ name }}"{% if region == name %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% endblock additional_filters %}
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>{% trans 'About this report' %}</h3>
+  <p>
+  <em>
+  {% trans 'This is a staff-only report. "Our Rev" reports 70% for all publishers.' %}
+  </em>
+  </p>
+  <p>
+    <strong>
+      {% trans 'This report will only report 1 view for each sold ad, showing 100% of our total views.' %}
+    </strong>
+  </p>
+</section>
+{% endblock explainer %}
