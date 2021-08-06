@@ -1499,9 +1499,6 @@ class RegionImpression(BaseImpression):
     """
 
     region = models.CharField(_("Region"), max_length=100)
-    publisher = models.ForeignKey(
-        Publisher, related_name="region_impressions", on_delete=models.PROTECT
-    )
     advertisement = models.ForeignKey(
         Advertisement,
         related_name="region_impressions",
@@ -1511,7 +1508,7 @@ class RegionImpression(BaseImpression):
 
     class Meta:
         ordering = ("-date",)
-        unique_together = ("publisher", "advertisement", "date", "region")
+        unique_together = ("advertisement", "date", "region")
 
     def __str__(self):
         """Simple override."""

@@ -109,8 +109,11 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
+        value_list = ["adverisement", "country"]
+        if geo:
+            value_list.append("publisher")
         for values in (
-            queryset.values("publisher", "advertisement", "country")
+            queryset.values(*value_list)
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
@@ -143,7 +146,6 @@ def daily_update_geos(day=None, geo=True, region=True):
                     _region = "global"
 
                 impression, _ = RegionImpression.objects.get_or_create(
-                    publisher_id=values["publisher"],
                     advertisement_id=values["advertisement"],
                     region=_region,
                     date=start_date,
