@@ -315,6 +315,11 @@ class PublisherRegionReport(PublisherReport):
     model = RegionImpression
     index = "region"
     order = "-views"
+    select_related_fields = (
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+    )
 
 
 class PublisherPlacementReport(PublisherReport):
