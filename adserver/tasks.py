@@ -109,7 +109,7 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
-        value_list = ["adverisement", "country"]
+        value_list = ["advertisement", "country"]
         if geo:
             value_list.append("publisher")
         for values in (
