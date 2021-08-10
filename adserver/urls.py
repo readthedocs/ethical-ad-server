@@ -18,6 +18,7 @@ from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
 from .views import AdViewProxyView
+from .views import AdViewTimeProxyView
 from .views import ApiTokenCreateView
 from .views import ApiTokenDeleteView
 from .views import ApiTokenListView
@@ -74,6 +75,11 @@ urlpatterns = [
         r"proxy/click/<int:advertisement_id>/<str:nonce>/",
         AdClickProxyView.as_view(),
         name="click-proxy",
+    ),
+    path(
+        r"proxy/viewtime/<int:advertisement_id>/<str:nonce>/",
+        AdViewTimeProxyView.as_view(),
+        name="view-time-proxy",
     ),
     # Global reports
     # TODO: Change these URL's to staff/ -- keeping for backwards compat for now

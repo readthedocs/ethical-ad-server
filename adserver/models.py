@@ -1081,6 +1081,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             and view_time > 0
         ):
             Offer.objects.filter(pk=offer.pk).update(view_time=view_time)
+            return True
+
+        return False
 
     def offer_ad(
         self, request, publisher, ad_type_slug, div_id, keywords, url=None, forced=False
@@ -1114,6 +1117,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             reverse("view-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce})
         )
 
+        view_time_url = generate_absolute_url(
+            reverse(
+                "view-time-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce}
+            )
+        )
+
         click_url = generate_absolute_url(
             reverse("click-proxy", kwargs={"advertisement_id": self.pk, "nonce": nonce})
         )
@@ -1137,6 +1146,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "image": self.image.url if self.image else None,
             "link": click_url,
             "view_url": view_url,
+            "view_time_url": view_time_url,
             "nonce": nonce,
             "display_type": ad_type_slug,
             "campaign_type": self.flight.campaign.campaign_type,

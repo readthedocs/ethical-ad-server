@@ -1229,6 +1229,9 @@ class AdvertisingIntegrationTests(BaseApiTest):
         view_url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
         )
+        view_time_url = reverse(
+            "view-time-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+        )
 
         # Tracks the ad view but without any view time attached
         resp = self.proxy_client.get(view_url)
@@ -1242,15 +1245,22 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertIsNotNone(offer)
         self.assertIsNone(offer.view_time)
 
-        time_viewed = 55
-        resp = self.proxy_client.get(view_url, {"view_time": time_viewed})
+        # Test invalid view time
+        resp = self.proxy_client.get(view_time_url, {"view_time": "invalid"})
         self.assertEqual(resp.status_code, 200)
-        offer = Offer.objects.filter(
-            advertisement=self.ad,
-            publisher=self.publisher1,
-            viewed=True,
-        ).first()
-        self.assertIsNotNone(offer)
+        offer.refresh_from_db()
+        self.assertIsNone(offer.view_time)
+
+        resp = self.proxy_client.get(view_time_url, {"view_time": "-1"})
+        self.assertEqual(resp.status_code, 200)
+        offer.refresh_from_db()
+        self.assertIsNone(offer.view_time)
+
+        # Test valid view time
+        time_viewed = 55
+        resp = self.proxy_client.get(view_time_url, {"view_time": time_viewed})
+        self.assertEqual(resp.status_code, 200)
+        offer.refresh_from_db()
         self.assertEqual(offer.view_time, time_viewed)
 
     def test_nullable_offers(self):
