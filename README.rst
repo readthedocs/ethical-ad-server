@@ -38,8 +38,10 @@ Use our existing ad network
 ---------------------------
 
 This code is what powers our `EthicalAds network <https://www.ethicalads.io/>`_.
-If you are just looking for a way to serve ethical ads,
-we'd recommend you give our existing network a try.
+If you are looking for a way to serve ethical ads to developers,
+we highly recommend that you give our existing network a try.
+If you are interested in handling your own ads sales while serving ads ethically,
+please get in contact with us as we are currently building a solution for you!
 
 Documentation
 -------------
