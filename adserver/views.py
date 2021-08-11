@@ -678,26 +678,38 @@ class BaseProxyView(View):
     def send_to_analytics(self, request, advertisement, message):
         """A no-op by default, sublcasses may override it to send view/clicks to analytics."""
 
-    def get(self, request, advertisement_id, nonce):
-        """Handles proxying ad views and clicks and collecting metrics on them."""
-        advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
+    def get_offer(self, nonce):
         try:
             offer = Offer.objects.get(id=nonce)
-            publisher = offer.publisher
         except (ValidationError, Offer.DoesNotExist) as exception:
             log.debug("Invalid Offer. exception=%s", exception)
             offer = None
-            publisher = None
 
+        return offer
+
+    def handle_action(self, request, advertisement, offer, publisher):
+        """Handle the view or click and return a reason if it was ignored."""
         ignore_reason = self.ignore_tracking_reason(request, advertisement, offer)
 
         if not ignore_reason:
             log.log(self.log_level, self.success_message)
-            advertisement.invalidate_nonce(self.impression_type, nonce)
+            advertisement.invalidate_nonce(self.impression_type, offer.pk)
             advertisement.track_impression(
                 request, self.impression_type, publisher=publisher, offer=offer
             )
 
+        return ignore_reason
+
+    def get(self, request, advertisement_id, nonce):
+        """Handles proxying ad views and clicks and collecting metrics on them."""
+        advertisement = get_object_or_404(Advertisement, pk=advertisement_id)
+        offer = self.get_offer(nonce)
+        publisher = None
+
+        if offer:
+            publisher = offer.publisher
+
+        ignore_reason = self.handle_action(request, advertisement, offer, publisher)
         message = ignore_reason or self.success_message
         response = self.get_response(request, advertisement, publisher)
 
@@ -776,6 +788,35 @@ class AdClickProxyView(BaseProxyView):
         url = urllib.parse.urlunparse(url_parts)
 
         return HttpResponseRedirect(url)
+
+
+class AdViewTimeProxyView(AdViewProxyView):
+
+    """Track the time an ad was viewed."""
+
+    error_message = "Invalid view time"
+    success_message = "Updated view time"
+
+    def get_response(self, request, advertisement, publisher):
+        return HttpResponse(
+            "<svg><!-- View Time Proxy --></svg>", content_type="image/svg+xml"
+        )
+
+    def ignore_tracking_reason(self, request, advertisement, offer):
+        """Always update the view time - never ignore."""
+        return None
+
+    def handle_action(self, request, advertisement, offer, publisher):
+        """Handle updating the view time for this offer."""
+        if "view_time" in request.GET:
+            try:
+                view_time = int(request.GET["view_time"])
+                if advertisement.track_view_time(offer, view_time):
+                    return self.success_message
+            except ValueError:
+                log.info("Invalid view time. view_time=%s", request.GET["view_time"])
+
+        return self.error_message
 
 
 class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
