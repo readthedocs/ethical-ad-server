@@ -73,6 +73,10 @@ class CreateAdvertiserTest(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(user.advertisers.count(), 1)
 
+        # Advertiser and user exists now
+        form = CreateAdvertiserForm(data=data)
+        self.assertFalse(form.is_valid())
+
     def test_view(self):
         url = reverse("create-advertiser")
 
@@ -147,6 +151,10 @@ class CreatePublisherTest(TestCase):
         user = User.objects.filter(email=user_email).first()
         self.assertIsNotNone(user)
         self.assertEqual(user.publishers.count(), 1)
+
+        # Publisher now exists
+        form = CreatePublisherForm(data=data)
+        self.assertFalse(form.is_valid())
 
     def test_view(self):
         url = reverse("create-publisher")

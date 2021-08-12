@@ -6,7 +6,7 @@ from django.db import models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0055_adding_history'),
+        ('adserver', '0057_custom_report_field_permissions'),
     ]
 
     operations = [

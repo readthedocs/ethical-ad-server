@@ -243,13 +243,13 @@ class CreatePublisherForm(forms.Form):
             ),
         )
 
-    def clean_name(self):
-        name = self.cleaned_data["name"].strip()
+    def clean_site(self):
+        site = self.cleaned_data["site"].strip()
 
-        if Publisher.objects.filter(name=name).exists():
+        if Publisher.objects.filter(name=site).exists():
             raise forms.ValidationError(_("Publisher already exists"))
 
-        return name
+        return site
 
     def create_user(self):
         """Create the user account and send an invite email."""
