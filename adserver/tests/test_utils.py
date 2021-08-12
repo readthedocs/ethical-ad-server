@@ -10,7 +10,6 @@ from django.test.client import RequestFactory
 from django.utils import timezone
 from geoip2.errors import AddressNotFoundError
 
-from ..utils import analytics_event
 from ..utils import anonymize_ip_address
 from ..utils import anonymize_user_agent
 from ..utils import calculate_ctr
@@ -186,19 +185,3 @@ class UtilsTest(TestCase):
             parse_date_string("2020-01-01"),
             datetime.datetime(year=2020, month=1, day=1, tzinfo=pytz.utc),
         )
-
-    @override_settings(ADSERVER_ANALYTICS_ID="FAKE-XXXXX-1")
-    def test_analytics_event(self):
-        ua = (
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
-        )
-
-        with mock.patch("adserver.utils.analytical") as analytical:
-            analytical.Provider = mock.MagicMock()
-
-            analytics_event(uip="7.7.7.7", ua="")
-            analytics_event(uip="7.7.7.7", ua=ua)
-            analytics_event(param="value")
-
-            self.assertTrue(analytical.Provider.called)

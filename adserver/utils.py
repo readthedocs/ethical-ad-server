@@ -8,7 +8,6 @@ from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
 
-import analytical
 import IP2Proxy
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
@@ -39,24 +38,6 @@ GeolocationTuple = namedtuple(
 
 # Put this here so we don't reload it on each call
 COUNTRY_DICT = dict(countries)
-
-
-def analytics_event(**kwargs):
-    """Send data to analytics with celery."""
-    if settings.ADSERVER_ANALYTICS_ID:
-        ga = analytical.Provider(
-            "googleanalytics", settings.ADSERVER_ANALYTICS_ID, asynchronously=True
-        )
-        kwargs["an"] = "Ethical Ad Server"
-        kwargs["av"] = settings.ADSERVER_VERSION
-        kwargs["aip"] = "1"
-
-        if kwargs.get("uip"):
-            kwargs["uip"] = anonymize_ip_address(kwargs["uip"])
-        if kwargs.get("ua"):
-            kwargs["ua"] = anonymize_user_agent(kwargs["ua"])
-
-        ga.event(kwargs)
 
 
 def get_ad_day():
