@@ -107,14 +107,13 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         payouts = {}
 
         for publisher in queryset:
-            data = generate_publisher_payout_data(
-                publisher, include_current_report=False
-            )
 
             # Cache payout data to make running payouts faster
             data = cache.get(f"payout-{publisher.pk}")
             if not data:
-                data = generate_publisher_payout_data(publisher)
+                data = generate_publisher_payout_data(
+                    publisher, include_current_report=False
+                )
                 cache.set(f"payout-{publisher.pk}", data, self.CACHE_SECONDS)
 
             report = data.get("due_report")
