@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.35.0
+---------------
+
+The main change in this release involved the server side changes
+to store how long an ad is viewed.
+We believe this is a cool metric to show to advertisers
+and may separate us from competition and generate higher revenues for publishers.
+
+:date: August 13, 2021
+
+ * @ericholscher: Fix silly bug with Payouts (#438)
+ * @davidfischer: Minor tweaks around view time (#437)
+ * @dependabot[bot]: Bump path-parse from 1.0.6 to 1.0.7 (#436)
+ * @davidfischer: Remove server side analytics which we weren't using (#435)
+ * @davidfischer: Fix the build (#434)
+ * @decaffeinatedio: No results from decision API despite valid(?) configuration (#432)
+
+
 Version v0.34.0
 ---------------
 
