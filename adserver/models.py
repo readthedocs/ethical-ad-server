@@ -1104,6 +1104,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         if view_time > Offer.MAX_VIEW_TIME:
             # Set a maximum allowed view time so averages aren't thrown off
             view_time = Offer.MAX_VIEW_TIME
+            log.warning("View time exceeded maximum view time: view_time=%s", view_time)
         if (
             not offer.is_old()
             and offer.viewed
@@ -1113,6 +1114,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             Offer.objects.filter(pk=offer.pk).update(view_time=view_time)
             return True
 
+        log.info("View time was for an invalid view")
         return False
 
     def offer_ad(

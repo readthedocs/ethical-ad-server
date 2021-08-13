@@ -771,7 +771,12 @@ class OfferAdmin(AdBaseAdmin):
 
     model = Offer
     actions = ["refund_impressions"]
-    readonly_fields = AdBaseAdmin.readonly_fields + ("viewed", "clicked", "is_refunded")
+    readonly_fields = AdBaseAdmin.readonly_fields + (
+        "view_time",
+        "viewed",
+        "clicked",
+        "is_refunded",
+    )
     list_display = AdBaseAdmin.list_display + ("viewed", "clicked", "is_refunded")
     list_filter = AdBaseAdmin.list_filter + ("is_refunded",)
 
