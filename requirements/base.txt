@@ -43,9 +43,6 @@ IP2Proxy==3.0.0
 # Countries helper used in ad targeting
 django-countries==5.4
 
-# Server side analytics
-analytical==0.0.1
-
 jsonfield==2.0.2
 bleach==3.3.0
 

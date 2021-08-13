@@ -84,7 +84,6 @@ from .reports import PublisherPlacementReport
 from .reports import PublisherRegionTopicReport
 from .reports import PublisherReport
 from .reports import PublisherUpliftReport
-from .utils import analytics_event
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import generate_publisher_payout_data
@@ -675,9 +674,6 @@ class BaseProxyView(View):
 
         return reason
 
-    def send_to_analytics(self, request, advertisement, message):
-        """A no-op by default, sublcasses may override it to send view/clicks to analytics."""
-
     def get_offer(self, nonce):
         try:
             offer = Offer.objects.get(id=nonce)
@@ -713,8 +709,6 @@ class BaseProxyView(View):
         message = ignore_reason or self.success_message
         response = self.get_response(request, advertisement, publisher)
 
-        self.send_to_analytics(request, advertisement, message)
-
         # Add the reason for accepting or rejecting the impression to the headers
         # but only for staff or in DEBUG/TESTING
         if settings.DEBUG or settings.TESTING or request.user.is_staff:
@@ -746,27 +740,6 @@ class AdClickProxyView(BaseProxyView):
 
     impression_type = CLICKS
     success_message = "Billed click"
-
-    def send_to_analytics(self, request, advertisement, message):
-        ip_address = get_client_ip(request)
-        user_agent = get_client_user_agent(request)
-
-        event_category = "Advertisement"
-        event_label = advertisement.slug
-        event_action = message
-
-        # The event_value is in US cents (eg. for $2 CPC, the value is 200)
-        # CPMs are too small to register
-        event_value = int(advertisement.flight.cpc * 100)
-
-        analytics_event(
-            ec=event_category,
-            ea=event_action,
-            el=event_label,
-            ev=event_value,
-            ua=user_agent,
-            uip=ip_address,  # will be anonymized
-        )
 
     def get_response(self, request, advertisement, publisher):
         # Allows using variables in links such as `?utm_source=${publisher}`
