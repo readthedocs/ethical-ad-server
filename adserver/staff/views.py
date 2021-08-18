@@ -81,23 +81,24 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     A view listing all the payouts that are due in the upcoming month.
 
     Has the following arguments:
-    * all: Show all publishers, not just folks with payouts due
+    * first: Show only payouts for the first time
+    * paid: Show only payouts that have already been paid
     * publisher: Filter to a specific publisher
-    * limit: Show only up to ``limit`` publishers, mostly for testing & debugging
     """
 
     template_name = "adserver/staff/publisher-payout-list.html"
-    # Two hours should be enough to run most payouts
-    CACHE_SECONDS = 7200
+    # Cache for 24 hours so we can finish payouts
+    CACHE_SECONDS = 3600 * 24
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         limit = int(self.request.GET.get("limit", 0))
-        all_publishers = self.request.GET.get("all")
         publisher_slug = self.request.GET.get("publisher")
+        first = self.request.GET.get("first", "")
+        paid = self.request.GET.get("paid", "")
 
-        queryset = Publisher.objects.all()
+        queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
 
@@ -106,29 +107,53 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
 
         payouts = {}
 
+        today = timezone.now()
+
         for publisher in queryset:
 
+            current_payout = publisher.payouts.filter(
+                date__month=today.month,
+                date__year=today.year,
+            ).first()
+
             # Cache payout data to make running payouts faster
-            data = cache.get(f"payout-{publisher.pk}")
+            cache_key = f"payout-due-{today.year}-{today.month}-{publisher.pk}"
+            data = cache.get(cache_key)
             if not data:
                 data = generate_publisher_payout_data(
                     publisher, include_current_report=False
                 )
-                cache.set(f"payout-{publisher.pk}", data, self.CACHE_SECONDS)
+                cache.set(cache_key, data, self.CACHE_SECONDS)
 
             report = data.get("due_report")
-            if not report:
+
+            if not report and not current_payout:
                 continue
 
-            due_balance = report["total"]["revenue_share"]
-            due_str = "{:.2f}".format(due_balance)
-            ctr = report["total"]["ctr"]
-            ctr_str = "{:.2f}".format(ctr)
-
-            if (
-                due_balance < float(settings.ADSERVER_MINIMUM_PAYOUT)
-                and not all_publishers
+            if (paid == "True" and current_payout is None) or (
+                paid == "False" and current_payout is not None
             ):
+                # Filter by ``paid``, allowing for 3 states (''=all, False=not first, True=first)
+                continue
+
+            if (first == "True" and data.get("first") == False) or (
+                first == "False" and data.get("first") == True
+            ):
+                # Filter by ``first``, allowing for 3 states (''=all, False=not first, True=first)
+                continue
+
+            if report:
+                due_balance = report["total"]["revenue_share"]
+                due_str = "{:.2f}".format(due_balance)
+                ctr_str = "{:.2f}".format(report["total"]["ctr"])
+
+            else:
+                due_balance = current_payout.amount
+                due_str = "{:.2f}".format(due_balance)
+                ctr_str = "Unknown"
+
+            if due_balance < float(settings.ADSERVER_MINIMUM_PAYOUT):
+                # Skip publishers with low balance
                 continue
 
             payout_context = dict(
@@ -137,10 +162,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 **data,
             )
 
-            current_payout = publisher.payouts.filter(
-                date__month=timezone.now().month,
-                date__year=timezone.now().year,
-            ).first()
             if current_payout:
                 payout_context["payout"] = current_payout
 
@@ -162,6 +183,11 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             payouts[publisher] = payout_context
 
         context["payouts"] = payouts
+        context["first"] = first
+        context["paid"] = paid
+        context["publisher_slug"] = publisher_slug
+        context["limit"] = limit
+        context["options"] = [["", "---"], ["True", "True"], ["False", "False"]]
         return context
 
 
