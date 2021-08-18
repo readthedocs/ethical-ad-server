@@ -132,8 +132,8 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 # Filter by ``paid``, allowing for 3 states (''=all, False=not first, True=first)
                 continue
 
-            if (first == "True" and data.get("first") == False) or (
-                first == "False" and data.get("first") == True
+            if (first == "True" and not data.get("first")) or (
+                first == "False" and data.get("first")
             ):
                 # Filter by ``first``, allowing for 3 states (''=all, False=not first, True=first)
                 continue
