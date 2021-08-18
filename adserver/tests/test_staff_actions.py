@@ -231,6 +231,43 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(list_response, "<td>$70.00</td>")
         self.assertContains(list_response, "test-publisher</a></td>")
 
+    def test_list_view_filters(self):
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+
+        # Filter paid
+        list_response = self.client.get(url + "?paid=True")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, "<td>$70.00</td>")
+        self.assertNotContains(list_response, "test-publisher</a></td>")
+
+        list_response = self.client.get(url + "?paid=False")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "<td>$70.00</td>")
+        self.assertContains(list_response, "test-publisher</a></td>")
+
+        # Filter first
+        list_response = self.client.get(url + "?first=True")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, "<td>$70.00</td>")
+        self.assertNotContains(list_response, "test-publisher</a></td>")
+
+        list_response = self.client.get(url + "?first=False")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "<td>$70.00</td>")
+        self.assertContains(list_response, "test-publisher</a></td>")
+
+        # Filter publisher
+        list_response = self.client.get(url + "?publisher=foo")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, "<td>$70.00</td>")
+        self.assertNotContains(list_response, "test-publisher</a></td>")
+
+        list_response = self.client.get(url + "?publisher=test")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "<td>$70.00</td>")
+        self.assertContains(list_response, "test-publisher</a></td>")
+
     @override_settings(FRONT_TOKEN="test", FRONT_CHANNEL="test", FRONT_AUTHOR="test")
     @patch("adserver.staff.forms.requests.request")
     def test_create_view(self, mock_request):

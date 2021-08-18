@@ -93,7 +93,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        limit = int(self.request.GET.get("limit", 0))
         publisher_slug = self.request.GET.get("publisher")
         first = self.request.GET.get("first", "")
         paid = self.request.GET.get("paid", "")
@@ -101,9 +100,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
-
-        if limit:
-            queryset = queryset[:limit]
 
         payouts = {}
 
@@ -183,11 +179,11 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             payouts[publisher] = payout_context
 
         context["payouts"] = payouts
+        # Filtering options
         context["first"] = first
         context["paid"] = paid
         context["publisher_slug"] = publisher_slug
-        context["limit"] = limit
-        context["options"] = [["", "---"], ["True", "True"], ["False", "False"]]
+        context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
         return context
 
 
