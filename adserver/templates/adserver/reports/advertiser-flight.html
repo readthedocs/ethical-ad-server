@@ -35,6 +35,18 @@
     </p>
   </section>
 
+  {% if advertisements %}
+  <section class="mb-5">
+      <h2>{% trans 'Advertisement Reports'%} </h2>
+      <ul>
+      {% for ad in advertisements %}
+        <li><a href="#{{ ad.slug }}">{{ ad }}</a></li>
+      {% endfor %}
+      </ul>
+  </section>
+  {% endif %}
+
+
   <section class="mt-5">
     <div>
       <div class="row">
@@ -59,16 +71,6 @@
 
 {% block report %}
 <div>
-<section class="mb-5">
-  {% if advertisements %}
-    <h2>{% trans 'Advertisements '%} </h2>
-    <ul>
-    {% for ad in advertisements %}
-      <li><a href="#{{ ad.slug }}">{{ ad }}</a></li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-</section>
   <section>
 
     {% for ad in advertisements %}
