@@ -806,6 +806,7 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
     DEFAULT_REPORT_DAYS = 30
     LIMIT = 20
+    FILTER_COUNT = 1
     SESSION_KEY_START_DATE = "report_start_date"
     SESSION_KEY_END_DATE = "report_end_date"
     export = False
@@ -1962,6 +1963,7 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
     force_revshare = 70.0
     report = PublisherRegionTopicReport
     template_name = "adserver/reports/staff-regiontopics.html"
+    FILTER_COUNT = 2
 
     def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
         context = super().get_context_data(**kwargs)
