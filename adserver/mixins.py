@@ -236,7 +236,7 @@ class AllReportMixin:
 
         order = None
         index = None
-        filtered = None
+        filtered = []
 
         # Handle filtering a larger subset of reports as needed
         # TODO: Backport similar logic to the base report class?
@@ -244,7 +244,7 @@ class AllReportMixin:
         for arg in ["keyword", "country", "publisher", "region", "topic"]:
             if arg in self.request.GET and self.request.GET[arg]:
                 kwargs[arg] = self.request.GET[arg]
-                filtered = arg
+                filtered.append(arg)
 
         queryset = self.get_queryset(
             start_date=context["start_date"],
@@ -255,7 +255,7 @@ class AllReportMixin:
 
         # Sort by date when filtering a specific value,
         # otherwise handle sorting via the users input
-        if filtered:
+        if len(filtered) >= self.FILTER_COUNT:
             order = "-date"
             index = "date"
         elif sort:

@@ -143,6 +143,7 @@ def daily_update_geos(day=None, geo=True, region=True):
                     _region = "global"
 
                 impression, _ = RegionImpression.objects.get_or_create(
+                    publisher_id=values["publisher"],
                     advertisement_id=values["advertisement"],
                     region=_region,
                     date=start_date,
