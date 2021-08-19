@@ -1,5 +1,17 @@
 """Our targeting data for topics & regions."""
 
+topic_list = [
+    "data-science",
+    "backend-web",
+    "frontend-web",
+    "security-privacy",
+    "devops",
+    "python",
+    "game-dev",
+    "blockchain",
+    "techwriting",
+]
+
 data_science = [
     "data-science",
     "datascience",
@@ -110,11 +122,11 @@ blockchain = [
 techwriting = ["technical-writing", "sphinx", "sphinx-doc", "mkdocs"]
 
 ## Geography
-regions = [
-    "us_ca",
-    "eu_aus_nz",
-    "wider_apac",
-    "latin_america",
+region_list = [
+    "us-ca",
+    "eu-aus-nz",
+    "wider-apac",
+    "latin-america",
     "africa",
     "exclude",
     "global",

@@ -75,7 +75,8 @@ from .models import PublisherPayout
 from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
-from .regiontopics import regions
+from .regiontopics import region_list
+from .regiontopics import topic_list
 from .reports import AdvertiserGeoReport
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
@@ -841,6 +842,9 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
+        # New report data
+        region = self.request.GET.get("region", "")
+        topic = self.request.GET.get("topic", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -849,6 +853,10 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
             "start_date": start_date,
             "end_date": end_date,
             "campaign_type": campaign_type,
+            "region": region,
+            "region_list": region_list,
+            "topic": topic,
+            "topic_list": topic_list,
             "limit": self.LIMIT,
         }
 
@@ -1976,14 +1984,8 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
     report = PublisherRegionReport
     template_name = "adserver/reports/staff-regions.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
 
-        context["regions"] = regions
-        region = self.request.GET.get("region", "")
-        context["region"] = region
-
-        return context
+""
 
 
 class PublisherMainView(

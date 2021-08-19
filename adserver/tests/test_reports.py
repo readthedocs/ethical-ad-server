@@ -948,6 +948,40 @@ class TestReportViews(TestReportsBase):
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
 
+    def test_global_region_report_contents(self):
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="US", viewed=True)
+        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
+
+        # Update reporting
+        daily_update_geos()
+
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_region_report")
+
+        # All reports
+        response = self.client.get(url)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertContains(response, "us-ca")
+        self.assertNotContains(response, "wider-apac")
+
+        # Filter reports
+        response = self.client.get(url, {"region": "us-ca"})
+        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>2</strong></td>'
+        )
+        response = self.client.get(url, {"region": "eu-aus-nz"})
+        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
+
+        # Invalid country
+        response = self.client.get(url, {"region": "foobar"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+
+        # Disabled for now
+        self.assertNotContains(response, "CSV Export")
+
     def test_staff_regiontopic_report_contents(self):
         get(
             Offer,

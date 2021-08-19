@@ -109,11 +109,8 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     for impression_type in IMPRESSION_TYPES:
         queryset = _default_filters(impression_type, start_date, end_date)
-        value_list = ["advertisement", "country"]
-        if geo:
-            value_list.append("publisher")
         for values in (
-            queryset.values(*value_list)
+            queryset.values("advertisement", "country", "publisher")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
@@ -309,12 +306,13 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
         topic_mapping = defaultdict(int)
 
         for values in (
-            queryset.values("keywords", "country")
+            queryset.values("advertisement", "keywords", "country")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
             .values(
                 "keywords",
+                "advertisement",
                 "country",
                 "total",
             )
@@ -366,21 +364,18 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             # This is important because we can't query on keywords, so we have a lot of records that increment
             # the total count on the region & topic.
             for topic in topics:
-                topic_mapping[f"{region}:{topic}"] += values["total"]
-
-        for region_topic, value in topic_mapping.items():
-            region, topic = region_topic.split(":")
-            impression, _ = RegionTopicImpression.objects.get_or_create(
-                date=start_date,
-                region=region,
-                topic=topic,
-            )
-            # These are a Sum because we can't query for specific keywords from Postgres,
-            # so a specific publisher and advertisement set could return the same keyword:
-            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-            RegionTopicImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: F(impression_type) + value}
-            )
+                impression, _ = RegionTopicImpression.objects.get_or_create(
+                    date=start_date,
+                    advertisement_id=values["advertisement"],
+                    region=region,
+                    topic=topic,
+                )
+                # these are a sum because we can't query for specific keywords from postgres,
+                # so a specific publisher and advertisement set could return the same keyword:
+                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
+                RegionTopicImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: F(impression_type) + values["total"]}
+                )
 
 
 @app.task()

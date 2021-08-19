@@ -21,7 +21,7 @@
   <label class="col-form-label" for="id_region">{% trans 'Region' %}</label>
   <select class="form-control" name="region" id="id_region">
     <option value="">All Regions</option>
-    {% for name in regions %}
+    {% for name in region_list %}
       <option value="{{ name }}"{% if region == name %} selected{% endif %}>{{ name }}</option>
     {% endfor %}
   </select>
