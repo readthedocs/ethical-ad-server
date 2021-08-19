@@ -323,6 +323,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
 
             keywords = json.loads(values["keywords"])
             country = values["country"]
+            ad = values["advertisement"]
             publisher_keywords = set(keywords)
 
             topics = set()
@@ -365,18 +366,23 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             # This is important because we can't query on keywords, so we have a lot of records that increment
             # the total count on the region & topic.
             for topic in topics:
-                impression, _ = RegionTopicImpression.objects.get_or_create(
-                    date=start_date,
-                    advertisement_id=values["advertisement"],
-                    region=region,
-                    topic=topic,
-                )
-                # these are a sum because we can't query for specific keywords from postgres,
-                # so a specific publisher and advertisement set could return the same keyword:
-                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-                RegionTopicImpression.objects.filter(pk=impression.pk).update(
-                    **{impression_type: F(impression_type) + values["total"]}
-                )
+                topic_mapping[f"{ad}:{region}:{topic}"] += values["total"]
+
+        log.info(f"Saving {len(topic_mapping)} RegionImpressions")
+        for data, value in topic_mapping.items():
+            ad, region, topic = data.split(":")
+            impression, _ = RegionTopicImpression.objects.get_or_create(
+                date=start_date,
+                advertisement_id=ad,
+                region=region,
+                topic=topic,
+            )
+            # these are a sum because we can't query for specific keywords from postgres,
+            # so a specific publisher and advertisement set could return the same keyword:
+            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
+            RegionTopicImpression.objects.filter(pk=impression.pk).update(
+                **{impression_type: F(impression_type) + values["total"]}
+            )
 
 
 @app.task()
