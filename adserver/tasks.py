@@ -161,7 +161,7 @@ def daily_update_geos(day=None, geo=True, region=True):
                 date=start_date,
             )
             RegionImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: F(impression_type) + values["total"]}
+                **{impression_type: F(impression_type) + value}
             )
 
 
