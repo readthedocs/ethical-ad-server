@@ -107,9 +107,8 @@ def daily_update_geos(day=None, geo=True, region=True):
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         ).delete()
 
-    topic_mapping = defaultdict(int)
-
     for impression_type in IMPRESSION_TYPES:
+        topic_mapping = defaultdict(int)
         queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
             queryset.values("advertisement", "country", "publisher")
@@ -313,10 +312,8 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
     ).delete()
 
     for impression_type in IMPRESSION_TYPES:
-        queryset = _default_filters(impression_type, start_date, end_date)
-
         topic_mapping = defaultdict(int)
-
+        queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
             queryset.values("advertisement", "keywords", "country")
             .annotate(total=Count("country"))
