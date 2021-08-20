@@ -128,6 +128,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.helper.layout = Layout(
             Fieldset(
                 "",
+                Field("name"),
                 Div(
                     Div("start_date", css_class="form-group col-lg-6"),
                     Div("end_date", css_class="form-group col-lg-6"),
@@ -164,6 +165,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                                 """
                                 <ul class="list-inline">
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">US / Canada</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">US / CA / EU / AU / NZ</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">EU / AU / NZ</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">APAC</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">Latin America</a></li>
@@ -171,6 +173,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                                 </ul>
                             """,
                                 ", ".join(us_ca),
+                                ", ".join(us_ca + eu_aus_nz),
                                 ", ".join(eu_aus_nz),
                                 ", ".join(wider_apac),
                                 ", ".join(latin_america),
@@ -188,6 +191,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                                 """
                                 <ul class="list-inline">
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">US / Canada</a></li>
+                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">US / CA / EU / AU / NZ</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">EU / AU / NZ</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">APAC</a></li>
                                     <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Latin America</a></li>
@@ -196,6 +200,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                                 </ul>
                             """,
                                 ", ".join(us_ca),
+                                ", ".join(us_ca + eu_aus_nz),
                                 ", ".join(eu_aus_nz),
                                 ", ".join(wider_apac),
                                 ", ".join(latin_america),
@@ -256,7 +261,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
         return data
 
     def clean_include_keywords(self):
-        data = self.cleaned_data["include_keywords"]
+        data = self.cleaned_data["include_keywords"].lower()
         include_keywords = [kw.strip() for kw in data.split(",") if len(kw.strip()) > 0]
         if include_keywords:
             TargetingParametersValidator()({"include_keywords": include_keywords})
@@ -300,6 +305,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
         model = Flight
 
         fields = (
+            "name",
             "start_date",
             "end_date",
             "live",
