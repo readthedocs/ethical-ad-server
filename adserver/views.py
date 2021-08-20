@@ -1965,16 +1965,6 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
     template_name = "adserver/reports/staff-regiontopics.html"
     FILTER_COUNT = 2
 
-    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
-        context = super().get_context_data(**kwargs)
-
-        # The regiontopic index does not link to advertisements
-        # and therefore doesn't know about campaign types
-        if "campaign_types" in context:
-            del context["campaign_types"]
-
-        return context
-
 
 class StaffRegionReportView(AllReportMixin, BaseReportView):
 
@@ -1985,9 +1975,6 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
     force_revshare = 70.0
     report = PublisherRegionReport
     template_name = "adserver/reports/staff-regions.html"
-
-
-""
 
 
 class PublisherMainView(

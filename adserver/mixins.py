@@ -1,4 +1,6 @@
 """Mixins for advertiser and publisher views."""
+import logging
+
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +17,8 @@ from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class StaffUserMixin(UserPassesTestMixin):
@@ -156,6 +160,10 @@ class ReportQuerysetMixin:
             queryset = queryset.filter(
                 advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
             )
+        if "region" in kwargs and kwargs["region"]:
+            queryset = queryset.filter(region=kwargs["region"])
+        if "topic" in kwargs and kwargs["topic"]:
+            queryset = queryset.filter(topic=kwargs["topic"])
 
         return queryset
 
@@ -245,6 +253,7 @@ class AllReportMixin:
             if arg in self.request.GET and self.request.GET[arg]:
                 kwargs[arg] = self.request.GET[arg]
                 filtered.append(arg)
+        log.info(f"Filtering report by {kwargs}")
 
         queryset = self.get_queryset(
             start_date=context["start_date"],

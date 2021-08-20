@@ -33,7 +33,7 @@
         <h2 class="col-md-8">{% trans 'Results' %}</h2>
         {% if filtered %}
         <h5 class="col-md-8">
-         {% blocktrans %}filtered by <code>{{ ", "|join:filtered }}</code>{% endblocktrans %}
+         {% blocktrans with filter=filtered|join:"," %}filtered by <code>{{ filter }}</code>{% endblocktrans %}
         </h5>
         {% endif %}
 

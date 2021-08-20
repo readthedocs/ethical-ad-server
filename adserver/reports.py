@@ -372,7 +372,12 @@ class PublisherRegionTopicReport(PublisherReport):
     model = RegionTopicImpression
     index = "topic"
     order = "-views"
-    select_related_fields = ()
+    select_related_fields = (
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+        "advertisement__flight__campaign__advertiser",
+    )
 
     def getter(self, data):  # pylint: disable=method-hidden
         """Show both region & topic in the index."""
