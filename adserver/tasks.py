@@ -451,7 +451,7 @@ def notify_of_completed_flights():
 
 
 @app.task()
-def notify_of_publisher_changes(difference_threshold=0.25, min_views=1000):
+def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
     """
     Send a notification when a publisher's main metrics change week to week.
 
