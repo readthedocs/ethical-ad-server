@@ -96,6 +96,7 @@ def daily_update_geos(day=None, geo=True, region=True):
         log.error("geo or region required, please pass one as True")
         return
 
+    # TODO: Delete the GeoImpression, once we're happy with RegionImpression's
     if geo:
         log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
 
@@ -143,25 +144,30 @@ def daily_update_geos(day=None, geo=True, region=True):
                 else:
                     _region = "global"
 
-            publisher = values["publisher"]
-            advertisement = values["advertisement"]
-            topic_mapping[f"{advertisement}:{publisher}:{region}"] += values["total"]
+                publisher = values["publisher"]
+                advertisement = values["advertisement"]
+                topic_mapping[f"{advertisement}:{publisher}:{_region}"] += values[
+                    "total"
+                ]
 
-        log.info("Saving %s RegionImpressions: %s", len(topic_mapping), impression_type)
-        for data, value in topic_mapping.items():
-            ad, publisher, _region = data.split(":")
-            # Handle the conversion of None
-            if ad == "None":
-                ad = None
-            impression, _ = RegionImpression.objects.get_or_create(
-                publisher_id=publisher,
-                advertisement_id=ad,
-                region=_region,
-                date=start_date,
+        if region:
+            log.info(
+                "Saving %s RegionImpressions: %s", len(topic_mapping), impression_type
             )
-            RegionImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: F(impression_type) + value}
-            )
+            for data, value in topic_mapping.items():
+                ad, publisher, _region = data.split(":")
+                # Handle the conversion of None
+                if ad == "None":
+                    ad = None
+                impression, _ = RegionImpression.objects.get_or_create(
+                    publisher_id=publisher,
+                    advertisement_id=ad,
+                    region=_region,
+                    date=start_date,
+                )
+                RegionImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: F(impression_type) + value}
+                )
 
 
 @app.task()

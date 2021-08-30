@@ -963,8 +963,8 @@ class TestReportViews(TestReportsBase):
         # All reports
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
-        self.assertContains(response, "us-ca")
-        self.assertNotContains(response, "wider-apac")
+        self.assertContains(response, "<td>us-ca</td>")
+        self.assertNotContains(response, "<td>wider-apac</td>")
 
         # Filter reports
         response = self.client.get(url, {"region": "us-ca"})
