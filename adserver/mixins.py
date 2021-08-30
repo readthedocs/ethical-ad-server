@@ -262,9 +262,11 @@ class AllReportMixin:
             **kwargs,
         )
 
-        # Sort by date when filtering a specific value,
-        # otherwise handle sorting via the users input
+        # The FILTER_COUNT is required for indexes that have multiple indexes (region & topic),
+        # so that we can properly show the values for a single-index filter (eg. only by region or topic)
         if len(filtered) >= self.FILTER_COUNT:
+            # Sort by date when filtering a specific value,
+            # otherwise handle sorting via the users input
             order = "-date"
             index = "date"
         elif sort:
