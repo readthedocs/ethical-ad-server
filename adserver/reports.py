@@ -381,4 +381,7 @@ class PublisherRegionTopicReport(PublisherReport):
 
     def getter(self, data):  # pylint: disable=method-hidden
         """Show both region & topic in the index."""
-        return f"{data.region}:{data.topic}"
+        if self.index != "date":
+            return f"{data.region}:{data.topic}"
+        # Fallback if not used
+        return operator.attrgetter(self.index)(data)

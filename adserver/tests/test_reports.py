@@ -1012,7 +1012,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["python"],
-            country="US",
+            country="FR",
             viewed=True,
             clicked=True,
         )
@@ -1027,7 +1027,36 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
         self.assertContains(response, "us-ca:frontend")
-        self.assertContains(response, "us-ca:python")
+        self.assertContains(response, "eu-aus-nz:python")
+        self.assertNotContains(response, "us-ca:python")
+
+        # Filter reports
+        response = self.client.get(url, {"region": "us-ca"})
+        self.assertContains(response, "<td>us-ca:frontend")
+        self.assertNotContains(response, "<td>eu-aus-nz")
+
+        response = self.client.get(url, {"region": "eu-aus-nz"})
+        self.assertContains(response, "<td>eu-aus-nz:python")
+        self.assertNotContains(response, "<td>us-ca:python")
+
+        response = self.client.get(url, {"topic": "python"})
+        self.assertContains(response, "<td>eu-aus-nz:python")
+        self.assertNotContains(response, "<td>us-ca:backend-web")
+
+        response = self.client.get(url, {"topic": "python"})
+        self.assertContains(response, "<td>eu-aus-nz:python")
+        self.assertNotContains(response, "<td>us-ca:frontend-web")
+
+        # 2 filters lead to a date-based view
+        response = self.client.get(url, {"topic": "frontend-web", "region": "us-ca"})
+        self.assertContains(
+            response, "<td>%s" % datetime.datetime.utcnow().strftime("%b")
+        )
+        self.assertNotContains(response, "<td>us-ca:frontend-web")
+
+        # Invalid country
+        response = self.client.get(url, {"region": "foobar"})
+        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
         # Disabled for now
         self.assertNotContains(response, "CSV Export")
