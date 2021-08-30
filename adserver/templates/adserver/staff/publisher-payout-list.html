@@ -10,8 +10,45 @@
   <li class="breadcrumb-item active">{% trans 'Publisher Payouts' %}</li>
 {% endblock breadcrumbs %}
 
-
 {% block content_container %}
+
+  {% block filters %}
+    <section class="mb-5">
+      <div>
+        <form method="get">
+          <div class="form-row">
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_first">{% trans 'First' %}</label>
+              <select class="form-control" name="first" id="id_first">
+                {% for option, name in boolean_options %}
+                  <option value="{{ option }}"{% if first == option %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_paid">{% trans 'Paid' %}</label>
+              <select class="form-control" name="paid" id="id_paid">
+                {% for option, name in boolean_options %}
+                  <option value="{{ option }}"{% if paid == option %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_publisher">{% trans 'Publisher' %}</label>
+              <input type="text" id="id_publisher" class="form-control text-monospace" name="publisher" value="{{ publisher_slug }}"><br><br>
+            </div>
+
+          </div>
+
+          <button class="btn btn-primary" type="submit">{% trans 'Filter report' %}</button>
+        </form>
+      </div>
+    </section>
+  {% endblock filters %}
+
 
   <div class="row">
     <table class="table table-hover">

@@ -661,6 +661,7 @@ class PublisherSettingsForm(forms.ModelForm):
                     Field("paypal_email", placeholder="you@yourdomain.com"),
                     data_bind="visible: (payoutMethod() == 'paypal')",
                 ),
+                "skip_payouts",
                 css_class="my-3",
             ),
             Fieldset(
@@ -704,9 +705,11 @@ class PublisherSettingsForm(forms.ModelForm):
             "payout_method",
             "open_collective_name",
             "paypal_email",
+            "skip_payouts",
             "allow_affiliate_campaigns",
             "allow_community_campaigns",
             "allow_house_campaigns",
+            "record_placements",
             "record_placements",
         ]
 
