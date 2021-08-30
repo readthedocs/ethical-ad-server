@@ -253,7 +253,7 @@ class AllReportMixin:
             if arg in self.request.GET and self.request.GET[arg]:
                 kwargs[arg] = self.request.GET[arg]
                 filtered.append(arg)
-        log.info(f"Filtering report by {kwargs}")
+        log.debug("Filtering report by %s", kwargs)
 
         queryset = self.get_queryset(
             start_date=context["start_date"],

@@ -147,7 +147,7 @@ def daily_update_geos(day=None, geo=True, region=True):
             advertisement = values["advertisement"]
             topic_mapping[f"{advertisement}:{publisher}:{region}"] += values["total"]
 
-        log.info(f"Saving {len(topic_mapping)} RegionImpressions: {impression_type}")
+        log.info("Saving %s RegionImpressions: %s", len(topic_mapping), impression_type)
         for data, value in topic_mapping.items():
             ad, publisher, _region = data.split(":")
             # Handle the conversion of None
@@ -372,9 +372,8 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
                 topic_mapping[f"{ad}:{region}:{topic}"] += values["total"]
 
         log.info(
-            f"Saving {len(topic_mapping)} RegionTopicImpressions: {impression_type}"
+            "Saving %s RegionTopicImpressions: %s", len(topic_mapping), impression_type
         )
-        log.info(f"{topic_mapping}")
         for data, value in topic_mapping.items():
             ad, region, topic = data.split(":")
             # Handle the conversion of
