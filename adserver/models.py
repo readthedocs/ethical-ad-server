@@ -143,6 +143,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     )
 
     # Payout information
+    skip_payouts = models.BooleanField(
+        _("Skip payouts"),
+        default=False,
+        help_text=_(
+            "Enable this to temporarily disable payouts. They will be processed again once you uncheck this."
+        ),
+    )
     payout_method = models.CharField(
         max_length=100,
         choices=PUBLISHER_PAYOUT_METHODS,

@@ -38,7 +38,7 @@
 
   <dt>{% trans 'Action' %}</dt>
   <dd>
-  {% if payout.status == 'emailed' %}
+  {% if payout.status == 'emailed' and payout.publisher.payout_url %}
   <a href="{{ payout.publisher.payout_url }}" class="button">{% trans "Send Money" %}</a>
   {% endif %}
   </dd>

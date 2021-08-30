@@ -35,6 +35,18 @@
     </p>
   </section>
 
+  {% if advertisements %}
+  <section class="mb-5">
+      <h2>{% trans 'Advertisement Reports'%} </h2>
+      <ul>
+      {% for ad in advertisements %}
+        <li><a href="#{{ ad.slug }}">{{ ad }}</a></li>
+      {% endfor %}
+      </ul>
+  </section>
+  {% endif %}
+
+
   <section class="mt-5">
     <div>
       <div class="row">
@@ -56,6 +68,7 @@
 {% endblock summary %}
 
 
+
 {% block report %}
 <div>
   <section>
@@ -64,7 +77,7 @@
 
       <hr class="my-4">
 
-      <h4>
+      <h4 id="{{ ad.slug }}">
         <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">{% trans 'Advertisement' %}: {{ ad.name }}</a>
         {% if not ad.live %}<span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="{% trans 'This ad is disabled' %}"></span>{% endif %}
       </h4>
