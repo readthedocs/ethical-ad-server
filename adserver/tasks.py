@@ -84,7 +84,9 @@ def _default_filters(impression_type, start_date, end_date):
 
 
 @app.task()
-def daily_update_geos(day=None, geo=True, region=True):
+def daily_update_geos(
+    day=None, geo=True, region=True
+):  # pylint: disable=too-many-branches
     """
     Update the Geo & region index each day.
 
