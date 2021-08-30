@@ -806,7 +806,7 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
     DEFAULT_REPORT_DAYS = 30
     LIMIT = 20
-    FILTER_COUNT = 1
+    FILTER_COUNT = 1  # More than 2 for indexes that have multiple displayed values
     SESSION_KEY_START_DATE = "report_start_date"
     SESSION_KEY_END_DATE = "report_end_date"
     export = False
@@ -1963,7 +1963,7 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
     force_revshare = 70.0
     report = PublisherRegionTopicReport
     template_name = "adserver/reports/staff-regiontopics.html"
-    FILTER_COUNT = 2
+    FILTER_COUNT = 2  # Needs to be 2, so that we can filter by just region or topic, and get proper values back
 
 
 class StaffRegionReportView(AllReportMixin, BaseReportView):
