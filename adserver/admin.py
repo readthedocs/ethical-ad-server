@@ -31,6 +31,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherPayout
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .models import View
@@ -863,6 +864,20 @@ class PublisherGroupAdmin(SimpleHistoryAdmin):
     readonly_fields = ("modified", "created")
 
 
+class RegionAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "__str__",
+        "date",
+        "views",
+        "clicks",
+        "offers",
+        "decisions",
+        "modified",
+        "created",
+    )
+    list_display = readonly_fields
+
+
 class RegionTopicAdmin(admin.ModelAdmin):
     readonly_fields = (
         "__str__",
@@ -897,3 +912,4 @@ if settings.DEBUG:
     admin.site.register(PlacementImpression, PlacementImpressionAdmin)
     admin.site.register(KeywordImpression, KeywordImpressionAdmin)
     admin.site.register(RegionTopicImpression, RegionTopicAdmin)
+    admin.site.register(RegionImpression, RegionAdmin)

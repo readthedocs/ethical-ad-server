@@ -45,6 +45,7 @@ from .views import StaffAdvertiserReportView
 from .views import StaffGeoReportView
 from .views import StaffKeywordReportView
 from .views import StaffPublisherReportView
+from .views import StaffRegionReportView
 from .views import StaffRegionTopicReportView
 from .views import StaffUpliftReportView
 
@@ -100,6 +101,11 @@ urlpatterns = [
         name="staff_keyword_report",
     ),
     path(r"staff/report/geos/", StaffGeoReportView.as_view(), name="staff_geo_report"),
+    path(
+        r"staff/report/regions/",
+        StaffRegionReportView.as_view(),
+        name="staff_region_report",
+    ),
     path(
         r"staff/report/regiontopics/",
         StaffRegionTopicReportView.as_view(),

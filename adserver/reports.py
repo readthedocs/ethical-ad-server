@@ -9,6 +9,7 @@ from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .utils import calculate_ctr
@@ -307,6 +308,20 @@ class PublisherGeoReport(PublisherReport):
         return super().get_index_display(index)
 
 
+class PublisherRegionReport(PublisherReport):
+
+    """Report to breakdown publisher performance by country."""
+
+    model = RegionImpression
+    index = "region"
+    order = "-views"
+    select_related_fields = (
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+    )
+
+
 class PublisherPlacementReport(PublisherReport):
 
     """Report to breakdown publisher performance by placement (<div>'s, ad type)."""
@@ -357,8 +372,16 @@ class PublisherRegionTopicReport(PublisherReport):
     model = RegionTopicImpression
     index = "topic"
     order = "-views"
-    select_related_fields = ()
+    select_related_fields = (
+        "advertisement",
+        "advertisement__flight",
+        "advertisement__flight__campaign",
+        "advertisement__flight__campaign__advertiser",
+    )
 
     def getter(self, data):  # pylint: disable=method-hidden
         """Show both region & topic in the index."""
-        return f"{data.region}:{data.topic}"
+        if self.index != "date":
+            return f"{data.region}:{data.topic}"
+        # Fallback if not used
+        return operator.attrgetter(self.index)(data)

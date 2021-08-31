@@ -72,8 +72,11 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
+from .regiontopics import region_list
+from .regiontopics import topic_list
 from .reports import AdvertiserGeoReport
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
@@ -81,6 +84,7 @@ from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
 from .reports import PublisherPlacementReport
+from .reports import PublisherRegionReport
 from .reports import PublisherRegionTopicReport
 from .reports import PublisherReport
 from .reports import PublisherUpliftReport
@@ -802,6 +806,7 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
     DEFAULT_REPORT_DAYS = 30
     LIMIT = 20
+    FILTER_COUNT = 1  # More than 2 for indexes that have multiple displayed values
     SESSION_KEY_START_DATE = "report_start_date"
     SESSION_KEY_END_DATE = "report_end_date"
     export = False
@@ -838,6 +843,9 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
         campaign_type = self.request.GET.get("campaign_type", "")
+        # New report data
+        region = self.request.GET.get("region", "")
+        topic = self.request.GET.get("topic", "")
 
         if end_date and end_date < start_date:
             end_date = None
@@ -846,6 +854,10 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
             "start_date": start_date,
             "end_date": end_date,
             "campaign_type": campaign_type,
+            "region": region,
+            "region_list": region_list,
+            "topic": topic,
+            "topic_list": topic_list,
             "limit": self.LIMIT,
         }
 
@@ -1944,23 +1956,25 @@ class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
 class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
 
-    """An uplift report for all publishers."""
+    """An region & topic report for all publishers."""
 
     fieldnames = ["index", "views", "clicks", "ctr"]
     impression_model = RegionTopicImpression
     force_revshare = 70.0
     report = PublisherRegionTopicReport
     template_name = "adserver/reports/staff-regiontopics.html"
+    FILTER_COUNT = 2  # Needs to be 2, so that we can filter by just region or topic, and get proper values back
 
-    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
-        context = super().get_context_data(**kwargs)
 
-        # The regiontopic index does not link to advertisements
-        # and therefore doesn't know about campaign types
-        if "campaign_types" in context:
-            del context["campaign_types"]
+class StaffRegionReportView(AllReportMixin, BaseReportView):
 
-        return context
+    """An region report for all publishers."""
+
+    fieldnames = ["index", "views", "clicks", "ctr"]
+    impression_model = RegionImpression
+    force_revshare = 70.0
+    report = PublisherRegionReport
+    template_name = "adserver/reports/staff-regions.html"
 
 
 class PublisherMainView(

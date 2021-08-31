@@ -1,4 +1,6 @@
 """Mixins for advertiser and publisher views."""
+import logging
+
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +17,8 @@ from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class StaffUserMixin(UserPassesTestMixin):
@@ -156,6 +160,10 @@ class ReportQuerysetMixin:
             queryset = queryset.filter(
                 advertisement__flight__campaign__campaign_type=kwargs["campaign_type"]
             )
+        if "region" in kwargs and kwargs["region"]:
+            queryset = queryset.filter(region=kwargs["region"])
+        if "topic" in kwargs and kwargs["topic"]:
+            queryset = queryset.filter(topic=kwargs["topic"])
 
         return queryset
 
@@ -236,15 +244,16 @@ class AllReportMixin:
 
         order = None
         index = None
-        filtered = None
+        filtered = []
 
         # Handle filtering a larger subset of reports as needed
         # TODO: Backport similar logic to the base report class?
         kwargs = {}
-        for arg in ["keyword", "country", "publisher"]:
-            if arg in self.request.GET:
+        for arg in ["keyword", "country", "publisher", "region", "topic"]:
+            if arg in self.request.GET and self.request.GET[arg]:
                 kwargs[arg] = self.request.GET[arg]
-                filtered = arg
+                filtered.append(arg)
+        log.debug("Filtering report by %s", kwargs)
 
         queryset = self.get_queryset(
             start_date=context["start_date"],
@@ -253,9 +262,11 @@ class AllReportMixin:
             **kwargs,
         )
 
-        # Sort by date when filtering a specific value,
-        # otherwise handle sorting via the users input
-        if filtered:
+        # The FILTER_COUNT is required for indexes that have multiple indexes (region & topic),
+        # so that we can properly show the values for a single-index filter (eg. only by region or topic)
+        if len(filtered) >= self.FILTER_COUNT:
+            # Sort by date when filtering a specific value,
+            # otherwise handle sorting via the users input
             order = "-date"
             index = "date"
         elif sort:

@@ -14,6 +14,30 @@
   <li class="breadcrumb-item active">{% trans 'Staff Region & Topic Report' %}</li>
 {% endblock breadcrumbs %}
 
+{% block additional_filters %}
+{{ block.super }}
+
+<div class="col-xl-3 col-md-6 col-12 mb-3">
+  <label class="col-form-label" for="id_region">{% trans 'Region' %}</label>
+  <select class="form-control" name="region" id="id_region">
+    <option value="">All Regions</option>
+    {% for name in region_list %}
+      <option value="{{ name }}"{% if region == name %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="col-xl-3 col-md-6 col-12 mb-3">
+  <label class="col-form-label" for="id_topic">{% trans 'Topic' %}</label>
+  <select class="form-control" name="topic" id="id_topic">
+    <option value="">All Topics</option>
+    {% for name in topic_list %}
+      <option value="{{ name }}"{% if topic == name %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% endblock additional_filters %}
+
 {% block explainer %}
 <section class="mb-5">
   <h3>{% trans 'About this report' %}</h3>

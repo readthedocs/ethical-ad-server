@@ -24,6 +24,7 @@ from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .regiontopics import africa
@@ -83,33 +84,92 @@ def _default_filters(impression_type, start_date, end_date):
 
 
 @app.task()
-def daily_update_geos(day=None):
+def daily_update_geos(
+    day=None, geo=True, region=True
+):  # pylint: disable=too-many-branches
     """
-    Update the Geo index each day.
+    Update the Geo & region index each day.
 
     :arg day: An optional datetime object representing a day
     """
     start_date, end_date = _get_day(day)
 
-    log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
+    if not geo and not region:
+        log.error("geo or region required, please pass one as True")
+        return
+
+    # TODO: Delete the GeoImpression, once we're happy with RegionImpression's
+    if geo:
+        log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
+
+    if region:
+        log.info("Updating RegionImpressions for %s-%s", start_date, end_date)
+        # Delete all previous Region impressions
+        RegionImpression.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+        ).delete()
 
     for impression_type in IMPRESSION_TYPES:
+        topic_mapping = defaultdict(int)
         queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
-            queryset.values("publisher", "advertisement", "country")
+            queryset.values("advertisement", "country", "publisher")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
         ):
-            impression, _ = GeoImpression.objects.get_or_create(
-                publisher_id=values["publisher"],
-                advertisement_id=values["advertisement"],
-                country=values["country"],
-                date=start_date,
+            country = values["country"]
+            if geo:
+                impression, _ = GeoImpression.objects.get_or_create(
+                    publisher_id=values["publisher"],
+                    advertisement_id=values["advertisement"],
+                    country=country,
+                    date=start_date,
+                )
+                GeoImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: values["total"]}
+                )
+
+            if region:
+
+                if country in us_ca:
+                    _region = "us-ca"
+                elif country in eu_aus_nz:
+                    _region = "eu-aus-nz"
+                elif country in wider_apac:
+                    _region = "wider-apac"
+                elif country in latin_america:
+                    _region = "latin-america"
+                elif country in africa:
+                    _region = "africa"
+                else:
+                    _region = "global"
+
+                publisher = values["publisher"]
+                advertisement = values["advertisement"]
+                topic_mapping[f"{advertisement}:{publisher}:{_region}"] += values[
+                    "total"
+                ]
+
+        if region:
+            log.info(
+                "Saving %s RegionImpressions: %s", len(topic_mapping), impression_type
             )
-            GeoImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: values["total"]}
-            )
+            for data, value in topic_mapping.items():
+                ad, publisher, _region = data.split(":")
+                # Handle the conversion of None
+                if ad == "None":
+                    ad = None
+                impression, _ = RegionImpression.objects.get_or_create(
+                    publisher_id=publisher,
+                    advertisement_id=ad,
+                    region=_region,
+                    date=start_date,
+                )
+                RegionImpression.objects.filter(pk=impression.pk).update(
+                    **{impression_type: F(impression_type) + value}
+                )
 
 
 @app.task()
@@ -256,31 +316,25 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
 
     # Remove all old impressions, because they are cumulative
     RegionTopicImpression.objects.filter(
-        date__gte=start_date,
-        date__lt=end_date,
+        date__gte=start_date, date__lt=end_date
     ).delete()
 
     for impression_type in IMPRESSION_TYPES:
-        queryset = _default_filters(impression_type, start_date, end_date)
-
         topic_mapping = defaultdict(int)
-
+        queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
-            queryset.values("keywords", "country")
+            queryset.values("advertisement", "keywords", "country")
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
-            .values(
-                "keywords",
-                "country",
-                "total",
-            )
+            .values("keywords", "advertisement", "country", "total")
         ):
             if not (values["keywords"] and values["country"]):
                 continue
 
             keywords = json.loads(values["keywords"])
             country = values["country"]
+            ad = values["advertisement"]
             publisher_keywords = set(keywords)
 
             topics = set()
@@ -323,16 +377,20 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             # This is important because we can't query on keywords, so we have a lot of records that increment
             # the total count on the region & topic.
             for topic in topics:
-                topic_mapping[f"{region}:{topic}"] += values["total"]
+                topic_mapping[f"{ad}:{region}:{topic}"] += values["total"]
 
-        for region_topic, value in topic_mapping.items():
-            region, topic = region_topic.split(":")
+        log.info(
+            "Saving %s RegionTopicImpressions: %s", len(topic_mapping), impression_type
+        )
+        for data, value in topic_mapping.items():
+            ad, region, topic = data.split(":")
+            # Handle the conversion of
+            if ad == "None":
+                ad = None
             impression, _ = RegionTopicImpression.objects.get_or_create(
-                date=start_date,
-                region=region,
-                topic=topic,
+                date=start_date, advertisement_id=ad, region=region, topic=topic
             )
-            # These are a Sum because we can't query for specific keywords from Postgres,
+            # these are a sum because we can't query for specific keywords from postgres,
             # so a specific publisher and advertisement set could return the same keyword:
             # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
             RegionTopicImpression.objects.filter(pk=impression.pk).update(
@@ -433,8 +491,7 @@ def notify_of_completed_flights():
             flight.clicks_remaining() == 0
             and flight.views_remaining() == 0
             and AdImpression.objects.filter(
-                date__gte=cutoff,
-                advertisement__flight=flight,
+                date__gte=cutoff, advertisement__flight=flight
             ).exists()
         ):
             log.info("Flight %s finished in the last day.", flight)
