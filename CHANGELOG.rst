@@ -6,6 +6,25 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.36.0
+---------------
+
+The big change in this release was to revamp our reporting
+to be more focused on topic and region rather than
+individual keywords and countries/regions.
+This should make be much faster than the previous geo and keyword
+reports which will be phased out.
+
+:date: August 31, 2021
+
+ * @davidfischer: More tweaks to publisher notifications (#444)
+ * @ericholscher: Add "Stay updated" to the top of the payout email (#442)
+ * @ericholscher: Tweaks payouts with issues that we've found (#441)
+ * @ericholscher: Make advertiser flight ads linkable (#440)
+ * @ericholscher: Add StaffRegionReport (#431)
+ * @ericholscher: Make report queries faster (#376)
+
+
 Version v0.35.0
 ---------------
 
