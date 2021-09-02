@@ -10,6 +10,7 @@ topic_list = [
     "game-dev",
     "blockchain",
     "techwriting",
+    "other",  # Special case, doesn't have any explicit tags
 ]
 
 data_science = [

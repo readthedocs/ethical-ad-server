@@ -360,6 +360,10 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
 
                 topics.add(topic)
 
+            # If nothing gets set as a topic, assign it other
+            if not topics:
+                topics.add("other")
+
             if country in us_ca:
                 region = "us-ca"
             elif country in eu_aus_nz:
