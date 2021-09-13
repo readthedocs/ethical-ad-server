@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.37.0
+---------------
+
+This release had a minor change to topic-based reporting only.
+
+:date: September 13, 2021
+
+ * @ericholscher: Add `other` to the list of topics when none other apply. (#446)
+
+
 Version v0.36.0
 ---------------
 
