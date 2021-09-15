@@ -843,13 +843,14 @@ class PublisherPayoutAdmin(SimpleHistoryAdmin):
     list_display = (
         "pk",
         "amount",
+        "status",
         "publisher",
         "date",
         "method",
         "modified",
         "created",
     )
-    list_filter = ("method", "publisher")
+    list_filter = ("method", "publisher", "status")
     list_select_related = ("publisher",)
     model = PublisherPayout
     readonly_fields = ("modified", "created")
