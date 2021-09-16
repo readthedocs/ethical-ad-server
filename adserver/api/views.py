@@ -157,8 +157,9 @@ class AdDecisionView(GeoIpMixin, APIView):
         div_id = placement.get("div_id")
 
         # Check if this client should get a sticky ad decision
-        cache_key = self._sticky_decision_cache_key(publisher, ad_type_slug)
-        data = cache.get(cache_key)
+        if publisher.cache_ads:
+            cache_key = self._sticky_decision_cache_key(publisher, ad_type_slug)
+            data = cache.get(cache_key)
 
         if not data:
             # Record a decision for every non-sticky call to the API
@@ -191,7 +192,8 @@ class AdDecisionView(GeoIpMixin, APIView):
                 div_id,
                 keywords,
             )
-            cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
+            if publisher.cache_ads:
+                cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
         else:
             referrer = url or self.request.META.get("HTTP_REFERER")
             log.info(
