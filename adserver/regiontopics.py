@@ -129,8 +129,8 @@ region_list = [
     "wider-apac",
     "latin-america",
     "africa",
-    "exclude",
     "global",
+    "exclude",
 ]
 us_ca = ["US", "CA"]
 

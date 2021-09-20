@@ -278,6 +278,7 @@ class AllReportMixin:
             force_revshare=force_revshare,
             order=order,
             index=index,
+            export=self.export,
         )
         report.generate()
         sort_options = report.total.keys()
