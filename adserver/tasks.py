@@ -105,7 +105,7 @@ def daily_update_geos(
     if region:
         log.info("Updating RegionImpressions for %s-%s", start_date, end_date)
         # Delete all previous Region impressions
-        RegionImpression.objects.filter(
+        RegionImpression.objects.using("default").filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         ).delete()
@@ -121,13 +121,13 @@ def daily_update_geos(
         ):
             country = values["country"]
             if geo:
-                impression, _ = GeoImpression.objects.get_or_create(
+                impression, _ = GeoImpression.objects.using("default").get_or_create(
                     publisher_id=values["publisher"],
                     advertisement_id=values["advertisement"],
                     country=country,
                     date=start_date,
                 )
-                GeoImpression.objects.filter(pk=impression.pk).update(
+                GeoImpression.objects.using("default").filter(pk=impression.pk).update(
                     **{impression_type: values["total"]}
                 )
 
@@ -161,15 +161,15 @@ def daily_update_geos(
                 # Handle the conversion of None
                 if ad == "None":
                     ad = None
-                impression, _ = RegionImpression.objects.get_or_create(
+                impression, _ = RegionImpression.objects.using("default").get_or_create(
                     publisher_id=publisher,
                     advertisement_id=ad,
                     region=_region,
                     date=start_date,
                 )
-                RegionImpression.objects.filter(pk=impression.pk).update(
-                    **{impression_type: F(impression_type) + value}
-                )
+                RegionImpression.objects.using("default").filter(
+                    pk=impression.pk
+                ).update(**{impression_type: F(impression_type) + value})
 
 
 @app.task()
@@ -194,16 +194,16 @@ def daily_update_placements(day=None):
             .order_by("-total")
         ):
 
-            impression, _ = PlacementImpression.objects.get_or_create(
+            impression, _ = PlacementImpression.objects.using("default").get_or_create(
                 publisher_id=values["publisher"],
                 advertisement_id=values["advertisement"],
                 div_id=values["div_id"],
                 ad_type_slug=values["ad_type_slug"],
                 date=start_date,
             )
-            PlacementImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: values["total"]}
-            )
+            PlacementImpression.objects.using("default").filter(
+                pk=impression.pk
+            ).update(**{impression_type: values["total"]})
 
 
 @app.task()
@@ -228,12 +228,12 @@ def daily_update_impressions(day=None):
             .order_by("-total")
         ):
 
-            impression, _ = AdImpression.objects.get_or_create(
+            impression, _ = AdImpression.objects.using("default").get_or_create(
                 publisher_id=values["publisher"],
                 advertisement_id=values["advertisement"],
                 date=start_date,
             )
-            AdImpression.objects.filter(pk=impression.pk).update(
+            AdImpression.objects.using("default").filter(pk=impression.pk).update(
                 **{impression_type: values["total"]}
             )
 
@@ -250,7 +250,7 @@ def daily_update_keywords(day=None):
     log.info("Updating KeywordImpression for %s-%s", start_date, end_date)
 
     # Remove all old keyword impressions, because they are cumulative
-    KeywordImpression.objects.filter(
+    KeywordImpression.objects.using("default").filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     ).delete()
@@ -287,7 +287,9 @@ def daily_update_keywords(day=None):
 
             matched_keywords = publisher_keywords & flight_keywords
             for keyword in matched_keywords:
-                impression, _ = KeywordImpression.objects.get_or_create(
+                impression, _ = KeywordImpression.objects.using(
+                    "default"
+                ).get_or_create(
                     date=start_date,
                     publisher_id=values["publisher"],
                     advertisement_id=values["advertisement"],
@@ -296,9 +298,9 @@ def daily_update_keywords(day=None):
                 # These are a Sum because we can't query for specific keywords from Postgres,
                 # so a specific publisher and advertisement set could return the same keyword:
                 # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-                KeywordImpression.objects.filter(pk=impression.pk).update(
-                    **{impression_type: F(impression_type) + values["total"]}
-                )
+                KeywordImpression.objects.using("default").filter(
+                    pk=impression.pk
+                ).update(**{impression_type: F(impression_type) + values["total"]})
 
 
 @app.task()
@@ -315,7 +317,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
     log.info("Updating RegionTopic's for %s-%s", start_date, end_date)
 
     # Remove all old impressions, because they are cumulative
-    RegionTopicImpression.objects.filter(
+    RegionTopicImpression.objects.using("default").filter(
         date__gte=start_date, date__lt=end_date
     ).delete()
 
@@ -391,15 +393,17 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             # Handle the conversion of
             if ad == "None":
                 ad = None
-            impression, _ = RegionTopicImpression.objects.get_or_create(
+            impression, _ = RegionTopicImpression.objects.using(
+                "default"
+            ).get_or_create(
                 date=start_date, advertisement_id=ad, region=region, topic=topic
             )
             # these are a sum because we can't query for specific keywords from postgres,
             # so a specific publisher and advertisement set could return the same keyword:
             # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-            RegionTopicImpression.objects.filter(pk=impression.pk).update(
-                **{impression_type: F(impression_type) + value}
-            )
+            RegionTopicImpression.objects.using("default").filter(
+                pk=impression.pk
+            ).update(**{impression_type: F(impression_type) + value})
 
 
 @app.task()
@@ -424,12 +428,12 @@ def daily_update_uplift(day=None):
             .values("publisher", "advertisement", "total")
         ):
 
-            impression, _ = UpliftImpression.objects.get_or_create(
+            impression, _ = UpliftImpression.objects.using("default").get_or_create(
                 publisher_id=values["publisher"],
                 advertisement_id=values["advertisement"],
                 date=start_date,
             )
-            UpliftImpression.objects.filter(pk=impression.pk).update(
+            UpliftImpression.objects.using("default").filter(pk=impression.pk).update(
                 **{impression_type: values["total"]}
             )
 

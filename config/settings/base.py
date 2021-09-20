@@ -124,6 +124,16 @@ DATABASES = {
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
+# Add support for a read replica, mostly used in reporting.
+DATABASE_ROUTERS = env("DATABASE_ROUTER", default=[])
+if DATABASE_ROUTERS:
+    REPLICA = env.db("REPLICA_DATABASE_URL", default=None)
+    if not REPLICA:
+        raise ImproperlyConfigured(
+            "You have defined a DATABASE_ROUTER, but not a REPLICA_DATABASE_URL. Please use both."
+        )
+    DATABASES["replica"] = REPLICA
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
