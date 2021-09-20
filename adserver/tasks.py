@@ -67,6 +67,8 @@ def _get_day(day):
 
 def _default_filters(impression_type, start_date, end_date):
     """Filter the queryset by date and impression type."""
+    # Use the replica for this query, since it's how we do all our reporting queries,
+    # and it currently hammers the prod DB.
     queryset = Offer.objects.using("replica").filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
