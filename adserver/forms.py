@@ -530,9 +530,11 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
         # Remove deprecated ad types unless the passed ad has those ad types
         if self.instance.pk:
-            adtype_queryset = adtype_queryset.filter(
-                Q(deprecated=False) | Q(pk__in=self.instance.ad_types.values("pk"))
+            # Extend the queryset to include the current type, so it's never unselected..
+            adtype_queryset |= AdType.objects.filter(
+                pk__in=self.instance.ad_types.values("pk")
             )
+            adtype_queryset = adtype_queryset.filter(deprecated=False)
         else:
             adtype_queryset = adtype_queryset.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
