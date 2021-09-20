@@ -67,7 +67,7 @@ def _get_day(day):
 
 def _default_filters(impression_type, start_date, end_date):
     """Filter the queryset by date and impression type."""
-    queryset = Offer.objects.filter(
+    queryset = Offer.objects.using("replica").filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         # is_refunded=False,  # This causes the query to be a filtered index and is much slower
