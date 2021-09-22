@@ -69,7 +69,7 @@ def _default_filters(impression_type, start_date, end_date):
     """Filter the queryset by date and impression type."""
     # Use the replica for this query, since it's how we do all our reporting queries,
     # and it currently hammers the prod DB.
-    queryset = Offer.objects.using("replica").filter(
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         # is_refunded=False,  # This causes the query to be a filtered index and is much slower

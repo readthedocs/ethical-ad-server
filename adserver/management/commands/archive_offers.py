@@ -84,11 +84,6 @@ class Command(BaseCommand):
         zipped_output_file = Path(str(output_file) + ".bz2")
         end_day = day + datetime.timedelta(days=1)
 
-        # Find the proper DB to query
-        copy_connection = "default"
-        if "replica" in connection:
-            copy_connection = "replica"
-
         self.stdout.write(_("Archiving %s to %s...") % (day, output_file))
 
         # Using the date params as an f-string is suboptimal but these are validated
@@ -98,7 +93,7 @@ class Command(BaseCommand):
                 WHERE date >= '{day:%Y-%m-%d}' AND date < '{end_day:%Y-%m-%d}'
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
-        with connection[copy_connection].cursor() as cursor:
+        with connection[settings.REPLICA_SLUG].cursor() as cursor:
             with open(output_file, "w") as fd:
                 # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
                 cursor.copy_expert(query, fd)

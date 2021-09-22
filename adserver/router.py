@@ -1,3 +1,4 @@
+"""Router for replica replica."""
 from .models import AdImpression
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -7,16 +8,16 @@ from .models import RegionTopicImpression
 from .models import UpliftImpression
 
 
-class ReplicaRouter:
-    """
-    A database router that allows for reading from a replica, mostly used for reporting for now.
-    """
+class ReplicaRouter:  # pylint: disable=unused-argument
+
+    """A database router that allows for reading from a replica, mostly used for reporting for now."""
 
     # All reporting models
     index_models = {
         AdImpression,
         PlacementImpression,
         GeoImpression,
+        KeywordImpression,
         RegionImpression,
         RegionTopicImpression,
         UpliftImpression,

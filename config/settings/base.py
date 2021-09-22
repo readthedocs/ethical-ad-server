@@ -133,6 +133,10 @@ if DATABASE_ROUTERS:
             "You have defined a DATABASE_ROUTER, but not a REPLICA_DATABASE_URL. Please use both."
         )
     DATABASES["replica"] = REPLICA
+    REPLICA_SLUG = "replica"
+else:
+    # Allow us to use `Offer.objects.using(settings.REPLICA_SLUG) when we do & don't have a replica
+    REPLICA_SLUG = "default"
 
 
 # Password validation
