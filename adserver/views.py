@@ -564,7 +564,9 @@ class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, Template
                 "flight": self.flight,
                 "advertisements": Advertisement.objects.filter(
                     flight__campaign__advertiser=self.advertiser
-                ).select_related(),
+                )
+                .order_by("-created")
+                .select_related(),
                 "source_advertisement": self.source_advertisement,
             }
         )
