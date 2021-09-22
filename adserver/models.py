@@ -189,6 +189,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "Render ethical-pixel in ad templates. This is needed for users not using the ad client."
         ),
     )
+    cache_ads = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Cache this publishers ad requests. Disable for special cases (eg. SaaS users)"
+        ),
+    )
 
     # Denormalized fields
     sampled_ctr = models.FloatField(
