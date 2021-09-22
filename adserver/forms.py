@@ -543,12 +543,14 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         if not self.instance.pk or self.instance.content:
             del self.fields["text"]
             self.fields["content"].widget.attrs["rows"] = 3
+            self.fields["content"].required = True
             ad_display_fields = ["headline", "content", "cta"]
         else:
             del self.fields["headline"]
             del self.fields["content"]
             del self.fields["cta"]
             self.fields["text"].widget.attrs["rows"] = 3
+            self.fields["text"].required = True
             ad_display_fields = ["text"]
 
         self.helper.layout = Layout(

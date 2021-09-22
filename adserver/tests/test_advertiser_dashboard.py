@@ -344,7 +344,8 @@ class TestAdvertiserDashboardViews(TestCase):
             "name": "New Name",
             "live": True,
             "link": "http://example.com",
-            "text": "Sample text",
+            "headline": "Some Company: ",
+            "content": "Sample text",
             "image": "",
             "ad_types": [self.ad_type1.pk],
         }
@@ -378,7 +379,8 @@ class TestAdvertiserDashboardViews(TestCase):
             "name": "New Name",
             "live": True,
             "link": "http://example.com",
-            "text": "Sample text",
+            "headline": "Some Company: ",
+            "content": "Sample text",
             "image": "",
             "ad_types": [self.ad_type1.pk],
         }
