@@ -33,7 +33,7 @@ class ReplicaRouter:  # pylint: disable=unused-argument
         """Only write to the default database."""
         return "default"
 
-    def allow_relation(self, obj1, obj2, **hints):
+    def allow_relation(self, obj1, obj2, **hints):  # pylint: disable=protected-access
         """Don't allow creating relations across databases."""
         db_list = ("default", "replica")
         if obj1._state.db in db_list and obj2._state.db in db_list:
