@@ -93,7 +93,7 @@ class Command(BaseCommand):
                 WHERE date >= '{day:%Y-%m-%d}' AND date < '{end_day:%Y-%m-%d}'
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
-        with connection.cursor() as cursor:
+        with connection[settings.REPLICA_SLUG].cursor() as cursor:
             with open(output_file, "w") as fd:
                 # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
                 cursor.copy_expert(query, fd)
@@ -180,7 +180,8 @@ class Command(BaseCommand):
         self.stdout.write(_("- Executing SQL:"))
         self.stdout.write(query % (day, end_day))
 
-        with connection.cursor() as cursor:
+        # Always delete from the default.
+        with connection["default"].cursor() as cursor:
             # Offers are normally immutable so the delete has to be run as raw sql
             cursor.execute(
                 query,
