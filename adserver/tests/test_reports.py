@@ -979,7 +979,7 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url, {"region": "foobar"})
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
-        # Disabled for now
+        # Check CSV export is enabled
         self.assertContains(response, "CSV Export")
 
     def test_staff_regiontopic_report_contents(self):
