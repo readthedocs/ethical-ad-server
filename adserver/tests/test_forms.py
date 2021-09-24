@@ -328,6 +328,13 @@ class FormTests(TestCase):
         )
         self.assertTrue(form.is_valid(), form.errors)
 
+    def test_content_required(self):
+        # When this is a "new style" ad form, at least content of headline, content and CTA is required
+        self.ad_data["content"] = ""
+        form = AdvertisementForm(data=self.ad_data, flight=self.flight)
+        self.assertFalse(form.is_valid())
+        self.assertEquals(form.errors["content"], ["This field is required."])
+
     # Below are tests for old-style ads with a single text field instead of broken out
     # headline, content, and CTA
     def test_ad_form_add_link(self):
