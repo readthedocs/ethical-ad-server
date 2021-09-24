@@ -5,6 +5,24 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.38.0
+---------------
+
+This release had a number of changes to support custom publishers and support for a read replica on our reporting.
+
+:date: September 24, 2021
+
+ * @davidfischer: Fixes a bug with old-style ads (#458)
+ * @ericholscher: Add a read replica DB router & settings (#457)
+ * @ericholscher: Fix mailing list link. (#456)
+ * @ericholscher: Add ability to export region data (#454)
+ * @ericholscher: Update the link we're pointing to for CTR low messages (#452)
+ * @ericholscher: Add ability to uncache publisher ads (#451)
+ * @ericholscher: Fix payout filtering & show status in admin (#450)
+ * @davidfischer: When copying ads, put newest ads first (#448)
+ * @dependabot[bot]: Bump pillow from 8.2.0 to 8.3.2 in /requirements (#447)
+ * @davidfischer: Flight form improvements (#443)
+
 
 Version v0.37.0
 ---------------
