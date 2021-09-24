@@ -980,7 +980,7 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
 
         # Disabled for now
-        self.assertNotContains(response, "CSV Export")
+        self.assertContains(response, "CSV Export")
 
     def test_staff_regiontopic_report_contents(self):
         get(
