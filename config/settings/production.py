@@ -36,10 +36,7 @@ INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 # --------------------------------------------------------------------------
-DATABASES = {
-    "default": env.db()  # Raises ImproperlyConfigured exception if DATABASE_URL not set
-}
-DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL not set
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
 
 
