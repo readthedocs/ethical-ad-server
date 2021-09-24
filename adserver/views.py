@@ -157,10 +157,16 @@ def dashboard(request):
             # This user has access to a single publisher - redirect to it
             return redirect(reverse("publisher_main", args=[publishers[0].slug]))
 
+    month_start = timezone.now().date().replace(day=1)
+
     return render(
         request,
         "adserver/dashboard.html",
-        {"advertisers": advertisers, "publishers": publishers},
+        {
+            "advertisers": advertisers,
+            "publishers": publishers,
+            "month_start": month_start,
+        },
     )
 
 
@@ -812,7 +818,7 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
     SESSION_KEY_START_DATE = "report_start_date"
     SESSION_KEY_END_DATE = "report_end_date"
     export = False
-    export_filename = "readthedocs-report.csv"
+    export_filename = "ethicalads-report.csv"
     export_view = None
     fieldnames = ["index", "views", "clicks", "cost", "ctr", "ecpm"]
     impression_model = AdImpression
@@ -1960,7 +1966,17 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
 
     """An region & topic report for all publishers."""
 
-    fieldnames = ["index", "views", "clicks", "ctr"]
+    fieldnames = [
+        "index",
+        "views",
+        "clicks",
+        "ctr",
+        "ecpm",
+        "revenue",
+        "our_revenue",
+        "fill_rate",
+        "view_rate",
+    ]
     impression_model = RegionTopicImpression
     force_revshare = 70.0
     report = PublisherRegionTopicReport
@@ -1972,7 +1988,18 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
 
     """An region report for all publishers."""
 
-    fieldnames = ["index", "views", "clicks", "ctr"]
+    export_view = "staff_region_report_export"
+    fieldnames = [
+        "index",
+        "views",
+        "clicks",
+        "ctr",
+        "ecpm",
+        "revenue",
+        "our_revenue",
+        "fill_rate",
+        "view_rate",
+    ]
     impression_model = RegionImpression
     force_revshare = 70.0
     report = PublisherRegionReport

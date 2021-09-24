@@ -33,6 +33,7 @@ from .regiontopics import blockchain
 from .regiontopics import data_science
 from .regiontopics import devops
 from .regiontopics import eu_aus_nz
+from .regiontopics import exclude
 from .regiontopics import frontend_web
 from .regiontopics import game_dev
 from .regiontopics import latin_america
@@ -145,6 +146,8 @@ def daily_update_geos(
                     _region = "latin-america"
                 elif country in africa:
                     _region = "africa"
+                elif country in exclude:
+                    _region = "exclude"
                 else:
                     _region = "global"
 

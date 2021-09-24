@@ -40,7 +40,9 @@ class BaseReport:
     # Fields to apply select_related on the queryset
     select_related_fields = ("advertisement", "advertisement__flight")
 
-    def __init__(self, queryset, index=None, order=None, max_results=None, **kwargs):
+    def __init__(
+        self, queryset, index=None, order=None, max_results=None, export=False, **kwargs
+    ):
         """
         Initialize the report using filtered, ordered queryset.
 
@@ -49,6 +51,7 @@ class BaseReport:
             This is sometimes necessary for example when filtering a geo report to a specific country,
             you probably want to index by date.
         :param order: Override the report result order.
+        :param export: Tell the report if it's being exported, so it can adjust display for processing
         :param max_results: Override the maximum results to return
         """
         self.queryset = queryset
@@ -61,6 +64,8 @@ class BaseReport:
             self.max_results = max_results
         else:
             self.max_results = self.DEFAULT_MAX_RESULTS
+
+        self.export = export
 
         # Save any other keyword args for use in subclasses
         self.kwargs = kwargs
@@ -288,7 +293,11 @@ class PublisherReport(BaseReport):
         """Handle making sure dates use the same 3 letter syntax as Django."""
         if isinstance(index, datetime.date):
             # %a is the day of week, so you know which are weekends
-            return index.strftime("%b %d, %Y (%a)")
+            value = index.strftime("%b %d, %Y")
+            # Make it so these parse as dates in a CSV
+            if not self.export:
+                value += index.strftime(" (%a)")
+            return value
 
         return super().get_index_display(index)
 

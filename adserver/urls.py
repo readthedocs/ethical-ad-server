@@ -107,6 +107,11 @@ urlpatterns = [
         name="staff_region_report",
     ),
     path(
+        r"staff/report/regions.csv",
+        StaffRegionReportView.as_view(export=True),
+        name="staff_region_report_export",
+    ),
+    path(
         r"staff/report/regiontopics/",
         StaffRegionTopicReportView.as_view(),
         name="staff_regiontopic_report",
