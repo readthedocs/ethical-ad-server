@@ -263,7 +263,10 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.flight.name)
 
+        new_name = "New Name"
+
         data = {
+            "name": new_name,
             "cpc": 2.5,
             "cpm": 0,
             "sold_clicks": 250,
@@ -280,6 +283,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Verify the DB was updated
         self.flight.refresh_from_db()
+        self.assertEqual(self.flight.name, new_name)
         self.assertFalse(self.flight.live)
         self.assertAlmostEqual(self.flight.cpc, 2.5)
         self.assertEqual(self.flight.sold_clicks, 250)

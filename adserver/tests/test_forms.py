@@ -103,7 +103,9 @@ class FormTests(TestCase):
         self.assertTrue(form.is_valid())
 
     def test_flight_form(self):
+        new_name = "New Name"
         data = {
+            "name": new_name,
             "cpc": 1.0,
             "cpm": 1.0,
             "sold_clicks": 100,
