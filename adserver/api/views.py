@@ -157,6 +157,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         div_id = placement.get("div_id")
 
         # Check if this client should get a sticky ad decision
+        data = None
         if publisher.cache_ads:
             cache_key = self._sticky_decision_cache_key(publisher, ad_type_slug)
             data = cache.get(cache_key)
