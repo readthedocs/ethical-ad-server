@@ -443,7 +443,7 @@ def daily_update_uplift(day=None):
             )
 
 
-@app.task()
+@app.task(time_limit=60 * 60 * 4)
 def update_previous_day_reports(day=None):
     """
     Complete all report data for the previous day.
