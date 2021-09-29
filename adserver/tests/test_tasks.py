@@ -72,6 +72,7 @@ class TasksTest(BaseAdModelsTestCase):
 
     def test_notify_completed_flights(self):
         backend = get_backend()
+        backend.reset_messages()
 
         notify_of_completed_flights()
         messages = backend.retrieve_messages()

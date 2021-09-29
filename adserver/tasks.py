@@ -463,6 +463,15 @@ def update_previous_day_reports(day=None):
     daily_update_uplift(start_date)
     daily_update_regiontopic(start_date)
 
+    # Send notification to Slack about previous day's reports
+    if settings.SLACK_TOKEN:
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": "Completed aggregating the previous day's report data. :page_with_curl:"
+            },
+        )
+
 
 @app.task()
 def remove_old_client_ids(days=90):
