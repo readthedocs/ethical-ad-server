@@ -1,0 +1,6 @@
+{% extends django_slack %}
+
+
+{% block text %}
+{{ text }}
+{% endblock %}
