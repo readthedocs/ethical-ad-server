@@ -1,11 +1,13 @@
 """Celery tasks for the ad server."""
 import datetime
+import io
 import json
 import logging
 from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
+from django.core import management
 from django.db.models import Count
 from django.db.models import F
 from django.utils.timezone import is_naive
@@ -54,9 +56,9 @@ def _get_day(day):
     """Get the start and end time with support for celery-encoded strings, dates, and datetimes."""
     start_date = get_ad_day()
     if day:
-        log.info("Got day: %s", day)
+        log.debug("Got day: %s", day)
         if not isinstance(day, (datetime.datetime, datetime.date)):
-            log.info("Converting day from string")
+            log.debug("Converting day from string")
             day = parse_iso8601(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
         if is_naive(start_date):
@@ -588,3 +590,38 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
                             ),
                         },
                     )
+
+
+@app.task(time_limit=60 * 60 * 4)
+def archive_offers(day=None, delete=False):
+    """
+    Archive offers from a single day.
+
+    :arg day: An optional datetime object representing a day. If not specified, archive offers 91 days ago.
+    :arg delete: Delete archived offers IF they were successfully archived to settings.BACKUPS_STORAGE
+    """
+    if not day:
+        day = get_ad_day() - datetime.timedelta(days=91)
+
+    start_date, _ = _get_day(day)
+
+    args = [
+        "-s",
+        start_date.strftime("%Y-%m-%d"),
+        "-e",
+        start_date.strftime("%Y-%m-%d"),
+    ]
+    if delete:
+        args += ["-d"]
+
+    out = io.StringIO()
+
+    log.info("Calling archive offers for %s", start_date)
+    management.call_command("archive_offers", *args, stdout=out)
+    log.info(out.getvalue())
+
+    # Send notification to Slack about archiving offers
+    slack_message(
+        "adserver/slack/generic-message.slack",
+        {"text": f"Offers archived for {start_date:%Y-%m-%d}... :date:"},
+    )

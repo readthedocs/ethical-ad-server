@@ -6,6 +6,7 @@ from django_slack.utils import get_backend
 
 from ..models import AdImpression
 from ..models import Offer
+from ..tasks import archive_offers
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_impressions
 from ..tasks import notify_of_completed_flights
@@ -168,3 +169,12 @@ class TasksTest(BaseAdModelsTestCase):
         notify_of_publisher_changes(min_views=1000)
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
+
+    def test_archive_offers(self):
+        backend = get_backend()
+        backend.reset_messages()
+
+        archive_offers()
+
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1)

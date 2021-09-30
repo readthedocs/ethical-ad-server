@@ -18,6 +18,7 @@ from django.core.files.storage import get_storage_class
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import connection
+from django.db import connections
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
@@ -93,10 +94,11 @@ class Command(BaseCommand):
                 WHERE date >= '{day:%Y-%m-%d}' AND date < '{end_day:%Y-%m-%d}'
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
-        with connection[settings.REPLICA_SLUG].cursor() as cursor:
+        with connections[settings.REPLICA_SLUG].cursor() as cursor:
             with open(output_file, "w") as fd:
-                # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
-                cursor.copy_expert(query, fd)
+                if connection.vendor == "postgresql":
+                    # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
+                    cursor.copy_expert(query, fd)
 
         # This will be off by one because the CSV contains a header row
         self.stdout.write(_("Running `wc -l %s`...") % output_file)
@@ -181,13 +183,13 @@ class Command(BaseCommand):
         self.stdout.write(query % (day, end_day))
 
         # Always delete from the default.
-        with connection["default"].cursor() as cursor:
+        with connections["default"].cursor() as cursor:
             # Offers are normally immutable so the delete has to be run as raw sql
             cursor.execute(
                 query,
                 [day, end_day],
             )
-            deleted_offers = cursor.fetchone()
+            deleted_offers = cursor.fetchone() or 0
 
         self.stdout.write(
             self.style.SUCCESS(_("Successfully removed %d offers.") % deleted_offers)
