@@ -466,9 +466,7 @@ def update_previous_day_reports(day=None):
     # Send notification to Slack about previous day's reports
     slack_message(
         "adserver/slack/generic-message.slack",
-        {
-            "text": "Completed aggregating the previous day's report data. :page_with_curl:"
-        },
+        {"text": "Completed aggregating report data for yesterday. :page_with_curl:"},
     )
 
 
