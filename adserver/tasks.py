@@ -464,13 +464,12 @@ def update_previous_day_reports(day=None):
     daily_update_regiontopic(start_date)
 
     # Send notification to Slack about previous day's reports
-    if settings.SLACK_TOKEN:
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": "Completed aggregating the previous day's report data. :page_with_curl:"
-            },
-        )
+    slack_message(
+        "adserver/slack/generic-message.slack",
+        {
+            "text": "Completed aggregating the previous day's report data. :page_with_curl:"
+        },
+    )
 
 
 @app.task()
@@ -519,14 +518,13 @@ def notify_of_completed_flights():
             log.info("Flight %s finished in the last day.", flight)
 
             # Send notification about this flight
-            if settings.SLACK_TOKEN:
-                slack_message(
-                    "adserver/slack/flight-complete.slack",
-                    {
-                        "flight": flight,
-                        "flight_url": generate_absolute_url(flight.get_absolute_url()),
-                    },
-                )
+            slack_message(
+                "adserver/slack/flight-complete.slack",
+                {
+                    "flight": flight,
+                    "flight_url": generate_absolute_url(flight.get_absolute_url()),
+                },
+            )
 
 
 @app.task()
@@ -579,17 +577,16 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
                     )
 
                     # Send notification to Slack about this publisher
-                    if settings.SLACK_TOKEN:
-                        slack_message(
-                            "adserver/slack/publisher-metric.slack",
-                            {
-                                "publisher": publisher,
-                                "metric": metric,
-                                "last_week_value": last_week_value,
-                                "previous_week_value": previous_week_value,
-                                "percent_diff": perc_diff,
-                                "report_url": generate_absolute_url(
-                                    publisher.get_absolute_url()
-                                ),
-                            },
-                        )
+                    slack_message(
+                        "adserver/slack/publisher-metric.slack",
+                        {
+                            "publisher": publisher,
+                            "metric": metric,
+                            "last_week_value": last_week_value,
+                            "previous_week_value": previous_week_value,
+                            "percent_diff": perc_diff,
+                            "report_url": generate_absolute_url(
+                                publisher.get_absolute_url()
+                            ),
+                        },
+                    )
