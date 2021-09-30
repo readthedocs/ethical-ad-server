@@ -359,6 +359,7 @@ stripe.api_version = "2020-03-02"
 SLACK_TOKEN = env("SLACK_TOKEN", default=None)
 SLACK_CHANNEL = env("SLACK_CHANNEL", default="#ads-notifications")
 SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
+SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
 
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html

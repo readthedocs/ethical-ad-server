@@ -17,3 +17,8 @@ DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
 # ------------------------------------------------------------------------------
 #STRIPE_SECRET_KEY=
 #STRIPE_CONNECT_CLIENT_ID=
+
+# Slack
+# ------------------------------------------------------------------------------
+# Must set DEBUG=False or set the backend to test slack integrations
+#SLACK_TOKEN=
