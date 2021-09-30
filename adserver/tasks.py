@@ -612,7 +612,7 @@ def archive_offers(day=None, delete=False):
         start_date.strftime("%Y-%m-%d"),
     ]
     if delete:
-        args += ["-d"]
+        args += ["--delete-offers"]
 
     out = io.StringIO()
 
