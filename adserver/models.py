@@ -1000,10 +1000,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         day = get_ad_day().date()
 
         # Ensure that an impression object exists for today
-        impression, _ = AdImpression.objects.get_or_create(
+        # and make sure to query the writable DB for this
+        impression, _ = AdImpression.objects.using("default").get_or_create(
             advertisement=self, publisher=publisher, date=day
         )
-        AdImpression.objects.filter(pk=impression.pk).update(
+        AdImpression.objects.using("default").filter(pk=impression.pk).update(
             **{impression_type: models.F(impression_type) + 1}
         )
 
