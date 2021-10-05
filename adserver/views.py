@@ -198,7 +198,7 @@ class AdvertiserMainView(
             f
             for f in (
                 Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-                    "-live", "-end_date", "name"
+                    "-live", "start_date", "name"
                 )
             )
             if f.state in (FLIGHT_STATE_UPCOMING, FLIGHT_STATE_CURRENT)
@@ -241,7 +241,7 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
         return Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-            "-live", "-end_date", "name"
+            "-live", "-start_date", "name"
         )
 
 
@@ -948,7 +948,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
         flights = (
             Flight.objects.filter(campaign__advertiser=advertiser)
-            .order_by("-live", "-end_date", "name")
+            .order_by("-live", "start_date", "name")
             .select_related("campaign")
         )
 
