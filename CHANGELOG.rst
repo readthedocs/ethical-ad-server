@@ -5,6 +5,23 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.39.0
+---------------
+
+Most of this release were small bug fixes and tweaks to staff notifications.
+
+:date: October 6, 2021
+
+ * @ericholscher: Force using the default DB during ad serving incr call (#467)
+ * @davidfischer: Small tweak to flight ordering (#466)
+ * @davidfischer: Fail silently on slack failures (#464)
+ * @davidfischer: Increase aggregation task time limit (#463)
+ * @davidfischer: Notify when daily reports are aggregated (#462)
+ * @ericholscher: Fix silly where bug data wasn't defined if we weren't caching. (#461)
+
+
+
 Version v0.38.0
 ---------------
 
