@@ -17,7 +17,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.images import get_image_dimensions
 from django.core.mail import EmailMessage
-from django.db.models import Q
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -27,6 +26,7 @@ from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 from simple_history.utils import update_change_reason
 
+from .models import AdType
 from .models import Advertisement
 from .models import Campaign
 from .models import Flight
