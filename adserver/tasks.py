@@ -452,8 +452,10 @@ def update_previous_day_reports(day=None):
     """
     start_date, _ = _get_day(day)
 
-    # Do the previous day now that the day is complete
-    start_date -= datetime.timedelta(days=1)
+    if not day:
+        # If not specified,
+        # do the previous day now that the day is complete
+        start_date -= datetime.timedelta(days=1)
 
     # Do all reports
     daily_update_geos(start_date)
@@ -463,11 +465,15 @@ def update_previous_day_reports(day=None):
     daily_update_uplift(start_date)
     daily_update_regiontopic(start_date)
 
-    # Send notification to Slack about previous day's reports
-    slack_message(
-        "adserver/slack/generic-message.slack",
-        {"text": "Completed aggregating report data for yesterday. :page_with_curl:"},
-    )
+    if not day:
+        # Send notification to Slack about previous day's reports
+        # Don't send this notification if run manually
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": "Completed aggregating report data for yesterday. :page_with_curl:"
+            },
+        )
 
 
 @app.task()
