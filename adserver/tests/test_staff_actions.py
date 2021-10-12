@@ -239,7 +239,7 @@ class PublisherPayoutTests(TestCase):
         list_response = self.client.get(url + "?paid=True")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
 
         list_response = self.client.get(url + "?paid=False")
         self.assertEqual(list_response.status_code, 200)
