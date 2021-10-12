@@ -471,7 +471,7 @@ def update_previous_day_reports(day=None):
         slack_message(
             "adserver/slack/generic-message.slack",
             {
-                "text": "Completed aggregating report data for yesterday. :page_with_curl:"
+                "text": f"Completed aggregating report data for yesterday ({start_date:%Y-%m-%d}). :page_with_curl:"
             },
         )
 
