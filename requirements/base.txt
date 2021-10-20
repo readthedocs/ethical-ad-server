@@ -54,3 +54,6 @@ django-slack==5.16.2
 
 # Stripe for payments
 stripe>=2.48.0,<3.0
+
+# JWT used by Metabase embedding
+PyJWT==2.1.0

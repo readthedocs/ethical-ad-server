@@ -2,6 +2,7 @@
 {% load crispy_forms_tags %}
 {% load humanize %}
 {% load i18n %}
+{% load metabase %}
 
 
 {% block title %}{% trans 'Publisher overview' %} - {{ publisher }}{% endblock %}
@@ -70,8 +71,14 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> <!-- /row -->
     <p class="text-right mb-5"><a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
+
+    <div class="row">
+      <div class="col" style="min-height: 50vh">
+        {% metabase_question_embed 2 publisher_slug=publisher.slug %}
+      </div>
+    </div>
 
   </section>
 {% endblock content_container %}

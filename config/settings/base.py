@@ -367,6 +367,14 @@ SLACK_CHANNEL = env("SLACK_CHANNEL", default="#ads-notifications")
 SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
 SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
 
+
+# Metabase
+# Graphing and BI tool
+# --------------------------------------------------------------------------
+METABASE_SITE_URL = env("METABASE_SITE_URL", default="http://localhost:3000")
+METABASE_SECRET_KEY = env("METABASE_SECRET_KEY", default=None)
+
+
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
