@@ -2022,13 +2022,22 @@ class PublisherMainView(
 
         # Get the beginning of the month so we can show month-to-date stats
         start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        end_date = start_date + timedelta(days=31)
 
         queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
         report = PublisherReport(queryset)
         report.generate()
 
         context.update(
-            {"publisher": self.publisher, "report": report, "start_date": start_date}
+            {
+                "publisher": self.publisher,
+                "report": report,
+                "start_date": start_date,
+                "end_date": end_date,
+                "metabase_publisher_performance": settings.METABASE_QUESTIONS.get(
+                    "PUBLISHER_PERFORMANCE"
+                ),
+            }
         )
         return context
 

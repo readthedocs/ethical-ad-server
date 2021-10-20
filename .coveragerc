@@ -19,6 +19,7 @@ omit =
     templates/admin/*.html
     templates/account/*.html
     templates/includes/*.html
+    adserver/management/commands/metabase.py
     adserver/management/commands/adtype-templates/*.html
 
 [report]

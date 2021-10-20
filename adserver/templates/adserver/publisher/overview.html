@@ -76,7 +76,7 @@
 
     <div class="row">
       <div class="col" style="min-height: 50vh">
-        {% metabase_question_embed 2 publisher_slug=publisher.slug %}
+        {% metabase_question_embed metabase_publisher_performance publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
       </div>
     </div>
 

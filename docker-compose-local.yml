@@ -90,6 +90,6 @@ services:
     image: metabase/metabase
     restart: always
     ports:
-      - 3001:3000
+      - 3000:3000
     volumes:
       - local_metabase_data:/metabase-data
