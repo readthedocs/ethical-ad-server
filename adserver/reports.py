@@ -211,6 +211,10 @@ class PublisherReport(BaseReport):
             # Count offers for all paid campaigns
             # This is required to get an accurate fill rate when house ads are on
             if (
+                # Support caching on the impression
+                getattr(impression, "cpc", 0)
+                or getattr(impression, "cpm", 0)
+            ) or (
                 getattr(impression, "advertisement", None)
                 and impression.advertisement.flight.campaign.campaign_type
                 == PAID_CAMPAIGN
@@ -227,13 +231,29 @@ class PublisherReport(BaseReport):
             # Calculate our revenue if the offer resulted in an ad impression
             # There's no revenue for offers with no views/clicks
             if getattr(impression, "advertisement", None):
-                results[index]["revenue"] += (
-                    impression.clicks * float(impression.advertisement.flight.cpc)
-                ) + (
-                    impression.views
-                    * float(impression.advertisement.flight.cpm)
-                    / 1000.0
-                )
+                # Calculate revenue with either CPC or CPM cached on the impression or flight
+                if getattr(impression, "cpc", 0):
+                    results[index]["revenue"] += impression.clicks * float(
+                        impression.cpc
+                    )
+                    log.info("Using Impression CPC")
+                elif getattr(impression, "cpm", 0):
+                    results[index]["revenue"] += (
+                        impression.views * float(impression.cpm) / 1000.0
+                    )
+                    log.info("Using Impression CPM")
+                elif impression.advertisement.flight.cpc:
+                    results[index]["revenue"] += impression.clicks * float(
+                        impression.advertisement.flight.cpc
+                    )
+                    log.info("Using Flight CPC")
+                elif impression.advertisement.flight.cpm:
+                    results[index]["revenue"] += (
+                        impression.views
+                        * float(impression.advertisement.flight.cpm)
+                        / 1000.0
+                    )
+                    log.info("Using Flight CPM")
                 # Support arbitrary revshare numbers on reporting
                 applied_rev_share = float(
                     self.kwargs.get("force_revshare")
@@ -381,12 +401,7 @@ class PublisherRegionTopicReport(PublisherReport):
     model = RegionTopicImpression
     index = "topic"
     order = "-views"
-    select_related_fields = (
-        "advertisement",
-        "advertisement__flight",
-        "advertisement__flight__campaign",
-        "advertisement__flight__campaign__advertiser",
-    )
+    select_related_fields = ()
 
     def getter(self, data):  # pylint: disable=method-hidden
         """Show both region & topic in the index."""

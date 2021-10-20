@@ -330,18 +330,30 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
         topic_mapping = defaultdict(int)
         queryset = _default_filters(impression_type, start_date, end_date)
         for values in (
-            queryset.values("advertisement", "keywords", "country")
+            queryset.values(
+                "advertisement__flight__cpc",
+                "advertisement__flight__cpm",
+                "keywords",
+                "country",
+            )
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
-            .values("keywords", "advertisement", "country", "total")
+            .values(
+                "keywords",
+                "advertisement__flight__cpc",
+                "advertisement__flight__cpm",
+                "country",
+                "total",
+            )
         ):
             if not (values["keywords"] and values["country"]):
                 continue
 
             keywords = json.loads(values["keywords"])
             country = values["country"]
-            ad = values["advertisement"]
+            cpc = values["advertisement__flight__cpc"] or 0
+            cpm = values["advertisement__flight__cpm"] or 0
             publisher_keywords = set(keywords)
 
             topics = set()
@@ -388,20 +400,17 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             # This is important because we can't query on keywords, so we have a lot of records that increment
             # the total count on the region & topic.
             for topic in topics:
-                topic_mapping[f"{ad}:{region}:{topic}"] += values["total"]
+                topic_mapping[f"{cpm}:{cpc}:{region}:{topic}"] += values["total"]
 
         log.info(
             "Saving %s RegionTopicImpressions: %s", len(topic_mapping), impression_type
         )
         for data, value in topic_mapping.items():
-            ad, region, topic = data.split(":")
-            # Handle the conversion of
-            if ad == "None":
-                ad = None
+            cpm, cpc, region, topic = data.split(":")
             impression, _ = RegionTopicImpression.objects.using(
                 "default"
             ).get_or_create(
-                date=start_date, advertisement_id=ad, region=region, topic=topic
+                date=start_date, cpm=cpm, cpc=cpc, region=region, topic=topic
             )
             # these are a sum because we can't query for specific keywords from postgres,
             # so a specific publisher and advertisement set could return the same keyword:

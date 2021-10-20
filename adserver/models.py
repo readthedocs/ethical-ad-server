@@ -1603,16 +1603,16 @@ class RegionTopicImpression(BaseImpression):
 
     region = models.CharField(_("Region"), max_length=100)
     topic = models.CharField(_("Topic"), max_length=100)
-    advertisement = models.ForeignKey(
-        Advertisement,
-        related_name="regiontopic_impressions",
-        on_delete=models.PROTECT,
-        null=True,
+    cpc = models.DecimalField(
+        _("Cost Per Click"), max_digits=5, decimal_places=2, default=0
+    )
+    cpm = models.DecimalField(
+        _("Cost Per 1k Impressions"), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:
         ordering = ("-date",)
-        unique_together = ("date", "region", "topic", "advertisement")
+        unique_together = ("date", "region", "topic", "cpc", "cpm")
 
     def __str__(self):
         """Simple override."""
