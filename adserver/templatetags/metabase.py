@@ -1,6 +1,8 @@
 """Custom template tags for metabase embedding."""
 import logging
 import time
+from datetime import date
+from datetime import datetime
 
 import jwt
 from django import template
@@ -23,15 +25,29 @@ def metabase_question_embed(question_id, **kwargs):
         log.warning("Metabase Secret Key is not set - Graphs won't render")
         return None
 
+    # These parameters must be JSON serializable to be signed
+    # Notably, dates aren't serializable by default
+    params = {}
+    for k in kwargs:
+        val = kwargs[k]
+        if isinstance(val, (date, datetime)):
+            params[k] = str(val)
+        else:
+            params[k] = val
+
     payload = {
         "resource": {"question": question_id},
-        "params": kwargs,
+        "params": params,
         "exp": round(time.time()) + (60 * 10),
     }
     log.debug(payload)
+
     token = jwt.encode(payload, settings.METABASE_SECRET_KEY, algorithm="HS256")
     iframe_url = (
-        settings.METABASE_SITE_URL + "/embed/question/" + token + "#bordered=true"
+        settings.METABASE_SITE_URL
+        + "/embed/question/"
+        + token
+        + "#bordered=true&titled=false"
     )
 
     return render_to_string(

@@ -185,7 +185,9 @@ class AdvertiserMainView(
         context = super().get_context_data(**kwargs)
 
         # Get the beginning/end of the month so we can show month-to-date stats
-        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        start_date = timezone.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
         end_date = start_date.replace(
             day=calendar.monthrange(start_date.year, start_date.month)[1]
         )
@@ -2021,7 +2023,9 @@ class PublisherMainView(
         context = super().get_context_data(**kwargs)
 
         # Get the beginning of the month so we can show month-to-date stats
-        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        start_date = timezone.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
         end_date = start_date + timedelta(days=31)
 
         queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
