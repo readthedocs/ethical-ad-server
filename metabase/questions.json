@@ -1,0 +1,150 @@
+[
+  {
+    "id": 1,
+    "name": "Publisher Performance",
+    "description": "Show a single publisher's performance on a daily basis",
+    "result_metadata": [
+      {
+        "name": "Date",
+        "display_name": "Date",
+        "base_type": "type/Date",
+        "effective_type": "type/Date",
+        "field_ref": [
+          "field",
+          "Date",
+          {
+            "base-type": "type/Date"
+          }
+        ],
+        "semantic_type": null,
+        "fingerprint": {
+          "global": {
+            "distinct-count": 1,
+            "nil%": 0
+          },
+          "type": {
+            "type/DateTime": {
+              "earliest": "2021-08-13T00:00:00Z",
+              "latest": "2021-08-13T00:00:00Z"
+            }
+          }
+        }
+      },
+      {
+        "name": "sum",
+        "display_name": "sum",
+        "base_type": "type/BigInteger",
+        "effective_type": "type/BigInteger",
+        "field_ref": [
+          "field",
+          "sum",
+          {
+            "base-type": "type/BigInteger"
+          }
+        ],
+        "semantic_type": null,
+        "fingerprint": {
+          "global": {
+            "distinct-count": 1,
+            "nil%": 0
+          },
+          "type": {
+            "type/Number": {
+              "min": 1,
+              "q1": 1,
+              "q3": 1,
+              "max": 1,
+              "sd": null,
+              "avg": 1
+            }
+          }
+        }
+      },
+      {
+        "name": "sum_2",
+        "display_name": "sum_2",
+        "base_type": "type/BigInteger",
+        "effective_type": "type/BigInteger",
+        "field_ref": [
+          "field",
+          "sum_2",
+          {
+            "base-type": "type/BigInteger"
+          }
+        ],
+        "semantic_type": null,
+        "fingerprint": {
+          "global": {
+            "distinct-count": 1,
+            "nil%": 0
+          },
+          "type": {
+            "type/Number": {
+              "min": 0,
+              "q1": 0,
+              "q3": 0,
+              "max": 0,
+              "sd": null,
+              "avg": 0
+            }
+          }
+        }
+      }
+    ],
+    "dataset_query": {
+      "type": "native",
+      "native": {
+        "query": "SELECT \"public\".\"adserver_adimpression\".\"date\" AS \"Date\", sum(\"public\".\"adserver_adimpression\".\"views\") AS \"sum\", sum(\"public\".\"adserver_adimpression\".\"clicks\") AS \"sum_2\"\nFROM \"public\".\"adserver_adimpression\"\nINNER JOIN \"public\".\"adserver_publisher\" ON \"public\".\"adserver_publisher\".\"id\" = \"public\".\"adserver_adimpression\".\"publisher_id\"\nWHERE \"public\".\"adserver_adimpression\".\"date\" >= {{ start_date }}\n   AND \"public\".\"adserver_adimpression\".\"date\" < {{ end_date }}\n   AND \"public\".\"adserver_publisher\".\"slug\" = {{ publisher_slug }}\nGROUP BY \"public\".\"adserver_adimpression\".\"publisher_id\", \"public\".\"adserver_adimpression\".\"date\" \nORDER BY \"public\".\"adserver_adimpression\".\"publisher_id\", \"public\".\"adserver_adimpression\".\"date\"  ASC",
+        "template-tags": {
+          "publisher_slug": {
+            "id": "f118a498-62c3-cf6d-6bc6-c060aaf96fb5",
+            "name": "publisher_slug",
+            "display-name": "Publisher slug",
+            "type": "text",
+            "required": true,
+            "default": "readthedocs"
+          },
+          "start_date": {
+            "id": "7f1144a1-ae40-8d20-a722-de53b03cc81a",
+            "name": "start_date",
+            "display-name": "Start date",
+            "type": "date",
+            "required": true
+          },
+          "end_date": {
+            "id": "d85c3237-3e49-b4c2-4e06-9f817d65d282",
+            "name": "end_date",
+            "display-name": "End date",
+            "type": "date",
+            "required": true
+          }
+        }
+      },
+      "database": 2
+    },
+    "display": "bar",
+    "visualization_settings": {
+      "table.pivot_column": "publisher_id",
+      "table.cell_column": "sum",
+      "graph.dimensions": [
+        "Date"
+      ],
+      "series_settings": {
+        "undefined": {
+          "axis": "left"
+        },
+        "sum": {
+          "title": "Views"
+        },
+        "sum_2": {
+          "title": "Clicks"
+        }
+      },
+      "graph.x_axis.title_text": "",
+      "graph.metrics": [
+        "sum",
+        "sum_2"
+      ]
+    }
+  }
+]
