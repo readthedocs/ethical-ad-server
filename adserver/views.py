@@ -213,6 +213,9 @@ class AdvertiserMainView(
                 "flights": flights,
                 "start_date": start_date,
                 "end_date": end_date,
+                "metabase_advertiser_performance": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_PERFORMANCE"
+                ),
             }
         )
         return context

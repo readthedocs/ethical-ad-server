@@ -376,6 +376,7 @@ METABASE_SECRET_KEY = env("METABASE_SECRET_KEY", default=None)
 # Maps metabase questions by name to the ID
 METABASE_QUESTIONS = {
     "PUBLISHER_PERFORMANCE": 1,
+    "ADVERTISER_PERFORMANCE": 2,
 }
 
 
