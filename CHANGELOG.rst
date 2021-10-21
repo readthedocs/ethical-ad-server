@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.40.0
+---------------
+
+The big change in this release was that we're trying out some graphs.
+However, for this release, they are staff-only.
+Other than that, there was nothing user facing in this release.
+
+:date: October 21, 2021
+
+ * @davidfischer: Charting/graphing with metabase (#475)
+ * @davidfischer: Remove the CTR publisher change alert (#473)
+ * @ericholscher: Show publisher name instead of slug in payout (#472)
+ * @davidfischer: Tweaks to the daily aggregation task (#471)
+ * @ericholscher: Make azure logging quiet (#470)
+ * @ericholscher: Fix a bug where existing AdType was excluded (#455)
+
+
 Version v0.39.0
 ---------------
 
