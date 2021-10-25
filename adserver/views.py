@@ -1,5 +1,4 @@
 """Ad server views."""
-import calendar
 import collections
 import csv
 import logging
@@ -188,9 +187,7 @@ class AdvertiserMainView(
         start_date = timezone.now().replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        end_date = start_date.replace(
-            day=calendar.monthrange(start_date.year, start_date.month)[1]
-        )
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
         queryset = self.get_queryset(advertiser=self.advertiser, start_date=start_date)
         report = AdvertiserReport(queryset)
@@ -862,6 +859,11 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
         if end_date and end_date < start_date:
             end_date = None
+        if not end_date:
+            # Default to last day of the current month
+            end_date = (timezone.now() + timedelta(days=31)).replace(day=1) - timedelta(
+                days=1
+            )
 
         return {
             "start_date": start_date,
@@ -1204,6 +1206,9 @@ class StaffAdvertiserReportView(BaseReportView):
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_cost, total_views),
+                "metabase_advertisers_breakdown": settings.METABASE_QUESTIONS.get(
+                    "ALL_ADVERTISERS_BREAKDOWN"
+                ),
             }
         )
 
@@ -1927,6 +1932,9 @@ class StaffPublisherReportView(BaseReportView):
                 "revenue_share_percentage": revenue_share_percentage,
                 "sort": sort,
                 "sort_options": sort_options,
+                "metabase_total_revenue": settings.METABASE_QUESTIONS.get(
+                    "TOTAL_REVENUE"
+                ),
             }
         )
 
@@ -2010,6 +2018,19 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
     report = PublisherRegionReport
     template_name = "adserver/reports/staff-regions.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "metabase_region_breakdown": settings.METABASE_QUESTIONS.get(
+                    "REGION_BREAKDOWN"
+                ),
+            }
+        )
+
+        return context
+
 
 class PublisherMainView(
     PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
@@ -2029,7 +2050,7 @@ class PublisherMainView(
         start_date = timezone.now().replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        end_date = start_date + timedelta(days=31)
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
         queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
         report = PublisherReport(queryset)

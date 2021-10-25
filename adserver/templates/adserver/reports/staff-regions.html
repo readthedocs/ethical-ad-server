@@ -1,6 +1,7 @@
 {% extends "adserver/reports/base-staff.html" %}
 {% load humanize %}
 {% load i18n %}
+{% load metabase %}
 
 
 {% block title %}{% trans 'Staff Region Report' %}{% endblock %}
@@ -29,6 +30,7 @@
 
 {% endblock additional_filters %}
 
+
 {% block explainer %}
 <section class="mb-5">
   <h3>{% trans 'About this report' %}</h3>
@@ -44,3 +46,14 @@
   </p>
 </section>
 {% endblock explainer %}
+
+
+{% block chart %}
+{% if not region and not campaign_type %}
+<section class="mb-5">
+  <div class="vh-50">
+    {% metabase_question_embed metabase_region_breakdown start_date=start_date end_date=end_date %}
+  </div>
+</section>
+{% endif %}
+{% endblock chart %}
