@@ -382,6 +382,11 @@ METABASE_QUESTIONS = {
 }
 
 
+# Plausible Analytics
+# --------------------------------------------------------------------------
+PLAUSIBLE_DOMAIN = env("PLAUSIBLE_DOMAIN", default="server.ethicalads.io")
+
+
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------
