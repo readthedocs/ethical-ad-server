@@ -15,5 +15,8 @@
     {% block body_content %}{% endblock body_content %}
 
     <script src="{% static 'bundle.js' %}" ></script>
+    {% if plausible_domain %}
+    <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/plausible.js"></script>
+    {% endif %}
   </body>
 </html>
