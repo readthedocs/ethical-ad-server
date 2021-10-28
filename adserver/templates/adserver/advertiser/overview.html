@@ -62,13 +62,11 @@
     </div>
     <p class="text-right mb-5"><a href="{% url 'advertiser_report' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
 
-    {% if request.user.is_staff %}
     <div class="row mb-5">
       <div class="col min-vh-50">
         {% metabase_question_embed metabase_advertiser_performance advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
       </div>
     </div>
-    {% endif %}
 
     <div class="row row-cols-1">
       <div class="col">
