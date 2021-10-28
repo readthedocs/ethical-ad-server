@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.41.0
+---------------
+
+We added Plausible Analytics to see which parts of the dashboard get the most use.
+We also added a lot more charts for staff and made a couple charts available
+to advertisers and publishers.
+
+:date: October 28, 2021
+
+ * @davidfischer: Make metabase charts public (#480)
+ * @davidfischer: Add Plausible Analytics to the dashboard (#479)
+ * @ericholscher: Remove analytical import from settings (#478)
+ * @davidfischer: Add additional charts (#477)
+
+
 Version v0.40.0
 ---------------
 
