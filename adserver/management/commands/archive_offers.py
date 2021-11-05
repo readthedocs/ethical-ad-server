@@ -189,7 +189,7 @@ class Command(BaseCommand):
                 query,
                 [day, end_day],
             )
-            deleted_offers = cursor.fetchone() or 0
+            deleted_offers = cursor.rowcount
 
         self.stdout.write(
             self.style.SUCCESS(_("Successfully removed %d offers.") % deleted_offers)
