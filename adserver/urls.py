@@ -17,6 +17,7 @@ from .views import AdvertiserGeoReportView
 from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
+from .views import AdvertiserStripePortalView
 from .views import AdViewProxyView
 from .views import AdViewTimeProxyView
 from .views import ApiTokenCreateView
@@ -226,6 +227,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/users/<int:user_id>/remove/",
         AdvertiserAuthorizedUsersRemoveView.as_view(),
         name="advertiser_users_remove",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/billing/",
+        AdvertiserStripePortalView.as_view(),
+        name="advertiser_stripe_portal",
     ),
     # Publisher management and reporting
     path(
