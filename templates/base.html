@@ -15,7 +15,7 @@
     {% block body_content %}{% endblock body_content %}
 
     <script src="{% static 'bundle.js' %}" ></script>
-    {% if plausible_domain %}
+    {% if plausible_domain and not request.user.is_staff %}
     <script defer data-domain="{{ plausible_domain }}" src="https://plausible.io/js/plausible.js"></script>
     {% endif %}
   </body>
