@@ -391,7 +391,9 @@ def generate_publisher_payout_data(
         )
 
     # Handle cases where a publisher has just joined this month
-    if start_date.month != today.month and include_due_report:
+    if (
+        start_date.month != today.month and start_date.year != today.year
+    ) and include_due_report:
         due_queryset = publisher.adimpression_set.filter(
             date__gte=start_date,
             date__lte=end_date,
