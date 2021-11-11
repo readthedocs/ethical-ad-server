@@ -1790,7 +1790,8 @@ class Offer(AdBase):
     class Meta:
         # This is needed because we can't sort on pk to get the created ordering
         ordering = ("-date",)
-        db_table = "adserver_offer_2021_11"
+        if settings.ADSERVER_OFFER_DB_TABLE:
+            db_table = settings.ADSERVER_OFFER_DB_TABLE
 
 
 class PublisherPayout(TimeStampedModel):
