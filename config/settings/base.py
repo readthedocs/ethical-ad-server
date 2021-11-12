@@ -124,6 +124,8 @@ DATABASES = {
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
+ADSERVER_OFFER_DB_TABLE = env("ADSERVER_OFFER_DB_TABLE", default=None)
+
 # Add support for a read replica, mostly used in reporting.
 DATABASE_ROUTERS = env("DATABASE_ROUTER", default=[])
 if DATABASE_ROUTERS:
