@@ -1,3 +1,4 @@
+
 CHANGELOG
 =========
 
@@ -5,6 +6,19 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.42.0
+---------------
+
+This release adds the ability for advertisers to view old invoices,
+and does a few small operations changes.
+The most important is being able to rename the Offers database table,
+which we plan to do in production to improve database performance.
+
+:date: November 15, 2021
+
+ * @ericholscher: These ports were used for me locally, let them be overridden. (#486)
+ * @ericholscher: Change the offers db_table to give us more space (#485)
+ * @davidfischer: Enable Stripe billing portal for advertisers (#483)
 
 Version v0.41.0
 ---------------
