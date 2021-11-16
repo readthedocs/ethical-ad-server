@@ -102,8 +102,12 @@
                             <td>
                               <div class="progress" style="height: 1.5rem">
                                 <div class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: {{ flight.percent_complete|floatformat:0 }}%;" aria-valuenow="{{ flight.percent_complete|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-                                  ${{ flight.value_remaining|floatformat:2 }} / ${{ flight.projected_total_value|floatformat:2 }} remaining</div>
+                                {{ flight.percent_complete|floatformat:0 }}% complete
+                                </div>
                               </div>
+                              {% if flight.cpc or flight.cpm %}
+                                <p class="text-center text-muted small">${{ flight.value_remaining|floatformat:2 }} / ${{ flight.projected_total_value|floatformat:2 }} remaining</p>
+                              {% endif %}
                             </td>
                           </tr>
                         {% endfor %}
