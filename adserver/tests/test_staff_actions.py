@@ -198,6 +198,8 @@ class PublisherPayoutTests(TestCase):
         last_month = timezone.now().replace(day=1) - timedelta(days=1)
         self.publisher1.created = last_month
         self.publisher1.save()
+
+        # 50 clicks * 2 CPC = $100 ($70 shared)
         for x in range(50):
             get(
                 Offer,
