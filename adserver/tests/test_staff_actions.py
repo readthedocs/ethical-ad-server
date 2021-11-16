@@ -77,6 +77,20 @@ class CreateAdvertiserTest(TestCase):
         form = CreateAdvertiserForm(data=data)
         self.assertFalse(form.is_valid())
 
+        # Create another advertiser with the same user
+        advertiser_name = "Test Advertiser 2"
+        data = {
+            "advertiser_name": advertiser_name,
+            "user_email": user_email,
+        }
+        form = CreateAdvertiserForm(data=data)
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.assertTrue(Advertiser.objects.filter(name=advertiser_name).exists())
+        user = User.objects.filter(email=user_email).first()
+        self.assertEqual(user.advertisers.count(), 2)
+
     def test_view(self):
         url = reverse("create-advertiser")
 
