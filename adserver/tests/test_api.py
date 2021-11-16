@@ -995,6 +995,40 @@ class AdvertisingIntegrationTests(BaseApiTest):
             1,
         )
 
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": nonce},
+            )
+            + "?view_time=a"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid view time")
+
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": "invalid-nonce"},
+            )
+            + "?view_time=10"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid view time")
+
+        # Ensure the view time was recorded
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": nonce},
+            )
+            + "?view_time=10"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Updated view time")
+
         # Simulate for a different publisher
         data = {"placements": self.placements, "publisher": self.publisher2.slug}
         resp = self.client.post(

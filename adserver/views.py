@@ -795,7 +795,7 @@ class AdViewTimeProxyView(AdViewProxyView):
 
     def handle_action(self, request, advertisement, offer, publisher):
         """Handle updating the view time for this offer."""
-        if "view_time" in request.GET:
+        if offer and "view_time" in request.GET:
             try:
                 view_time = int(request.GET["view_time"])
                 if advertisement.track_view_time(offer, view_time):
