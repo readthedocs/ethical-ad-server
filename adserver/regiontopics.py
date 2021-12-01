@@ -129,6 +129,7 @@ region_list = [
     "wider-apac",
     "latin-america",
     "africa",
+    "south-asia",
     "global",
     "exclude",
 ]
@@ -290,6 +291,8 @@ africa = [
     "ZM",
     "ZW",
 ]
+
+south_asia = ["IN"]
 
 # Global list with a few excludes
 exclude = ["CN", "ID", "RU", "VN", "IR"]
