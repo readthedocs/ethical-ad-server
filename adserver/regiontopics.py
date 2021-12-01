@@ -292,4 +292,4 @@ africa = [
 ]
 
 # Global list with a few excludes
-exclude = ["CN", "IN", "ID", "RU", "VN", "IR"]
+exclude = ["CN", "ID", "RU", "VN", "IR"]
