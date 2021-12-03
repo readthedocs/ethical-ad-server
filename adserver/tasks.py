@@ -39,6 +39,7 @@ from .regiontopics import game_dev
 from .regiontopics import latin_america
 from .regiontopics import python
 from .regiontopics import security_privacy
+from .regiontopics import south_asia
 from .regiontopics import us_ca
 from .regiontopics import wider_apac
 from .reports import PublisherReport
@@ -148,6 +149,8 @@ def daily_update_geos(
                     _region = "africa"
                 elif country in exclude:
                     _region = "exclude"
+                elif country in south_asia:
+                    _region = "south-asia"
                 else:
                     _region = "global"
 
