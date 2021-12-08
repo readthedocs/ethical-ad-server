@@ -65,7 +65,7 @@
 
 
   {% if advertisement_list %}
-    <div class="table-responsive">
+    <div class="table-responsive" id="advertisement-list">
       <table class="table table-hover">
         <thead>
           <tr>
@@ -86,7 +86,7 @@
                 {% endif %}
               </td>
               <td>
-                <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">{{ ad.name }}</a>
+                <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}" {% if not ad.live %}class="disabled"{% endif %}>{{ ad.name }}</a>
                 {% if not ad.live %}
                   <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
                 {% endif %}

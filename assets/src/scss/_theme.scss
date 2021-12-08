@@ -26,6 +26,13 @@ body {
     }
   }
 
+  #advertisement-list {
+    .disabled {
+      text-decoration: line-through;
+    }
+  }
+
+
 
   /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
   .advertisement-preview {
