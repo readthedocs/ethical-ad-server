@@ -46,6 +46,11 @@ if settings.ADSERVER_ADMIN_URL:
     # If no ADSERVER_ADMIN_URL is specified, the Django admin is disabled
     urlpatterns += [path(r"{}/".format(settings.ADSERVER_ADMIN_URL), admin.site.urls)]
 
+if "djstripe" in settings.INSTALLED_APPS:
+    urlpatterns += [
+        path(r"stripe/", include("djstripe.urls", namespace="djstripe")),
+    ]
+
 urlpatterns += [
     path(r"accounts/", include("allauth.urls")),
     path(r"", include("adserver.urls")),

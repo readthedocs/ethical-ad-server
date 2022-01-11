@@ -354,7 +354,22 @@ REST_FRAMEWORK = {
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
 STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
 stripe.api_key = STRIPE_SECRET_KEY
-stripe.api_version = "2020-03-02"
+stripe.api_version = "2020-08-27"
+
+# Needed for dj-stripe
+# https://dj-stripe.readthedocs.io/
+STRIPE_LIVE_SECRET_KEY = STRIPE_SECRET_KEY
+STRIPE_TEST_SECRET_KEY = STRIPE_SECRET_KEY
+STRIPE_LIVE_MODE = False  # Set to True in production
+DJSTRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+if not DJSTRIPE_WEBHOOK_SECRET:
+    # This is less optimal than setting the webhook secret
+    # However, the app won't start without the secret
+    # with this setting set to the default
+    DJSTRIPE_WEBHOOK_VALIDATION = "retrieve_event"
+if STRIPE_LIVE_SECRET_KEY:
+    INSTALLED_APPS += ["djstripe"]
 
 
 # Slack

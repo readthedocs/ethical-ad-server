@@ -43,7 +43,7 @@ IP2Proxy==3.0.0
 # Countries helper used in ad targeting
 django-countries==5.4
 
-jsonfield==2.0.2
+jsonfield==3.1.0
 bleach==3.3.0
 
 # Security features
@@ -54,6 +54,7 @@ django-slack==5.16.2
 
 # Stripe for payments
 stripe>=2.48.0,<3.0
+dj-stripe==2.5.1
 
 # JWT used by Metabase embedding
 PyJWT==2.1.0
