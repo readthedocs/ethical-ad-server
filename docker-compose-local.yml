@@ -88,7 +88,6 @@ services:
 
   metabase:
     image: metabase/metabase
-    restart: always
     ports:
       - ${ETHICALADS_METABASE_PORT:-3000}:3000
     volumes:
