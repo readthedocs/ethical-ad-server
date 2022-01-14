@@ -1,6 +1,5 @@
 """Celery tasks for the ad server."""
 import datetime
-import json
 import logging
 from collections import defaultdict
 
@@ -285,12 +284,9 @@ def daily_update_keywords(day=None):
             ):
                 continue
 
-            keywords = json.loads(values["keywords"])
-            publisher_keywords = set(keywords)
+            publisher_keywords = set(values["keywords"])
 
-            flight_targeting = json.loads(
-                values["advertisement__flight__targeting_parameters"]
-            )
+            flight_targeting = values["advertisement__flight__targeting_parameters"]
             flight_keywords = set(flight_targeting.get("include_keywords", {}))
 
             matched_keywords = publisher_keywords & flight_keywords
@@ -342,7 +338,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             if not (values["keywords"] and values["country"]):
                 continue
 
-            keywords = json.loads(values["keywords"])
+            keywords = values["keywords"]
             country = values["country"]
             ad = values["advertisement"]
             publisher_keywords = set(keywords)

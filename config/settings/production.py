@@ -180,3 +180,6 @@ ADSERVER_STICKY_DECISION_DURATION = env.int(
 GEOIP_PATH = env("GEOIP_GEOLITE2_PATH", default=GEOIP_PATH)
 GEOIP_CITY = env("GEOIP_GEOLITE2_CITY_FILENAME", default="GeoLite2-City.mmdb")
 GEOIP_COUNTRY = env("GEOIP_GEOLITE2_COUNTRY_FILENAME", default="GeoLite2-Country.mmdb")
+
+# Stripe settings for dj-stripe
+STRIPE_LIVE_MODE = True
