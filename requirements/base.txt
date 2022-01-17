@@ -1,5 +1,5 @@
 # Django itself and its requirements (pytz)
-Django==2.2.24
+Django==2.2.26
 pytz==2019.2
 
 # Asynchronous tasks
