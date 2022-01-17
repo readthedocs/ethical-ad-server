@@ -54,12 +54,13 @@ class AdModelAdminTests(BaseAdModelsTestCase):
             self.assertTrue(response.status_code, 200)
 
         # Ensure the Stripe customer link is present
-        self.advertiser.stripe_customer_id = "cus_1234567890"
+        self.advertiser.djstripe_customer = self.stripe_customer
         self.advertiser.save()
 
         response = self.client.get(list_url)
         self.assertTrue(response.status_code, 200)
-        self.assertContains(response, self.advertiser.stripe_customer_id)
+        self.assertContains(response, self.advertiser.djstripe_customer.id)
+        self.assertContains(response, self.advertiser.djstripe_customer.name)
 
     def test_advertiser_invoice_create(self):
         url = reverse("admin:adserver_advertiser_changelist")
@@ -70,14 +71,16 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         resp = self.client.post(url, data, follow=True)
         self.assertContains(resp, "Stripe is not configured")
 
-        with override_settings(STRIPE_SECRET_KEY="test-12345"):
+        with override_settings(
+            STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
+        ):
             with mock.patch("stripe.InvoiceItem.create") as _:
                 with mock.patch("stripe.Invoice.create") as invoice_create:
                     # No Stripe ID for this advertiser
                     resp = self.client.post(url, data, follow=True)
                     self.assertContains(resp, "No Stripe customer ID")
 
-                    self.advertiser.stripe_customer_id = "cus_1234567890"
+                    self.advertiser.djstripe_customer = self.stripe_customer
                     self.advertiser.save()
 
                     invoice_create.return_value = stripe.Invoice(id="inv_98765")
@@ -133,7 +136,9 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         resp = self.client.post(url, data, follow=True)
         self.assertContains(resp, "Stripe is not configured")
 
-        with override_settings(STRIPE_SECRET_KEY="test-12345"):
+        with override_settings(
+            STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
+        ):
             with mock.patch("stripe.InvoiceItem.create") as _:
                 with mock.patch("stripe.Invoice.create") as invoice_create:
                     resp = self.client.post(url, data, follow=True)
@@ -148,7 +153,7 @@ class AdModelAdminTests(BaseAdModelsTestCase):
                     resp = self.client.post(url, data, follow=True)
                     self.assertContains(resp, "No Stripe customer ID")
 
-                    self.advertiser.stripe_customer_id = "cus_1234567890"
+                    self.advertiser.djstripe_customer = self.stripe_customer
                     self.advertiser.save()
 
                     invoice_create.return_value = stripe.Invoice(id="inv_98765")
