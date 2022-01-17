@@ -109,7 +109,7 @@
                 </a>
               </li>
 
-              {% if advertiser.stripe_customer_id %}
+              {% if advertiser.djstripe_customer %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'advertiser_stripe_portal' advertiser.slug %}">
                   <span class="fa fa-credit-card fa-fw mr-2 text-muted" aria-hidden="true"></span>

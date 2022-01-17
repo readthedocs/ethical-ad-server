@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "adserver.auth",
     "simple_history",
     "django_slack",
+    "djstripe",
 ]
 
 MIDDLEWARE = [
@@ -351,16 +352,12 @@ REST_FRAMEWORK = {
 # Stripe
 # Handle payments and invoice creation with Stripe
 # https://stripe.com/docs
-# --------------------------------------------------------------------------
-STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
-STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
-stripe.api_key = STRIPE_SECRET_KEY
-stripe.api_version = "2020-08-27"
-
-# Needed for dj-stripe
 # https://dj-stripe.readthedocs.io/
-STRIPE_LIVE_SECRET_KEY = STRIPE_SECRET_KEY
-STRIPE_TEST_SECRET_KEY = STRIPE_SECRET_KEY
+# --------------------------------------------------------------------------
+STRIPE_KEY_DEFAULT = "sk_live_x"
+STRIPE_LIVE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=STRIPE_KEY_DEFAULT)
+STRIPE_TEST_SECRET_KEY = env("STRIPE_TEST_SECRET_KEY", default="sk_test_x")
+STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
 STRIPE_LIVE_MODE = False  # Set to True in production
 DJSTRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
@@ -369,8 +366,17 @@ if not DJSTRIPE_WEBHOOK_SECRET:
     # However, the app won't start without the secret
     # with this setting set to the default
     DJSTRIPE_WEBHOOK_VALIDATION = "retrieve_event"
-if STRIPE_LIVE_SECRET_KEY:
-    INSTALLED_APPS += ["djstripe"]
+
+# This is a bit convoluted but basically django-stripe raises a critical
+# if the key isn't set to anything. This prevents migrations from being created
+# among other things.
+# https://github.com/dj-stripe/dj-stripe/issues/1360
+STRIPE_ENABLED = STRIPE_LIVE_SECRET_KEY != STRIPE_KEY_DEFAULT
+if STRIPE_ENABLED:
+    stripe.api_key = STRIPE_LIVE_SECRET_KEY
+else:
+    stripe.api_key = None
+stripe.api_version = "2020-08-27"
 
 
 # Slack

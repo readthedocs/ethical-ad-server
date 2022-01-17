@@ -35,7 +35,6 @@ from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .models import View
-from .stripe_utils import get_customer_url
 from .stripe_utils import get_invoice_url
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
@@ -111,16 +110,17 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     list_display = ("name", "report", "stripe_customer")
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("modified", "created", "stripe_customer")
-    search_fields = ("name", "slug", "stripe_customer_id")
+    readonly_fields = ("modified", "created")
+    search_fields = ("name", "slug", "djstripe_customer__id")
 
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
-        if not settings.STRIPE_SECRET_KEY:
+        # TODO: Convert to using djstripe for invoice creation
+        if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
                 messages.ERROR,
-                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+                _("Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY."),
             )
             return
 
@@ -128,10 +128,10 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         flight_end = flight_start + timedelta(days=30)
 
         for advertiser in queryset:
-            if advertiser.stripe_customer_id:
+            if advertiser.djstripe_customer:
                 # Amounts, prices, and description can be customized before sending
                 stripe.InvoiceItem.create(
-                    customer=advertiser.stripe_customer_id,
+                    customer=advertiser.djstripe_customer.id,
                     description="Advertising - per 1k impressions",
                     quantity=200,
                     unit_amount=300,  # in US cents
@@ -140,7 +140,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
                 # https://stripe.com/docs/api/invoices/create
                 invoice = stripe.Invoice.create(
-                    customer=advertiser.stripe_customer_id,
+                    customer=advertiser.djstripe_customer.id,
                     auto_advance=False,  # Draft invoice
                     collection_method="send_invoice",
                     custom_fields=[
@@ -188,11 +188,11 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         )
 
     def stripe_customer(self, obj):
-        if obj.stripe_customer_id:
+        if obj.djstripe_customer:
             return format_html(
                 '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
-                get_customer_url(obj.stripe_customer_id),
-                obj.stripe_customer_id,
+                obj.djstripe_customer.get_stripe_dashboard_url(),
+                obj.djstripe_customer.name,
             )
         return None
 
@@ -440,11 +440,12 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
         This fails with a message if the flights aren't all from the same advertiser.
         """
-        if not settings.STRIPE_SECRET_KEY:
+        # TODO: convert to using djstripe and tie FK to flights
+        if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
                 messages.ERROR,
-                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+                _("Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY."),
             )
             return
 
@@ -465,7 +466,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
         latest_end_date = max([f.end_date for f in flights])
         advertiser = [f.campaign.advertiser for f in flights][0]
 
-        if not advertiser.stripe_customer_id:
+        if not advertiser.djstripe_customer:
             messages.add_message(
                 request,
                 messages.ERROR,
@@ -489,7 +490,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
             # Amounts, prices, and description can be customized before sending
             stripe.InvoiceItem.create(
-                customer=advertiser.stripe_customer_id,
+                customer=advertiser.djstripe_customer.id,
                 description=" - ".join(message_components),
                 quantity=quantity,
                 unit_amount=unit_amount,  # in US cents
@@ -504,7 +505,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
         # https://stripe.com/docs/api/invoices/create
         invoice = stripe.Invoice.create(
-            customer=advertiser.stripe_customer_id,
+            customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
             custom_fields=[

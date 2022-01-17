@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
+from djstripe.models import Customer
 
 from ..models import AdType
 from ..models import Advertisement
@@ -91,6 +92,11 @@ class BaseAdModelsTestCase(TestCase):
             is_staff=True,
             is_superuser=True,
             email="test-admin@example.com",
+        )
+
+        self.stripe_customer = Customer.objects.create(
+            name="Test Customer",
+            email="test@example.com",
         )
 
         self.factory = RequestFactory()
