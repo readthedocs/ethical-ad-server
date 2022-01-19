@@ -61,6 +61,13 @@ class FlightMixin:
         if cpc > 0 and cpm > 0:
             raise forms.ValidationError(_("A flight cannot have both CPC & CPM"))
 
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+        if start_date >= end_date:
+            raise forms.ValidationError(
+                _("The end date must come after the start date")
+            )
+
         return cleaned_data
 
 
