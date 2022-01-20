@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   tests:
     docker:
-      - image: 'cimg/python:3.6'
+      - image: 'cimg/python:3.8'
     steps:
       - checkout
       - run: pip install --user -r requirements/testing.txt
@@ -16,7 +16,7 @@ jobs:
 
   checks:
     docker:
-      - image: 'cimg/python:3.6'
+      - image: 'cimg/python:3.8'
     steps:
       - checkout
       - run: pip install --user -r requirements/testing.txt

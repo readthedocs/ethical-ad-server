@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
         with connection[settings.REPLICA_SLUG].cursor() as cursor:
-            with open(output_file, "w") as fd:
+            with open(output_file, "wb") as fd:
                 # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
                 cursor.copy_expert(query, fd)
 

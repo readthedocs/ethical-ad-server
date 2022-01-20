@@ -28,8 +28,7 @@ def metabase_question_embed(question_id, **kwargs):
     # These parameters must be JSON serializable to be signed
     # Notably, dates aren't serializable by default
     params = {}
-    for k in kwargs:
-        val = kwargs[k]
+    for (k, val) in kwargs.items():
         if isinstance(val, (date, datetime)):
             params[k] = str(val)
         else:
