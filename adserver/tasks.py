@@ -121,6 +121,7 @@ def daily_update_geos(
             .annotate(total=Count("country"))
             .filter(total__gt=0)
             .order_by("-total")
+            .iterator()
         ):
             country = values["country"]
             if geo:
@@ -199,6 +200,7 @@ def daily_update_placements(day=None):
             .filter(publisher__record_placements=True)
             .exclude(div_id__regex=r"(rtd-\w{4}|ad_\w{4}).*")
             .order_by("-total")
+            .iterator()
         ):
 
             impression, _ = PlacementImpression.objects.using("default").get_or_create(
@@ -233,6 +235,7 @@ def daily_update_impressions(day=None):
             .annotate(total=Count("publisher"))
             .filter(total__gt=0)
             .order_by("-total")
+            .iterator()
         ):
 
             impression, _ = AdImpression.objects.using("default").get_or_create(
@@ -277,6 +280,7 @@ def daily_update_keywords(day=None):
                 "advertisement__flight__targeting_parameters",
                 "total",
             )
+            .iterator()
         ):
             if not (
                 values["keywords"]
@@ -334,6 +338,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
             .filter(total__gt=0)
             .order_by("-total")
             .values("keywords", "advertisement", "country", "total")
+            .iterator()
         ):
             if not (values["keywords"] and values["country"]):
                 continue
@@ -430,6 +435,7 @@ def daily_update_uplift(day=None):
             .filter(total__gt=0)
             .order_by("-total")
             .values("publisher", "advertisement", "total")
+            .iterator()
         ):
 
             impression, _ = UpliftImpression.objects.using("default").get_or_create(
