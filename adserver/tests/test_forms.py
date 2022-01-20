@@ -140,6 +140,14 @@ class FormTests(TestCase):
         form = FlightForm(data=data)
         self.assertTrue(form.is_valid(), form.errors)
 
+        # Start date comes after end date
+        data["end_date"] = data["start_date"] - datetime.timedelta(days=2)
+        form = FlightForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertEquals(
+            form.errors["__all__"], ["The end date must come after the start date"]
+        )
+
     def test_ad_type_required(self):
         self.ad_data["ad_types"] = []
         form = AdvertisementForm(
