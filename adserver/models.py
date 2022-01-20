@@ -396,7 +396,7 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         )
         if exclude_deprecated:
             queryset = queryset.exclude(deprecated=True)
-        return queryset
+        return queryset.distinct()
 
     def total_value(self):
         """Calculate total cost/revenue for all ads/flights in this campaign."""
