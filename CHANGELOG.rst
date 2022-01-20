@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.43.1
+---------------
+
+The only changes in this release were minor bug fixes
+and slight tweaks on some checks when updating ads and flights.
+
+:date: January 20, 2022
+
+ * @davidfischer: Tone down the link error message. (#504)
+ * @davidfischer: Use iterators in daily aggregations (#502)
+ * @davidfischer: Ensure the start date comes before the end date (#501)
+ * @davidfischer: Distinct away duplicate ad types (#500)
+
+
 Version v0.43.0
 ---------------
 
