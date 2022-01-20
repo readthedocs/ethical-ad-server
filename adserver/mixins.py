@@ -83,7 +83,9 @@ class AdvertisementValidateLinkMixin:
     VALIDATE_LINK_MESSAGES = {
         "error": _(
             "Your link returned an error with status %s. "
-            "Unless your landing page is not live yet, this is probably a mistake."
+            "Double check that your landing page is live. "
+            "Occasionally, landing pages block automated access "
+            "and that can result in a false positive."
         ),
         "redirect": _(
             "Your link redirected to a page (%s) that did successfully load. "
