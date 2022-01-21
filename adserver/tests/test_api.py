@@ -622,6 +622,20 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         self.assertEqual(resp.json(), {})
 
+    def test_very_long_div_id(self):
+        div_id = "abc" * 99
+        self.data["placements"][0]["div_id"] = div_id
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["div_id"], div_id, resp_json)
+
+        # The Offer.div_id is only 100 chars max
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertEqual(offer.div_id, div_id[: Offer.DIV_MAXLENGTH])
+
     def test_keywords(self):
         data = {
             "placements": self.placements,
