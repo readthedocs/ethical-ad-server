@@ -238,7 +238,8 @@ class AllReportMixin:
 
     """A mixin that handles the primary "view" logic for staff reports."""
 
-    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
+    def get_context_data(self, **kwargs):
+        """Set the base data needed for all reports."""
         context = super().get_context_data(**kwargs)
 
         sort = self.request.GET.get("sort", "")

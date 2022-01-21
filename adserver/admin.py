@@ -46,12 +46,14 @@ class RemoveDeleteMixin:
     """Removes the ability to delete this model from the admin."""
 
     def get_actions(self, request):
-        actions = super(RemoveDeleteMixin, self).get_actions(request)
+        actions = super().get_actions(request)
         if "delete_selected" in actions:
             del actions["delete_selected"]  # pragma: no cover
         return actions
 
-    def has_delete_permission(self, request, obj=None):
+    def has_delete_permission(
+        self, request, obj=None
+    ):  # pylint: disable=unused-argument
         return False
 
 
@@ -96,11 +98,9 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
-        )
+        name = escape(instance.name)
+        url = instance.get_absolute_url()
+        return mark_safe(f'<a href="{url}">{name}</a> Report')
 
 
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
@@ -536,7 +536,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     )
 
     def get_queryset(self, request):
-        queryset = super(FlightAdmin, self).get_queryset(request)
+        queryset = super().get_queryset(request)
         queryset = queryset.annotate(
             num_ads=models.Count("advertisements", distinct=True)
         )
@@ -636,7 +636,7 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
 
     def get_queryset(self, request):
-        queryset = super(CampaignAdmin, self).get_queryset(request)
+        queryset = super().get_queryset(request)
         queryset = queryset.annotate(
             campaign_total_value=models.Sum(
                 (

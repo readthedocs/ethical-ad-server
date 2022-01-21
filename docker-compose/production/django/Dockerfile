@@ -3,7 +3,7 @@
 # This Dockerfile is not currently used or maintained
 # but may be useful in setting up your own adserver instance.
 
-FROM python:3.6-alpine
+FROM python:3.8-alpine
 MAINTAINER Read the Docs, Inc. <support@readthedocs.org>
 
 ENV PYTHONUNBUFFERED 1
