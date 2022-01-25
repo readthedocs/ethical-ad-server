@@ -8,8 +8,12 @@
       <th class="text-right"><strong>{% trans 'Views' %}</strong></th>
       <th class="text-right"><strong>{% trans 'Clicks' %}</strong></th>
       <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-      <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
       <th class="text-right"><strong>{% blocktrans %}<abbr title="% of traffic that viewed the ad">View Rate</abbr>{% endblocktrans %}</strong></th>
+      {% if publisher.saas %}
+      <th class="text-right"><strong>{% blocktrans %}<abbr title="Billable API requests">API Requests</abbr>{% endblocktrans %}</strong></th>
+      {% else %}
+      <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
+      {% endif %}
       {% if "adserver.staff_publisher_fields" in perms %}
         <th class="text-right staff-only"><strong>{% trans 'Our&nbsp;Rev' %}</strong></th>
         <th class="text-right staff-only"><strong>{% trans 'Total&nbsp;Rev' %}</strong></th>
@@ -26,8 +30,12 @@
         <td class="text-right">{{ result.views|intcomma }}</td>
         <td class="text-right">{{ result.clicks|intcomma }}</td>
         <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
-        <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
         <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
+        {% if publisher.saas %}
+          <td class="text-right">${{ result.decisions|intcomma }}</td>
+        {% else %}
+          <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
+        {% endif %}
         {% if "adserver.staff_publisher_fields" in perms %}
           <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
@@ -42,8 +50,12 @@
       <td class="text-right"><strong>{{ report.total.views|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
-      <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
+      {% if publisher.saas %}
+        <td class="text-right"><strong>${{ report.total.decisions|intcomma }}</strong></td>
+      {% else %}
+        <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
+      {% endif %}
       {% if "adserver.staff_publisher_fields" in perms %}
         <td class="text-right"><strong>${{ report.total.our_revenue|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
