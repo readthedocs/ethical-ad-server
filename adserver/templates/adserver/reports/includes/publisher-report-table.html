@@ -27,12 +27,12 @@
         <td class="text-right">{{ result.clicks|intcomma }}</td>
         <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
         <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
+        <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
         {% if "adserver.staff_publisher_fields" in perms %}
           <td class="text-right">${{ result.our_revenue|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.revenue|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.ecpm|floatformat:2 }}</td>
           <td class="text-right">{{ result.fill_rate|floatformat:1 }}%</td>
-          <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
         {% endif %}
       </tr>
       {% endif %}
@@ -43,12 +43,12 @@
       <td class="text-right"><strong>{{ report.total.clicks|intcomma }}</strong></td>
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
       <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
+      <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
       {% if "adserver.staff_publisher_fields" in perms %}
         <td class="text-right"><strong>${{ report.total.our_revenue|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.revenue|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.ecpm|floatformat:2 }}</strong></td>
         <td class="text-right"><strong>{{ report.total.fill_rate|floatformat:1 }}%</strong></td>
-        <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
       {% endif %}
     </tr>
   </tbody>
