@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('djstripe', '0008_2_5'),
-        ('adserver', '0061_add_uncached_publisher'),
+        ('adserver', '0062_add_saas_attribute'),
     ]
 
     operations = [

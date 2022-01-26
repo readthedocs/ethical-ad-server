@@ -45,7 +45,7 @@ def backwards(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0062_stripe_fks'),
+        ('adserver', '0063_stripe_fks'),
     ]
 
     operations = [
