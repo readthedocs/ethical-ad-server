@@ -1046,6 +1046,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # we can't store UAs indefinitely from a user merely browsing
             user_agent = None
 
+        if div_id:
+            # Even though the publisher could have a div of any length
+            # and we want to echo back the same div to them,
+            # we only store the first 100 characters of it.
+            div_id = div_id[: Offer.DIV_MAXLENGTH]
+
         obj = model.objects.create(
             date=timezone.now(),
             publisher=publisher,
@@ -1630,6 +1636,8 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     """A base class for data on ad views and clicks."""
 
+    DIV_MAXLENGTH = 100
+
     date = models.DateTimeField(_("Impression date"), db_index=True)
 
     publisher = models.ForeignKey(
@@ -1668,7 +1676,9 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     # Client data
     keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
-    div_id = models.CharField(_("Div id"), blank=True, null=True, max_length=100)
+    div_id = models.CharField(
+        _("Div id"), blank=True, null=True, max_length=DIV_MAXLENGTH
+    )
     # This locked up the DB for a long time trying to write to our huge View table,
     # so we made it a Text field instead of a FK.
     ad_type_slug = models.CharField(_("Ad type"), blank=True, null=True, max_length=100)
