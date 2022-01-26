@@ -7,6 +7,7 @@ from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
 from django.db.models import Count
 from django.db.models import F
+from django.db.models import Q
 from django.utils.timezone import is_naive
 from django.utils.timezone import utc
 from django_slack import slack_message
@@ -54,9 +55,9 @@ def _get_day(day):
     """Get the start and end time with support for celery-encoded strings, dates, and datetimes."""
     start_date = get_ad_day()
     if day:
-        log.info("Got day: %s", day)
+        log.debug("Got day: %s", day)
         if not isinstance(day, (datetime.datetime, datetime.date)):
-            log.info("Converting day from string")
+            log.debug("Converting day from string")
             day = parse_iso8601(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
         if is_naive(start_date):
@@ -265,50 +266,61 @@ def daily_update_keywords(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     ).delete()
 
-    for impression_type in IMPRESSION_TYPES:
-        queryset = _default_filters(impression_type, start_date, end_date)
-
-        for values in (
-            queryset.values("publisher", "advertisement", "keywords")
-            .annotate(total=Count("keywords"))
-            .filter(total__gt=0)
-            .order_by("-total")
-            .values(
-                "publisher",
-                "advertisement",
-                "keywords",
-                "advertisement__flight__targeting_parameters",
-                "total",
-            )
-            .iterator()
+    for values in (
+        Offer.objects.using(settings.REPLICA_SLUG)
+        .filter(
+            date__gte=start_date,
+            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+        )
+        .values("publisher", "advertisement", "keywords", "viewed", "clicked")
+        .annotate(
+            total_decisions=Count("keywords"),
+            total_offers=Count("keywords", filter=Q(advertisement__isnull=False)),
+            total_views=Count("keywords", filter=Q(viewed=True)),
+            total_clicks=Count("keywords", filter=Q(clicked=True)),
+        )
+        .order_by("-total_decisions")
+        .values(
+            "publisher",
+            "advertisement",
+            "keywords",
+            "advertisement__flight__targeting_parameters",
+            "total_decisions",
+            "total_offers",
+            "total_views",
+            "total_clicks",
+        )
+        .iterator()
+    ):
+        if not (
+            values["keywords"] and values["advertisement__flight__targeting_parameters"]
         ):
-            if not (
-                values["keywords"]
-                and values["advertisement__flight__targeting_parameters"]
-            ):
-                continue
+            continue
 
-            publisher_keywords = set(values["keywords"])
+        publisher_keywords = set(values["keywords"])
+        flight_targeting = values["advertisement__flight__targeting_parameters"]
+        flight_keywords = set(flight_targeting.get("include_keywords", {}))
 
-            flight_targeting = values["advertisement__flight__targeting_parameters"]
-            flight_keywords = set(flight_targeting.get("include_keywords", {}))
+        # Only store keywords where the advertiser targeting
+        # matched the keywords on the offer
+        matched_keywords = publisher_keywords & flight_keywords
 
-            matched_keywords = publisher_keywords & flight_keywords
-            for keyword in matched_keywords:
-                impression, _ = KeywordImpression.objects.using(
-                    "default"
-                ).get_or_create(
-                    date=start_date,
-                    publisher_id=values["publisher"],
-                    advertisement_id=values["advertisement"],
-                    keyword=keyword,
-                )
-                # These are a Sum because we can't query for specific keywords from Postgres,
-                # so a specific publisher and advertisement set could return the same keyword:
-                # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-                KeywordImpression.objects.using("default").filter(
-                    pk=impression.pk
-                ).update(**{impression_type: F(impression_type) + values["total"]})
+        for keyword in matched_keywords:
+            impression, _ = KeywordImpression.objects.using("default").get_or_create(
+                date=start_date,
+                publisher_id=values["publisher"],
+                advertisement_id=values["advertisement"],
+                keyword=keyword,
+            )
+            # These are a Sum because we can't query for specific keywords from Postgres,
+            # so a specific publisher and advertisement set could return the same keyword:
+            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
+            KeywordImpression.objects.using("default").filter(pk=impression.pk).update(
+                decisions=F("decisions") + values["total_decisions"],
+                offers=F("offers") + values["total_offers"],
+                views=F("views") + values["total_views"],
+                clicks=F("clicks") + values["total_views"],
+            )
 
 
 @app.task()
