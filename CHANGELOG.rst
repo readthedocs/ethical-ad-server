@@ -6,6 +6,27 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.44.0
+---------------
+
+**NOTE:** This release requires Python 3.8
+
+The largest change in this release was an upgrade to Python 3.8.
+Other than that, there were a few migrations to support tighter Stripe integration
+and some changes that will allow a set of publishers who pay us (instead of get paid)
+to run their house ads or sponsorship.
+
+:date: January 26, 2022
+
+ * @ericholscher: Start modeling SaaS publishers to show them billing data (#509)
+ * @davidfischer: Optimize the keyword aggregation (#508)
+ * @davidfischer: Handle an extra long div-id (#507)
+ * @ericholscher: Expose View Rate to publishers. (#505)
+ * @davidfischer: Upgrade to Python 3.8 (#503)
+ * @davidfischer: Stripe foreign key fields migrations (#498)
+ * @dependabot[bot]: Bump pillow from 8.3.2 to 9.0.0 in /requirements (#496)
+
+
 Version v0.43.1
 ---------------
 
