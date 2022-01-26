@@ -126,6 +126,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    saas = models.BooleanField(
+        default=False,
+        help_text=_(
+            "This published is configured as a SaaS customer. They will be billed by usage instead of paid out."
+        ),
+    )
+
     # Default to False so that we can use this as an "approved" flag for publishers
     allow_paid_campaigns = models.BooleanField(_("Allow paid campaigns"), default=False)
     allow_affiliate_campaigns = models.BooleanField(
