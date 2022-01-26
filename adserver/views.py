@@ -1333,25 +1333,25 @@ class AdvertiserStripePortalView(AdvertiserAccessMixin, UserPassesTestMixin, Vie
         advertiser = get_object_or_404(Advertiser, slug=self.kwargs["advertiser_slug"])
         return_url = reverse("advertiser_main", args=[advertiser.slug])
 
-        if not advertiser.stripe_customer_id:
+        if not advertiser.djstripe_customer:
             log.warning(
                 "Advertiser %s cannot access the portal (no customer ID)", advertiser
             )
             messages.warning(request, _("You can't access the billing portal."))
             return redirect(return_url)
-        if not settings.STRIPE_SECRET_KEY:
+        if not settings.STRIPE_LIVE_SECRET_KEY:
             messages.add_message(
                 request,
                 messages.ERROR,
                 _("Billing portal is not configured"),
             )
             log.error(
-                "Stripe is not configured. Please set settings.STRIPE_SECRET_KEY.",
+                "Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY.",
             )
             return redirect(return_url)
 
         session = stripe.billing_portal.Session.create(
-            customer=advertiser.stripe_customer_id,
+            customer=advertiser.djstripe_customer.id,
             return_url=request.build_absolute_uri(return_url),
         )
         return redirect(session.url)

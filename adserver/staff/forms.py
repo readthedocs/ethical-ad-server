@@ -2,7 +2,6 @@
 import logging
 
 import requests
-import stripe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
@@ -15,6 +14,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
+from djstripe.models import Customer
 from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
@@ -177,10 +177,10 @@ class CreateAdvertiserForm(forms.Form):
 
     def create_stripe_customer(self, user, advertiser):
         """Setup a Stripe customer for this user."""
-        if not settings.STRIPE_SECRET_KEY:
+        if not settings.STRIPE_ENABLED:
             return None
 
-        stripe_customer = stripe.Customer.create(
+        stripe_customer = Customer.objects.create(
             name=user.name,
             email=user.email,
             description=f"Advertising @ {advertiser.name}",
@@ -198,10 +198,10 @@ class CreateAdvertiserForm(forms.Form):
 
         user.advertisers.add(advertiser)
 
-        if settings.STRIPE_SECRET_KEY:
+        if settings.STRIPE_ENABLED:
             # Attach Stripe customer record to the advertiser
             stripe_customer = self.create_stripe_customer(user, advertiser)
-            advertiser.stripe_customer_id = stripe_customer.id
+            advertiser.djstripe_customer = stripe_customer
             advertiser.save()
 
         return advertiser

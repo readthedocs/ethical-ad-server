@@ -7,6 +7,7 @@ import uuid
 from collections import Counter
 
 import bleach
+import djstripe.models as djstripe_models
 from django.conf import settings
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
@@ -164,6 +165,16 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         null=True,
         default=None,
     )
+    djstripe_account = models.ForeignKey(
+        djstripe_models.Account,
+        verbose_name=_("Stripe connected account"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+    )
+
+    # Deprecated - migrate to `stripe_account`
     stripe_connected_account_id = models.CharField(
         _("Stripe connected account ID"),
         max_length=200,
@@ -260,8 +271,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return 0
 
     def payout_url(self):
-        if self.stripe_connected_account_id:
-            return f"https://dashboard.stripe.com/connect/accounts/{self.stripe_connected_account_id}"
+        if self.djstripe_account:
+            return f"https://dashboard.stripe.com/connect/accounts/{self.djstripe_account.id}"
         if self.open_collective_name:
             return f"https://opencollective.com/{self.open_collective_name}"
         if self.paypal_email:
@@ -302,6 +313,16 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
 
+    djstripe_customer = models.ForeignKey(
+        djstripe_models.Customer,
+        verbose_name=_("Stripe Customer"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+    )
+
+    # Deprecated - will migration to `customer`
     stripe_customer_id = models.CharField(
         _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
     )
