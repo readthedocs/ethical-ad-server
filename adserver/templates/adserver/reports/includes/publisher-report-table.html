@@ -32,7 +32,7 @@
         <td class="text-right">{{ result.ctr|floatformat:3 }}%</td>
         <td class="text-right">{{ result.view_rate|floatformat:1 }}%</td>
         {% if publisher.saas %}
-          <td class="text-right">${{ result.decisions|intcomma }}</td>
+          <td class="text-right">{{ result.decisions|intcomma }}</td>
         {% else %}
           <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
         {% endif %}
@@ -52,7 +52,7 @@
       <td class="text-right"><strong>{{ report.total.ctr|floatformat:3 }}%</strong></td>
       <td class="text-right"><strong>{{ report.total.view_rate|floatformat:1 }}%</strong></td>
       {% if publisher.saas %}
-        <td class="text-right"><strong>${{ report.total.decisions|intcomma }}</strong></td>
+        <td class="text-right"><strong>{{ report.total.decisions|intcomma }}</strong></td>
       {% else %}
         <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
       {% endif %}
