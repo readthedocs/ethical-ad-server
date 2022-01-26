@@ -1,10 +1,45 @@
-
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.43.1
+---------------
+
+The only changes in this release were minor bug fixes
+and slight tweaks on some checks when updating ads and flights.
+
+:date: January 20, 2022
+
+ * @davidfischer: Tone down the link error message. (#504)
+ * @davidfischer: Use iterators in daily aggregations (#502)
+ * @davidfischer: Ensure the start date comes before the end date (#501)
+ * @davidfischer: Distinct away duplicate ad types (#500)
+
+
+Version v0.43.0
+---------------
+
+The big change in this PR was the beginnings of tighter Stripe integration.
+This PR merely sets the groundwork by adding django-stripe which syncs
+data from Stripe to our local database.
+
+:date: January 18, 2022
+
+ * @dependabot[bot]: Bump django from 2.2.24 to 2.2.26 in /requirements (#497)
+ * @ericholscher: Disable metabase restart (#495)
+ * @davidfischer: Initial DJStripe integration (#494)
+ * @davidfischer: Make disabled ads more obvious (#493)
+ * @davidfischer: Update exclude list (#492)
+ * @davidfischer: Tweak to progress bar formatting (#490)
+ * @davidfischer: Make the user name optional on the advertiser form (#489)
+ * @davidfischer: Fix a bug with an invalid view time (#488)
+ * @ericholscher: Fix another silly month/year date bug (#484)
+ * @decaffeinatedio: Update GeoIP Links (#427)
+
 
 Version v0.42.0
 ---------------

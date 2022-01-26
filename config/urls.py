@@ -44,7 +44,7 @@ if settings.ADSERVER_ADMIN_URL:
     # In development, the Django admin is available at /admin
     # In production, a custom URL path can be specified
     # If no ADSERVER_ADMIN_URL is specified, the Django admin is disabled
-    urlpatterns += [path(r"{}/".format(settings.ADSERVER_ADMIN_URL), admin.site.urls)]
+    urlpatterns += [path(f"{settings.ADSERVER_ADMIN_URL}/", admin.site.urls)]
 
 urlpatterns += [
     path(r"accounts/", include("allauth.urls")),

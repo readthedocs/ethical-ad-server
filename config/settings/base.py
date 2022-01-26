@@ -117,10 +117,11 @@ SITE_ID = 1  # Required for allauth
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 # --------------------------------------------------------------------------
+DB_PATH_SQLITE = os.path.join(BASE_DIR, "db.sqlite3")
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="sqlite:///{}".format(os.path.join(BASE_DIR, "db.sqlite3")),
+        default=f"sqlite:///{DB_PATH_SQLITE}",
     )
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
@@ -452,5 +453,5 @@ ADSERVER_STICKY_DECISION_DURATION = 0
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
 ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
 
-with open(os.path.join(BASE_DIR, "package.json")) as fd:
+with open(os.path.join(BASE_DIR, "package.json"), encoding="utf-8") as fd:
     ADSERVER_VERSION = json.load(fd)["version"]

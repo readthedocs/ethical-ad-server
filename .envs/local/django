@@ -24,9 +24,16 @@ DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
 #SLACK_TOKEN=
 
 
-#
+# Metabase
 # ------------------------------------------------------------------------------
 # This is the address in docker. Use http://localhost:3000 outside docker.
 METABASE_SITE_URL=http://metabase:3000
 # Ensure this is set in http://localhost:3000/admin/settings/embedding_in_other_applications
 METABASE_SECRET_KEY=0000000000000000000000000000000000000000000000000000000000000000
+
+
+# Celery
+# ------------------------------------------------------------------------------
+# This is a workaround for some celery issues that are likely fixed in future versions.
+# https://github.com/celery/celery/issues/5761
+COLUMNS=80

@@ -40,7 +40,7 @@ This section is more to document steps than to encourage you to develop outside 
 Requirements
 ~~~~~~~~~~~~
 
-- Python 3.6
+- Python 3.8
 - Nodejs (tested with v12.3)
 
 Front-end assets

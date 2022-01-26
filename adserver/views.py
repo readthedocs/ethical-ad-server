@@ -217,7 +217,7 @@ class AdvertiserMainView(
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -231,7 +231,7 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     model = Flight
     template_name = "adserver/advertiser/flight-list.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
@@ -262,7 +262,7 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -338,7 +338,7 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         context.update({"advertiser": self.advertiser})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -370,7 +370,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
         context.update({"advertiser": self.advertiser})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -411,7 +411,7 @@ class AdvertisementUpdateView(
         kwargs["flight"] = ad.flight
         return kwargs
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -1225,7 +1225,7 @@ class AdvertiserAuthorizedUsersView(
     model = get_user_model()
     template_name = "adserver/advertiser/users.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser})
         return context
@@ -1696,7 +1696,7 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         context.update({"publisher": self.object})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
     def get_success_url(self):
@@ -1802,19 +1802,20 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
     model = PublisherPayout
     template_name = "adserver/publisher/payout-list.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         """Get the past payouts, along with the current balance and future balance."""
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()
         data = generate_publisher_payout_data(self.publisher)
+        total_balance = float(self.publisher.total_payout_sum())
 
-        total_balance = (
-            float(self.publisher.total_payout_sum())
-            + data["current_report"]["total"]["revenue_share"]
-        )
+        # For some reason, pylint is confused by the deep nesting
+        # pylint: disable=unsubscriptable-object
+        if data["current_report"]:
+            total_balance += data["current_report"]["total"]["revenue_share"]
 
-        if data.get("due_report"):
+        if data["due_report"]:
             total_balance += data["due_report"]["total"]["revenue_share"]
 
         context.update(data)
@@ -2108,7 +2109,7 @@ class PublisherMainView(
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
@@ -2203,7 +2204,7 @@ class ApiTokenDeleteView(ApiTokenMixin, DeleteView):
         messages.info(request, _("API token revoked"))
         return result
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         token = Token.objects.filter(user=self.request.user).first()
         if not token:
             raise Http404

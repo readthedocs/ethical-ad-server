@@ -285,8 +285,8 @@ def build_blocked_ip_set():
 
     filepath = os.path.join(settings.GEOIP_PATH, "torbulkexitlist.txt")
     if os.path.exists(filepath):
-        with open(filepath) as fd:
-            for line in fd.readlines():
+        with open(filepath, "r", encoding="utf-8") as fd:
+            for line in fd:
                 line = line.strip()
                 if line:
                     blocked_ips.add(line)
@@ -344,7 +344,9 @@ def generate_publisher_payout_data(
 
     TODO: Break this function up and move it out of utils.
     """
-    from .reports import PublisherReport  # pylint: disable=cyclic-import
+    # pylint: disable=cyclic-import
+    # pylint: disable=import-outside-toplevel
+    from .reports import PublisherReport
 
     today = timezone.now()
     end_date = today.replace(day=1) - timedelta(days=1)

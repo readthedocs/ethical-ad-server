@@ -83,7 +83,9 @@ class AdvertisementValidateLinkMixin:
     VALIDATE_LINK_MESSAGES = {
         "error": _(
             "Your link returned an error with status %s. "
-            "Unless your landing page is not live yet, this is probably a mistake."
+            "Double check that your landing page is live. "
+            "Occasionally, landing pages block automated access "
+            "and that can result in a false positive."
         ),
         "redirect": _(
             "Your link redirected to a page (%s) that did successfully load. "
@@ -236,7 +238,8 @@ class AllReportMixin:
 
     """A mixin that handles the primary "view" logic for staff reports."""
 
-    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
+    def get_context_data(self, **kwargs):
+        """Set the base data needed for all reports."""
         context = super().get_context_data(**kwargs)
 
         sort = self.request.GET.get("sort", "")
