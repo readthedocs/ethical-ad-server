@@ -38,12 +38,10 @@ class GeoIpMixin:
         )
 
         # Geolocate the actual IP address
-        country_code = region_code = metro_code = None
-        geo_data = get_geolocation(request.ip_address)
-        if geo_data:
-            country_code = geo_data["country_code"]
-            region_code = geo_data["region"]
-            metro_code = geo_data["dma_code"]
+        geo_data = get_geolocation(request, request.ip_address)
+        country_code = geo_data["country_code"]
+        region_code = geo_data["region"]
+        metro_code = geo_data["dma_code"]
 
         request.geo = GeolocationTuple(country_code, region_code, metro_code)
 

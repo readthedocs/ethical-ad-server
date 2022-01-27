@@ -599,16 +599,12 @@ class BaseProxyView(View):
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
 
-        country_code = None
-        region_code = None
-        metro_code = None
-        geo_data = get_geolocation(ip_address)
-        if geo_data:
-            # One or more of these may be None which is OK
-            # Ads targeting countries/regions/metros won't be counted
-            country_code = geo_data["country_code"]
-            region_code = geo_data["region"]
-            metro_code = geo_data["dma_code"]
+        # One or more of these may be None which is OK
+        # Ads targeting countries/regions/metros won't be counted
+        geo_data = get_geolocation(request, ip_address)
+        country_code = geo_data["country_code"]
+        region_code = geo_data["region"]
+        metro_code = geo_data["dma_code"]
 
         if not offer:
             log.log(self.log_level, "Ad impression for unknown offer")

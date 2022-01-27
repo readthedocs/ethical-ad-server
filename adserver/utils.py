@@ -119,12 +119,15 @@ def get_client_id(request):
 
 def get_client_country(request, ip_address=None):
     """Get country data for this request."""
-    country = None
+    country = getattr(request, "user_country", None)
+    if country:
+        # Set by Cloudflare's GeoIP header
+        return country
     if hasattr(request, "geo"):
         # This is set in all API requests that use the GeoIpMixin
         country = request.geo.country_code
     else:
-        geo_data = get_geolocation(ip_address)
+        geo_data = get_geolocation(request, ip_address)
         if geo_data:
             country = geo_data["country_code"]
 
@@ -249,22 +252,29 @@ def is_proxy_ip(ip):
     return False
 
 
-def get_geolocation(ip_address):
+def get_geolocation(request, ip_address):
+    """Gets the geolocation for this IP address."""
+    geolocation = {
+        # Use the Cloudflare GeoIP if available
+        "country_code": getattr(request, "user_country", None),
+        "region": None,
+        "dma_code": None,
+    }
     try:
         ipaddress.ip_address(force_text(ip_address))
     except ValueError:
         # Invalid IP address
-        return None
+        return geolocation
 
     if geoip:
         try:
-            return geoip.city(ip_address)
+            geolocation = geoip.city(ip_address)
         except AddressNotFoundError:
             log.debug("Could not get geolocation for %s", ip_address)
         except GeoIP2Exception:
             log.warning("Geolocation configuration error")
 
-    return None
+    return geolocation
 
 
 def get_ipproxy_db():

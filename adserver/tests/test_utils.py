@@ -28,6 +28,10 @@ from ..utils import parse_date_string
 
 
 class UtilsTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.request = self.factory.get("/")
+
     def test_get_ad_day(self):
         day = get_ad_day()
         self.assertTrue(timezone.is_aware(day))
@@ -156,7 +160,8 @@ class UtilsTest(TestCase):
 
     def test_geolocation(self):
         """The GeoIP database is not available in CI."""
-        self.assertIsNone(get_geolocation("invalid-ip"))
+        geolocation = get_geolocation(self.request, "invalid-ip")
+        self.assertIsNone(geolocation["country_code"])
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.return_value = {
@@ -164,17 +169,19 @@ class UtilsTest(TestCase):
                 "region": None,
                 "dma_code": None,
             }
-            geolocation = get_geolocation("8.8.8.8")
+            geolocation = get_geolocation(self.request, "8.8.8.8")
             self.assertIsNotNone(geolocation)
             self.assertEqual(geolocation["country_code"], "FR")
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.side_effect = AddressNotFoundError()
-            self.assertIsNone(get_geolocation("8.8.8.8"))
+            geolocation = get_geolocation(self.request, "8.8.8.8")
+            self.assertIsNone(geolocation["country_code"])
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.side_effect = GeoIP2Exception()
-            self.assertIsNone(get_geolocation("8.8.8.8"))
+            geolocation = get_geolocation(self.request, "8.8.8.8")
+            self.assertIsNone(geolocation["country_code"])
 
     def test_parse_date_string(self):
         self.assertIsNone(parse_date_string("not-a-date"))
