@@ -135,7 +135,7 @@ def get_client_country(request, ip_address=None):
 
 
 def get_country_name(country_code):
-    return COUNTRY_DICT.get(country_code)
+    return COUNTRY_DICT.get(country_code, country_code)
 
 
 def anonymize_ip_address(ip_address):

@@ -33,6 +33,7 @@ class CloudflareMiddleware:
     Sets request.ip_address and request.country from Cloudflare headers.
 
     See: https://developers.cloudflare.com/fundamentals/get-started/http-request-headers
+    See: https://support.cloudflare.com/hc/en-us/articles/200168236-Configuring-Cloudflare-IP-Geolocation
 
     SECURITY NOTE: This middleware *SHOULD BE DISABLED* if not running on Cloudflare.
         Otherwise these headers are spoofable and could result in invalid traffic.
@@ -82,6 +83,7 @@ class CloudflareMiddleware:
         country_code = request.headers.get(self.COUNTRY_HEADER, None)
         if country_code == "XX":
             # CF always adds the header and sets "XX" if it can't geolocate
+            # CF uses "T1" for Tor traffic
             country_code = None
 
         return country_code
