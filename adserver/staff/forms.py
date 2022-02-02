@@ -2,6 +2,7 @@
 import logging
 
 import requests
+import stripe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
@@ -180,12 +181,16 @@ class CreateAdvertiserForm(forms.Form):
         if not settings.STRIPE_ENABLED:
             return None
 
-        stripe_customer = Customer.objects.create(
+        # Create the new stripe customer
+        customer = stripe.Customer.create(
             name=user.name,
             email=user.email,
             description=f"Advertising @ {advertiser.name}",
         )
-        return stripe_customer
+
+        # Force sync this customer from stripe
+        # Then return the Django model instance
+        return Customer.sync_from_stripe_data(customer)
 
     def save(self):
         """Create the advertiser and associated objects. Send the invitation to the user account."""
