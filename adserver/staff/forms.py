@@ -39,8 +39,8 @@ class CreateAdvertiserForm(forms.Form):
     """
 
     # TODO: Make these configurable in the web UI as a dropdown of common values.
-    DEFAULT_CPM = 3.33
-    DEFAULT_NUM_IMPRESSIONS = 300000
+    DEFAULT_CPM = 5
+    DEFAULT_NUM_IMPRESSIONS = 200000
     DEFAULT_COUNTRY_TARGETING = [
         # North America
         "US",
