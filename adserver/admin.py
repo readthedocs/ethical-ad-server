@@ -12,6 +12,7 @@ from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
 
 from .forms import AdvertisementAdminForm
@@ -35,7 +36,6 @@ from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .models import View
-from .stripe_utils import get_invoice_url
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 
@@ -115,7 +115,6 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
-        # TODO: Convert to using djstripe for invoice creation
         if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
@@ -139,7 +138,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                 )
 
                 # https://stripe.com/docs/api/invoices/create
-                invoice = stripe.Invoice.create(
+                inv = stripe.Invoice.create(
                     customer=advertiser.djstripe_customer.id,
                     auto_advance=False,  # Draft invoice
                     collection_method="send_invoice",
@@ -156,13 +155,14 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     ],
                     days_until_due=30,
                 )
+                invoice = Invoice.sync_from_stripe_data(inv)
 
                 messages.add_message(
                     request,
                     messages.SUCCESS,
                     _(
                         "New Stripe invoice for {}: {}".format(
-                            advertiser, get_invoice_url(invoice.id)
+                            advertiser, invoice.get_stripe_dashboard_url()
                         )
                     ),
                 )
@@ -355,6 +355,37 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
         return False
 
 
+class InvoiceInline(admin.TabularInline):
+
+    """List of Stripe invoices for a flight."""
+
+    model = Flight.invoices.through
+    can_delete = True
+    extra = 1
+    fields = (
+        "invoice",
+        "total",
+        "due_date",
+        "status",
+    )
+    list_select_related = ("invoice", "flight")
+    raw_id_fields = ("invoice",)
+    readonly_fields = (
+        "total",
+        "due_date",
+        "status",
+    )
+
+    def total(self, obj):
+        return obj.invoice.total
+
+    def due_date(self, obj):
+        return obj.invoice.due_date
+
+    def status(self, obj):
+        return obj.invoice.status
+
+
 class FlightMixin:
 
     """Used by the FlightAdmin and FlightInline."""
@@ -387,7 +418,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     save_as = True
 
     actions = ["action_create_draft_invoice"]
-    inlines = (AdvertisementsInline,)
+    inlines = (AdvertisementsInline, InvoiceInline)
     list_display = (
         "name",
         "slug",
@@ -417,7 +448,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
         "campaign__advertiser",
     )
     list_select_related = ("campaign", "campaign__advertiser")
-    raw_id_fields = ("campaign",)
+    raw_id_fields = ("campaign", "invoices")
     readonly_fields = (
         "value_remaining",
         "projected_total_value",
@@ -504,7 +535,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
 
         # https://stripe.com/docs/api/invoices/create
-        invoice = stripe.Invoice.create(
+        inv = stripe.Invoice.create(
             customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
@@ -521,13 +552,20 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             ],
             days_until_due=30,
         )
+        invoice = Invoice.sync_from_stripe_data(inv)
+
+        # Attach Stripe invoices to flights
+        # There isn't a good way to mock invoices for tests so this check is to mock the invoice
+        if invoice.pk:
+            for flight in flights:
+                flight.invoices.add(invoice)
 
         messages.add_message(
             request,
             messages.SUCCESS,
             _(
                 "New Stripe invoice for {}: {}".format(
-                    advertiser, get_invoice_url(invoice.id)
+                    advertiser, invoice.get_stripe_dashboard_url()
                 )
             ),
         )

@@ -4,6 +4,7 @@ import stripe
 from django.test import override_settings
 from django.urls import reverse
 from django_dynamic_fixture import get
+from djstripe.models import Invoice
 
 from ..constants import CLICKS
 from ..constants import VIEWS
@@ -74,19 +75,22 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         with override_settings(
             STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
         ):
-            with mock.patch("stripe.InvoiceItem.create") as _:
-                with mock.patch("stripe.Invoice.create") as invoice_create:
-                    # No Stripe ID for this advertiser
-                    resp = self.client.post(url, data, follow=True)
-                    self.assertContains(resp, "No Stripe customer ID")
+            with mock.patch("stripe.InvoiceItem.create") as _, mock.patch(
+                "stripe.Invoice.create"
+            ) as invoice_create, mock.patch(
+                "adserver.admin.Invoice.sync_from_stripe_data"
+            ) as _2:
+                # No Stripe ID for this advertiser
+                resp = self.client.post(url, data, follow=True)
+                self.assertContains(resp, "No Stripe customer ID")
 
-                    self.advertiser.djstripe_customer = self.stripe_customer
-                    self.advertiser.save()
+                self.advertiser.djstripe_customer = self.stripe_customer
+                self.advertiser.save()
 
-                    invoice_create.return_value = stripe.Invoice(id="inv_98765")
+                invoice_create.return_value = stripe.Invoice(id="inv_98765")
 
-                    resp = self.client.post(url, data, follow=True)
-                    self.assertContains(resp, "New Stripe invoice")
+                resp = self.client.post(url, data, follow=True)
+                self.assertContains(resp, "New Stripe invoice")
 
     def test_advertisement_admin(self):
         list_url = reverse("admin:adserver_advertisement_changelist")
@@ -139,27 +143,32 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         with override_settings(
             STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
         ):
-            with mock.patch("stripe.InvoiceItem.create") as _:
-                with mock.patch("stripe.Invoice.create") as invoice_create:
-                    resp = self.client.post(url, data, follow=True)
-                    self.assertContains(
-                        resp, "All selected flights must be from a single advertiser"
-                    )
+            with mock.patch("stripe.InvoiceItem.create") as _, mock.patch(
+                "stripe.Invoice.create"
+            ) as invoice_create, mock.patch(
+                "adserver.admin.Invoice.sync_from_stripe_data"
+            ) as invoice_object:
+                resp = self.client.post(url, data, follow=True)
+                self.assertContains(
+                    resp,
+                    "All selected flights must be from a single advertiser",
+                )
 
-                    campaign2.advertiser = self.advertiser
-                    campaign2.save()
+                campaign2.advertiser = self.advertiser
+                campaign2.save()
 
-                    # No Stripe ID for this advertiser
-                    resp = self.client.post(url, data, follow=True)
-                    self.assertContains(resp, "No Stripe customer ID")
+                # No Stripe ID for this advertiser
+                resp = self.client.post(url, data, follow=True)
+                self.assertContains(resp, "No Stripe customer ID")
 
-                    self.advertiser.djstripe_customer = self.stripe_customer
-                    self.advertiser.save()
+                self.advertiser.djstripe_customer = self.stripe_customer
+                self.advertiser.save()
 
-                    invoice_create.return_value = stripe.Invoice(id="inv_98765")
+                invoice_create.return_value = stripe.Invoice(id="inv_98765")
+                invoice_object.return_value = Invoice(customer=self.stripe_customer)
 
-                    resp = self.client.post(url, data, follow=True)
-                    self.assertContains(resp, "New Stripe invoice")
+                resp = self.client.post(url, data, follow=True)
+                self.assertContains(resp, "New Stripe invoice")
 
     def test_campaign_admin(self):
         list_url = reverse("admin:adserver_campaign_changelist")
