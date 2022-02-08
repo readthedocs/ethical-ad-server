@@ -128,6 +128,10 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "Whether this publisher allows unauthenticated ad decision API requests (eg. JSONP)"
         ),
     )
+    disabled = models.BooleanField(
+        default=False,
+        help_text=_("Completely disable this publisher"),
+    )
 
     saas = models.BooleanField(
         default=False,

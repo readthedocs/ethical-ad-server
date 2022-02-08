@@ -495,6 +495,18 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+    def test_publisher_disabled(self):
+        self.publisher2.disabled = True
+        self.publisher2.save()
+
+        self.user.publishers.add(self.publisher2)
+        data = {"placements": self.placements, "publisher": self.publisher2.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.assertEqual(resp.json(), {"publisher": ["Disabled publisher"]})
+
     def test_publisher_groups(self):
         # Get an ad for the first publisher
         data = {"placements": self.placements, "publisher": self.publisher1.slug}

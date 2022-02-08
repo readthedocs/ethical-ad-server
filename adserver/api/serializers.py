@@ -78,10 +78,12 @@ class AdDecisionSerializer(serializers.Serializer):
     def validate_publisher(self, publisher_slug):
         # Resolve the publisher slug into the actual Publisher
         publisher = Publisher.objects.filter(slug=publisher_slug).first()
-        if publisher:
-            return publisher
+        if not publisher:
+            raise serializers.ValidationError("Invalid publisher")
+        if publisher.disabled:
+            raise serializers.ValidationError("Disabled publisher")
 
-        raise serializers.ValidationError("Invalid publisher")
+        return publisher
 
     def validate_keywords(self, keywords):
         if keywords:
