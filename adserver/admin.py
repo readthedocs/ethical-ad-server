@@ -102,11 +102,34 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return mark_safe(f'<a href="{url}">{name}</a> Report')
 
 
+class CampaignInline(admin.TabularInline):
+
+    """For inlining the campaigns on the advertiser admin."""
+
+    model = Campaign
+
+    can_delete = False
+    fields = (
+        "id",
+        "name",
+        "campaign_type",
+    )
+    readonly_fields = (
+        "name",
+        "campaign_type",
+    )
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisers."""
 
     actions = ["action_create_draft_invoice"]
+    inlines = (CampaignInline,)
     list_display = ("name", "report", "stripe_customer")
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
