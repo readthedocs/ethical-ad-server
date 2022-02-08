@@ -167,7 +167,7 @@ class TestPublisherDashboardViews(TestCase):
             self.assertContains(resp, "Manage Stripe account")
             self.assertContains(resp, stripe_url)
 
-    def test_publisher_nopaid_notice(self):
+    def test_publisher_notices(self):
         self.client.force_login(self.staff_user)
 
         url = reverse("publisher_settings", args=[self.publisher1.slug])
@@ -184,6 +184,17 @@ class TestPublisherDashboardViews(TestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(
+            resp, "Your publisher account is not approved for paid campaigns"
+        )
+
+        # Disable the publisher
+        self.publisher1.disabled = True
+        self.publisher1.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Your publisher account is disabled")
+        self.assertNotContains(
             resp, "Your publisher account is not approved for paid campaigns"
         )
 
