@@ -47,6 +47,7 @@ class Command(BaseCommand):
 
         api_token = os.environ.get("PYTHON_API_TOKEN")
         api_url = os.environ.get("PYTHON_API_URL")
+        sync = kwargs["sync"]
 
         if not api_url and api_token:
             raise CommandError(
@@ -55,30 +56,27 @@ class Command(BaseCommand):
                 )
             )
 
+        if not sync:
+            self.stdout.write("DRY RUN: Specify --sync to actually write data")
+
+        # State
         valid_ads = set()
+        # Ad types
+        psf_ad = AdType.objects.get(slug="psf")
+        image_only_ad = AdType.objects.get(slug="psf-image-only")
+        # Flights
+        sidebar = Flight.objects.get(slug="pypi-sidebar")
+        sponsors = Flight.objects.get(slug="pypi-sponsors")
 
         response = requests.get(
             api_url,
             headers={"Authorization": f"Token {api_token}"},
         )
 
-        # Ad types
-        psf_ad = AdType.objects.get(slug="psf")
-        image_only_ad = AdType.objects.get(slug="psf-image-only")
-
-        # Flights
-        sidebar = Flight.objects.get(slug="pypi-sidebar")
-        sponsors = Flight.objects.get(slug="pypi-sponsors")
-
-        sync = kwargs["sync"]
-
-        if not sync:
-            self.stdout.write("DRY RUN: Specify --sync to actually write data")
-
         for item in response.json():
             self.stdout.write("Processing: " + item["sponsor"])
             try:
-                if sync or (not sync and kwargs["images]"]):
+                if sync or (not sync and kwargs["images"]):
                     url = item["logo"]
                     image_response = requests.get(url, timeout=5)
                     image_response.raise_for_status()
@@ -98,6 +96,7 @@ class Command(BaseCommand):
                 continue
 
             name = f"{item['sponsor']} ({flight.slug})"
+
             if sync:
                 self.stdout.write(f"Syncing: {name}")
                 ad, created = Advertisement.objects.get_or_create(
@@ -116,16 +115,29 @@ class Command(BaseCommand):
                 ad.ad_types.add(psf_ad)
                 ad.ad_types.add(image_only_ad)
                 ad.save()
+            else:
+                # Try to get the ad if it exists to add to valid_ads
+                try:
+                    ad = Advertisement.objects.get(
+                        name=name,
+                        slug=slugify(name),
+                        flight=flight,
+                    )
+                except Advertisement.DoesNotExist:
+                    self.stdout.write(f"Failed to get ad for {name}")
+                    continue
 
-                valid_ads.add(ad)
+            valid_ads.add(ad)
 
         for iterated_ad in Advertisement.objects.filter(
             flight__campaign__advertiser__slug="psf"
         ):
             if iterated_ad not in valid_ads:
                 if sync:
-                    self.stdout.write(f"Deactivating invalid ad: {ad}")
-                    ad.live = False
-                    ad.save()
+                    self.stdout.write(f"Deactivating invalid ad: {iterated_ad}")
+                    iterated_ad.live = False
+                    iterated_ad.save()
                 else:
-                    self.stdout.write(f"Invalid ad will be deactivated: {ad}")
+                    self.stdout.write(f"Invalid ad will be deactivated: {iterated_ad}")
+            else:
+                self.stdout.write(f"Keeping ad: {iterated_ad}")
