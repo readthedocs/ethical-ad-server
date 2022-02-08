@@ -20,12 +20,14 @@ from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.functional import cached_property
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from django_countries import countries
 from django_countries.fields import CountryField
 from django_extensions.db.models import TimeStampedModel
+from djstripe.enums import InvoiceStatus
 from jsonfield import JSONField
 from simple_history.models import HistoricalRecords
 from user_agents import parse
@@ -526,6 +528,16 @@ class Flight(TimeStampedModel, IndestructibleModel):
         default=0, help_text=_("Clicks across all ads in this flight")
     )
 
+    # Connect to Stripe invoice data
+    # There can be multiple invoices for a flight
+    # (say a 3 month flight billed monthly)
+    # and an invoice can cover multiple flights
+    invoices = models.ManyToManyField(
+        djstripe_models.Invoice,
+        verbose_name=_("Stripe invoices"),
+        blank=True,
+    )
+
     history = HistoricalRecords()
 
     class Meta:
@@ -796,6 +808,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
         clicks = self.total_clicks
         views = self.total_views
         return calculate_ctr(clicks, views)
+
+    @cached_property
+    def active_invoices(self):
+        """Get invoices excluding drafts, void, and uncollectable ones."""
+        return self.invoices.filter(status__in=(InvoiceStatus.open, InvoiceStatus.paid))
 
 
 class AdType(TimeStampedModel, models.Model):

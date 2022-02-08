@@ -68,3 +68,33 @@
     </dd>
   {% endif %}
 </dl>
+
+{% if flight.active_invoices %}
+  <table class="table table-sm table-borderless max-w-800px">
+    <thead>
+      <tr>
+        <th>{% trans 'Invoice' %}</th>
+        <th>{% trans 'Amount' %}</th>
+        <th>{% trans 'Status' %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for invoice in flight.active_invoices %}
+      <tr>
+        <td>
+          {% if invoice.hosted_invoice_url %}<a href="{{ invoice.hosted_invoice_url }}" target="_blank" rel="nofollow noopener">{% endif %}
+            <span>{% if invoice.number %}#{{ invoice.number }}{% else %}{% trans 'Draft' %}{% endif %}</span>
+          {% if invoice.hosted_invoice_url %}</a>{% endif %}
+        </td>
+        <td>${{ invoice.total }}</td>
+        <td>
+          <span>{{ invoice.status }}</span>
+          {% if invoice.paid %}
+            <span class="fa fa-check-circle-o fa-fw mr-2 text-muted" aria-hidden="true"></span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
