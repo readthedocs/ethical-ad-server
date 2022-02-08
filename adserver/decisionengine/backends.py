@@ -373,6 +373,13 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         for advertisement in candidate_ads:
             placement = self.get_placement(advertisement)
+            if not placement:
+                log.warning(
+                    "Couldn't find a matching ad placement. ad=%s, placements=%s",
+                    advertisement,
+                    self.placements,
+                )
+                continue
             priority = placement.get("priority", 1)
             for _ in range(max_priority + 1 - priority):
                 weighted_ad_choices.append(advertisement)
