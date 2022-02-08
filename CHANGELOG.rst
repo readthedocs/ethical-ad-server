@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.45.0
+---------------
+
+Other than a few quality of life improvements and bug fixes,
+the main change in this release is a many-to-many relation between Flights to Invoices.
+
+:date: February 8, 2022
+
+ * @davidfischer: Disable a publisher completely (#517)
+ * @davidfischer: Add a campaign inline to the advertiser admin (#516)
+ * @davidfischer: Connect flights to invoices (#515)
+ * @davidfischer: Change the default flight size and price (#514)
+ * @davidfischer: Fix for incorrectly creating new advertisers (#513)
+ * @ericholscher: Decisions aren't currency :) (#511)
+
+
 Version v0.44.0
 ---------------
 
