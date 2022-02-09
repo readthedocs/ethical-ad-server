@@ -19,6 +19,8 @@ sphinx-rtd-theme
 sphinxcontrib-httpdomain==1.7.0
 
 # Various testing tools
+pytest==7.0.0
+pytest-django==4.5.2
 prospector==1.5.2
 django-dynamic-fixture==2.0.0
 
