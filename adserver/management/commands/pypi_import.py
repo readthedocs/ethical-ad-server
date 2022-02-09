@@ -65,8 +65,10 @@ class Command(BaseCommand):
         psf_ad = AdType.objects.get(slug="psf")
         image_only_ad = AdType.objects.get(slug="psf-image-only")
         # Flights
-        sidebar = Flight.objects.get(slug="pypi-sidebar")
-        sponsors = Flight.objects.get(slug="pypi-sponsors")
+        pypi_sidebar = Flight.objects.get(slug="pypi-sidebar")
+        pypi_sponsors = Flight.objects.get(slug="pypi-sponsors")
+        psf_sponsors = Flight.objects.get(slug="psf-sponsors")
+        pycon_sponsors = Flight.objects.get(slug="pycon-sponsors")
 
         response = requests.get(
             api_url,
@@ -88,9 +90,13 @@ class Command(BaseCommand):
                 continue
 
             if item["flight"] == "sidebar":
-                flight = sidebar
-            elif item["flight"] == "sponsors":
-                flight = sponsors
+                flight = pypi_sidebar
+            elif item["flight"] == "sponsors" and item["publisher"] == "pypi":
+                flight = pypi_sponsors
+            elif item["flight"] == "sponsors" and item["publisher"] == "psf":
+                flight = psf_sponsors
+            elif item["flight"] == "sponsors" and item["publisher"] == "pycon":
+                flight = pycon_sponsors
             else:
                 self.stdout.write("WARNING: No Active Flight Data: %s" % item)
                 continue
