@@ -319,7 +319,7 @@ def daily_update_keywords(day=None):
                 decisions=F("decisions") + values["total_decisions"],
                 offers=F("offers") + values["total_offers"],
                 views=F("views") + values["total_views"],
-                clicks=F("clicks") + values["total_views"],
+                clicks=F("clicks") + values["total_clicks"],
             )
 
 

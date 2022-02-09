@@ -5,9 +5,11 @@ from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
 from ..models import AdImpression
+from ..models import KeywordImpression
 from ..models import Offer
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_impressions
+from ..tasks import daily_update_keywords
 from ..tasks import notify_of_completed_flights
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
@@ -69,6 +71,79 @@ class TasksTest(BaseAdModelsTestCase):
 
         self.publisher.refresh_from_db()
         self.assertEqual(self.publisher.sampled_ctr, 20)
+
+    def test_daily_update_keywords(self):
+        # Keyword Aggregation requires some targeting
+        self.flight.targeting_parameters = {
+            "include_keywords": ["django"],
+        }
+        self.flight.save()
+
+        # Add some views and clicks
+        # Ad1 - offered/decision=4, views=3, clicks=1
+        # Ad2 - offered/decisions=2, views=2, clicks=0
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=False,
+            keywords=["django", "python"],
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            keywords=["django", "python"],
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            keywords=["django", "python"],
+        )
+        get(
+            Offer,
+            advertisement=self.ad2,
+            publisher=self.publisher,
+            viewed=True,
+            keywords=["django", "python"],
+        )
+        get(
+            Offer,
+            advertisement=self.ad2,
+            publisher=self.publisher,
+            viewed=True,
+            keywords=["django", "python"],
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+            keywords=["django", "python"],
+        )
+
+        daily_update_keywords()
+
+        # Verify that the aggregation task worked correctly
+        ki_ad1 = KeywordImpression.objects.filter(
+            keyword="django", publisher=self.publisher, advertisement=self.ad1
+        ).first()
+        self.assertIsNotNone(ki_ad1)
+        self.assertEqual(ki_ad1.offers, 4)
+        self.assertEqual(ki_ad1.views, 3)
+        self.assertEqual(ki_ad1.clicks, 1)
+
+        ki_ad2 = KeywordImpression.objects.filter(
+            keyword="django", publisher=self.publisher, advertisement=self.ad2
+        ).first()
+        self.assertIsNotNone(ki_ad2)
+        self.assertEqual(ki_ad2.offers, 2)
+        self.assertEqual(ki_ad2.views, 2)
+        self.assertEqual(ki_ad2.clicks, 0)
 
     def test_notify_completed_flights(self):
         backend = get_backend()
