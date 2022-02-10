@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.45.1
+---------------
+
+This is purely a bugfix release.
+The main fix is a fix for keyword aggregation that fixes a bug introduced in v0.44.0.
+All keyword aggregations done since v0.44.0 need to be re-run.
+
+:date: February 9, 2022
+
+ * @davidfischer: Fix typo with keyword aggregation (#521)
+ * @davidfischer: Handle a bug with a forced ad but mismatched ad type (#519)
+
+
 Version v0.45.0
 ---------------
 
