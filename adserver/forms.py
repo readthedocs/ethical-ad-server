@@ -97,7 +97,13 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
 
 class FlightForm(FlightMixin, forms.ModelForm):
 
-    """The form for flights used in a staff interface."""
+    """
+    The form for flights used in a staff interface.
+
+    The plan is to eventually make this a not-only-staff form.
+    However, that would require a significant rework. Since different targeting is priced differently,
+    we would need a way to let folks make adjustments and it automatically changes the price.
+    """
 
     include_countries = forms.CharField(
         max_length=1024,
@@ -162,6 +168,8 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 ),
                 css_class="my-3",
             ),
+            # NOTE: remove this when this form is made for non-staff users
+            Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
                 Div(
@@ -320,6 +328,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "sold_clicks",
             "cpm",
             "sold_impressions",
+            "priority_multiplier",
         )
         widgets = {
             "start_date": forms.DateInput(
