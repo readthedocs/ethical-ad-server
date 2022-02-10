@@ -731,7 +731,12 @@ class PublisherSettingsForm(forms.ModelForm):
 
 class InviteUserForm(forms.ModelForm):
 
-    """Used to invite users to collaborate on an advertiser/publisher."""
+    """
+    Used to invite users to collaborate on an advertiser/publisher.
+
+    If the user already exists, the user will be returned from ``save()``
+    without a duplicate being created.
+    """
 
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
@@ -751,9 +756,21 @@ class InviteUserForm(forms.ModelForm):
         email = self.cleaned_data.get("email")
         return User.objects.normalize_email(email)
 
+    def get_existing_user(self):
+        """Return an existing user with the email or None if no user exists."""
+        email = self.cleaned_data["email"]
+        return User.objects.filter(email=email).first()
+
+    def validate_unique(self):
+        """Remove the uniqueness check on email. Handle this in save()."""
+
     def save(self, commit=True):
-        user = super().save(commit)
-        user.invite_user()
+        # Get the user if it already exists
+        user = self.get_existing_user()
+        if not user:
+            # Invite the user if they're new
+            user = super().save(commit)
+            user.invite_user()
 
         # Track who added this user
         update_change_reason(user, "Invited via authorized users view")
