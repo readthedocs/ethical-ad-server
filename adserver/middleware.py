@@ -21,8 +21,9 @@ class ServerInfoMiddleware:
         """Sets headers for staff users or in debug mode."""
         response = self.get_response(request)
 
+        response["X-Server"] = socket.gethostname()
+
         if settings.DEBUG or request.user.is_staff:
-            response["X-Server"] = socket.gethostname()
             response["X-Adserver-Version"] = settings.ADSERVER_VERSION
         return response
 

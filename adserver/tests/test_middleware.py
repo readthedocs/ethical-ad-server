@@ -6,7 +6,8 @@ from django_dynamic_fixture import get
 class TestMiddleware(TestCase):
     def test_server_middleware(self):
         response = self.client.get("/")
-        self.assertFalse("X-Server" in response)
+        self.assertTrue("X-Server" in response)
+        self.assertFalse("X-Adserver-Version" in response)
 
         # Login as staff
         staff_user = get(get_user_model(), is_staff=True, username="staff-user")
@@ -14,6 +15,7 @@ class TestMiddleware(TestCase):
 
         response = self.client.get("/")
         self.assertTrue("X-Server" in response)
+        self.assertTrue("X-Adserver-Version" in response)
 
     def test_cloudflare_middleware(self):
         response = self.client.get("/")
