@@ -4,11 +4,11 @@ import ipaddress
 import logging
 import os
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 
 import IP2Proxy
-from dataclasses import dataclass
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
