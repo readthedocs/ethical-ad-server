@@ -93,6 +93,20 @@ class TestMiddleware(TestCase):
             request = response.wsgi_request
             self.assertEqual(request.ip_address, "127.0.0.1")
 
+            # Login as staff
+            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            self.client.force_login(staff_user)
+
+            # The provider header should be present for staff
+            ip = "10.10.10.10"
+            response = self.client.get("/", HTTP_X_FORWARDED_FOR=ip)
+            request = response.wsgi_request
+            self.assertEqual(request.ip_address, ip)
+            self.assertTrue("X-Adserver-IpAddress-Provider" in response)
+            self.assertEqual(
+                response["X-Adserver-IpAddress-Provider"], "X-Forwarded-For"
+            )
+
     def test_cloudflare_geoip_middleware(self):
         with self.modify_settings(
             MIDDLEWARE={
