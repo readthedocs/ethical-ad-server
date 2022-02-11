@@ -274,6 +274,7 @@ class TestAdvertiserDashboardViews(TestCase):
             "live": False,
             "start_date": get_ad_day().date(),
             "end_date": get_ad_day().date() + datetime.timedelta(days=2),
+            "priority_multiplier": 1,
             "include_countries": "US  ,  CN",
             "exclude_countries": "",
             "include_keywords": "python, django",
