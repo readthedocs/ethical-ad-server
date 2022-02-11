@@ -17,46 +17,44 @@ class TestMiddleware(TestCase):
         self.assertTrue("X-Server" in response)
         self.assertTrue("X-Adserver-Version" in response)
 
-    def test_cloudflare_middleware(self):
-        response = self.client.get("/")
-        request = response.wsgi_request
-        self.assertTrue(hasattr(request, "ip_address"))
-        self.assertEqual(request.ip_address, "127.0.0.1")
+    def test_cloudflare_ip_middleware(self):
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.CloudflareIpAddressMiddleware",
+            }
+        ):
+            response = self.client.get("/")
+            request = response.wsgi_request
+            self.assertTrue(hasattr(request, "ip_address"))
+            self.assertEqual(request.ip_address, "127.0.0.1")
 
-        ip = "10.10.10.10"
-        response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
-        request = response.wsgi_request
-        self.assertEqual(request.ip_address, ip)
-        self.assertFalse("X-Adserver-GeoIPProvider" in response)
+            ip = "10.10.10.10"
+            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            request = response.wsgi_request
+            self.assertEqual(request.ip_address, ip)
+            self.assertFalse("X-Adserver-IpAddress-Provider" in response)
 
-        ip = "invalid"
-        response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
-        request = response.wsgi_request
-        self.assertEqual(request.ip_address, "127.0.0.1")
+            ip = "invalid"
+            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            request = response.wsgi_request
+            self.assertEqual(request.ip_address, "127.0.0.1")
 
-        country = "CA"
-        response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
-        request = response.wsgi_request
-        self.assertEqual(request.user_country, country)
+            # Login as staff
+            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            self.client.force_login(staff_user)
 
-        country = "XX"
-        response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
-        request = response.wsgi_request
-        self.assertEqual(request.user_country, None)
-
-        # Login as staff
-        staff_user = get(get_user_model(), is_staff=True, username="staff-user")
-        self.client.force_login(staff_user)
-
-        country = "CA"
-        response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
-        self.assertEqual(response["X-Adserver-GeoIPProvider"], "Cloudflare")
+            # The provider header should be present for staff
+            ip = "10.10.10.10"
+            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            request = response.wsgi_request
+            self.assertEqual(request.ip_address, ip)
+            self.assertTrue("X-Adserver-IpAddress-Provider" in response)
+            self.assertEqual(response["X-Adserver-IpAddress-Provider"], "Cloudflare")
 
     def test_xforwarded_for_middleware(self):
         with self.modify_settings(
             MIDDLEWARE={
                 "append": "adserver.middleware.XForwardedForMiddleware",
-                "remove": "adserver.middleware.CloudflareMiddleware",
             }
         ):
             response = self.client.get("/")
@@ -94,3 +92,54 @@ class TestMiddleware(TestCase):
             response = self.client.get("/", HTTP_X_FORWARDED_FOR=ip)
             request = response.wsgi_request
             self.assertEqual(request.ip_address, "127.0.0.1")
+
+    def test_cloudflare_geoip_middleware(self):
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.CloudflareGeoIpMiddleware",
+            }
+        ):
+            country = "CA"
+            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            request = response.wsgi_request
+            self.assertEqual(request.geo.country, country)
+            self.assertFalse("X-Adserver-GeoIP-Provider" in response)
+
+            country = "XX"
+            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            request = response.wsgi_request
+            self.assertEqual(request.geo.country, None)
+
+            # Login as staff
+            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            self.client.force_login(staff_user)
+
+            country = "US"
+            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            request = response.wsgi_request
+            self.assertEqual(request.geo.country, country)
+            self.assertTrue("X-Adserver-GeoIP-Provider" in response)
+            self.assertEqual(response["X-Adserver-GeoIP-Provider"], "Cloudflare")
+
+    def test_geoipdb_middleware(self):
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.GeoIpDatabaseMiddleware",
+            }
+        ):
+            # Note: Because we can't ship the GeoIP database,
+            # this test is mostly a fake test...
+            response = self.client.get("/")
+            request = response.wsgi_request
+            self.assertIsNone(request.geo.country)
+            self.assertFalse("X-Adserver-GeoIP-Provider" in response)
+
+            # Login as staff
+            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            self.client.force_login(staff_user)
+
+            response = self.client.get("/")
+            request = response.wsgi_request
+            self.assertIsNone(request.geo.country)
+            self.assertTrue("X-Adserver-GeoIP-Provider" in response)
+            self.assertEqual(response["X-Adserver-GeoIP-Provider"], "GeoIP DB")

@@ -85,6 +85,35 @@ a backend that chooses ads based on how many more clicks and views are needed.
 Set to ``None`` to disable all ads from serving. This can be useful during migrations.
 
 
+ADSERVER_GEOIP_MIDDLEWARE
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If set, this middleware should be used to turn IP addresses into geolocations
+for the purposes of ad targeting.
+
+If the adserver is deployed behind Cloudflare (recommended),
+then use ``adserver.middleware.CloudflareGeoIpMiddleware``.
+You should also enable "Cloudflare IP Geolocation" in the Cloudflare dashboard.
+
+Use ``adserver.middleware.GeoIpDatabaseMiddleware`` to use a GeoIP database.
+
+
+ADSERVER_IPADDRESS_MIDDLEWARE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If set, this middleware should be used to get the real IP address for requests.
+IP addresses are used to get a location for ad targeting.
+These IPs are not stored in full (the last 2 bytes are zeroed out).
+
+If the adserver is deployed behind Cloudflare (recommended),
+then use ``adserver.middleware.CloudflareIpAddressMiddleware``.
+Do not use this middleware if not behind Cloudflare as the real IP address header
+could be spoofed.
+
+Use ``adserver.middleware.XForwardedForMiddleware`` if the x-forwarded-for header
+can be trusted to have a valid, non-spoofed IP address.
+
+
 ADSERVER_HTTPS
 ~~~~~~~~~~~~~~
 

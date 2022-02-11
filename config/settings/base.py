@@ -77,9 +77,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "adserver.middleware.ServerInfoMiddleware",
-    "adserver.middleware.CloudflareMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "adserver.middleware.ServerInfoMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -456,3 +455,13 @@ ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
 
 with open(os.path.join(BASE_DIR, "package.json"), encoding="utf-8") as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
+
+# Additional middleware for setting the user's real IP
+# and translating the IP into a geo for ad targeting.
+ADSERVER_GEOIP_MIDDLEWARE = env("ADSERVER_GEOIP_MIDDLEWARE", default=None)
+ADSERVER_IPADDRESS_MIDDLEWARE = env("ADSERVER_IPADDRESS_MIDDLEWARE", default=None)
+
+if ADSERVER_GEOIP_MIDDLEWARE:
+    MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
+if ADSERVER_IPADDRESS_MIDDLEWARE:
+    MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)

@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import BaseValidator
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
-from django_countries import countries
+
+from .utils import COUNTRY_DICT
 
 
 @deconstructible
@@ -39,7 +40,7 @@ class TargetingParametersValidator(BaseValidator):
 
     def __init__(self, message=None):
         """Initialization for the targeting validator."""
-        self.country_set = {cc for cc, name in countries}
+        self.country_set = set(COUNTRY_DICT)
         if message:
             self.message = message
 

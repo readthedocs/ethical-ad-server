@@ -17,6 +17,7 @@ from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
 from ..reports import AdvertiserReport
+from ..utils import GeolocationData
 from ..utils import get_ad_day
 from .common import BaseAdModelsTestCase
 
@@ -39,32 +40,32 @@ class TestProtectedModels(BaseAdModelsTestCase):
 class TestAdModels(BaseAdModelsTestCase):
     def test_geo_include(self):
         # Show to countries if no targeting/excludes
-        self.assertTrue(self.flight.show_to_geo("US"))
-        self.assertTrue(self.flight.show_to_geo("UK"))
-        self.assertTrue(self.flight.show_to_geo("CA"))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("UK")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("CA")))
 
         self.flight.targeting_parameters = {"include_countries": ["US", "UK"]}
         self.flight.save()
 
-        self.assertTrue(self.flight.show_to_geo("US"))
-        self.assertTrue(self.flight.show_to_geo("UK"))
-        self.assertFalse(self.flight.show_to_geo("CA"))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("UK")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("CA")))
 
         # Unknown geo
-        self.assertFalse(self.flight.show_to_geo(None))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData()))
 
     def test_geo_exclude(self):
-        self.assertTrue(self.flight.show_to_geo("AZ"))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("AZ")))
 
         self.flight.targeting_parameters = {"exclude_countries": ["US", "AZ"]}
         self.flight.save()
 
-        self.assertTrue(self.flight.show_to_geo("UK"))
-        self.assertFalse(self.flight.show_to_geo("AZ"))
-        self.assertFalse(self.flight.show_to_geo("US"))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("UK")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("AZ")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("US")))
 
     def test_geo_state_metro_include(self):
-        self.assertTrue(self.flight.show_to_geo("US", "CA", 825))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US", "CA", 825)))
 
         self.flight.targeting_parameters = {
             "include_countries": ["US"],
@@ -72,8 +73,8 @@ class TestAdModels(BaseAdModelsTestCase):
         }
         self.flight.save()
 
-        self.assertTrue(self.flight.show_to_geo("US", "CA", 825))
-        self.assertFalse(self.flight.show_to_geo("US", "WA", 819))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US", "CA", 825)))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("US", "WA", 819)))
 
         self.flight.targeting_parameters = {
             "include_countries": ["US"],
@@ -81,8 +82,8 @@ class TestAdModels(BaseAdModelsTestCase):
         }
         self.flight.save()
 
-        self.assertFalse(self.flight.show_to_geo("US", "CA", 825))
-        self.assertTrue(self.flight.show_to_geo("US", "WA", 819))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("US", "CA", 825)))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US", "WA", 819)))
 
     def test_keyword_targeting(self):
         self.assertTrue(self.flight.show_to_keywords(["django"]))

@@ -599,12 +599,9 @@ class BaseProxyView(View):
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
 
-        # One or more of these may be None which is OK
-        # Ads targeting countries/regions/metros won't be counted
-        geo_data = get_geolocation(request, ip_address)
-        country_code = geo_data["country_code"]
-        region_code = geo_data["region"]
-        metro_code = geo_data["dma_code"]
+        # One or more of country/region/etc. may be None which is OK
+        # Ads targeting countries/regions/metros will never match None
+        geo_data = get_geolocation(request)
 
         if not offer:
             log.log(self.log_level, "Ad impression for unknown offer")
@@ -650,9 +647,7 @@ class BaseProxyView(View):
         elif not offer.publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
-        elif not advertisement.flight.show_to_geo(
-            country_code, region_code, metro_code
-        ):
+        elif not advertisement.flight.show_to_geo(geo_data):
             # This is very rare but it is visible in ad reports
             # I believe the most common cause for this is somebody uses a VPN and is served an ad
             # Then they turn off their VPN and click on the ad
@@ -660,9 +655,9 @@ class BaseProxyView(View):
                 self.log_security_level,
                 "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s]",
                 advertisement,
-                country_code,
-                region_code,
-                metro_code,
+                geo_data.country,
+                geo_data.region,
+                geo_data.metro,
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
