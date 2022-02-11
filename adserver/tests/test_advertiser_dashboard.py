@@ -18,6 +18,9 @@ from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
 
 
+User = get_user_model()
+
+
 class TestAdvertiserDashboardViews(TestCase):
 
     """Test the advertiser dashboard interface for creating and updating ads."""
@@ -547,3 +550,39 @@ class TestAdvertiserDashboardViews(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Successfully invited")
+
+    def test_authorized_users_invite_existing(self):
+        url = reverse(
+            "advertiser_users_invite",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+
+        name = "Another User"
+        email = "another@example.com"
+
+        response = self.client.post(
+            url,
+            data={"name": name, "email": email},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")
+        self.assertEqual(User.objects.filter(email=email).count(), 1)
+
+        # Invite the same user again to check that the user isn't created again
+        response = self.client.post(
+            url,
+            data={"name": "Yet Another User", "email": email},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")
+        self.assertEqual(User.objects.filter(email=email).count(), 1)
+        self.assertEqual(User.objects.filter(name=name).count(), 1)
+
+        # The 2nd request didn't create a user or update the user's name
+        self.assertEqual(User.objects.filter(name="Yet Another User").count(), 0)
