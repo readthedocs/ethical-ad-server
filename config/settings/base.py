@@ -458,10 +458,13 @@ with open(os.path.join(BASE_DIR, "package.json"), encoding="utf-8") as fd:
 
 # Additional middleware for setting the user's real IP
 # and translating the IP into a geo for ad targeting.
-ADSERVER_GEOIP_MIDDLEWARE = env("ADSERVER_GEOIP_MIDDLEWARE", default=None)
 ADSERVER_IPADDRESS_MIDDLEWARE = env("ADSERVER_IPADDRESS_MIDDLEWARE", default=None)
+ADSERVER_GEOIP_MIDDLEWARE = env("ADSERVER_GEOIP_MIDDLEWARE", default=None)
 
-if ADSERVER_GEOIP_MIDDLEWARE:
-    MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
+# Add the optional middlewares if they are set
+# The IP address middleware should come BEFORE the GeoIP middleware
+# That way the GeoIP middleware will have access to the correct IP
 if ADSERVER_IPADDRESS_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
+if ADSERVER_GEOIP_MIDDLEWARE:
+    MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
