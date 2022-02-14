@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.46.0
+---------------
+
+The big change here is added middleware for getting IP addresses
+and for geolocating them. This gives options instead of just relying on
+``X-Forwarded-For`` or using the MaxMind GeoIP databases.
+For production, we will be using Cloudflare for GeoIP and IP normalization.
+
+See the `docs <https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html#adserver-geoip-middleware>`_.
+
+:date: February 14, 2022
+
+ * @davidfischer: Put the priority multiplier in the flight form (#526)
+ * @davidfischer: Add an existing user to an advertiser (#525)
+ * @dependabot[bot]: Bump django from 2.2.26 to 2.2.27 in /requirements (#524)
+ * @davidfischer: Use Cloudflare GeoIP and IP canonicalization (#512)
+
+
 Version v0.45.1
 ---------------
 
