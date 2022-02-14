@@ -21,6 +21,7 @@ class TestMiddleware(TestCase):
         with self.modify_settings(
             MIDDLEWARE={
                 "append": "adserver.middleware.CloudflareIpAddressMiddleware",
+                "remove": "adserver.middleware.IpAddressMiddleware",
             }
         ):
             response = self.client.get("/")
@@ -55,6 +56,7 @@ class TestMiddleware(TestCase):
         with self.modify_settings(
             MIDDLEWARE={
                 "append": "adserver.middleware.XForwardedForMiddleware",
+                "remove": "adserver.middleware.IpAddressMiddleware",
             }
         ):
             response = self.client.get("/")
@@ -111,6 +113,7 @@ class TestMiddleware(TestCase):
         with self.modify_settings(
             MIDDLEWARE={
                 "append": "adserver.middleware.CloudflareGeoIpMiddleware",
+                "remove": "adserver.middleware.GeoIpMiddleware",
             }
         ):
             country = "CA"
@@ -139,6 +142,7 @@ class TestMiddleware(TestCase):
         with self.modify_settings(
             MIDDLEWARE={
                 "append": "adserver.middleware.GeoIpDatabaseMiddleware",
+                "remove": "adserver.middleware.GeoIpMiddleware",
             }
         ):
             # Note: Because we can't ship the GeoIP database,
