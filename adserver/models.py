@@ -24,7 +24,6 @@ from django.utils.functional import cached_property
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from django_countries import countries
 from django_countries.fields import CountryField
 from django_extensions.db.models import TimeStampedModel
 from djstripe.enums import InvoiceStatus
@@ -48,6 +47,7 @@ from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
+from .utils import COUNTRY_DICT
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_country
@@ -607,15 +607,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
-        countries_dict = dict(countries)
-        return [countries_dict.get(cc, "Unknown") for cc in included_country_codes]
+        return [COUNTRY_DICT.get(cc, "Unknown") for cc in included_country_codes]
 
     def get_exclude_countries_display(self):
         excluded_country_codes = self.excluded_countries
-        countries_dict = dict(countries)
-        return [countries_dict.get(cc, "Unknown") for cc in excluded_country_codes]
+        return [COUNTRY_DICT.get(cc, "Unknown") for cc in excluded_country_codes]
 
-    def show_to_geo(self, country_code, state_province_code=None, metro_code=None):
+    def show_to_geo(self, geo_data):
         """
         Check if a flight is valid for a given country code.
 
@@ -623,16 +621,19 @@ class Flight(TimeStampedModel, IndestructibleModel):
         will not match a flight with any ``include_countries`` but wont be
         excluded from any ``exclude_countries``
         """
-        if self.included_countries and country_code not in self.included_countries:
+        if self.included_countries and geo_data.country not in self.included_countries:
             return False
         if (
             self.included_state_provinces
-            and state_province_code not in self.included_state_provinces
+            and geo_data.region not in self.included_state_provinces
         ):
             return False
-        if self.included_metro_codes and metro_code not in self.included_metro_codes:
+        if (
+            self.included_metro_codes
+            and geo_data.metro not in self.included_metro_codes
+        ):
             return False
-        if self.excluded_countries and country_code in self.excluded_countries:
+        if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
         return True
@@ -1080,7 +1081,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         user_agent = get_client_user_agent(request)
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
-        country = get_client_country(request, ip_address)
+        country = get_client_country(request)
         url = url or request.META.get("HTTP_REFERER")
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:

@@ -36,6 +36,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
 from ..models import View
+from ..utils import GeolocationData
 
 
 class ApiPermissionTest(TestCase):
@@ -1628,19 +1629,29 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited click impression")
 
+    def test_click_tracking_valid_country_targeting(self):
+        self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
+        self.ad.flight.save()
+
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
+
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.CloudflareGeoIpMiddleware",
+            }
+        ):
+            resp = self.client.get(self.click_url, HTTP_CF_IPCountry="CA")
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
+
     def test_click_tracking_invalid_targeting(self):
         self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
         self.ad.flight.save()
 
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
 
-        with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "FR",
-                "region": None,
-                "dma_code": None,
-            }
-            resp = self.client.get(self.click_url)
+        resp = self.client.get(self.click_url, HTTP_CF_IPCountry="FR")
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
@@ -1655,33 +1666,21 @@ class TestProxyViews(BaseApiTest):
         get(View, offer=self.offer)
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "ID",
-                "dma_code": 757,  # Boise
-            }
+            get_geo.return_value = GeolocationData("US", "ID", 757)  # Boise, ID
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "CA",
-                "dma_code": 807,  # Bay Area
-            }
+            get_geo.return_value = GeolocationData("US", "CA", 807)  # Bay Area
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "CA",
-                "dma_code": 825,  # San Diego
-            }
+            get_geo.return_value = GeolocationData("US", "CA", 825)  # San Diego, CA
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
