@@ -60,7 +60,7 @@ def run_import(sync=False, images=False):
     )
 
     for item in response.json():
-        log.info("Processing: " + item["sponsor"])
+        log.debug("Processing: " + item["sponsor"])
         try:
             # Only run this code when we're either syncing, or we specifically want images.
             # This is because gathering images is the slowest part of this process.
@@ -132,4 +132,4 @@ def run_import(sync=False, images=False):
             else:
                 log.info(f"Invalid ad will be deactivated: {iterated_ad}")
         else:
-            log.info(f"Keeping ad: {iterated_ad}")
+            log.debug(f"Keeping ad: {iterated_ad}")
