@@ -62,7 +62,9 @@ def run_import(sync=False, images=False):
     for item in response.json():
         log.info("Processing: " + item["sponsor"])
         try:
-            if sync or (not sync and kwargs["images"]):
+            # Only run this code when we're either syncing, or we specifically want images.
+            # This is because gathering images is the slowest part of this process.
+            if sync or images:
                 url = item["logo"]
                 image_response = requests.get(url, timeout=5)
                 image_response.raise_for_status()
@@ -70,7 +72,7 @@ def run_import(sync=False, images=False):
                     BytesIO(image_response.content), name=url[url.rfind("/") + 1 :]
                 )
         except:
-            log.warning("WARNING: No ad image: %s" % item)
+            log.exception("WARNING: No ad image: %s" % item)
             continue
 
         if item["flight"] == "sidebar":
