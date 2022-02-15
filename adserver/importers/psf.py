@@ -24,6 +24,7 @@ def run_import(sync=False, images=False):
     * PyPI Sidebar sponsors
     * PyPI Sponsors
     * PSF Sponsors
+    * PSF Jobs
     * Pycon Sponsors
 
     This list will get updated as the sponsorship expands.
@@ -52,6 +53,7 @@ def run_import(sync=False, images=False):
     pypi_sidebar = Flight.objects.get(slug="pypi-sidebar")
     pypi_sponsors = Flight.objects.get(slug="pypi-sponsors")
     psf_sponsors = Flight.objects.get(slug="psf-sponsors")
+    psf_jobs = Flight.objects.get(slug="psf-jobs")
     pycon_sponsors = Flight.objects.get(slug="pycon-sponsors")
 
     response = requests.get(
@@ -81,6 +83,8 @@ def run_import(sync=False, images=False):
             flight = pypi_sponsors
         elif item["flight"] == "sponsors" and item["publisher"] == "psf":
             flight = psf_sponsors
+        elif item["flight"] == "jobs" and item["publisher"] == "psf":
+            flight = psf_jobs
         elif item["flight"] == "sponsors" and item["publisher"] == "pycon":
             flight = pycon_sponsors
         else:
