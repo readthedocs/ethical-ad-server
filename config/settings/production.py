@@ -139,6 +139,11 @@ CELERY_BEAT_SCHEDULE = {
         # Runs on Wednesday
         "schedule": crontab(day_of_week=3, hour="5", minute="0"),
     },
+    # Run publisher importers daily
+    "every-day-sync-publisher-data": {
+        "task": "adserver.tasks.run_publisher_importers",
+        "schedule": crontab(hour="1", minute="0"),
+    },
 }
 
 
