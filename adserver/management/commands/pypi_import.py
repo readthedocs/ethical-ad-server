@@ -3,6 +3,7 @@ import os
 
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
+from django.utils.translation import ugettext_lazy as _
 
 from adserver.importers import psf
 
