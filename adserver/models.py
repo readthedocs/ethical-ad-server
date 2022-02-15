@@ -1208,9 +1208,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=ad_type_slug,
         )
 
-        if forced:
-            # Ad offers forced to a specific ad or campaign should never be billed
-            # By discarding the nonce, the ad view/click will never count
+        if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
+            # Ad offers forced to a specific ad or campaign should never be billed.
+            # By discarding the nonce, the ad view/click will never count.
+            # We will still record data for unpaid campaign in reporting though.
             nonce = "forced"
         else:
             nonce = offer.pk
