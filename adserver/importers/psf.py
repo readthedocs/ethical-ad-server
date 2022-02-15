@@ -122,7 +122,7 @@ def run_import(sync=False, images=False):
         valid_ads.add(ad)
 
     for iterated_ad in Advertisement.objects.filter(
-        flight__campaign__advertiser__slug="psf"
+        flight__campaign__advertiser__slug="psf", live=True
     ):
         if iterated_ad not in valid_ads:
             if sync:
