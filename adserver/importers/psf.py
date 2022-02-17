@@ -6,7 +6,6 @@ import requests
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files import File
 from django.utils.text import slugify
-from django.utils.translation import ugettext_lazy as _
 
 from adserver.models import AdType
 from adserver.models import Advertisement
@@ -33,7 +32,6 @@ def run_import(sync=False, images=False):
     :arg: sync: Actually write data to the Database.
     :arg: images: Test images when not doing a full sync.
     """
-
     api_token = os.environ.get("PYTHON_API_TOKEN")
     api_url = os.environ.get("PYTHON_API_URL")
 

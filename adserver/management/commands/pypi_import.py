@@ -1,7 +1,4 @@
-"""Import data from Python API"""
-import os
-
-from django.core.management import CommandError
+"""Import data from Python API."""
 from django.core.management.base import BaseCommand
 from django.utils.translation import ugettext_lazy as _
 
@@ -10,9 +7,9 @@ from adserver.importers import psf
 
 class Command(BaseCommand):
 
-    """Import data for Python"""
+    """Import data for PSF."""
 
-    help = "Import data for Python"
+    help = "Import data for PSF"
 
     def add_arguments(self, parser):
         """Add command line args for this command."""
@@ -34,5 +31,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         """Entrypoint to the command."""
-
         psf.run_import(sync=kwargs["sync"], images=kwargs["images"])

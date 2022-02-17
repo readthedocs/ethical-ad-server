@@ -654,6 +654,5 @@ def run_publisher_importers():
 
     This is done nightly to ensure imported data is up to date.
     """
-
     # PSF is the only importer for now..
     psf.run_import(sync=True)
