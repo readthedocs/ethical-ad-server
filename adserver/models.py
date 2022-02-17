@@ -1053,12 +1053,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         else:
             impression_types = impression_type
 
-        # Ensure that an impression object exists for today
-        # and make sure to query the writable DB for this
-        impression, _ = AdImpression.objects.using("default").get_or_create(
-            advertisement=self, publisher=publisher, date=day
-        )
-
         for imp_type in impression_types:
             assert imp_type in IMPRESSION_TYPES
 
@@ -1072,9 +1066,21 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                     total_clicks=models.F("total_clicks") + 1
                 )
 
-        AdImpression.objects.using("default").filter(pk=impression.pk).update(
-            **{imp_type: models.F(imp_type) + 1 for imp_type in impression_types}
+        # Ensure that an impression object exists for today
+        # and make sure to query the writable DB for this
+        impression, created = AdImpression.objects.using("default").get_or_create(
+            advertisement=self,
+            publisher=publisher,
+            date=day,
+            defaults={imp_type: 1 for imp_type in impression_types},
         )
+
+        if not created:
+            # If the object was created above, we don't need to update
+            # since the defaults will have already done the update for us.
+            AdImpression.objects.using("default").filter(pk=impression.pk).update(
+                **{imp_type: models.F(imp_type) + 1 for imp_type in impression_types}
+            )
 
     def _record_base(
         self, request, model, publisher, keywords, url, div_id, ad_type_slug
