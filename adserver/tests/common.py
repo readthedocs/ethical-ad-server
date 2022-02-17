@@ -72,10 +72,16 @@ class BaseAdModelsTestCase(TestCase):
         )
 
         self.text_ad_type = get(
-            AdType, has_text=True, max_text_length=100, has_image=False, template=None
+            AdType,
+            slug="text-slug",
+            has_text=True,
+            max_text_length=100,
+            has_image=False,
+            template=None,
         )
         self.image_ad_type = get(
             AdType,
+            slug="image-slug",
             has_text=True,
             has_image=True,
             image_height=None,
