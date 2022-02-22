@@ -255,8 +255,10 @@ def is_proxy_ip(ip):
     return False
 
 
-def get_geolocation(request):
+def get_geolocation(request, force=False):
     """Gets the geolocation for this IP address."""
+    if force:
+        return get_geoipdb_geolocation(request)
     if hasattr(request, "geo"):
         return request.geo
 

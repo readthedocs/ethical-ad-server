@@ -32,6 +32,10 @@ class GeoIpMixin:
         # Get the actual client IP address and UA (the user who will view the ad)
         if self.ip_field in request.data and request.data[self.ip_field]:
             request.ip_address = request.data[self.ip_field]
+
+            # Geolocate the actual IP address (not the requestor's IP)
+            # This is needed for the case of a server requesting ads on a user's behalf
+            request.geo = get_geolocation(request, force=True)
         if self.ua_field in request.data and request.data[self.ua_field]:
             request.user_agent = request.data[self.ua_field]
 
@@ -39,15 +43,11 @@ class GeoIpMixin:
             request.ip_address, request.user_agent
         )
 
-        # Geolocate the actual IP address (not the requestor's IP)
-        # This is needed for the case of a server requesting ads on a user's behalf
-        request.geo = get_geolocation(request)
-
     def finalize_response(self, request, response, *args, **kwargs):
         """Log data set on the request to HTTP headers in DEBUG or for staff."""
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        if settings.DEBUG or request.user.is_staff:
+        if settings.DEBUG or settings.TESTING or request.user.is_staff:
             # Show the real IP and geo for staff users in production
             # This allows debugging issues with ad targeting
             response["X-Adserver-RealIP"] = str(getattr(request, "ip_address", ""))

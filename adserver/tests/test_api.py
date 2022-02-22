@@ -1165,6 +1165,27 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(click.os_family, "Mac OS X")
         self.assertEqual(click.url, self.page_url)
 
+    def test_user_geoip_passed_ip(self):
+        new_ip = "255.255.255.255"
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "url": self.page_url,
+            "user_ip": new_ip,
+            "user_ua": self.user_agent,
+        }
+        with mock.patch("adserver.utils.get_geoipdb_geolocation") as get_geo:
+            get_geo.return_value = GeolocationData("CA")
+
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Check that the new IP was used for ad targeting
+        self.assertEqual(resp["X-Adserver-RealIP"], new_ip)
+        self.assertEqual(resp["X-Adserver-Country"], "CA")
+
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
         self.publisher1.record_views = False
