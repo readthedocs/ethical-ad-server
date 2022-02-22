@@ -1,9 +1,23 @@
+
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.46.1
+---------------
+
+We had a bug in the previous release that affected server-to-server ad clients.
+These clients pass an IP address for geolocating and we weren't re-running
+GeoIP for them properly.
+
+:date: February 21, 2022
+
+ * @davidfischer: Force IP Geolocation if there's a passed userip (#534)
+ * @ericholscher: Don't show paid ads warning on saas account (#527)
 
 
 Version v0.46.0
