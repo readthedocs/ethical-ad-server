@@ -50,6 +50,7 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
+from .forms import FlightRenewForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .forms import SupportForm
@@ -347,6 +348,53 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             campaign__advertiser=self.advertiser,
             slug=self.kwargs["flight_slug"],
         )
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
+        )
+
+
+class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+
+    """Renew an existing flight."""
+
+    form_class = FlightRenewForm
+    model = Flight
+    permission_required = "adserver.change_flight"
+    template_name = "adserver/advertiser/flight-renew.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.old_flight = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+        messages.success(
+            self.request,
+            _("Successfully created new flight '%(flight)s' via renewal")
+            % {"flight": flight},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["advertiser"] = self.advertiser
+        kwargs["flight"] = self.old_flight
+        return kwargs
 
     def get_success_url(self):
         return reverse(

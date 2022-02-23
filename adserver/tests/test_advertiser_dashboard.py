@@ -308,6 +308,82 @@ class TestAdvertiserDashboardViews(TestCase):
         self.flight.refresh_from_db()
         self.assertEqual(self.flight.included_countries, ["US", "CA"])
 
+    def test_flight_renew_view(self):
+        url = reverse(
+            "flight_renew",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        # Regular user - no access
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        # Staff user still requires permission
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="change_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.flight.name)
+
+        # Save a small update to the flight we're copying
+        # We will verify this was copied
+        self.flight.priority_multiplier = 10
+        self.flight.save()
+
+        new_name = "Renewed Flight"
+        today = get_ad_day().date()
+
+        data = {
+            "name": new_name,
+            "campaign": self.flight.campaign.pk,
+            "cpc": 2.5,
+            "cpm": 0,
+            "sold_clicks": 250,
+            "sold_impressions": 0,
+            "live": False,
+            "start_date": today,
+            "end_date": today + datetime.timedelta(days=20),
+            "advertisements": [self.ad1.pk, self.ad2.pk],
+        }
+        resp = self.client.post(url, data=data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"Successfully created new flight")
+        self.assertContains(resp, f"via renewal")
+
+        # Verify the new flight was created in the DB
+        new_flight = Flight.objects.filter(name=new_name).first()
+        self.assertIsNotNone(new_flight)
+        self.assertFalse(new_flight.live)
+        self.assertAlmostEqual(new_flight.cpc, 2.5)
+        self.assertEqual(new_flight.sold_clicks, 250)
+
+        # Fields not on the form
+        self.assertEqual(new_flight.included_countries, ["US", "CA"])
+        self.assertEqual(new_flight.included_keywords, ["python"])
+        self.assertEqual(
+            new_flight.priority_multiplier, self.flight.priority_multiplier
+        )
+
+        # Ensure the ads were copied
+        self.assertEqual(new_flight.advertisements.all().count(), 2)
+
     def test_ad_detail_view(self):
         url = reverse(
             "advertisement_detail",
