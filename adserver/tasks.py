@@ -526,9 +526,9 @@ def calculate_publisher_ctrs(days=7):
 
 @app.task()
 def notify_of_completed_flights():
-    """Send a notification about flights which completed in the last day."""
+    """Send a note and close flights which completed in the last day."""
     cutoff = get_ad_day() - datetime.timedelta(days=1)
-    for flight in Flight.objects.filter(live=True).filter():
+    for flight in Flight.objects.filter(live=True):
         if (
             flight.clicks_remaining() == 0
             and flight.views_remaining() == 0
@@ -546,6 +546,10 @@ def notify_of_completed_flights():
                     "flight_url": generate_absolute_url(flight.get_absolute_url()),
                 },
             )
+
+            # Mark the flight as no longer live. It is complete
+            flight.live = False
+            flight.save()
 
 
 @app.task()
