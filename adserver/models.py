@@ -42,7 +42,6 @@ from .constants import OFFERS
 from .constants import PAID
 from .constants import PAID_CAMPAIGN
 from .constants import PAYOUT_OPENCOLLECTIVE
-from .constants import PAYOUT_OTHER
 from .constants import PAYOUT_PAYPAL
 from .constants import PAYOUT_STATUS
 from .constants import PAYOUT_STRIPE
