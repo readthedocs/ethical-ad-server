@@ -242,6 +242,10 @@ class BaseApiTest(TestCase):
         self.staff_client = Client(
             HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
         )
+        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
+        self.proxy_client = Client(
+            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
+        )
 
         self.unauth_client = Client()
 
@@ -405,6 +409,30 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_force_ad_counted(self):
+        # Paid ads don't count
+
+        self.ad.flight.campaign.campaign_type = "paid"
+        self.ad.flight.campaign.save()
+
+        self.data["force_ad"] = "ad-slug"
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        view_resp = self.proxy_client.get(resp.json()["view_url"])
+        self.assertFalse(self.ad.offers.first().viewed)
+
+        # House ads are counted
+        self.ad.flight.campaign.campaign_type = "house"
+        self.ad.flight.campaign.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.proxy_client.get(resp.json()["view_url"])
+        self.assertTrue(self.ad.offers.first().viewed)
 
     def test_force_campaign(self):
         # Force ad on the unauthed client
@@ -972,11 +1000,6 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.campaign.publishers.add(self.publisher2)
 
         self.page_url = "http://example.com"
-
-        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
-        self.proxy_client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
-        )
 
     def test_ad_view_and_tracking(self):
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
