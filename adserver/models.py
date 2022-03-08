@@ -41,7 +41,10 @@ from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID
 from .constants import PAID_CAMPAIGN
+from .constants import PAYOUT_OPENCOLLECTIVE
+from .constants import PAYOUT_PAYPAL
 from .constants import PAYOUT_STATUS
+from .constants import PAYOUT_STRIPE
 from .constants import PENDING
 from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
@@ -277,11 +280,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return 0
 
     def payout_url(self):
-        if self.djstripe_account:
+        if self.payout_method == PAYOUT_STRIPE and self.djstripe_account.id:
             return f"https://dashboard.stripe.com/connect/accounts/{self.djstripe_account.id}"
-        if self.open_collective_name:
+        if self.payout_method == PAYOUT_OPENCOLLECTIVE and self.open_collective_name:
             return f"https://opencollective.com/{self.open_collective_name}"
-        if self.paypal_email:
+        if self.payout_method == PAYOUT_PAYPAL and self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
         return ""
 
