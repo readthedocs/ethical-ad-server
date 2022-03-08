@@ -1012,6 +1012,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # At this point, the ad has been "offered" but not "viewed"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
@@ -1034,6 +1035,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
@@ -1087,8 +1089,34 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
 
         impression = self.ad.impressions.filter(publisher=self.publisher2).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
+
+    def test_multiple_ad_offers_views(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        times = 5
+
+        # Simulate some offers and views
+        for _ in range(times):
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+            # Simulate the view
+            view_url = reverse(
+                "view-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": resp.json()["nonce"]},
+            )
+            resp = self.proxy_client.get(view_url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, times)
+        self.assertEqual(impression.offers, times)
+        self.assertEqual(impression.views, times)
 
     def test_ad_views_for_forced_ads(self):
         data = {
@@ -1117,6 +1145,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written - but not considered viewed
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
@@ -1137,6 +1166,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # At this point, the ad has been "offered" but not "clicked"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 0)
 
@@ -1173,6 +1203,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 1)
 
@@ -1232,6 +1263,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
@@ -1268,6 +1300,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 

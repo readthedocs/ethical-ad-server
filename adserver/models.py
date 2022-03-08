@@ -1049,26 +1049,40 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
-        assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
+
+        if isinstance(impression_type, str):
+            impression_types = (impression_type,)
+        else:
+            impression_types = impression_type
+
+        for imp_type in impression_types:
+            assert imp_type in IMPRESSION_TYPES
+
+            # Update the denormalized fields on the Flight
+            if imp_type == VIEWS:
+                Flight.objects.filter(pk=self.flight_id).update(
+                    total_views=models.F("total_views") + 1
+                )
+            elif imp_type == CLICKS:
+                Flight.objects.filter(pk=self.flight_id).update(
+                    total_clicks=models.F("total_clicks") + 1
+                )
 
         # Ensure that an impression object exists for today
         # and make sure to query the writable DB for this
-        impression, _ = AdImpression.objects.using("default").get_or_create(
-            advertisement=self, publisher=publisher, date=day
-        )
-        AdImpression.objects.using("default").filter(pk=impression.pk).update(
-            **{impression_type: models.F(impression_type) + 1}
+        impression, created = AdImpression.objects.using("default").get_or_create(
+            advertisement=self,
+            publisher=publisher,
+            date=day,
+            defaults={imp_type: 1 for imp_type in impression_types},
         )
 
-        # Update the denormalized fields on the Flight
-        if impression_type == VIEWS:
-            Flight.objects.filter(pk=self.flight_id).update(
-                total_views=models.F("total_views") + 1
-            )
-        elif impression_type == CLICKS:
-            Flight.objects.filter(pk=self.flight_id).update(
-                total_clicks=models.F("total_clicks") + 1
+        if not created:
+            # If the object was created above, we don't need to update
+            # since the defaults will have already done the update for us.
+            AdImpression.objects.using("default").filter(pk=impression.pk).update(
+                **{imp_type: models.F(imp_type) + 1 for imp_type in impression_types}
             )
 
     def _record_base(
@@ -1200,7 +1214,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(impression_type=OFFERS, publisher=publisher)
+        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
