@@ -176,6 +176,10 @@ class TasksTest(BaseAdModelsTestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
 
+        # Flight should no longer be live
+        self.flight.refresh_from_db()
+        self.assertFalse(self.flight.live)
+
     def test_notify_of_publisher_changes(self):
         # Publisher changes only apply to paid campaigns
         self.publisher.allow_paid_campaigns = True
