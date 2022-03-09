@@ -1,0 +1,6 @@
+{% extends django_slack %}
+
+
+{% block text %}
+Customer {{ customer.name }} ({{ customer.description }}) paid invoice #{{ invoice.number }} for ${{ invoice.amount_paid }} :money_mouth_face:: {{ invoice.get_stripe_dashboard_url }}
+{% endblock %}
