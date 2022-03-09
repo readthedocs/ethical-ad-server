@@ -1,0 +1,50 @@
+{# Adapted from bootstrap4/layout/checkboxselectmultiple.html in crispy forms #}
+
+{% load crispy_forms_filters %}
+{% load i18n %}
+{% load l10n %}
+
+
+<div id="advertisement-list" class="{% if field_class %} {{ field_class }}{% endif %}"{% if flat_attrs %} {{ flat_attrs|safe }}{% endif %}>
+  <div class="mb-2">
+    {% include 'bootstrap4/layout/help_text.html' %}
+  </div>
+
+  {% for choice in field.field.choices %}
+    <div class="form-check mb-2">
+      <input type="checkbox" class="form-check-input{% if field.errors %} is-invalid{% endif %}"{% if choice.0 in field.value or choice.0|stringformat:"s" in field.value or choice.0|stringformat:"s" == field.value|default_if_none:""|stringformat:"s" %} checked="checked"{% endif %} name="{{ field.html_name }}" id="id_{{ field.html_name }}_{{ forloop.counter }}" value="{{ choice.0|unlocalize }}" {{ field.field.widget.attrs|flatatt }}>
+
+      {% with ad=choice.1 %}
+      <div class="media">
+        {% if ad.image %}<img src="{{ ad.image.url }}" class="mr-3" alt="{{ ad.name }}" width="120">{% endif %}
+        <div class="media-body">
+          <label class="mb-0" for="id_{{ field.html_name }}_{{ forloop.counter }}">
+            <span {% if not ad.live %}class="disabled"{% endif %}>{{ ad.name }}</span>
+            {% if not ad.live %}
+              <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
+            {% endif %}
+          </label>
+          <ul class="list-unstyled text-muted small">
+            <li>{% blocktrans with types=ad.ad_types.all|join:", " %}Ad types: {{ types }}{% endblocktrans %}</li>
+            <li>{% blocktrans with ctr=ad.ctr|floatformat:3 %}CTR: {{ ctr }}%{% endblocktrans %}</li>
+            <li>
+              <details>
+                <summary>{% trans 'Preview' %}</summary>
+                {% with ad_type=ad.ad_types.first advertisement=ad %}
+                  {% include "adserver/includes/ad-preview.html" %}
+                {% endwith %}
+              </details>
+            </li>
+          </ul>
+        </div>
+      </div>
+      {% endwith %}
+
+      {% if field.errors and forloop.last and not inline_class %}
+        {% include 'bootstrap4/layout/field_errors_block.html' %}
+      {% endif %}
+    </div>
+  {% empty %}
+    <div>{% trans 'No advertisements to renew' %}</div>
+  {% endfor %}
+</div>

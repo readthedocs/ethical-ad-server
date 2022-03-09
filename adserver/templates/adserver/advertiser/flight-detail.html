@@ -41,6 +41,10 @@
       <span class="fa fa-lock mr-1" aria-hidden="true"></span>
       <span>{% trans 'Edit flight' %}</span>
     </a>
+    <a href="{% url 'flight_renew' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">
+      <span class="fa fa-lock mr-1" aria-hidden="true"></span>
+      <span>{% trans 'Renew flight' %}</span>
+    </a>
     {% endif %}
   </p>
 

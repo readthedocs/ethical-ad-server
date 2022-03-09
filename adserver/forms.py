@@ -1,5 +1,6 @@
 """Forms for the ad server."""
 import logging
+from datetime import timedelta
 
 import bleach
 import stripe
@@ -20,6 +21,7 @@ from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
 from django.utils.text import slugify
@@ -48,6 +50,19 @@ from .validators import TargetingParametersValidator
 
 log = logging.getLogger(__name__)  # noqa
 User = get_user_model()
+
+
+class AdvertisementMultipleChoiceField(forms.ModelMultipleChoiceField):
+
+    """
+    Create a multiple choice field of advertisements with previews and additional data.
+
+    The template should be able to handle being passed the full object
+    as opposed to a string label.
+    """
+
+    def label_from_instance(self, obj):
+        return obj
 
 
 class FlightMixin:
@@ -356,8 +371,11 @@ class FlightCreateForm(forms.ModelForm):
         self.fields["campaign"].queryset = Campaign.objects.filter(
             advertiser=self.advertiser
         )
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
+        self.helper = self.create_form_helper()
+
+    def create_form_helper(self):
+        helper = FormHelper()
+        helper.layout = Layout(
             Fieldset(
                 "",
                 "name",
@@ -371,6 +389,7 @@ class FlightCreateForm(forms.ModelForm):
                 + "</p>"
             ),
         )
+        return helper
 
     def generate_slug(self):
         campaign_slug = self.instance.campaign.slug
@@ -396,6 +415,129 @@ class FlightCreateForm(forms.ModelForm):
             "name",
             "campaign",
         )
+
+
+class FlightRenewForm(FlightMixin, FlightCreateForm):
+
+    """Form class for creating a new flight via renewal."""
+
+    advertisements = AdvertisementMultipleChoiceField(
+        queryset=Advertisement.objects.none(),
+        required=False,
+        help_text=_("Renew the flight with the following advertisements"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Set the flight form helper and initial data for renewing a flight."""
+        self.old_flight = kwargs.pop("flight")
+
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        kwargs["initial"].update(
+            {
+                "name": self.old_flight.name,
+                "cpm": self.old_flight.cpm,
+                "cpc": self.old_flight.cpc,
+                "sold_clicks": self.old_flight.sold_clicks,
+                "sold_impressions": self.old_flight.sold_impressions,
+                "campaign": self.old_flight.campaign,
+                "start_date": timezone.now().today(),
+                "end_date": timezone.now().today()
+                + timedelta(days=self.old_flight.sold_days()),
+                "advertisements": self.old_flight.advertisements.filter(live=True),
+            }
+        )
+
+        # Sets self.advertiser
+        super().__init__(*args, **kwargs)
+
+        self.fields["advertisements"].queryset = self.old_flight.advertisements.all()
+
+    def create_form_helper(self):
+        helper = FormHelper()
+        helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("name"),
+                Field("campaign"),
+                Div(
+                    Div("start_date", css_class="form-group col-lg-6"),
+                    Div("end_date", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                "live",
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Per impression (CPM) flights"),
+                Div(
+                    Div("cpm", css_class="form-group col-lg-6"),
+                    Div("sold_impressions", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Per click (CPC) flights"),
+                Div(
+                    Div("cpc", css_class="form-group col-lg-6"),
+                    Div("sold_clicks", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Advertisements"),
+                Field(
+                    "advertisements",
+                    template="adserver/includes/widgets/advertisement-form-option.html",
+                ),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Create flight via renewal")),
+        )
+        return helper
+
+    def save(self, commit=True):
+        assert commit, "Delayed saving is not supported on this form"
+
+        instance = super().save(commit)
+
+        # Copy flight fields that aren't part of the form
+        for field in ("targeting_parameters", "priority_multiplier"):
+            setattr(instance, field, getattr(self.old_flight, field))
+        instance.save()
+
+        # Duplicate the advertisements into the new flight
+        for ad in self.cleaned_data["advertisements"]:
+            new_ad = ad.__copy__()
+            new_ad.flight = instance
+            new_ad.save()  # Automatically gets a new slug
+
+        return instance
+
+    class Meta:
+        model = Flight
+
+        fields = (
+            "name",
+            "campaign",
+            "start_date",
+            "end_date",
+            "live",
+            "cpc",
+            "sold_clicks",
+            "cpm",
+            "sold_impressions",
+        )
+        widgets = {
+            "start_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+            "end_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+        }
 
 
 class AdvertisementFormMixin:
