@@ -176,11 +176,7 @@ def daily_update_placements(day=None):
     )
 
     for values in (
-        queryset.filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        )
-        .values("publisher", "advertisement", "div_id", "ad_type_slug")
+        queryset.values("publisher", "advertisement", "div_id", "ad_type_slug")
         .annotate(
             total_decisions=Count("div_id"),
             total_offers=Count("div_id", filter=Q(advertisement__isnull=False)),
@@ -226,11 +222,7 @@ def daily_update_impressions(day=None):
     )
 
     for values in (
-        queryset.filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        )
-        .values("publisher", "advertisement")
+        queryset.values("publisher", "advertisement")
         # This needs to be publisher and not advertisement to gets decisions properly
         .annotate(
             total_decisions=Count("publisher"),
@@ -279,11 +271,7 @@ def daily_update_keywords(day=None):
     )
 
     for values in (
-        queryset.filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        )
-        .values("publisher", "advertisement", "keywords", "viewed", "clicked")
+        queryset.values("publisher", "advertisement", "keywords", "viewed", "clicked")
         .annotate(
             total_decisions=Count("keywords"),
             total_offers=Count("keywords", filter=Q(advertisement__isnull=False)),
