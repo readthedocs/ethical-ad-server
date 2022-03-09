@@ -23,21 +23,15 @@ from .models import Publisher
 from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
-from .regiontopics import africa
 from .regiontopics import backend_web
 from .regiontopics import blockchain
 from .regiontopics import data_science
 from .regiontopics import devops
-from .regiontopics import eu_aus_nz
-from .regiontopics import exclude
 from .regiontopics import frontend_web
 from .regiontopics import game_dev
-from .regiontopics import latin_america
+from .regiontopics import get_region_from_country_code
 from .regiontopics import python
 from .regiontopics import security_privacy
-from .regiontopics import south_asia
-from .regiontopics import us_ca
-from .regiontopics import wider_apac
 from .reports import PublisherReport
 from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
@@ -64,9 +58,7 @@ def _get_day(day):
 
 
 @app.task()
-def daily_update_geos(
-    day=None, geo=True, region=True
-):  # pylint: disable=too-many-branches
+def daily_update_geos(day=None, geo=True, region=True):
     """
     Update the Geo & region index each day.
 
@@ -130,22 +122,7 @@ def daily_update_geos(
             )
 
         if region:
-            if country in us_ca:
-                _region = "us-ca"
-            elif country in eu_aus_nz:
-                _region = "eu-aus-nz"
-            elif country in wider_apac:
-                _region = "wider-apac"
-            elif country in latin_america:
-                _region = "latin-america"
-            elif country in africa:
-                _region = "africa"
-            elif country in exclude:
-                _region = "exclude"
-            elif country in south_asia:
-                _region = "south-asia"
-            else:
-                _region = "global"
+            _region = get_region_from_country_code(country)
 
             publisher = values["publisher"]
             advertisement = values["advertisement"]
@@ -193,9 +170,13 @@ def daily_update_placements(day=None):
 
     log.info("Updating PlacementImpressions for %s-%s", start_date, end_date)
 
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
     for values in (
-        Offer.objects.using(settings.REPLICA_SLUG)
-        .filter(
+        queryset.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         )
@@ -239,9 +220,13 @@ def daily_update_impressions(day=None):
 
     log.info("Updating AdImpressions for %s-%s", start_date, end_date)
 
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
     for values in (
-        Offer.objects.using(settings.REPLICA_SLUG)
-        .filter(
+        queryset.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         )
@@ -288,9 +273,13 @@ def daily_update_keywords(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     ).delete()
 
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
     for values in (
-        Offer.objects.using(settings.REPLICA_SLUG)
-        .filter(
+        queryset.filter(
             date__gte=start_date,
             date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
         )
@@ -431,18 +420,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
         if not topics:
             topics.add("other")
 
-        if country in us_ca:
-            region = "us-ca"
-        elif country in eu_aus_nz:
-            region = "eu-aus-nz"
-        elif country in wider_apac:
-            region = "wider-apac"
-        elif country in latin_america:
-            region = "latin-america"
-        elif country in africa:
-            region = "africa"
-        else:
-            region = "global"
+        region = get_region_from_country_code(country)
 
         # Aggregate data into topic_mapping to save doing queries until we have everything counted
         # This is important because we can't query on keywords, so we have a lot of records that increment

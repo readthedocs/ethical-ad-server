@@ -296,3 +296,25 @@ south_asia = ["IN"]
 
 # Global list with a few excludes
 exclude = ["CN", "ID", "RU", "VN", "IR"]
+
+
+def get_region_from_country_code(country):
+    """Gets the region from the country code."""
+    if country in us_ca:
+        region = "us-ca"
+    elif country in eu_aus_nz:
+        region = "eu-aus-nz"
+    elif country in wider_apac:
+        region = "wider-apac"
+    elif country in latin_america:
+        region = "latin-america"
+    elif country in africa:
+        region = "africa"
+    elif country in exclude:
+        region = "exclude"
+    elif country in south_asia:
+        region = "south-asia"
+    else:
+        region = "global"
+
+    return region
