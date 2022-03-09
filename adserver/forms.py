@@ -53,6 +53,14 @@ User = get_user_model()
 
 
 class AdvertisementMultipleChoiceField(forms.ModelMultipleChoiceField):
+
+    """
+    Create a multiple choice field of advertisements with previews and additional data.
+
+    The template should be able to handle being passed the full object
+    as opposed to a string label.
+    """
+
     def label_from_instance(self, obj):
         return obj
 
@@ -493,7 +501,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
     def save(self, commit=True):
         assert commit, "Delayed saving is not supported on this form"
 
-        instance = super().save(commit=True)
+        instance = super().save(commit)
 
         # Copy flight fields that aren't part of the form
         for field in ("targeting_parameters", "priority_multiplier"):
