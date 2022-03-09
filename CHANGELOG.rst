@@ -1,10 +1,28 @@
-
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.47.0
+---------------
+
+This version contained a number of small improvements to performance
+and some additional notifications.
+The larger change was a new staff-only (for now) form
+for renewing an advertising flight.
+
+:date: March 9, 2022
+
+ * @davidfischer: Close flights when complete (#540)
+ * @davidfischer: Post to Slack when an invoice is paid (#537)
+ * @davidfischer: Flight renewal form (#536)
+ * @davidfischer: Performance improvement to offer recording (#533)
+ * @davidfischer: Aggregation task performance improvements (#532)
+ * @ericholscher: Fix payout url for invalid methods (#531)
+ * @ericholscher: Record data for forced ads if they are unpaid. (#530)
 
 
 Version v0.46.1
