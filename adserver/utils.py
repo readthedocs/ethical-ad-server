@@ -4,7 +4,7 @@ import ipaddress
 import logging
 import os
 import re
-from collections import namedtuple
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 
@@ -31,13 +31,23 @@ from .constants import PAID_CAMPAIGN
 log = logging.getLogger(__name__)  # noqa
 
 
-GeolocationTuple = namedtuple(
-    "GeolocationTuple", ["country_code", "region_code", "metro_code"]
-)
-
-
 # Put this here so we don't reload it on each call
 COUNTRY_DICT = dict(countries)
+COUNTRY_DICT["T1"] = "Tor"
+
+
+@dataclass
+class GeolocationData:
+
+    """Dataclass for (temporarily) storing geolocation information for ad viewers."""
+
+    country: str = (
+        None  # Should be a 2 character ISO 3166-1 country code (or T1 for Tor)
+    )
+    region: str = None
+    metro: int = None
+    lat: float = None
+    lng: float = None
 
 
 def get_ad_day():
@@ -87,14 +97,18 @@ def get_client_ip(request):
     Gets the real IP based on a request object.
 
     Checks if ``request.ip_address`` is present from a Middleware
-    (eg. ``RealIPAddressMiddleware``) and returns that.
-    If that is not set, return the value from ``REMOTE_ADDR``.
+    (eg. ``CloudflareIpAddressMiddleware``) and returns that.
+    If that is not set, return the value from ``REMOTE_ADDR`` and raise a warning.
     """
-    ip = getattr(request, "ip_address", None)
-    if ip:
-        return ip
+    if hasattr(request, "ip_address"):
+        return request.ip_address
 
-    return request.META.get("REMOTE_ADDR", "")
+    log.warning(
+        "No IP address set by middleware (see CloudflareIpAddressMiddleware). "
+        "Consider enabling an IP address middleware so IPs can be used for ad targeting."
+    )
+
+    return request.META.get("REMOTE_ADDR", None)
 
 
 def get_client_user_agent(request):
@@ -117,22 +131,14 @@ def get_client_id(request):
     return client_id
 
 
-def get_client_country(request, ip_address=None):
+def get_client_country(request):
     """Get country data for this request."""
-    country = None
-    if hasattr(request, "geo"):
-        # This is set in all API requests that use the GeoIpMixin
-        country = request.geo.country_code
-    else:
-        geo_data = get_geolocation(ip_address)
-        if geo_data:
-            country = geo_data["country_code"]
-
-    return country
+    geo_data = get_geolocation(request)
+    return geo_data.country
 
 
 def get_country_name(country_code):
-    return COUNTRY_DICT.get(country_code)
+    return COUNTRY_DICT.get(country_code, country_code)
 
 
 def anonymize_ip_address(ip_address):
@@ -249,22 +255,47 @@ def is_proxy_ip(ip):
     return False
 
 
-def get_geolocation(ip_address):
+def get_geolocation(request, force=False):
+    """Gets the geolocation for this IP address."""
+    if force:
+        return get_geoipdb_geolocation(request)
+    if hasattr(request, "geo"):
+        return request.geo
+
+    log.warning(
+        "No geolocation data set by middleware (see CloudflareGeoIpMiddleware). "
+        "Consider enabling a GeoIp middleware for ad targeting."
+    )
+    return GeolocationData()
+
+
+def get_geoipdb_geolocation(request):
+    """Get geolocation using a GeoIP database (such as MaxMind)."""
+    geolocation = GeolocationData()
+    ip_address = get_client_ip(request)
+
     try:
         ipaddress.ip_address(force_text(ip_address))
     except ValueError:
-        # Invalid IP address
-        return None
+        # Invalid IP address - should be safe to log. It's invalid and not identifying
+        log.warning("Invalid IP address passed to GeoIP database. IP=%s", ip_address)
+        return geolocation
 
     if geoip:
         try:
-            return geoip.city(ip_address)
+            geo = geoip.city(ip_address)
+            geolocation.country = geo["country_code"]
+            geolocation.region = geo["region"]
+            geolocation.metro = geo["dma_code"]
         except AddressNotFoundError:
-            log.debug("Could not get geolocation for %s", ip_address)
+            # This is probably a local address like 127.0.0.1
+            log.debug("Could not get geolocation. IP=%s", ip_address)
         except GeoIP2Exception:
             log.warning("Geolocation configuration error")
+    else:
+        log.warning("No GeoIP database found.")
 
-    return None
+    return geolocation
 
 
 def get_ipproxy_db():

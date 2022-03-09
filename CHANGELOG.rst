@@ -1,9 +1,54 @@
+
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.46.1
+---------------
+
+We had a bug in the previous release that affected server-to-server ad clients.
+These clients pass an IP address for geolocating and we weren't re-running
+GeoIP for them properly.
+
+:date: February 21, 2022
+
+ * @davidfischer: Force IP Geolocation if there's a passed userip (#534)
+ * @ericholscher: Don't show paid ads warning on saas account (#527)
+
+
+Version v0.46.0
+---------------
+
+The big change here is added middleware for getting IP addresses
+and for geolocating them. This gives options instead of just relying on
+``X-Forwarded-For`` or using the MaxMind GeoIP databases.
+For production, we will be using Cloudflare for GeoIP and IP normalization.
+
+See the `docs <https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html#adserver-geoip-middleware>`_.
+
+:date: February 14, 2022
+
+ * @davidfischer: Put the priority multiplier in the flight form (#526)
+ * @davidfischer: Add an existing user to an advertiser (#525)
+ * @dependabot[bot]: Bump django from 2.2.26 to 2.2.27 in /requirements (#524)
+ * @davidfischer: Use Cloudflare GeoIP and IP canonicalization (#512)
+
+
+Version v0.45.1
+---------------
+
+This is purely a bugfix release.
+The main fix is a fix for keyword aggregation that fixes a bug introduced in v0.44.0.
+All keyword aggregations done since v0.44.0 need to be re-run.
+
+:date: February 9, 2022
+
+ * @davidfischer: Fix typo with keyword aggregation (#521)
+ * @davidfischer: Handle a bug with a forced ad but mismatched ad type (#519)
 
 
 Version v0.45.0

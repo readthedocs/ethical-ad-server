@@ -24,7 +24,6 @@ from django.utils.functional import cached_property
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from django_countries import countries
 from django_countries.fields import CountryField
 from django_extensions.db.models import TimeStampedModel
 from djstripe.enums import InvoiceStatus
@@ -42,12 +41,16 @@ from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID
 from .constants import PAID_CAMPAIGN
+from .constants import PAYOUT_OPENCOLLECTIVE
+from .constants import PAYOUT_PAYPAL
 from .constants import PAYOUT_STATUS
+from .constants import PAYOUT_STRIPE
 from .constants import PENDING
 from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
+from .utils import COUNTRY_DICT
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_country
@@ -277,11 +280,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return 0
 
     def payout_url(self):
-        if self.djstripe_account:
+        if self.payout_method == PAYOUT_STRIPE and self.djstripe_account.id:
             return f"https://dashboard.stripe.com/connect/accounts/{self.djstripe_account.id}"
-        if self.open_collective_name:
+        if self.payout_method == PAYOUT_OPENCOLLECTIVE and self.open_collective_name:
             return f"https://opencollective.com/{self.open_collective_name}"
-        if self.paypal_email:
+        if self.payout_method == PAYOUT_PAYPAL and self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
         return ""
 
@@ -607,15 +610,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
-        countries_dict = dict(countries)
-        return [countries_dict.get(cc, "Unknown") for cc in included_country_codes]
+        return [COUNTRY_DICT.get(cc, "Unknown") for cc in included_country_codes]
 
     def get_exclude_countries_display(self):
         excluded_country_codes = self.excluded_countries
-        countries_dict = dict(countries)
-        return [countries_dict.get(cc, "Unknown") for cc in excluded_country_codes]
+        return [COUNTRY_DICT.get(cc, "Unknown") for cc in excluded_country_codes]
 
-    def show_to_geo(self, country_code, state_province_code=None, metro_code=None):
+    def show_to_geo(self, geo_data):
         """
         Check if a flight is valid for a given country code.
 
@@ -623,16 +624,19 @@ class Flight(TimeStampedModel, IndestructibleModel):
         will not match a flight with any ``include_countries`` but wont be
         excluded from any ``exclude_countries``
         """
-        if self.included_countries and country_code not in self.included_countries:
+        if self.included_countries and geo_data.country not in self.included_countries:
             return False
         if (
             self.included_state_provinces
-            and state_province_code not in self.included_state_provinces
+            and geo_data.region not in self.included_state_provinces
         ):
             return False
-        if self.included_metro_codes and metro_code not in self.included_metro_codes:
+        if (
+            self.included_metro_codes
+            and geo_data.metro not in self.included_metro_codes
+        ):
             return False
-        if self.excluded_countries and country_code in self.excluded_countries:
+        if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
         return True
@@ -1045,26 +1049,40 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
-        assert impression_type in IMPRESSION_TYPES
         day = get_ad_day().date()
+
+        if isinstance(impression_type, str):
+            impression_types = (impression_type,)
+        else:
+            impression_types = impression_type
+
+        for imp_type in impression_types:
+            assert imp_type in IMPRESSION_TYPES
+
+            # Update the denormalized fields on the Flight
+            if imp_type == VIEWS:
+                Flight.objects.filter(pk=self.flight_id).update(
+                    total_views=models.F("total_views") + 1
+                )
+            elif imp_type == CLICKS:
+                Flight.objects.filter(pk=self.flight_id).update(
+                    total_clicks=models.F("total_clicks") + 1
+                )
 
         # Ensure that an impression object exists for today
         # and make sure to query the writable DB for this
-        impression, _ = AdImpression.objects.using("default").get_or_create(
-            advertisement=self, publisher=publisher, date=day
-        )
-        AdImpression.objects.using("default").filter(pk=impression.pk).update(
-            **{impression_type: models.F(impression_type) + 1}
+        impression, created = AdImpression.objects.using("default").get_or_create(
+            advertisement=self,
+            publisher=publisher,
+            date=day,
+            defaults={imp_type: 1 for imp_type in impression_types},
         )
 
-        # Update the denormalized fields on the Flight
-        if impression_type == VIEWS:
-            Flight.objects.filter(pk=self.flight_id).update(
-                total_views=models.F("total_views") + 1
-            )
-        elif impression_type == CLICKS:
-            Flight.objects.filter(pk=self.flight_id).update(
-                total_clicks=models.F("total_clicks") + 1
+        if not created:
+            # If the object was created above, we don't need to update
+            # since the defaults will have already done the update for us.
+            AdImpression.objects.using("default").filter(pk=impression.pk).update(
+                **{imp_type: models.F(imp_type) + 1 for imp_type in impression_types}
             )
 
     def _record_base(
@@ -1080,7 +1098,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         user_agent = get_client_user_agent(request)
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
-        country = get_client_country(request, ip_address)
+        country = get_client_country(request)
         url = url or request.META.get("HTTP_REFERER")
 
         if model != Click and settings.ADSERVER_DO_NOT_TRACK:
@@ -1196,7 +1214,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(impression_type=OFFERS, publisher=publisher)
+        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1207,9 +1225,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=ad_type_slug,
         )
 
-        if forced:
-            # Ad offers forced to a specific ad or campaign should never be billed
-            # By discarding the nonce, the ad view/click will never count
+        if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
+            # Ad offers forced to a specific ad or campaign should never be billed.
+            # By discarding the nonce, the ad view/click will never count.
+            # We will still record data for unpaid campaign in reporting though.
             nonce = "forced"
         else:
             nonce = offer.pk

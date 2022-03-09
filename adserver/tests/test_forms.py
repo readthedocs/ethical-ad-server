@@ -111,6 +111,7 @@ class FormTests(TestCase):
             "sold_clicks": 100,
             "sold_impressions": 100_000,
             "live": True,
+            "priority_multiplier": 1,
             "start_date": get_ad_day().date(),
             "end_date": get_ad_day().date() + datetime.timedelta(days=2),
             "include_countries": "",

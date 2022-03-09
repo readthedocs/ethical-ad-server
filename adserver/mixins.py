@@ -11,12 +11,13 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
-from django_countries import countries
 
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
+from .utils import COUNTRY_DICT
+
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -187,8 +188,6 @@ class GeoReportMixin:
         return queryset
 
     def get_country_options(self, queryset):
-        countries_dict = dict(countries)
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = (
@@ -198,11 +197,10 @@ class GeoReportMixin:
             .distinct()[: self.LIMIT]
         )
 
-        return ((cc, countries_dict.get(cc, "Unknown")) for cc in country_list)
+        return ((cc, COUNTRY_DICT.get(cc, "Unknown")) for cc in country_list)
 
     def get_country_name(self, country):
-        countries_dict = dict(countries)
-        return countries_dict.get(country)
+        return COUNTRY_DICT.get(country)
 
 
 class KeywordReportMixin:

@@ -22,7 +22,7 @@ from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
-from ..utils import GeolocationTuple
+from ..utils import GeolocationData
 from ..utils import get_ad_day
 
 
@@ -113,7 +113,7 @@ class DecisionEngineTests(TestCase):
 
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
-        self.request.geo = GeolocationTuple("US", "CA", None)
+        self.request.geo = GeolocationData("US", "CA", None)
 
         self.backend = AdvertisingEnabledBackend(
             request=self.request, placements=self.placements, publisher=self.publisher
@@ -230,23 +230,23 @@ class DecisionEngineTests(TestCase):
         ad, _ = self.backend.get_ad_and_placement()
         self.assertTrue(ad in (self.advertisement1, self.advertisement2))
 
-        self.backend.country_code = "US"
+        self.backend.geolocation = GeolocationData("US")
         ad, _ = self.backend.get_ad_and_placement()
         self.assertEqual(ad, self.advertisement1)
 
-        self.backend.country_code = "MX"
+        self.backend.geolocation = GeolocationData("MX")
         ad, _ = self.backend.get_ad_and_placement()
         self.assertTrue(ad in (self.advertisement1, self.advertisement2))
 
-        self.backend.country_code = "FO"
+        self.backend.geolocation = GeolocationData("FO")
         ad, _ = self.backend.get_ad_and_placement()
         self.assertEqual(ad, self.advertisement2)
 
-        self.backend.country_code = "AZ"
+        self.backend.geolocation = GeolocationData("AZ")
         ad, _ = self.backend.get_ad_and_placement()
         self.assertIsNone(ad)
 
-        self.backend.country_code = "RANDOM"
+        self.backend.geolocation = GeolocationData("T1")
         ad, _ = self.backend.get_ad_and_placement()
         self.assertEqual(ad, self.advertisement2)
 

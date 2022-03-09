@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jsonp.renderers import JSONPRenderer
 
-from ..constants import DECISIONS
 from ..decisionengine import get_ad_decision_backend
 from ..models import AdImpression
 from ..models import Advertisement
@@ -174,8 +173,6 @@ class AdDecisionView(GeoIpMixin, APIView):
                     url=url,
                 )
                 return {}
-
-            ad.incr(impression_type=DECISIONS, publisher=publisher)
 
             data = ad.offer_ad(
                 request=self.request,

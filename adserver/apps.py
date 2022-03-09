@@ -8,3 +8,4 @@ class AdserverConfig(AppConfig):
 
     def ready(self):
         import adserver.tasks  # noqa
+        import adserver.hooks  # noqa
