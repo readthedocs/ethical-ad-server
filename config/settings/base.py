@@ -127,6 +127,7 @@ DATABASES = {
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 ADSERVER_OFFER_DB_TABLE = env("ADSERVER_OFFER_DB_TABLE", default=None)
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Add support for a read replica, mostly used in reporting.
 DATABASE_ROUTERS = env("DATABASE_ROUTER", default=[])
@@ -361,6 +362,7 @@ STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
 STRIPE_LIVE_MODE = False  # Set to True in production
 DJSTRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+DJSTRIPE_USE_NATIVE_JSONFIELD = False
 if not DJSTRIPE_WEBHOOK_SECRET:
     # This is less optimal than setting the webhook secret
     # However, the app won't start without the secret

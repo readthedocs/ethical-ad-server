@@ -59,6 +59,7 @@ class TestAdvertiserDashboardViews(TestCase):
             slug="test-ad-1",
             flight=self.flight,
             image=None,
+            content="ad text",
         )
         self.ad2 = get(
             Advertisement,
@@ -434,7 +435,7 @@ class TestAdvertiserDashboardViews(TestCase):
             "ad_types": [self.ad_type1.pk],
         }
         response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 302, response.content)
 
         # Verify the DB was updated
         self.ad1.refresh_from_db()

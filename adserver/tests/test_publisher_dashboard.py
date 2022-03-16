@@ -34,13 +34,11 @@ class TestPublisherDashboardViews(TestCase):
         )
 
         self.password = "(@*#$&ASDFKJ"
-        self.user = get(
-            get_user_model(), email="test1@example.com", username="test-user"
-        )
+        self.user = get(get_user_model(), email="test1@example.com")
         self.user.set_password(self.password)
         self.user.save()
 
-        self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+        self.staff_user = get(get_user_model(), is_staff=True)
 
         # Copied from test_reports.py
         # TODO: Extract into a base class?

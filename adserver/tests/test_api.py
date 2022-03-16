@@ -225,7 +225,7 @@ class BaseApiTest(TestCase):
             "publisher": self.publisher.slug,
         }
 
-        self.user = get(get_user_model(), username="test-user")
+        self.user = get(get_user_model())
         self.user.publishers.add(self.publisher)
         self.token = Token.objects.create(user=self.user)
         self.url = reverse("api:decision")
@@ -1483,7 +1483,7 @@ class TestProxyViews(BaseApiTest):
         # I want the base setup of the API tests
         super().setUp()
 
-        self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+        self.staff_user = get(get_user_model(), is_staff=True)
 
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
@@ -1740,7 +1740,6 @@ class TestProxyViews(BaseApiTest):
             "include_metro_codes": [825, 803],  # San Diego, LA
         }
         self.ad.flight.save()
-        get(View, offer=self.offer)
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
             get_geo.return_value = GeolocationData("US", "ID", 757)  # Boise, ID

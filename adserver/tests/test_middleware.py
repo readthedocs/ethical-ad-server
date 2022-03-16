@@ -10,7 +10,7 @@ class TestMiddleware(TestCase):
         self.assertFalse("X-Adserver-Version" in response)
 
         # Login as staff
-        staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+        staff_user = get(get_user_model(), is_staff=True)
         self.client.force_login(staff_user)
 
         response = self.client.get("/")
@@ -41,7 +41,7 @@ class TestMiddleware(TestCase):
             self.assertEqual(request.ip_address, "127.0.0.1")
 
             # Login as staff
-            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            staff_user = get(get_user_model(), is_staff=True)
             self.client.force_login(staff_user)
 
             # The provider header should be present for staff
@@ -96,7 +96,7 @@ class TestMiddleware(TestCase):
             self.assertEqual(request.ip_address, "127.0.0.1")
 
             # Login as staff
-            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            staff_user = get(get_user_model(), is_staff=True)
             self.client.force_login(staff_user)
 
             # The provider header should be present for staff
@@ -128,7 +128,7 @@ class TestMiddleware(TestCase):
             self.assertEqual(request.geo.country, None)
 
             # Login as staff
-            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            staff_user = get(get_user_model(), is_staff=True)
             self.client.force_login(staff_user)
 
             country = "US"
@@ -153,7 +153,7 @@ class TestMiddleware(TestCase):
             self.assertFalse("X-Adserver-GeoIP-Provider" in response)
 
             # Login as staff
-            staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+            staff_user = get(get_user_model(), is_staff=True)
             self.client.force_login(staff_user)
 
             response = self.client.get("/")
