@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.48.0
+---------------
+
+This release was purely to update dependencies.
+
+:date: March 16, 2022
+
+ * @dependabot[bot]: Bump pillow from 9.0.0 to 9.0.1 in /requirements (#543)
+ * @davidfischer: Use pytest for testing (#541)
+ * @davidfischer: Django 3.2 upgrade (#539)
+
+
 Version v0.47.0
 ---------------
 
