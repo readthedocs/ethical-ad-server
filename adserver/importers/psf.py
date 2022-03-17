@@ -127,6 +127,7 @@ def run_import(sync=False, images=False):
 
         valid_ads.add(ad)
 
+    # Disable ads no longer returned by the API
     for iterated_ad in Advertisement.objects.filter(
         flight__campaign__advertiser__slug="psf", live=True
     ):
