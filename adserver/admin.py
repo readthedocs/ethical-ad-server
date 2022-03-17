@@ -846,7 +846,7 @@ class OfferAdmin(AdBaseAdmin):
     # Without this, the django admin will order by date and PK
     # resulting in a very expensive query
     # This is due to how the admin determines that the order should be deterministic.
-    # https://docs.djangoproject.com/en/2.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
+    # https://docs.djangoproject.com/en/3.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
     # Ordering by a UUID isn't very useful.
     ordering = ("-pk",)
 
