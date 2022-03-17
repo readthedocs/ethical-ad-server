@@ -757,6 +757,10 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return "{:.3f}%".format(calculate_ctr(obj.views, obj.offers))
 
 
+class ImpressionAdmin(AdImpressionsAdmin):
+    readonly_fields = ("view_time",) + AdImpressionsAdmin.readonly_fields
+
+
 class PlacementImpressionAdmin(AdImpressionsAdmin):
     readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
     list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
@@ -969,7 +973,7 @@ admin.site.register(Campaign, CampaignAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:
-    admin.site.register(AdImpression, AdImpressionsAdmin)
+    admin.site.register(AdImpression, ImpressionAdmin)
     admin.site.register(UpliftImpression, AdImpressionsAdmin)
     admin.site.register(GeoImpression, GeoImpressionAdmin)
     admin.site.register(PlacementImpression, PlacementImpressionAdmin)

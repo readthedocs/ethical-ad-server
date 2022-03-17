@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db.models import Count
 from django.db.models import F
 from django.db.models import Q
+from django.db.models import Sum
 from django.utils.timezone import is_naive
 from django.utils.timezone import utc
 from django_slack import slack_message
@@ -230,6 +231,7 @@ def daily_update_impressions(day=None):
             total_offers=Count("publisher", filter=Q(advertisement__isnull=False)),
             total_views=Count("publisher", filter=Q(viewed=True)),
             total_clicks=Count("publisher", filter=Q(clicked=True)),
+            view_time=Sum("view_time"),
         )
         .filter(total_decisions__gt=0)
         .order_by("-total_decisions")
@@ -246,6 +248,7 @@ def daily_update_impressions(day=None):
             offers=values["total_offers"],
             views=values["total_views"],
             clicks=values["total_clicks"],
+            view_time=values["view_time"],
         )
 
 
