@@ -1,6 +1,7 @@
 {% extends "adserver/reports/base.html" %}
 {% load humanize %}
 {% load i18n %}
+{% load metabase %}
 
 
 {% block title %}{% trans 'Staff Publishers Report' %}{% endblock %}
@@ -125,3 +126,14 @@
     </section>
   {% endfor %}
 {% endblock report %}
+
+
+{% block chart %}
+{% if not revenue_share_percentage and not campaign_type %}
+<section class="mb-5">
+  <div class="vh-50">
+    {% metabase_question_embed metabase_total_revenue start_date=start_date end_date=end_date %}
+  </div>
+</section>
+{% endif %}
+{% endblock chart %}

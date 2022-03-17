@@ -296,6 +296,27 @@ class Command(BaseCommand):
             "small",
         ]
 
+        with open(
+            os.path.join(self.BASE_DIR, "adtype-templates/readthedocs-sidebar.html"),
+            "r",
+            encoding="utf-8",
+        ) as fd:
+            rtd_sidebar_template = fd.read()
+        with open(
+            os.path.join(self.BASE_DIR, "adtype-templates/readthedocs-footer.html"),
+            "r",
+            encoding="utf-8",
+        ) as fd:
+            rtd_footer_template = fd.read()
+        with open(
+            os.path.join(
+                self.BASE_DIR, "adtype-templates/readthedocs-fixedfooter.html"
+            ),
+            "r",
+            encoding="utf-8",
+        ) as fd:
+            rtd_fixedfooter_template = fd.read()
+
         ad_type_mapping = {
             "doc": AdType.objects.create(
                 name="RTD Sidebar",
@@ -304,12 +325,7 @@ class Command(BaseCommand):
                 has_text=True,
                 max_text_length=150,  # Many ads exceed the "allowed" 80
                 allowed_html_tags=" ".join(allowed_tags),
-                template=open(
-                    os.path.join(
-                        self.BASE_DIR, "adtype-templates/readthedocs-sidebar.html"
-                    ),
-                    "r",
-                ).read(),
+                template=rtd_sidebar_template,
             ),
             "site-footer": AdType.objects.create(
                 name="RTD Footer",
@@ -320,12 +336,7 @@ class Command(BaseCommand):
                 has_text=True,
                 max_text_length=300,
                 allowed_html_tags=" ".join(allowed_tags),
-                template=open(
-                    os.path.join(
-                        self.BASE_DIR, "adtype-templates/readthedocs-footer.html"
-                    ),
-                    "r",
-                ).read(),
+                template=rtd_footer_template,
             ),
             "fixed-footer": AdType.objects.create(
                 name="RTD Fixed Footer",
@@ -334,12 +345,7 @@ class Command(BaseCommand):
                 has_text=True,
                 max_text_length=100,
                 allowed_html_tags=" ".join(allowed_tags),
-                template=open(
-                    os.path.join(
-                        self.BASE_DIR, "adtype-templates/readthedocs-fixedfooter.html"
-                    ),
-                    "r",
-                ).read(),
+                template=rtd_fixedfooter_template,
             ),
             # There are two "error" ads but they are old and problematic
             # The images are SVGs (can't be stored in an ImageField)
@@ -529,5 +535,5 @@ class Command(BaseCommand):
             flight.save()
 
         self.stdout.write(
-            self.style.SUCCESS(f"- Calculated totals across imported flights")
+            self.style.SUCCESS("- Calculated totals across imported flights")
         )

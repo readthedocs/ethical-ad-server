@@ -15,6 +15,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
+from djstripe.models import Customer
 from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
@@ -39,8 +40,8 @@ class CreateAdvertiserForm(forms.Form):
     """
 
     # TODO: Make these configurable in the web UI as a dropdown of common values.
-    DEFAULT_CPM = 3.33
-    DEFAULT_NUM_IMPRESSIONS = 300000
+    DEFAULT_CPM = 5
+    DEFAULT_NUM_IMPRESSIONS = 200000
     DEFAULT_COUNTRY_TARGETING = [
         # North America
         "US",
@@ -74,8 +75,8 @@ class CreateAdvertiserForm(forms.Form):
     advertiser_name = forms.CharField(label=_("Advertiser name"), max_length=200)
 
     # User information
-    user_name = forms.CharField(label=_("Name"), max_length=200)
     user_email = forms.EmailField(label=_("Email"))
+    user_name = forms.CharField(label=_("Name"), max_length=200, required=False)
 
     # Used to track historical changes
     message = "Added via staff interface"
@@ -93,8 +94,13 @@ class CreateAdvertiserForm(forms.Form):
             ),
             Fieldset(
                 _("Managing user"),
-                Field("user_name"),
+                HTML(
+                    "<p class='form-text small text-muted'>"
+                    + str(_("Enter an existing user's email or invite a new one."))
+                    + "</p>"
+                ),
                 Field("user_email", placeholder="advertiser@company.com"),
+                Field("user_name"),
                 css_class="my-3",
             ),
             Submit("submit", _("Create advertiser")),
@@ -102,8 +108,8 @@ class CreateAdvertiserForm(forms.Form):
                 "<p class='form-text small text-muted'>"
                 + str(
                     _(
-                        "Creates an advertiser, a campaign, user account, and initial flight. "
-                        "The user will receive an invitation email."
+                        "Creates an advertiser, a campaign, an initial flight, and optionally a user account. "
+                        "The user will receive an invitation email if they are new."
                     )
                 )
                 + "</p>"
@@ -118,10 +124,16 @@ class CreateAdvertiserForm(forms.Form):
 
         return advertiser_name
 
+    def get_existing_user(self):
+        """Return an existing user with the email or None if no user exists."""
+        user_email = self.cleaned_data["user_email"]
+        return User.objects.filter(email=user_email).first()
+
     def create_user(self):
         """Create the user account and send an invite email."""
         user_name = self.cleaned_data["user_name"].strip()
         user_email = self.cleaned_data["user_email"]
+
         user = User.objects.create_user(name=user_name, email=user_email, password="")
         update_change_reason(user, self.message)
         if hasattr(user, "invite_user"):
@@ -166,28 +178,36 @@ class CreateAdvertiserForm(forms.Form):
 
     def create_stripe_customer(self, user, advertiser):
         """Setup a Stripe customer for this user."""
-        if not settings.STRIPE_SECRET_KEY:
+        if not settings.STRIPE_ENABLED:
             return None
 
-        stripe_customer = stripe.Customer.create(
+        # Create the new stripe customer
+        customer = stripe.Customer.create(
             name=user.name,
             email=user.email,
             description=f"Advertising @ {advertiser.name}",
         )
-        return stripe_customer
+
+        # Force sync this customer from stripe
+        # Then return the Django model instance
+        return Customer.sync_from_stripe_data(customer)
 
     def save(self):
         """Create the advertiser and associated objects. Send the invitation to the user account."""
         advertiser = self.create_advertiser()
-        user = self.create_user()
 
-        if settings.STRIPE_SECRET_KEY:
-            # Attach Stripe customer record to the advertiser
-            stripe_customer = self.create_stripe_customer(user, advertiser)
-            advertiser.stripe_customer_id = stripe_customer.id
-            advertiser.save()
+        # Get the user
+        user = self.get_existing_user()
+        if not user:
+            user = self.create_user()
 
         user.advertisers.add(advertiser)
+
+        if settings.STRIPE_ENABLED:
+            # Attach Stripe customer record to the advertiser
+            stripe_customer = self.create_stripe_customer(user, advertiser)
+            advertiser.djstripe_customer = stripe_customer
+            advertiser.save()
 
         return advertiser
 

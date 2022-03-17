@@ -77,6 +77,20 @@ class CreateAdvertiserTest(TestCase):
         form = CreateAdvertiserForm(data=data)
         self.assertFalse(form.is_valid())
 
+        # Create another advertiser with the same user
+        advertiser_name = "Test Advertiser 2"
+        data = {
+            "advertiser_name": advertiser_name,
+            "user_email": user_email,
+        }
+        form = CreateAdvertiserForm(data=data)
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.assertTrue(Advertiser.objects.filter(name=advertiser_name).exists())
+        user = User.objects.filter(email=user_email).first()
+        self.assertEqual(user.advertisers.count(), 2)
+
     def test_view(self):
         url = reverse("create-advertiser")
 
@@ -198,6 +212,8 @@ class PublisherPayoutTests(TestCase):
         last_month = timezone.now().replace(day=1) - timedelta(days=1)
         self.publisher1.created = last_month
         self.publisher1.save()
+
+        # 50 clicks * 2 CPC = $100 ($70 shared)
         for x in range(50):
             get(
                 Offer,
@@ -229,7 +245,7 @@ class PublisherPayoutTests(TestCase):
         list_response = self.client.get(url)
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, "test-publisher</a></td>")
+        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
 
     def test_list_view_filters(self):
         url = reverse("staff-publisher-payouts")
@@ -239,34 +255,34 @@ class PublisherPayoutTests(TestCase):
         list_response = self.client.get(url + "?paid=True")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, "test-publisher</a></td>")
+        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
 
         list_response = self.client.get(url + "?paid=False")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, "test-publisher</a></td>")
+        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
 
         # Filter first
         list_response = self.client.get(url + "?first=True")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, "test-publisher</a></td>")
+        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
 
         list_response = self.client.get(url + "?first=False")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, "test-publisher</a></td>")
+        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
 
         # Filter publisher
         list_response = self.client.get(url + "?publisher=foo")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, "test-publisher</a></td>")
+        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
 
         list_response = self.client.get(url + "?publisher=test")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, "test-publisher</a></td>")
+        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
 
     @override_settings(FRONT_TOKEN="test", FRONT_CHANNEL="test", FRONT_AUTHOR="test")
     @patch("adserver.staff.forms.requests.request")

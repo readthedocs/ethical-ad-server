@@ -36,9 +36,7 @@ class BaseAdDecisionBackend:
 
         self.ad_types = [p["ad_type"] for p in self.placements]
 
-        self.country_code = request.geo.country_code
-        self.region_code = request.geo.region_code
-        self.metro_code = request.geo.metro_code
+        self.geolocation = request.geo
 
         # Optional parameters
         self.keywords = kwargs.get("keywords", []) or []
@@ -219,7 +217,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return True
 
         # Skip if we aren't meant to show to this country/state/dma
-        if not flight.show_to_geo(self.country_code, self.region_code, self.metro_code):
+        if not flight.show_to_geo(self.geolocation):
             return False
 
         # Skip if we aren't meant to show to these keywords
@@ -373,6 +371,13 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         for advertisement in candidate_ads:
             placement = self.get_placement(advertisement)
+            if not placement:
+                log.warning(
+                    "Couldn't find a matching ad placement. ad=%s, placements=%s",
+                    advertisement,
+                    self.placements,
+                )
+                continue
             priority = placement.get("priority", 1)
             for _ in range(max_priority + 1 - priority):
                 weighted_ad_choices.append(advertisement)

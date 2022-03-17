@@ -93,7 +93,7 @@ class FormTests(TestCase):
         }
         form = FlightAdminForm(data=data)
         self.assertFalse(form.is_valid())
-        self.assertEquals(
+        self.assertEqual(
             form.errors["__all__"], ["A flight cannot have both CPC & CPM"]
         )
 
@@ -111,6 +111,7 @@ class FormTests(TestCase):
             "sold_clicks": 100,
             "sold_impressions": 100_000,
             "live": True,
+            "priority_multiplier": 1,
             "start_date": get_ad_day().date(),
             "end_date": get_ad_day().date() + datetime.timedelta(days=2),
             "include_countries": "",
@@ -119,7 +120,7 @@ class FormTests(TestCase):
         }
         form = FlightForm(data=data)
         self.assertFalse(form.is_valid())
-        self.assertEquals(
+        self.assertEqual(
             form.errors["__all__"], ["A flight cannot have both CPC & CPM"]
         )
 
@@ -132,13 +133,21 @@ class FormTests(TestCase):
         data["include_countries"] = "US, YY"
         form = FlightForm(data=data)
         self.assertFalse(form.is_valid())
-        self.assertEquals(
+        self.assertEqual(
             form.errors["include_countries"], ["YY is not a valid country code"]
         )
 
         data["include_countries"] = "US ,  CN"
         form = FlightForm(data=data)
         self.assertTrue(form.is_valid(), form.errors)
+
+        # Start date comes after end date
+        data["end_date"] = data["start_date"] - datetime.timedelta(days=2)
+        form = FlightForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["__all__"], ["The end date must come after the start date"]
+        )
 
     def test_ad_type_required(self):
         self.ad_data["ad_types"] = []
@@ -147,7 +156,7 @@ class FormTests(TestCase):
         )
 
         self.assertFalse(form.is_valid(), form.errors)
-        self.assertEquals(
+        self.assertEqual(
             form.errors["ad_types"], [AdvertisementForm.messages["ad_type_required"]]
         )
 
@@ -183,7 +192,7 @@ class FormTests(TestCase):
             data["content"],
             data["cta"],
         )
-        self.assertEquals(
+        self.assertEqual(
             form.errors["content"],
             [
                 AdvertisementForm.messages["text_too_long"]
@@ -208,7 +217,7 @@ class FormTests(TestCase):
         form = AdvertisementForm(data=self.ad_data, files={}, flight=self.flight)
         self.assertFalse(form.is_valid(), form.errors)
 
-        self.assertEquals(
+        self.assertEqual(
             form.errors["image"],
             [
                 AdvertisementForm.messages["missing_image"]
@@ -223,7 +232,7 @@ class FormTests(TestCase):
         form = AdvertisementForm(data=self.ad_data, files={}, flight=self.flight)
         self.assertFalse(form.is_valid(), form.errors)
 
-        self.assertEquals(
+        self.assertEqual(
             form.errors["image"],
             [
                 AdvertisementForm.messages["missing_image"]
@@ -236,7 +245,7 @@ class FormTests(TestCase):
             self.ad_data["content"],
             self.ad_data["cta"],
         )
-        self.assertEquals(
+        self.assertEqual(
             form.errors["content"],
             [
                 AdvertisementForm.messages["text_too_long"]
@@ -270,7 +279,7 @@ class FormTests(TestCase):
             data=self.ad_data, files=self.files, instance=self.ad, flight=self.flight
         )
         self.assertFalse(form.is_valid(), form.errors)
-        self.assertEquals(
+        self.assertEqual(
             form.errors["image"],
             [
                 AdvertisementForm.messages["invalid_dimensions"]
@@ -317,7 +326,7 @@ class FormTests(TestCase):
         form = AdvertisementForm(data=self.ad_data, files={}, flight=self.flight)
         self.assertFalse(form.is_valid(), form.errors)
 
-        self.assertEquals(
+        self.assertEqual(
             form.errors["image"],
             [
                 AdvertisementForm.messages["missing_image"]
@@ -335,7 +344,7 @@ class FormTests(TestCase):
         self.ad_data["content"] = ""
         form = AdvertisementForm(data=self.ad_data, flight=self.flight)
         self.assertFalse(form.is_valid())
-        self.assertEquals(form.errors["content"], ["This field is required."])
+        self.assertEqual(form.errors["content"], ["This field is required."])
 
     # Below are tests for old-style ads with a single text field instead of broken out
     # headline, content, and CTA

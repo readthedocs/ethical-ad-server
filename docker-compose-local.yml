@@ -13,6 +13,7 @@ version: '3'
 volumes:
   local_postgres_data: {}
   local_postgres_data_backups: {}
+  local_metabase_data: {}
 
 services:
   django: &django
@@ -28,7 +29,7 @@ services:
       - ./.envs/local/django
       - ./.envs/local/postgres
     ports:
-      - "5000:5000"
+      - "${ETHICALADS_DJANGO_PORT:-5000}:5000"
     command: /start
     # Allow us to run `docker attach` and get
     # control on STDIN and be able to debug our code with interactive pdb
@@ -84,3 +85,10 @@ services:
     ports: []
     volumes:
       - .:/app
+
+  metabase:
+    image: metabase/metabase
+    ports:
+      - ${ETHICALADS_METABASE_PORT:-3000}:3000
+    volumes:
+      - local_metabase_data:/metabase-data

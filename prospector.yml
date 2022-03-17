@@ -28,6 +28,7 @@ pylint:
   disable:
     - too-many-arguments
     - too-many-locals
+    - consider-using-f-string
 
 mccabe:
   run: true
@@ -43,4 +44,5 @@ pep257:
 
 pyflakes:
   disable:
+    - F405  # Disabled for "import *" in config/settings
     - F999  # Disabled for "import *" in config/settings

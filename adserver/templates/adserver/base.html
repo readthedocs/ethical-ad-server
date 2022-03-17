@@ -108,6 +108,16 @@
                   <span>{% trans 'Authorized users' %}</span>
                 </a>
               </li>
+
+              {% if advertiser.djstripe_customer %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'advertiser_stripe_portal' advertiser.slug %}">
+                  <span class="fa fa-credit-card fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Billing history' %}</span>
+                </a>
+              </li>
+              {% endif %}
+
             </ul>
           {% elif publisher %}
             <h6 class="text-muted">{{ publisher }}</h6>
@@ -215,7 +225,7 @@
         </nav>
         <main class="main col-lg-9 ml-sm-auto px-4">
           {% include 'includes/messages.html' %}
-          {% include "adserver/includes/publisher-paid-notice.html" with publisher=publisher only %}
+          {% include "adserver/includes/publisher-notices.html" with publisher=publisher only %}
 
           {% block content_container %}{% endblock content_container %}
         </main>

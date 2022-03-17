@@ -2,10 +2,10 @@
 Django settings for the Ethical Ad Server project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/2.2/topics/settings/
+https://docs.djangoproject.com/en/3.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/2.2/ref/settings/
+https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import json
 import logging
@@ -31,7 +31,7 @@ BASE_DIR = os.path.abspath(
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "Overridden in Production"  # noqa
@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "adserver.auth",
     "simple_history",
     "django_slack",
+    "djstripe",
 ]
 
 MIDDLEWARE = [
@@ -76,8 +77,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "adserver.middleware.XForwardedForMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "adserver.middleware.ServerInfoMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -114,15 +115,19 @@ SITE_ID = 1  # Required for allauth
 
 
 # Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 # --------------------------------------------------------------------------
+DB_PATH_SQLITE = os.path.join(BASE_DIR, "db.sqlite3")
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="sqlite:///{}".format(os.path.join(BASE_DIR, "db.sqlite3")),
+        default=f"sqlite:///{DB_PATH_SQLITE}",
     )
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
+
+ADSERVER_OFFER_DB_TABLE = env("ADSERVER_OFFER_DB_TABLE", default=None)
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Add support for a read replica, mostly used in reporting.
 DATABASE_ROUTERS = env("DATABASE_ROUTER", default=[])
@@ -140,7 +145,7 @@ else:
 
 
 # Password validation
-# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 # --------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -155,7 +160,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Caching
 # Using a local memory cache for development and testing
 # and a more hardened cache in production
-# See: https://docs.djangoproject.com/en/2.2/topics/cache/
+# See: https://docs.djangoproject.com/en/3.2/topics/cache/
 # --------------------------------------------------------------------------
 CACHES = {
     "default": {
@@ -166,7 +171,7 @@ CACHES = {
 
 
 # Sessions
-# See: https://docs.djangoproject.com/en/2.2/topics/http/sessions/
+# See: https://docs.djangoproject.com/en/3.2/topics/http/sessions/
 # Using signed cookie sessions. No session data is stored server side,
 # but sessions are tamper proof as long as the SECRET_KEY is a secret.
 # --------------------------------------------------------------------------
@@ -174,7 +179,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
 
 # Email
-# https://docs.djangoproject.com/en/2.2/topics/email/
+# https://docs.djangoproject.com/en/3.2/topics/email/
 # In development, emails are not sent and just logged to the console
 # --------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -188,7 +193,7 @@ FRONT_CHANNEL = env("FRONT_CHANNEL", default=None)
 FRONT_AUTHOR = env("FRONT_AUTHOR", default=None)
 
 # Internationalization
-# https://docs.djangoproject.com/en/2.2/topics/i18n/
+# https://docs.djangoproject.com/en/3.2/topics/i18n/
 # --------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -198,7 +203,7 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
+# https://docs.djangoproject.com/en/3.2/howto/static-files/
 # --------------------------------------------------------------------------
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
@@ -207,7 +212,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
 
 
 # User-uploaded files (ad images)
-# https://docs.djangoproject.com/en/2.2/topics/files/
+# https://docs.djangoproject.com/en/3.2/topics/files/
 # --------------------------------------------------------------------------
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # Even for dev, this should be fully qualified
@@ -215,11 +220,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = env("MEDIA_URL", default="/media/")
 
 # Logging
-# See: https://docs.djangoproject.com/en/2.2/ref/settings/#logging
+# See: https://docs.djangoproject.com/en/3.2/ref/settings/#logging
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.
-# See: http://docs.djangoproject.com/en/2.2/topics/logging
+# See: http://docs.djangoproject.com/en/3.2/topics/logging
 # --------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
@@ -270,13 +275,19 @@ LOGGING = {
             "handlers": ["mail_admins"],
             "propagate": True,
         },
+        # Disable azure's super spammy INFO logging
+        "azure": {
+            "level": "WARNING",
+            "handlers": ["console-adserver"],
+            "propagate": False,
+        },
     },
 }
 
 # Security settings
-# https://docs.djangoproject.com/en/2.2/topics/security/
-# https://docs.djangoproject.com/en/2.2/ref/middleware/#django.middleware.security.SecurityMiddleware
-# https://docs.djangoproject.com/en/2.2/ref/clickjacking/
+# https://docs.djangoproject.com/en/3.2/topics/security/
+# https://docs.djangoproject.com/en/3.2/ref/middleware/#django.middleware.security.SecurityMiddleware
+# https://docs.djangoproject.com/en/3.2/ref/clickjacking/
 # These are only the settings that don't matter whether the request is HTTPS or not
 # See settings/production.py for additional settings
 # --------------------------------------------------------------------------
@@ -318,7 +329,6 @@ CELERY_SEND_TASK_ERROR_EMAILS = False
 CELERYD_HIJACK_ROOT_LOGGER = False
 CELERYD_PREFETCH_MULTIPLIER = 1
 CELERY_CREATE_MISSING_QUEUES = True
-CELERY_IMPORTS = ["analytical.tasks"]
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -343,11 +353,32 @@ REST_FRAMEWORK = {
 # Stripe
 # Handle payments and invoice creation with Stripe
 # https://stripe.com/docs
+# https://dj-stripe.readthedocs.io/
 # --------------------------------------------------------------------------
-STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=None)
+STRIPE_KEY_DEFAULT = "sk_live_x"
+STRIPE_LIVE_SECRET_KEY = env("STRIPE_SECRET_KEY", default=STRIPE_KEY_DEFAULT)
+STRIPE_TEST_SECRET_KEY = env("STRIPE_TEST_SECRET_KEY", default="sk_test_x")
 STRIPE_CONNECT_CLIENT_ID = env("STRIPE_CONNECT_CLIENT_ID", default=None)
-stripe.api_key = STRIPE_SECRET_KEY
-stripe.api_version = "2020-03-02"
+STRIPE_LIVE_MODE = False  # Set to True in production
+DJSTRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default=None)
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+DJSTRIPE_USE_NATIVE_JSONFIELD = False
+if not DJSTRIPE_WEBHOOK_SECRET:
+    # This is less optimal than setting the webhook secret
+    # However, the app won't start without the secret
+    # with this setting set to the default
+    DJSTRIPE_WEBHOOK_VALIDATION = "retrieve_event"
+
+# This is a bit convoluted but basically django-stripe raises a critical
+# if the key isn't set to anything. This prevents migrations from being created
+# among other things.
+# https://github.com/dj-stripe/dj-stripe/issues/1360
+STRIPE_ENABLED = STRIPE_LIVE_SECRET_KEY != STRIPE_KEY_DEFAULT
+if STRIPE_ENABLED:
+    stripe.api_key = STRIPE_LIVE_SECRET_KEY
+else:
+    stripe.api_key = None
+stripe.api_version = "2020-08-27"
 
 
 # Slack
@@ -360,6 +391,27 @@ SLACK_TOKEN = env("SLACK_TOKEN", default=None)
 SLACK_CHANNEL = env("SLACK_CHANNEL", default="#ads-notifications")
 SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
 SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
+
+
+# Metabase
+# Graphing and BI tool
+# --------------------------------------------------------------------------
+METABASE_SITE_URL = env("METABASE_SITE_URL", default="http://metabase:3000")
+METABASE_SECRET_KEY = env("METABASE_SECRET_KEY", default=None)
+# Maps metabase questions by name to the ID
+METABASE_QUESTIONS = {
+    "PUBLISHER_PERFORMANCE": 1,
+    "ADVERTISER_PERFORMANCE": 2,
+    "REGION_BREAKDOWN": 3,
+    "ALL_ADVERTISERS_BREAKDOWN": 5,
+    "TOTAL_REVENUE": 6,
+}
+
+
+# Plausible Analytics
+# --------------------------------------------------------------------------
+PLAUSIBLE_DOMAIN = env("PLAUSIBLE_DOMAIN", default="server.ethicalads.io")
+
 
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
@@ -403,5 +455,22 @@ ADSERVER_STICKY_DECISION_DURATION = 0
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
 ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
 
-with open(os.path.join(BASE_DIR, "package.json")) as fd:
+with open(os.path.join(BASE_DIR, "package.json"), encoding="utf-8") as fd:
     ADSERVER_VERSION = json.load(fd)["version"]
+
+# Additional middleware for setting the user's real IP
+# and translating the IP into a geo for ad targeting.
+ADSERVER_IPADDRESS_MIDDLEWARE = env(
+    "ADSERVER_IPADDRESS_MIDDLEWARE", default="adserver.middleware.IpAddressMiddleware"
+)
+ADSERVER_GEOIP_MIDDLEWARE = env(
+    "ADSERVER_GEOIP_MIDDLEWARE", default="adserver.middleware.GeoIpMiddleware"
+)
+
+# Add the optional middlewares if they are set
+# The IP address middleware should come BEFORE the GeoIP middleware
+# That way the GeoIP middleware will have access to the correct IP
+if ADSERVER_IPADDRESS_MIDDLEWARE:
+    MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
+if ADSERVER_GEOIP_MIDDLEWARE:
+    MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)

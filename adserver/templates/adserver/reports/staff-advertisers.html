@@ -1,6 +1,7 @@
 {% extends "adserver/reports/base.html" %}
 {% load humanize %}
 {% load i18n %}
+{% load metabase %}
 
 
 {% block title %}{% trans 'Staff Advertisers Report' %}{% endblock %}
@@ -76,3 +77,15 @@
     </section>
   {% endfor %}
 {% endblock report %}
+
+
+{% block chart %}
+
+{# NOTE: This chart may have issues with Metabase when there are more than 100 advertisers over the series #}
+
+  <section class="mb-5">
+    <div class="vh-50">
+      {% metabase_question_embed metabase_advertisers_breakdown start_date=start_date end_date=end_date %}
+    </div>
+  </section>
+{% endblock chart %}

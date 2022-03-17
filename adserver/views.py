@@ -1,5 +1,4 @@
 """Ad server views."""
-import calendar
 import collections
 import csv
 import logging
@@ -51,6 +50,7 @@ from .constants import VIEWS
 from .forms import AdvertisementForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
+from .forms import FlightRenewForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .forms import SupportForm
@@ -185,10 +185,10 @@ class AdvertiserMainView(
         context = super().get_context_data(**kwargs)
 
         # Get the beginning/end of the month so we can show month-to-date stats
-        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
-        end_date = start_date.replace(
-            day=calendar.monthrange(start_date.year, start_date.month)[1]
+        start_date = timezone.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
         )
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
         queryset = self.get_queryset(advertiser=self.advertiser, start_date=start_date)
         report = AdvertiserReport(queryset)
@@ -198,7 +198,7 @@ class AdvertiserMainView(
             f
             for f in (
                 Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-                    "-live", "-end_date", "name"
+                    "-live", "start_date", "name"
                 )
             )
             if f.state in (FLIGHT_STATE_UPCOMING, FLIGHT_STATE_CURRENT)
@@ -211,11 +211,14 @@ class AdvertiserMainView(
                 "flights": flights,
                 "start_date": start_date,
                 "end_date": end_date,
+                "metabase_advertiser_performance": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_PERFORMANCE"
+                ),
             }
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -229,7 +232,7 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     model = Flight
     template_name = "adserver/advertiser/flight-list.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
@@ -241,7 +244,7 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
         return Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-            "-live", "-end_date", "name"
+            "-live", "-start_date", "name"
         )
 
 
@@ -260,7 +263,7 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -336,7 +339,7 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         context.update({"advertiser": self.advertiser})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -345,6 +348,53 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             campaign__advertiser=self.advertiser,
             slug=self.kwargs["flight_slug"],
         )
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
+        )
+
+
+class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+
+    """Renew an existing flight."""
+
+    form_class = FlightRenewForm
+    model = Flight
+    permission_required = "adserver.change_flight"
+    template_name = "adserver/advertiser/flight-renew.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.old_flight = get_object_or_404(Flight, slug=self.kwargs["flight_slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+        messages.success(
+            self.request,
+            _("Successfully created new flight '%(flight)s' via renewal")
+            % {"flight": flight},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser})
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["advertiser"] = self.advertiser
+        kwargs["flight"] = self.old_flight
+        return kwargs
 
     def get_success_url(self):
         return reverse(
@@ -368,7 +418,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
         context.update({"advertiser": self.advertiser})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -409,7 +459,7 @@ class AdvertisementUpdateView(
         kwargs["flight"] = ad.flight
         return kwargs
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
@@ -597,16 +647,9 @@ class BaseProxyView(View):
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
 
-        country_code = None
-        region_code = None
-        metro_code = None
-        geo_data = get_geolocation(ip_address)
-        if geo_data:
-            # One or more of these may be None which is OK
-            # Ads targeting countries/regions/metros won't be counted
-            country_code = geo_data["country_code"]
-            region_code = geo_data["region"]
-            metro_code = geo_data["dma_code"]
+        # One or more of country/region/etc. may be None which is OK
+        # Ads targeting countries/regions/metros will never match None
+        geo_data = get_geolocation(request)
 
         if not offer:
             log.log(self.log_level, "Ad impression for unknown offer")
@@ -652,9 +695,7 @@ class BaseProxyView(View):
         elif not offer.publisher:
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
-        elif not advertisement.flight.show_to_geo(
-            country_code, region_code, metro_code
-        ):
+        elif not advertisement.flight.show_to_geo(geo_data):
             # This is very rare but it is visible in ad reports
             # I believe the most common cause for this is somebody uses a VPN and is served an ad
             # Then they turn off their VPN and click on the ad
@@ -662,9 +703,9 @@ class BaseProxyView(View):
                 self.log_security_level,
                 "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s]",
                 advertisement,
-                country_code,
-                region_code,
-                metro_code,
+                geo_data.country,
+                geo_data.region,
+                geo_data.metro,
             )
             reason = "Invalid targeting impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
@@ -793,7 +834,7 @@ class AdViewTimeProxyView(AdViewProxyView):
 
     def handle_action(self, request, advertisement, offer, publisher):
         """Handle updating the view time for this offer."""
-        if "view_time" in request.GET:
+        if offer and "view_time" in request.GET:
             try:
                 view_time = int(request.GET["view_time"])
                 if advertisement.track_view_time(offer, view_time):
@@ -857,6 +898,11 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
         if end_date and end_date < start_date:
             end_date = None
+        if not end_date:
+            # Default to last day of the current month
+            end_date = (timezone.now() + timedelta(days=31)).replace(day=1) - timedelta(
+                days=1
+            )
 
         return {
             "start_date": start_date,
@@ -948,7 +994,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
         flights = (
             Flight.objects.filter(campaign__advertiser=advertiser)
-            .order_by("-live", "-end_date", "name")
+            .order_by("-live", "start_date", "name")
             .select_related("campaign")
         )
 
@@ -1199,6 +1245,9 @@ class StaffAdvertiserReportView(BaseReportView):
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_cost, total_views),
+                "metabase_advertisers_breakdown": settings.METABASE_QUESTIONS.get(
+                    "ALL_ADVERTISERS_BREAKDOWN"
+                ),
             }
         )
 
@@ -1215,7 +1264,7 @@ class AdvertiserAuthorizedUsersView(
     model = get_user_model()
     template_name = "adserver/advertiser/users.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"advertiser": self.advertiser})
         return context
@@ -1306,6 +1355,45 @@ class AdvertiserAuthorizedUsersRemoveView(
         return reverse(
             "advertiser_users", kwargs={"advertiser_slug": self.advertiser.slug}
         )
+
+
+class AdvertiserStripePortalView(AdvertiserAccessMixin, UserPassesTestMixin, View):
+
+    """
+    Redirect advertiser to the stripe portal where they can download invoices.
+
+    https://stripe.com/docs/billing/subscriptions/integrating-customer-portal
+    """
+
+    http_method_names = ["get"]
+
+    def get(self, request, *args, **kwargs):
+        """Redirect to the Stripe portal."""
+        advertiser = get_object_or_404(Advertiser, slug=self.kwargs["advertiser_slug"])
+        return_url = reverse("advertiser_main", args=[advertiser.slug])
+
+        if not advertiser.djstripe_customer:
+            log.warning(
+                "Advertiser %s cannot access the portal (no customer ID)", advertiser
+            )
+            messages.warning(request, _("You can't access the billing portal."))
+            return redirect(return_url)
+        if not settings.STRIPE_LIVE_SECRET_KEY:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                _("Billing portal is not configured"),
+            )
+            log.error(
+                "Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY.",
+            )
+            return redirect(return_url)
+
+        session = stripe.billing_portal.Session.create(
+            customer=advertiser.djstripe_customer.id,
+            return_url=request.build_absolute_uri(return_url),
+        )
+        return redirect(session.url)
 
 
 class PublisherReportView(PublisherAccessMixin, BaseReportView):
@@ -1647,7 +1735,7 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         context.update({"publisher": self.object})
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
     def get_success_url(self):
@@ -1753,19 +1841,20 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
     model = PublisherPayout
     template_name = "adserver/publisher/payout-list.html"
 
-    def get_context_data(self, **kwargs):  # pylint: disable=arguments-differ
+    def get_context_data(self, **kwargs):
         """Get the past payouts, along with the current balance and future balance."""
         context = super().get_context_data(**kwargs)
 
         payouts = self.get_queryset()
         data = generate_publisher_payout_data(self.publisher)
+        total_balance = float(self.publisher.total_payout_sum())
 
-        total_balance = (
-            float(self.publisher.total_payout_sum())
-            + data["current_report"]["total"]["revenue_share"]
-        )
+        # For some reason, pylint is confused by the deep nesting
+        # pylint: disable=unsubscriptable-object
+        if data["current_report"]:
+            total_balance += data["current_report"]["total"]["revenue_share"]
 
-        if data.get("due_report"):
+        if data["due_report"]:
             total_balance += data["due_report"]["total"]["revenue_share"]
 
         context.update(data)
@@ -1922,6 +2011,9 @@ class StaffPublisherReportView(BaseReportView):
                 "revenue_share_percentage": revenue_share_percentage,
                 "sort": sort,
                 "sort_options": sort_options,
+                "metabase_total_revenue": settings.METABASE_QUESTIONS.get(
+                    "TOTAL_REVENUE"
+                ),
             }
         )
 
@@ -2005,6 +2097,19 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
     report = PublisherRegionReport
     template_name = "adserver/reports/staff-regions.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "metabase_region_breakdown": settings.METABASE_QUESTIONS.get(
+                    "REGION_BREAKDOWN"
+                ),
+            }
+        )
+
+        return context
+
 
 class PublisherMainView(
     PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
@@ -2021,18 +2126,29 @@ class PublisherMainView(
         context = super().get_context_data(**kwargs)
 
         # Get the beginning of the month so we can show month-to-date stats
-        start_date = timezone.now().replace(day=1, hour=0, minute=0, second=0)
+        start_date = timezone.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
         queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
         report = PublisherReport(queryset)
         report.generate()
 
         context.update(
-            {"publisher": self.publisher, "report": report, "start_date": start_date}
+            {
+                "publisher": self.publisher,
+                "report": report,
+                "start_date": start_date,
+                "end_date": end_date,
+                "metabase_publisher_performance": settings.METABASE_QUESTIONS.get(
+                    "PUBLISHER_PERFORMANCE"
+                ),
+            }
         )
         return context
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
@@ -2127,7 +2243,7 @@ class ApiTokenDeleteView(ApiTokenMixin, DeleteView):
         messages.info(request, _("API token revoked"))
         return result
 
-    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+    def get_object(self, queryset=None):
         token = Token.objects.filter(user=self.request.user).first()
         if not token:
             raise Http404

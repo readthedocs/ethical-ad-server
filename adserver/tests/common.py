@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
+from djstripe.models import Customer
 
 from ..models import AdType
 from ..models import Advertisement
@@ -71,10 +72,16 @@ class BaseAdModelsTestCase(TestCase):
         )
 
         self.text_ad_type = get(
-            AdType, has_text=True, max_text_length=100, has_image=False, template=None
+            AdType,
+            slug="text-slug",
+            has_text=True,
+            max_text_length=100,
+            has_image=False,
+            template=None,
         )
         self.image_ad_type = get(
             AdType,
+            slug="image-slug",
             has_text=True,
             has_image=True,
             image_height=None,
@@ -91,6 +98,11 @@ class BaseAdModelsTestCase(TestCase):
             is_staff=True,
             is_superuser=True,
             email="test-admin@example.com",
+        )
+
+        self.stripe_customer = Customer.objects.create(
+            name="Test Customer",
+            email="test@example.com",
         )
 
         self.factory = RequestFactory()

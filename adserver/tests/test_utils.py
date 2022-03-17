@@ -4,7 +4,6 @@ from unittest import mock
 
 import pytz
 from django.contrib.gis.geoip2 import GeoIP2Exception
-from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.utils import timezone
@@ -18,6 +17,7 @@ from ..utils import generate_client_id
 from ..utils import get_ad_day
 from ..utils import get_client_id
 from ..utils import get_client_user_agent
+from ..utils import get_geoipdb_geolocation
 from ..utils import get_geolocation
 from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
@@ -28,6 +28,10 @@ from ..utils import parse_date_string
 
 
 class UtilsTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.request = self.factory.get("/")
+
     def test_get_ad_day(self):
         day = get_ad_day()
         self.assertTrue(timezone.is_aware(day))
@@ -156,7 +160,9 @@ class UtilsTest(TestCase):
 
     def test_geolocation(self):
         """The GeoIP database is not available in CI."""
-        self.assertIsNone(get_geolocation("invalid-ip"))
+        self.request.ip_address = "invalid-ip"
+        geolocation = get_geolocation(self.request)
+        self.assertIsNone(geolocation.country)
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.return_value = {
@@ -164,17 +170,20 @@ class UtilsTest(TestCase):
                 "region": None,
                 "dma_code": None,
             }
-            geolocation = get_geolocation("8.8.8.8")
+            self.request.ip_address = "8.8.8.8"
+            geolocation = get_geoipdb_geolocation(self.request)
             self.assertIsNotNone(geolocation)
-            self.assertEqual(geolocation["country_code"], "FR")
+            self.assertEqual(geolocation.country, "FR")
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.side_effect = AddressNotFoundError()
-            self.assertIsNone(get_geolocation("8.8.8.8"))
+            geolocation = get_geoipdb_geolocation(self.request)
+            self.assertIsNone(geolocation.country)
 
         with mock.patch("adserver.utils.geoip") as geoip:
             geoip.city.side_effect = GeoIP2Exception()
-            self.assertIsNone(get_geolocation("8.8.8.8"))
+            geolocation = get_geoipdb_geolocation(self.request)
+            self.assertIsNone(geolocation.country)
 
     def test_parse_date_string(self):
         self.assertIsNone(parse_date_string("not-a-date"))

@@ -17,6 +17,7 @@ from .views import AdvertiserGeoReportView
 from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
+from .views import AdvertiserStripePortalView
 from .views import AdViewProxyView
 from .views import AdViewTimeProxyView
 from .views import ApiTokenCreateView
@@ -28,6 +29,7 @@ from .views import do_not_track_policy
 from .views import FlightCreateView
 from .views import FlightDetailView
 from .views import FlightListView
+from .views import FlightRenewView
 from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
@@ -183,6 +185,11 @@ urlpatterns = [
         name="flight_update",
     ),
     path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/renew/",
+        FlightRenewView.as_view(),
+        name="flight_renew",
+    ),
+    path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/report/",
         AdvertiserFlightReportView.as_view(),
         name="flight_report",
@@ -226,6 +233,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/users/<int:user_id>/remove/",
         AdvertiserAuthorizedUsersRemoveView.as_view(),
         name="advertiser_users_remove",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/billing/",
+        AdvertiserStripePortalView.as_view(),
+        name="advertiser_stripe_portal",
     ),
     # Publisher management and reporting
     path(

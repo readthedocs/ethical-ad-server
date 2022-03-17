@@ -1,0 +1,35 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Renew flight' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Renew flight' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Renew flight' %}{% endblock heading %}</h1>
+
+<p>{% trans 'Create a new flight from an existing flight.' %}</p>
+
+<section>
+  <div class="row">
+
+    <div class="col-md-8">
+      {% crispy form form.helper %}
+    </div>
+
+  </div>
+</section>
+
+
+{% endblock content_container %}

@@ -12,9 +12,7 @@ class TestApiTokenMangementViews(TestCase):
     """Test the API token management (list, create, delete) views."""
 
     def setUp(self):
-        self.user = get(
-            get_user_model(), email="test1@example.com", username="test-user"
-        )
+        self.user = get(get_user_model(), email="test1@example.com")
 
         self.list_view = reverse("api_token_list")
         self.create_view = reverse("api_token_create")
@@ -62,9 +60,7 @@ class TestApiTokenMangementViews(TestCase):
 
 class TestSupportView(TestCase):
     def setUp(self):
-        self.user = get(
-            get_user_model(), email="test1@example.com", username="test-user"
-        )
+        self.user = get(get_user_model(), email="test1@example.com")
 
         self.support_view = reverse("support")
 

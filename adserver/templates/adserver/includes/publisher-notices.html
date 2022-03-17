@@ -1,0 +1,9 @@
+{% load i18n %}
+
+
+{% url 'support' as support_url %}
+{% if publisher and publisher.disabled %}
+<div class="alert alert-warning" role="alert">{% blocktrans %}Your publisher account is disabled. If this is in error, please <a href="{{ support_url }}">contact us</a>.{% endblocktrans %}</div>
+{% elif publisher and not publisher.allow_paid_campaigns and not publisher.saas %}
+<div class="alert alert-warning" role="alert">{% blocktrans %}Your publisher account is not approved for paid campaigns. When you are ready for us to review your integration, please <a href="{{ support_url }}">contact us</a>.{% endblocktrans %}</div>
+{% endif %}

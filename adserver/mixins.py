@@ -11,12 +11,13 @@ from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
-from django_countries import countries
 
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
 from .models import Publisher
+from .utils import COUNTRY_DICT
+
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -83,7 +84,9 @@ class AdvertisementValidateLinkMixin:
     VALIDATE_LINK_MESSAGES = {
         "error": _(
             "Your link returned an error with status %s. "
-            "Unless your landing page is not live yet, this is probably a mistake."
+            "Double check that your landing page is live. "
+            "Occasionally, landing pages block automated access "
+            "and that can result in a false positive."
         ),
         "redirect": _(
             "Your link redirected to a page (%s) that did successfully load. "
@@ -185,8 +188,6 @@ class GeoReportMixin:
         return queryset
 
     def get_country_options(self, queryset):
-        countries_dict = dict(countries)
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         country_list = (
@@ -196,11 +197,10 @@ class GeoReportMixin:
             .distinct()[: self.LIMIT]
         )
 
-        return ((cc, countries_dict.get(cc, "Unknown")) for cc in country_list)
+        return ((cc, COUNTRY_DICT.get(cc, "Unknown")) for cc in country_list)
 
     def get_country_name(self, country):
-        countries_dict = dict(countries)
-        return countries_dict.get(country)
+        return COUNTRY_DICT.get(country)
 
 
 class KeywordReportMixin:
@@ -236,7 +236,8 @@ class AllReportMixin:
 
     """A mixin that handles the primary "view" logic for staff reports."""
 
-    def get_context_data(self, **kwargs):  # pylint: disable=missing-docstring
+    def get_context_data(self, **kwargs):
+        """Set the base data needed for all reports."""
         context = super().get_context_data(**kwargs)
 
         sort = self.request.GET.get("sort", "")

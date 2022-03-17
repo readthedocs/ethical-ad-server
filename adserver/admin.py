@@ -12,6 +12,7 @@ from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
 
 from .forms import AdvertisementAdminForm
@@ -35,8 +36,6 @@ from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .models import View
-from .stripe_utils import get_customer_url
-from .stripe_utils import get_invoice_url
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 
@@ -46,12 +45,14 @@ class RemoveDeleteMixin:
     """Removes the ability to delete this model from the admin."""
 
     def get_actions(self, request):
-        actions = super(RemoveDeleteMixin, self).get_actions(request)
+        actions = super().get_actions(request)
         if "delete_selected" in actions:
             del actions["delete_selected"]  # pragma: no cover
         return actions
 
-    def has_delete_permission(self, request, obj=None):
+    def has_delete_permission(
+        self, request, obj=None
+    ):  # pylint: disable=unused-argument
         return False
 
 
@@ -96,11 +97,31 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
-        )
+        name = escape(instance.name)
+        url = instance.get_absolute_url()
+        return mark_safe(f'<a href="{url}">{name}</a> Report')
+
+
+class CampaignInline(admin.TabularInline):
+
+    """For inlining the campaigns on the advertiser admin."""
+
+    model = Campaign
+
+    can_delete = False
+    fields = (
+        "id",
+        "name",
+        "campaign_type",
+    )
+    readonly_fields = (
+        "name",
+        "campaign_type",
+    )
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
@@ -108,19 +129,20 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     """Django admin configuration for advertisers."""
 
     actions = ["action_create_draft_invoice"]
+    inlines = (CampaignInline,)
     list_display = ("name", "report", "stripe_customer")
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("modified", "created", "stripe_customer")
-    search_fields = ("name", "slug", "stripe_customer_id")
+    readonly_fields = ("modified", "created")
+    search_fields = ("name", "slug", "djstripe_customer__id")
 
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
-        if not settings.STRIPE_SECRET_KEY:
+        if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
                 messages.ERROR,
-                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+                _("Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY."),
             )
             return
 
@@ -128,10 +150,10 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         flight_end = flight_start + timedelta(days=30)
 
         for advertiser in queryset:
-            if advertiser.stripe_customer_id:
+            if advertiser.djstripe_customer:
                 # Amounts, prices, and description can be customized before sending
                 stripe.InvoiceItem.create(
-                    customer=advertiser.stripe_customer_id,
+                    customer=advertiser.djstripe_customer.id,
                     description="Advertising - per 1k impressions",
                     quantity=200,
                     unit_amount=300,  # in US cents
@@ -139,8 +161,8 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                 )
 
                 # https://stripe.com/docs/api/invoices/create
-                invoice = stripe.Invoice.create(
-                    customer=advertiser.stripe_customer_id,
+                inv = stripe.Invoice.create(
+                    customer=advertiser.djstripe_customer.id,
                     auto_advance=False,  # Draft invoice
                     collection_method="send_invoice",
                     custom_fields=[
@@ -156,13 +178,14 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     ],
                     days_until_due=30,
                 )
+                invoice = Invoice.sync_from_stripe_data(inv)
 
                 messages.add_message(
                     request,
                     messages.SUCCESS,
                     _(
                         "New Stripe invoice for {}: {}".format(
-                            advertiser, get_invoice_url(invoice.id)
+                            advertiser, invoice.get_stripe_dashboard_url()
                         )
                     ),
                 )
@@ -188,11 +211,11 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         )
 
     def stripe_customer(self, obj):
-        if obj.stripe_customer_id:
+        if obj.djstripe_customer:
             return format_html(
                 '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
-                get_customer_url(obj.stripe_customer_id),
-                obj.stripe_customer_id,
+                obj.djstripe_customer.get_stripe_dashboard_url(),
+                obj.djstripe_customer.name,
             )
         return None
 
@@ -355,6 +378,37 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
         return False
 
 
+class InvoiceInline(admin.TabularInline):
+
+    """List of Stripe invoices for a flight."""
+
+    model = Flight.invoices.through
+    can_delete = True
+    extra = 1
+    fields = (
+        "invoice",
+        "total",
+        "due_date",
+        "status",
+    )
+    list_select_related = ("invoice", "flight")
+    raw_id_fields = ("invoice",)
+    readonly_fields = (
+        "total",
+        "due_date",
+        "status",
+    )
+
+    def total(self, obj):
+        return obj.invoice.total
+
+    def due_date(self, obj):
+        return obj.invoice.due_date
+
+    def status(self, obj):
+        return obj.invoice.status
+
+
 class FlightMixin:
 
     """Used by the FlightAdmin and FlightInline."""
@@ -387,7 +441,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     save_as = True
 
     actions = ["action_create_draft_invoice"]
-    inlines = (AdvertisementsInline,)
+    inlines = (AdvertisementsInline, InvoiceInline)
     list_display = (
         "name",
         "slug",
@@ -417,7 +471,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
         "campaign__advertiser",
     )
     list_select_related = ("campaign", "campaign__advertiser")
-    raw_id_fields = ("campaign",)
+    raw_id_fields = ("campaign", "invoices")
     readonly_fields = (
         "value_remaining",
         "projected_total_value",
@@ -440,11 +494,12 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
         This fails with a message if the flights aren't all from the same advertiser.
         """
-        if not settings.STRIPE_SECRET_KEY:
+        # TODO: convert to using djstripe and tie FK to flights
+        if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
                 messages.ERROR,
-                _("Stripe is not configured. Please set settings.STRIPE_SECRET_KEY."),
+                _("Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY."),
             )
             return
 
@@ -465,7 +520,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
         latest_end_date = max([f.end_date for f in flights])
         advertiser = [f.campaign.advertiser for f in flights][0]
 
-        if not advertiser.stripe_customer_id:
+        if not advertiser.djstripe_customer:
             messages.add_message(
                 request,
                 messages.ERROR,
@@ -489,7 +544,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
             # Amounts, prices, and description can be customized before sending
             stripe.InvoiceItem.create(
-                customer=advertiser.stripe_customer_id,
+                customer=advertiser.djstripe_customer.id,
                 description=" - ".join(message_components),
                 quantity=quantity,
                 unit_amount=unit_amount,  # in US cents
@@ -503,8 +558,8 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
 
         # https://stripe.com/docs/api/invoices/create
-        invoice = stripe.Invoice.create(
-            customer=advertiser.stripe_customer_id,
+        inv = stripe.Invoice.create(
+            customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
             custom_fields=[
@@ -520,13 +575,20 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             ],
             days_until_due=30,
         )
+        invoice = Invoice.sync_from_stripe_data(inv)
+
+        # Attach Stripe invoices to flights
+        # There isn't a good way to mock invoices for tests so this check is to mock the invoice
+        if invoice.pk:
+            for flight in flights:
+                flight.invoices.add(invoice)
 
         messages.add_message(
             request,
             messages.SUCCESS,
             _(
                 "New Stripe invoice for {}: {}".format(
-                    advertiser, get_invoice_url(invoice.id)
+                    advertiser, invoice.get_stripe_dashboard_url()
                 )
             ),
         )
@@ -536,7 +598,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     )
 
     def get_queryset(self, request):
-        queryset = super(FlightAdmin, self).get_queryset(request)
+        queryset = super().get_queryset(request)
         queryset = queryset.annotate(
             num_ads=models.Count("advertisements", distinct=True)
         )
@@ -636,7 +698,7 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
 
     def get_queryset(self, request):
-        queryset = super(CampaignAdmin, self).get_queryset(request)
+        queryset = super().get_queryset(request)
         queryset = queryset.annotate(
             campaign_total_value=models.Sum(
                 (
@@ -784,7 +846,7 @@ class OfferAdmin(AdBaseAdmin):
     # Without this, the django admin will order by date and PK
     # resulting in a very expensive query
     # This is due to how the admin determines that the order should be deterministic.
-    # https://docs.djangoproject.com/en/2.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
+    # https://docs.djangoproject.com/en/3.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
     # Ordering by a UUID isn't very useful.
     ordering = ("-pk",)
 

@@ -2,12 +2,13 @@
 -r testing.txt
 
 # Useful debugging tools
-django-debug-toolbar<2.0
+django-debug-toolbar>=3.2,<4.0
 ipdb==0.13.3
+ipython==8.0.1
 
 # Code formatters
-black==19.3b0
-reorder-python-imports<2.0
+black==21.12b0
+reorder-python-imports>=2.6.0,<3.0
 
 # For running the black code formatter before commits and other checks
 pre-commit<2.0
@@ -19,8 +20,10 @@ sphinx-rtd-theme
 sphinxcontrib-httpdomain==1.7.0
 
 # Various testing tools
-prospector==1.1.7
-django-dynamic-fixture==2.0.0
+pytest==7.0.0
+pytest-django==4.5.2
+prospector==1.5.2
+django-dynamic-fixture==3.1.2
 
 # Coverage
 coverage<5.0

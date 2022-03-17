@@ -36,6 +36,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
 from ..models import View
+from ..utils import GeolocationData
 
 
 class ApiPermissionTest(TestCase):
@@ -224,7 +225,7 @@ class BaseApiTest(TestCase):
             "publisher": self.publisher.slug,
         }
 
-        self.user = get(get_user_model(), username="test-user")
+        self.user = get(get_user_model())
         self.user.publishers.add(self.publisher)
         self.token = Token.objects.create(user=self.user)
         self.url = reverse("api:decision")
@@ -240,6 +241,10 @@ class BaseApiTest(TestCase):
         self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
         self.staff_client = Client(
             HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
+        )
+        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
+        self.proxy_client = Client(
+            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
         )
 
         self.unauth_client = Client()
@@ -405,6 +410,30 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+    def test_force_ad_counted(self):
+        # Paid ads don't count
+
+        self.ad.flight.campaign.campaign_type = "paid"
+        self.ad.flight.campaign.save()
+
+        self.data["force_ad"] = "ad-slug"
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        view_resp = self.proxy_client.get(resp.json()["view_url"])
+        self.assertFalse(self.ad.offers.first().viewed)
+
+        # House ads are counted
+        self.ad.flight.campaign.campaign_type = "house"
+        self.ad.flight.campaign.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.proxy_client.get(resp.json()["view_url"])
+        self.assertTrue(self.ad.offers.first().viewed)
+
     def test_force_campaign(self):
         # Force ad on the unauthed client
         self.publisher.unauthed_ad_decisions = True
@@ -494,6 +523,18 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
+
+    def test_publisher_disabled(self):
+        self.publisher2.disabled = True
+        self.publisher2.save()
+
+        self.user.publishers.add(self.publisher2)
+        data = {"placements": self.placements, "publisher": self.publisher2.slug}
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.assertEqual(resp.json(), {"publisher": ["Disabled publisher"]})
 
     def test_publisher_groups(self):
         # Get an ad for the first publisher
@@ -621,6 +662,20 @@ class AdDecisionApiTests(BaseApiTest):
         resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
         self.assertEqual(resp.json(), {})
+
+    def test_very_long_div_id(self):
+        div_id = "abc" * 99
+        self.data["placements"][0]["div_id"] = div_id
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        resp_json = resp.json()
+        self.assertEqual(resp_json["div_id"], div_id, resp_json)
+
+        # The Offer.div_id is only 100 chars max
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertEqual(offer.div_id, div_id[: Offer.DIV_MAXLENGTH])
 
     def test_keywords(self):
         data = {
@@ -946,11 +1001,6 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         self.page_url = "http://example.com"
 
-        # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
-        self.proxy_client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
-        )
-
     def test_ad_view_and_tracking(self):
         data = {"placements": self.placements, "publisher": self.publisher1.slug}
         resp = self.client.post(
@@ -962,6 +1012,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # At this point, the ad has been "offered" but not "viewed"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
@@ -984,6 +1035,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
@@ -995,6 +1047,40 @@ class AdvertisingIntegrationTests(BaseApiTest):
             1,
         )
 
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": nonce},
+            )
+            + "?view_time=a"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid view time")
+
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": "invalid-nonce"},
+            )
+            + "?view_time=10"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Invalid view time")
+
+        # Ensure the view time was recorded
+        view_time_url = (
+            reverse(
+                "view-time-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": nonce},
+            )
+            + "?view_time=10"
+        )
+        resp = self.proxy_client.get(view_time_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Updated view time")
+
         # Simulate for a different publisher
         data = {"placements": self.placements, "publisher": self.publisher2.slug}
         resp = self.client.post(
@@ -1003,8 +1089,34 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
 
         impression = self.ad.impressions.filter(publisher=self.publisher2).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
+
+    def test_multiple_ad_offers_views(self):
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        times = 5
+
+        # Simulate some offers and views
+        for _ in range(times):
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200, resp.content)
+
+            # Simulate the view
+            view_url = reverse(
+                "view-proxy",
+                kwargs={"advertisement_id": self.ad.pk, "nonce": resp.json()["nonce"]},
+            )
+            resp = self.proxy_client.get(view_url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+        impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, times)
+        self.assertEqual(impression.offers, times)
+        self.assertEqual(impression.views, times)
 
     def test_ad_views_for_forced_ads(self):
         data = {
@@ -1033,6 +1145,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written - but not considered viewed
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 0)
 
@@ -1053,6 +1166,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # At this point, the ad has been "offered" but not "clicked"
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 0)
 
@@ -1089,6 +1203,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.clicks, 1)
 
@@ -1103,6 +1218,27 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(click.advertisement, self.ad)
         self.assertEqual(click.os_family, "Mac OS X")
         self.assertEqual(click.url, self.page_url)
+
+    def test_user_geoip_passed_ip(self):
+        new_ip = "255.255.255.255"
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "url": self.page_url,
+            "user_ip": new_ip,
+            "user_ua": self.user_agent,
+        }
+        with mock.patch("adserver.utils.get_geoipdb_geolocation") as get_geo:
+            get_geo.return_value = GeolocationData("CA")
+
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Check that the new IP was used for ad targeting
+        self.assertEqual(resp["X-Adserver-RealIP"], new_ip)
+        self.assertEqual(resp["X-Adserver-Country"], "CA")
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
@@ -1127,6 +1263,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
@@ -1163,6 +1300,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Verify an impression was written
         impression = self.ad.impressions.filter(publisher=self.publisher1).first()
+        self.assertEqual(impression.decisions, 1)
         self.assertEqual(impression.offers, 1)
         self.assertEqual(impression.views, 1)
 
@@ -1345,7 +1483,7 @@ class TestProxyViews(BaseApiTest):
         # I want the base setup of the API tests
         super().setUp()
 
-        self.staff_user = get(get_user_model(), is_staff=True, username="staff-user")
+        self.staff_user = get(get_user_model(), is_staff=True)
 
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
@@ -1568,19 +1706,29 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited click impression")
 
+    def test_click_tracking_valid_country_targeting(self):
+        self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
+        self.ad.flight.save()
+
+        Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
+
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.CloudflareGeoIpMiddleware",
+            }
+        ):
+            resp = self.client.get(self.click_url, HTTP_CF_IPCountry="CA")
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
+
     def test_click_tracking_invalid_targeting(self):
         self.ad.flight.targeting_parameters = {"include_countries": ["CA"]}
         self.ad.flight.save()
 
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
 
-        with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "FR",
-                "region": None,
-                "dma_code": None,
-            }
-            resp = self.client.get(self.click_url)
+        resp = self.client.get(self.click_url, HTTP_CF_IPCountry="FR")
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
@@ -1592,36 +1740,23 @@ class TestProxyViews(BaseApiTest):
             "include_metro_codes": [825, 803],  # San Diego, LA
         }
         self.ad.flight.save()
-        get(View, offer=self.offer)
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "ID",
-                "dma_code": 757,  # Boise
-            }
+            get_geo.return_value = GeolocationData("US", "ID", 757)  # Boise, ID
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "CA",
-                "dma_code": 807,  # Bay Area
-            }
+            get_geo.return_value = GeolocationData("US", "CA", 807)  # Bay Area
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")
 
         with mock.patch("adserver.views.get_geolocation") as get_geo:
-            get_geo.return_value = {
-                "country_code": "US",
-                "region": "CA",
-                "dma_code": 825,  # San Diego
-            }
+            get_geo.return_value = GeolocationData("US", "CA", 825)  # San Diego, CA
             resp = self.client.get(self.click_url)
 
         self.assertEqual(resp.status_code, 302)

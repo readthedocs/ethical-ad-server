@@ -5,6 +5,216 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.48.0
+---------------
+
+This release was purely to update dependencies.
+
+:date: March 16, 2022
+
+ * @dependabot[bot]: Bump pillow from 9.0.0 to 9.0.1 in /requirements (#543)
+ * @davidfischer: Use pytest for testing (#541)
+ * @davidfischer: Django 3.2 upgrade (#539)
+
+
+Version v0.47.0
+---------------
+
+This version contained a number of small improvements to performance
+and some additional notifications.
+The larger change was a new staff-only (for now) form
+for renewing an advertising flight.
+
+:date: March 9, 2022
+
+ * @davidfischer: Close flights when complete (#540)
+ * @davidfischer: Post to Slack when an invoice is paid (#537)
+ * @davidfischer: Flight renewal form (#536)
+ * @davidfischer: Performance improvement to offer recording (#533)
+ * @davidfischer: Aggregation task performance improvements (#532)
+ * @ericholscher: Fix payout url for invalid methods (#531)
+ * @ericholscher: Record data for forced ads if they are unpaid. (#530)
+
+
+Version v0.46.1
+---------------
+
+We had a bug in the previous release that affected server-to-server ad clients.
+These clients pass an IP address for geolocating and we weren't re-running
+GeoIP for them properly.
+
+:date: February 21, 2022
+
+ * @davidfischer: Force IP Geolocation if there's a passed userip (#534)
+ * @ericholscher: Don't show paid ads warning on saas account (#527)
+
+
+Version v0.46.0
+---------------
+
+The big change here is added middleware for getting IP addresses
+and for geolocating them. This gives options instead of just relying on
+``X-Forwarded-For`` or using the MaxMind GeoIP databases.
+For production, we will be using Cloudflare for GeoIP and IP normalization.
+
+See the `docs <https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html#adserver-geoip-middleware>`_.
+
+:date: February 14, 2022
+
+ * @davidfischer: Put the priority multiplier in the flight form (#526)
+ * @davidfischer: Add an existing user to an advertiser (#525)
+ * @dependabot[bot]: Bump django from 2.2.26 to 2.2.27 in /requirements (#524)
+ * @davidfischer: Use Cloudflare GeoIP and IP canonicalization (#512)
+
+
+Version v0.45.1
+---------------
+
+This is purely a bugfix release.
+The main fix is a fix for keyword aggregation that fixes a bug introduced in v0.44.0.
+All keyword aggregations done since v0.44.0 need to be re-run.
+
+:date: February 9, 2022
+
+ * @davidfischer: Fix typo with keyword aggregation (#521)
+ * @davidfischer: Handle a bug with a forced ad but mismatched ad type (#519)
+
+
+Version v0.45.0
+---------------
+
+Other than a few quality of life improvements and bug fixes,
+the main change in this release is a many-to-many relation between Flights to Invoices.
+
+:date: February 8, 2022
+
+ * @davidfischer: Disable a publisher completely (#517)
+ * @davidfischer: Add a campaign inline to the advertiser admin (#516)
+ * @davidfischer: Connect flights to invoices (#515)
+ * @davidfischer: Change the default flight size and price (#514)
+ * @davidfischer: Fix for incorrectly creating new advertisers (#513)
+ * @ericholscher: Decisions aren't currency :) (#511)
+
+
+Version v0.44.0
+---------------
+
+**NOTE:** This release requires Python 3.8
+
+The largest change in this release was an upgrade to Python 3.8.
+Other than that, there were a few migrations to support tighter Stripe integration
+and some changes that will allow a set of publishers who pay us (instead of get paid)
+to run their house ads or sponsorship.
+
+:date: January 26, 2022
+
+ * @ericholscher: Start modeling SaaS publishers to show them billing data (#509)
+ * @davidfischer: Optimize the keyword aggregation (#508)
+ * @davidfischer: Handle an extra long div-id (#507)
+ * @ericholscher: Expose View Rate to publishers. (#505)
+ * @davidfischer: Upgrade to Python 3.8 (#503)
+ * @davidfischer: Stripe foreign key fields migrations (#498)
+ * @dependabot[bot]: Bump pillow from 8.3.2 to 9.0.0 in /requirements (#496)
+
+
+Version v0.43.1
+---------------
+
+The only changes in this release were minor bug fixes
+and slight tweaks on some checks when updating ads and flights.
+
+:date: January 20, 2022
+
+ * @davidfischer: Tone down the link error message. (#504)
+ * @davidfischer: Use iterators in daily aggregations (#502)
+ * @davidfischer: Ensure the start date comes before the end date (#501)
+ * @davidfischer: Distinct away duplicate ad types (#500)
+
+
+Version v0.43.0
+---------------
+
+The big change in this PR was the beginnings of tighter Stripe integration.
+This PR merely sets the groundwork by adding django-stripe which syncs
+data from Stripe to our local database.
+
+:date: January 18, 2022
+
+ * @dependabot[bot]: Bump django from 2.2.24 to 2.2.26 in /requirements (#497)
+ * @ericholscher: Disable metabase restart (#495)
+ * @davidfischer: Initial DJStripe integration (#494)
+ * @davidfischer: Make disabled ads more obvious (#493)
+ * @davidfischer: Update exclude list (#492)
+ * @davidfischer: Tweak to progress bar formatting (#490)
+ * @davidfischer: Make the user name optional on the advertiser form (#489)
+ * @davidfischer: Fix a bug with an invalid view time (#488)
+ * @ericholscher: Fix another silly month/year date bug (#484)
+ * @decaffeinatedio: Update GeoIP Links (#427)
+
+
+Version v0.42.0
+---------------
+
+This release adds the ability for advertisers to view old invoices,
+and does a few small operations changes.
+The most important is being able to rename the Offers database table,
+which we plan to do in production to improve database performance.
+
+:date: November 15, 2021
+
+ * @ericholscher: These ports were used for me locally, let them be overridden. (#486)
+ * @ericholscher: Change the offers db_table to give us more space (#485)
+ * @davidfischer: Enable Stripe billing portal for advertisers (#483)
+
+Version v0.41.0
+---------------
+
+We added Plausible Analytics to see which parts of the dashboard get the most use.
+We also added a lot more charts for staff and made a couple charts available
+to advertisers and publishers.
+
+:date: October 28, 2021
+
+ * @davidfischer: Make metabase charts public (#480)
+ * @davidfischer: Add Plausible Analytics to the dashboard (#479)
+ * @ericholscher: Remove analytical import from settings (#478)
+ * @davidfischer: Add additional charts (#477)
+
+
+Version v0.40.0
+---------------
+
+The big change in this release was that we're trying out some graphs.
+However, for this release, they are staff-only.
+Other than that, there was nothing user facing in this release.
+
+:date: October 21, 2021
+
+ * @davidfischer: Charting/graphing with metabase (#475)
+ * @davidfischer: Remove the CTR publisher change alert (#473)
+ * @ericholscher: Show publisher name instead of slug in payout (#472)
+ * @davidfischer: Tweaks to the daily aggregation task (#471)
+ * @ericholscher: Make azure logging quiet (#470)
+ * @ericholscher: Fix a bug where existing AdType was excluded (#455)
+
+
+Version v0.39.0
+---------------
+
+Most of this release were small bug fixes and tweaks to staff notifications.
+
+:date: October 6, 2021
+
+ * @ericholscher: Force using the default DB during ad serving incr call (#467)
+ * @davidfischer: Small tweak to flight ordering (#466)
+ * @davidfischer: Fail silently on slack failures (#464)
+ * @davidfischer: Increase aggregation task time limit (#463)
+ * @davidfischer: Notify when daily reports are aggregated (#462)
+ * @ericholscher: Fix silly where bug data wasn't defined if we weren't caching. (#461)
+
+
+
 Version v0.38.0
 ---------------
 
