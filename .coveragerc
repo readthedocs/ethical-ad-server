@@ -19,6 +19,8 @@ omit =
     templates/admin/*.html
     templates/account/*.html
     templates/includes/*.html
+    adserver/templatetags/metabase.py
+    adserver/regiontopics.py # Just data/constants
     adserver/importers/*.py
     adserver/management/commands/metabase.py
     adserver/management/commands/rtdimport.py
