@@ -19,6 +19,7 @@ omit =
     templates/admin/*.html
     templates/account/*.html
     templates/includes/*.html
+    adserver/importers/*.py
     adserver/management/commands/metabase.py
     adserver/management/commands/rtdimport.py
     adserver/management/commands/pypi_import.py
