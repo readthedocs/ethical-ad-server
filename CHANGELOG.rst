@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.48.1
+---------------
+
+This release fixed some issues not seen in development related to v0.48.0.
+That release shouldn't be used.
+
+:date: March 17, 2022
+
+ * @davidfischer: Additional Django 3.2 fixes (#545)
+
+
 Version v0.48.0
 ---------------
 
