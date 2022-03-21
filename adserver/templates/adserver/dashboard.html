@@ -20,7 +20,7 @@
       {% trans 'Reports only visible to staff users.' %}
     </p>
     <ul>
-        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a> (<a href="{% url 'staff_advertisers_report' %}?start_date={{ month_start|date:'Y-m-d' }}"> {% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a> (<a href="{% url 'staff_advertisers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
         <li><a href="{% url 'staff_publishers_report' %}">{% trans 'Staff Publisher Report' %}</a> (<a href="{% url 'staff_publishers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
         <li><a href="{% url 'staff_regiontopic_report' %}">{% trans 'Staff Region & Topic Report' %}</a> (<a href="{% url 'staff_regiontopic_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
         <li><a href="{% url 'staff_keyword_report' %}">{% trans 'Staff Keyword Report' %}</a> (<a href="{% url 'staff_keyword_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
