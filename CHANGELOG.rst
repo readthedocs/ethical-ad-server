@@ -6,6 +6,28 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.48.2
+---------------
+
+Fixed more issues that weren't seen until staging.
+Notably, a New Relic upgrade was required.
+
+:date: March 17, 2022
+
+ * @davidfischer: Still more Django 3.2 upgrade fixes (#548)
+
+
+Version v0.48.1
+---------------
+
+This release fixed some issues not seen in development related to v0.48.0.
+That release shouldn't be used.
+
+:date: March 17, 2022
+
+ * @davidfischer: Additional Django 3.2 fixes (#545)
+
+
 Version v0.48.0
 ---------------
 

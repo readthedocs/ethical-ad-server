@@ -12,6 +12,7 @@ Only a few environment variables are required:
 - SENDGRID_API_KEY
 """
 import logging
+import socket
 import ssl
 
 from celery.schedules import crontab
@@ -81,7 +82,11 @@ if env.bool("ADSERVER_HTTPS", default=False):
     # Optionally enforce a specific host. Other hosts will redirect
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
-    ENFORCE_HOST = env("ENFORCE_HOST", default=None)
+
+    # Enforcing the host means any request for any other host will redirect
+    # Don't do this on ethicalads-extra (our staging server)
+    if not socket.gethostname().startswith("ethicalads-extra"):
+        ENFORCE_HOST = env("ENFORCE_HOST", default=None)
 
 
 # Email settings
@@ -142,6 +147,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.notify_of_publisher_changes",
         # Runs on Wednesday
         "schedule": crontab(day_of_week=3, hour="5", minute="0"),
+    },
+    # Run publisher importers daily
+    "every-day-sync-publisher-data": {
+        "task": "adserver.tasks.run_publisher_importers",
+        "schedule": crontab(hour="1", minute="0"),
     },
 }
 

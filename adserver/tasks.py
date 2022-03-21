@@ -16,6 +16,7 @@ from django.utils.timezone import utc
 from django_slack import slack_message
 
 from .constants import PAID_CAMPAIGN
+from .importers import psf
 from .models import AdImpression
 from .models import Flight
 from .models import GeoImpression
@@ -682,3 +683,14 @@ def archive_offers(day=None, delete=False):
         "adserver/slack/generic-message.slack",
         {"text": f"Offers archived for {start_date:%Y-%m-%d}... :date:"},
     )
+
+
+@app.task()
+def run_publisher_importers():
+    """
+    Run a sync task for all the importers from our various publishers.
+
+    This is done nightly to ensure imported data is up to date.
+    """
+    # PSF is the only importer for now..
+    psf.run_import(sync=True)
