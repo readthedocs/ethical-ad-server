@@ -19,7 +19,12 @@ omit =
     templates/admin/*.html
     templates/account/*.html
     templates/includes/*.html
+    adserver/templatetags/metabase.py
+    adserver/regiontopics.py # Just data/constants
+    adserver/importers/*.py
     adserver/management/commands/metabase.py
+    adserver/management/commands/rtdimport.py
+    adserver/management/commands/pypi_import.py
     adserver/management/commands/adtype-templates/*.html
     adserver/router.py
 
