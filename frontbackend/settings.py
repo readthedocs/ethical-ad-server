@@ -1,4 +1,8 @@
-"""Default settings for the Front email backend."""
+"""
+Default settings for the Front email backend.
+
+These can be overridden when initializing the backend.
+"""
 from django.conf import settings
 
 
@@ -19,6 +23,8 @@ FRONT_SENDER_NAME = getattr(settings, "FRONT_SENDER_NAME", None)
 
 # The author for a draft message
 # This is *ONLY* used when saving drafts
+# This should be set to a "Teammate ID"
+# https://dev.frontapp.com/reference/get_teammates
 FRONT_AUTHOR = getattr(settings, "FRONT_AUTHOR", None)
 
 # Whether to archive messages after they are sent

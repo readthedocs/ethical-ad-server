@@ -33,32 +33,52 @@ class EmailBackend(BaseEmailBackend):
     See: https://docs.djangoproject.com/en/3.2/topics/email/#defining-a-custom-email-backend
     """
 
-    def __init__(self, **kwargs):
-        """Init override."""
+    def __init__(
+        self,
+        token=None,
+        channel=None,
+        sender_name=None,
+        author=None,
+        archive=False,
+        **kwargs,
+    ):
+        """
+        Initialize the backend.
+
+        :param token: The Front API token (defaults to settings.FRONT_TOKEN)
+        :param channel: The Front channel (defaults to settings.FRONT_CHANNEL)
+        :param sender_name: A display name for the FROM address (defaults to settings.FRONT_SENDER_NAME)
+        :param author: Used for drafts only to save the draft to a teammate's drafts folder
+            (defaults to settings.FRONT_AUTHOR)
+        :param archive: Whether to auto-archive sent messages (defaults to settings.FRONT_ARCHIVE)
+        """
         super().__init__(**kwargs)
 
-        token = settings.FRONT_TOKEN
-        channel = settings.FRONT_CHANNEL
+        self.token = token or settings.FRONT_TOKEN
+        self.channel = channel or settings.FRONT_CHANNEL
 
-        if not token or not channel:
+        if not self.token or not self.channel:
             raise NotImplementedError(
                 "For the Front email backend, "
                 "settings.FRONT_TOKEN and settings.FRONT_CHANNEL "
                 "must be set."
             )
 
+        self.sender_name = sender_name or settings.FRONT_SENDER_NAME
+        self.author = author or settings.FRONT_AUTHOR
+
         # Whether to archive messages on send
-        self.archive = settings.FRONT_ARCHIVE
+        self.archive = archive or settings.FRONT_ARCHIVE
 
         # Front API urls for creating a conversation or creating a draft
         # https://dev.frontapp.com/reference/post_channels-channel-id-messages
         # https://dev.frontapp.com/reference/post_conversations-conversation-id-drafts
-        self.message_url = f"https://api2.frontapp.com/channels/{channel}/messages"
-        self.draft_url = f"https://api2.frontapp.com/channels/{channel}/drafts"
+        self.message_url = f"https://api2.frontapp.com/channels/{self.channel}/messages"
+        self.draft_url = f"https://api2.frontapp.com/channels/{self.channel}/drafts"
 
         self.headers = {
             "Accept": "application/json",
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {self.token}",
         }
 
     def send_messages(self, email_messages):
@@ -82,6 +102,9 @@ class EmailBackend(BaseEmailBackend):
         # Whether this email should be created as a draft or simply sent (the default)
         draft = getattr(email_message, "draft", False)
 
+        # Whether to archive this message when sent
+        archive = getattr(email_message, "archive", self.archive)
+
         encoding = email_message.encoding or settings.DEFAULT_CHARSET
         recipients = [
             sanitize_address(addr, encoding) for addr in email_message.recipients()
@@ -94,17 +117,17 @@ class EmailBackend(BaseEmailBackend):
             "to": recipients,
             "cc": email_message.cc,
             "bcc": email_message.bcc,
-            "sender_name": settings.FRONT_SENDER_NAME,
+            "sender_name": self.sender_name,
             "subject": email_message.subject,
-            "options": {"archive": self.archive},
+            "options": {"archive": archive},
             "body": email_message.body,
         }
 
         if draft:
             url = self.draft_url
             payload["mode"] = "shared"
-            payload["author_id"] = settings.FRONT_AUTHOR
-            if not settings.FRONT_AUTHOR:
+            payload["author_id"] = self.author
+            if not self.author:
                 raise NotImplementedError(
                     "Can't save a draft message without setting FRONT_AUTHOR."
                 )

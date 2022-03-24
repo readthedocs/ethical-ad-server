@@ -188,6 +188,7 @@ DEFAULT_FROM_EMAIL = SERVER_EMAIL
 EMAIL_TIMEOUT = 5
 
 # For sending email through Front.
+FRONT_BACKEND = "frontbackend.backend.EmailBackend"
 FRONT_TOKEN = env("FRONT_TOKEN", default=None)
 FRONT_CHANNEL = env("FRONT_CHANNEL", default=None)
 FRONT_AUTHOR = env("FRONT_AUTHOR", default=None)
