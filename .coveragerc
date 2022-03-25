@@ -4,6 +4,7 @@ plugins =
     django_coverage_plugin
 source =
     adserver
+    frontbackend
     templates
 omit =
     # Skip django AppConfig files
