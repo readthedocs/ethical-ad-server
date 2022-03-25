@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.http import urlencode
 from django_countries import countries
 from geoip2.errors import AddressNotFoundError
@@ -147,7 +147,7 @@ def anonymize_ip_address(ip_address):
     ip_mask = int("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000", 16)
 
     try:
-        ip_obj = ipaddress.ip_address(force_text(ip_address))
+        ip_obj = ipaddress.ip_address(force_str(ip_address))
     except ValueError:
         return None
 
@@ -275,7 +275,7 @@ def get_geoipdb_geolocation(request):
     ip_address = get_client_ip(request)
 
     try:
-        ipaddress.ip_address(force_text(ip_address))
+        ipaddress.ip_address(force_str(ip_address))
     except ValueError:
         # Invalid IP address - should be safe to log. It's invalid and not identifying
         log.warning("Invalid IP address passed to GeoIP database. IP=%s", ip_address)
@@ -346,7 +346,7 @@ def generate_client_id(ip_address, user_agent):
         # Since no IP and no UA were specified,
         # there's no way to distinguish sessions.
         # Instead, just treat every user differently
-        hash_id.update(force_bytes(get_random_string()))
+        hash_id.update(force_bytes(get_random_string(length=12)))
 
     return hash_id.hexdigest()
 

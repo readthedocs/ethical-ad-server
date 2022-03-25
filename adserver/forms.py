@@ -25,8 +25,8 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html
 from django.utils.text import slugify
-from django.utils.translation import ugettext
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
 from simple_history.utils import update_change_reason
 
 from .models import Advertisement
@@ -792,7 +792,7 @@ class PublisherSettingsForm(forms.ModelForm):
                     "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
                     "</a>",
                     link_obj.url,
-                    ugettext("Manage Stripe account"),
+                    gettext("Manage Stripe account"),
                 )
             )
         elif settings.STRIPE_CONNECT_CLIENT_ID:
@@ -805,7 +805,7 @@ class PublisherSettingsForm(forms.ModelForm):
                     "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
                     "</a>",
                     connect_url,
-                    ugettext("Connect via Stripe"),
+                    gettext("Connect via Stripe"),
                 )
             )
         else:

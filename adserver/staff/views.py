@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 from django.views.generic import FormView
 from django.views.generic import TemplateView
