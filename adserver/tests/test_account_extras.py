@@ -7,6 +7,40 @@ from django_dynamic_fixture import get
 from rest_framework.authtoken.models import Token
 
 
+class TestAccountOverviewView(TestCase):
+    def setUp(self):
+        self.email = "test1@example.com"
+        self.name = "Test User"
+        self.user = get(get_user_model(), name=self.name, email=self.email)
+        self.url = reverse("account")
+
+        self.client.force_login(self.user)
+
+    def test_logged_out(self):
+        self.client.logout()
+        resp = self.client.get(self.url)
+
+        # Redirected to login
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+    def test_update(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.name)
+
+        new_name = "New Name"
+        resp = self.client.post(self.url, {"name": new_name}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Successfully updated your account.")
+        self.assertContains(resp, new_name)
+        self.assertNotContains(resp, self.name)
+
+        # Check that the name was updated
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.name, new_name)
+
+
 class TestApiTokenMangementViews(TestCase):
 
     """Test the API token management (list, create, delete) views."""

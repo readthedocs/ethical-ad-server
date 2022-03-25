@@ -937,6 +937,34 @@ class InviteUserForm(forms.ModelForm):
         ]
 
 
+class AccountForm(forms.ModelForm):
+
+    """Form used to update account information and notifications."""
+
+    def __init__(self, *args, **kwargs):
+        """Set up the form helper for the account."""
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                "name",
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Notification settings"),
+                "notify_on_completed_flights",
+                css_class="my-3",
+            ),
+            Submit("submit", _("Update account")),
+        )
+
+    class Meta:
+        model = get_user_model()
+        fields = ("name", "notify_on_completed_flights")
+
+
 class SupportForm(forms.Form):
 
     """

@@ -1,0 +1,40 @@
+{% extends "adserver/dashboard.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans "Account" %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
+</li>
+<li class="breadcrumb-item active">{% trans 'Account' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans "Account" %}{% endblock heading %}</h1>
+
+<p>{% trans 'Update your account information and notification settings.' %}</p>
+
+<div class="row">
+  <div class="col col-md-8">
+
+    <div class="form-group">
+      <label>{% trans 'Email' %}</label>
+      <p>{{ request.user.email }}</p>
+      {% url "support" as support_url %}
+      <p class="small text-muted">{% blocktrans %}To update your email address, contact <a href="{{ support_url }}">support</a>.{% endblocktrans %}</p>
+    </div>
+
+    {% crispy form form.helper %}
+  </div>
+</div>
+
+{% endblock content_container %}

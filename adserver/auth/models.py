@@ -83,6 +83,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     advertisers = models.ManyToManyField(Advertiser, blank=True)
     publishers = models.ManyToManyField(Publisher, blank=True)
 
+    # Notifications
+    notify_on_completed_flights = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Receive an email notification when an advertising flight is complete"
+        ),
+    )
+
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []  # email is required already
