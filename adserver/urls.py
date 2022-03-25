@@ -327,7 +327,7 @@ urlpatterns = [
         name="publisher_payout",
     ),
     # User account management
-    path(r"accounts/account/", AccountOverviewView.as_view(), name="account"),
+    path(r"accounts/settings/", AccountOverviewView.as_view(), name="account"),
     path(r"accounts/support/", AccountSupportView.as_view(), name="support"),
     path(r"accounts/api-token/", ApiTokenListView.as_view(), name="api_token_list"),
     path(
