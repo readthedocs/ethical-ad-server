@@ -47,6 +47,7 @@ from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID
 from .constants import VIEWS
+from .forms import AccountForm
 from .forms import AdvertisementForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
@@ -2153,6 +2154,25 @@ class PublisherMainView(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
         return self.publisher
+
+
+class AccountOverviewView(LoginRequiredMixin, UpdateView):
+
+    """Manage account name and other user settings."""
+
+    form_class = AccountForm
+    message_success = _("Successfully updated your account.")
+    model = get_user_model()
+    template_name = "adserver/accounts/account.html"
+    success_url = reverse_lazy("account")
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        messages.success(self.request, self.message_success)
+        return result
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 
 class AccountSupportView(LoginRequiredMixin, FormView):
