@@ -5,16 +5,23 @@ from collections import defaultdict
 
 from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
+from django.core import mail
 from django.db.models import Count
 from django.db.models import F
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.utils.timezone import is_naive
 from django.utils.timezone import utc
+from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
 
+from .constants import FLIGHT_STATE_CURRENT
+from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
 from .importers import psf
 from .models import AdImpression
+from .models import Advertiser
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -558,7 +565,9 @@ def calculate_publisher_ctrs(days=7):
 def notify_of_completed_flights():
     """Send a note and close flights which completed in the last day."""
     cutoff = get_ad_day() - datetime.timedelta(days=1)
-    for flight in Flight.objects.filter(live=True):
+
+    completed_flights_by_advertiser = defaultdict(list)
+    for flight in Flight.objects.filter(live=True).select_related():
         if (
             flight.clicks_remaining() == 0
             and flight.views_remaining() == 0
@@ -568,7 +577,7 @@ def notify_of_completed_flights():
         ):
             log.info("Flight %s finished in the last day.", flight)
 
-            # Send notification about this flight
+            # Send an internal notification about this flight
             slack_message(
                 "adserver/slack/flight-complete.slack",
                 {
@@ -580,6 +589,57 @@ def notify_of_completed_flights():
             # Mark the flight as no longer live. It is complete
             flight.live = False
             flight.save()
+
+            completed_flights_by_advertiser[flight.campaign.advertiser.slug].append(
+                flight
+            )
+
+    # Send notification to advertiser - one email even if multiple flights finished
+    if settings.FRONT_TOKEN and settings.FRONT_AUTHOR and settings.FRONT_CHANNEL:
+
+        site = get_current_site(request=None)
+
+        for (
+            advertiser_slug,
+            completed_flights,
+        ) in completed_flights_by_advertiser.items():
+            advertiser = Advertiser.objects.get(slug=advertiser_slug)
+
+            to_addresses = [
+                u.email
+                for u in advertiser.user_set.all()
+                if u.notify_on_completed_flights
+            ]
+            context = {
+                "advertiser": advertiser,
+                "site": site,
+                # Just the flights completed today
+                "completed_flights": completed_flights,
+                "current_flights": [
+                    f
+                    for f in Flight.objects.filter(campaign__advertiser=advertiser)
+                    if f.state == FLIGHT_STATE_CURRENT
+                ],
+                "upcoming_flights": [
+                    f
+                    for f in Flight.objects.filter(campaign__advertiser=advertiser)
+                    if f.state == FLIGHT_STATE_UPCOMING
+                ],
+            }
+
+            with mail.get_connection(settings.FRONT_BACKEND) as connection:
+                message = mail.EmailMessage(
+                    _("Advertising flight wrapup - %(name)s") % {"name": site.name},
+                    render_to_string("adserver/email/flight_wrapup.html", context),
+                    settings.SERVER_EMAIL,  # Front doesn't use this
+                    to_addresses,
+                    connection=connection,
+                )
+
+                # Make this a draft instead of just sending it directly
+                message.draft = True
+
+                message.send()
 
 
 @app.task()
