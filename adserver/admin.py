@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
 
@@ -758,29 +758,29 @@ class ImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 
 class AdImpressionAdmin(ImpressionsAdmin):
-    readonly_fields = ("view_time",) + AdImpressionsAdmin.readonly_fields
+    readonly_fields = ("view_time",) + ImpressionsAdmin.readonly_fields
 
 
-class UpliftImpressionAdmin(ImpressionAdmin):
-    readonly_fields = ("view_time",) + AdImpressionsAdmin.readonly_fields
+class UpliftImpressionAdmin(ImpressionsAdmin):
+    pass
 
 
 class PlacementImpressionAdmin(ImpressionsAdmin):
-    readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
-    list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
-    search_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.search_fields
+    readonly_fields = ("div_id", "ad_type_slug") + ImpressionsAdmin.readonly_fields
+    list_display = ("div_id", "ad_type_slug") + ImpressionsAdmin.list_display
+    search_fields = ("div_id", "ad_type_slug") + ImpressionsAdmin.search_fields
 
 
 class GeoImpressionAdmin(ImpressionsAdmin):
-    readonly_fields = ("country",) + AdImpressionsAdmin.readonly_fields
-    list_display = ("country",) + AdImpressionsAdmin.list_display
-    search_fields = ("country",) + AdImpressionsAdmin.search_fields
+    readonly_fields = ("country",) + ImpressionsAdmin.readonly_fields
+    list_display = ("country",) + ImpressionsAdmin.list_display
+    search_fields = ("country",) + ImpressionsAdmin.search_fields
 
 
 class KeywordImpressionAdmin(ImpressionsAdmin):
-    readonly_fields = ("keyword",) + AdImpressionsAdmin.readonly_fields
-    list_display = ("keyword",) + AdImpressionsAdmin.list_display
-    search_fields = ("keyword",) + AdImpressionsAdmin.search_fields
+    readonly_fields = ("keyword",) + ImpressionsAdmin.readonly_fields
+    list_display = ("keyword",) + ImpressionsAdmin.list_display
+    search_fields = ("keyword",) + ImpressionsAdmin.search_fields
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
