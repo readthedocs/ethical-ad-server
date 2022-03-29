@@ -1,3 +1,4 @@
+
 CHANGELOG
 =========
 
@@ -5,6 +6,22 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.48.3
+---------------
+
+Add a Front email backend, and a couple small depedency upgrades
+
+ * @davidfischer: Fix a pre-commit versioning issue (#557)
+ * @davidfischer: Fix a number of test warnings (#554)
+ * @davidfischer: Add a form for controlling user notifications (#553)
+ * @davidfischer: Adds a Front (front.com) email backend (#552)
+ * @davidfischer: Fix an awkward space (#551)
+ * @davidfischer: Remove the redirect on the staging server (#550)
+ * @davidfischer: Release v0.48.2 (#549)
+ * @davidfischer: Still more Django 3.2 upgrade fixes (#548)
+ * @davidfischer: Release v0.48.1 (#547)
+ * @davidfischer: Additional Django 3.2 fixes (#545)
+ * @ericholscher: Add a Python data import script (#520)
 
 Version v0.48.2
 ---------------
