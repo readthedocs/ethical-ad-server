@@ -1495,6 +1495,10 @@ class AdImpression(BaseImpression):
     advertisement = models.ForeignKey(
         Advertisement, related_name="impressions", on_delete=models.PROTECT, null=True
     )
+    view_time = models.PositiveIntegerField(
+        _("Seconds that the ad was in view"),
+        null=True,
+    )
 
     class Meta:
         # We must also constrain when the `advertisement` is null
