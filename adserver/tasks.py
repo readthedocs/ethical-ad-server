@@ -595,8 +595,7 @@ def notify_of_completed_flights():
             )
 
     # Send notification to advertiser - one email even if multiple flights finished
-    if settings.FRONT_TOKEN and settings.FRONT_AUTHOR and settings.FRONT_CHANNEL:
-
+    if settings.FRONT_ENABLED:
         site = get_current_site(request=None)
 
         for (
@@ -610,6 +609,11 @@ def notify_of_completed_flights():
                 for u in advertiser.user_set.all()
                 if u.notify_on_completed_flights
             ]
+
+            if not to_addresses:
+                log.debug("No recipients for the wrapup email. Skipping...")
+                continue
+
             context = {
                 "advertiser": advertiser,
                 "site": site,
@@ -631,8 +635,8 @@ def notify_of_completed_flights():
                 message = mail.EmailMessage(
                     _("Advertising flight wrapup - %(name)s") % {"name": site.name},
                     render_to_string("adserver/email/flight_wrapup.html", context),
-                    settings.SERVER_EMAIL,  # Front doesn't use this
-                    to_addresses,
+                    from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                    to=to_addresses,
                     connection=connection,
                 )
 
