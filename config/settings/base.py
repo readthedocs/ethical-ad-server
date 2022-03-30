@@ -194,6 +194,7 @@ FRONT_CHANNEL = env("FRONT_CHANNEL", default=None)
 FRONT_AUTHOR = env("FRONT_AUTHOR", default=None)
 FRONT_SENDER_NAME = env("FRONT_SENDER_NAME", default=None)
 FRONT_ARCHIVE = env.bool("FRONT_ARCHIVE", default=False)
+FRONT_ENABLED = FRONT_TOKEN and FRONT_CHANNEL and FRONT_AUTHOR
 
 
 # Internationalization

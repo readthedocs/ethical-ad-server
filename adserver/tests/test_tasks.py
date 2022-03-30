@@ -1,6 +1,8 @@
 import datetime
 
 from django.contrib.auth.models import AnonymousUser
+from django.core import mail
+from django.test import override_settings
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
@@ -81,7 +83,15 @@ class TasksTest(BaseAdModelsTestCase):
         self.publisher.refresh_from_db()
         self.assertEqual(self.publisher.sampled_ctr, 20)
 
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
     def test_notify_completed_flights(self):
+        # Ensure there's a recipient for a wrapup email
+        self.staff_user.advertisers.add(self.advertiser)
+
         backend = get_backend()
         backend.reset_messages()
 
@@ -90,6 +100,7 @@ class TasksTest(BaseAdModelsTestCase):
 
         # Shouldn't be any completed flight messages
         self.assertEqual(len(messages), 0)
+        self.assertEqual(len(mail.outbox), 0)
 
         # "Complete" the flight
         self.flight.sold_clicks = 1
@@ -111,6 +122,8 @@ class TasksTest(BaseAdModelsTestCase):
         # Should be one message for the completed flight now
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(mail.outbox[0].subject.startswith("Advertising flight wrapup"))
 
         # Flight should no longer be live
         self.flight.refresh_from_db()
@@ -122,8 +135,10 @@ class TasksTest(BaseAdModelsTestCase):
         self.publisher.save()
 
         backend = get_backend()
-        messages = backend.retrieve_messages()
+        backend.reset_messages()
+
         notify_of_publisher_changes()
+        messages = backend.retrieve_messages()
 
         # Shouldn't be any publisher changes yet
         self.assertEqual(len(messages), 0)

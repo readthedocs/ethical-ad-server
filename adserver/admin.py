@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.html import escape
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
 
