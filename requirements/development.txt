@@ -7,11 +7,11 @@ ipdb==0.13.3
 ipython==8.0.1
 
 # Code formatters
-black==21.12b0
+black==22.3.0
 reorder-python-imports>=2.6.0,<3.0
 
 # For running the black code formatter before commits and other checks
-pre-commit<2.0
+pre-commit==2.17.0
 
 # Sphinx for docs
 Sphinx<4.0

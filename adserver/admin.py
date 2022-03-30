@@ -720,7 +720,7 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return queryset
 
 
-class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
+class ImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     """Django admin configuration for the ad impressions."""
 
@@ -757,22 +757,30 @@ class AdImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return "{:.3f}%".format(calculate_ctr(obj.views, obj.offers))
 
 
-class PlacementImpressionAdmin(AdImpressionsAdmin):
-    readonly_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.readonly_fields
-    list_display = ("div_id", "ad_type_slug") + AdImpressionsAdmin.list_display
-    search_fields = ("div_id", "ad_type_slug") + AdImpressionsAdmin.search_fields
+class AdImpressionAdmin(ImpressionsAdmin):
+    readonly_fields = ("view_time",) + ImpressionsAdmin.readonly_fields
 
 
-class GeoImpressionAdmin(AdImpressionsAdmin):
-    readonly_fields = ("country",) + AdImpressionsAdmin.readonly_fields
-    list_display = ("country",) + AdImpressionsAdmin.list_display
-    search_fields = ("country",) + AdImpressionsAdmin.search_fields
+class UpliftImpressionAdmin(ImpressionsAdmin):
+    pass
 
 
-class KeywordImpressionAdmin(AdImpressionsAdmin):
-    readonly_fields = ("keyword",) + AdImpressionsAdmin.readonly_fields
-    list_display = ("keyword",) + AdImpressionsAdmin.list_display
-    search_fields = ("keyword",) + AdImpressionsAdmin.search_fields
+class PlacementImpressionAdmin(ImpressionsAdmin):
+    readonly_fields = ("div_id", "ad_type_slug") + ImpressionsAdmin.readonly_fields
+    list_display = ("div_id", "ad_type_slug") + ImpressionsAdmin.list_display
+    search_fields = ("div_id", "ad_type_slug") + ImpressionsAdmin.search_fields
+
+
+class GeoImpressionAdmin(ImpressionsAdmin):
+    readonly_fields = ("country",) + ImpressionsAdmin.readonly_fields
+    list_display = ("country",) + ImpressionsAdmin.list_display
+    search_fields = ("country",) + ImpressionsAdmin.search_fields
+
+
+class KeywordImpressionAdmin(ImpressionsAdmin):
+    readonly_fields = ("keyword",) + ImpressionsAdmin.readonly_fields
+    list_display = ("keyword",) + ImpressionsAdmin.list_display
+    search_fields = ("keyword",) + ImpressionsAdmin.search_fields
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
@@ -969,8 +977,8 @@ admin.site.register(Campaign, CampaignAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:
-    admin.site.register(AdImpression, AdImpressionsAdmin)
-    admin.site.register(UpliftImpression, AdImpressionsAdmin)
+    admin.site.register(AdImpression, AdImpressionAdmin)
+    admin.site.register(UpliftImpression, UpliftImpressionAdmin)
     admin.site.register(GeoImpression, GeoImpressionAdmin)
     admin.site.register(PlacementImpression, PlacementImpressionAdmin)
     admin.site.register(KeywordImpression, KeywordImpressionAdmin)

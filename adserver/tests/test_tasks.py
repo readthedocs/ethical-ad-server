@@ -230,6 +230,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             publisher=self.publisher,
             country="CA",
             viewed=True,
+            view_time=6,
             keywords=["backend"],
             div_id="id_1",
             ad_type_slug=self.text_ad_type.slug,
@@ -240,6 +241,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             publisher=self.publisher,
             country="CA",
             viewed=True,
+            view_time=6,
             clicked=True,
             uplifted=True,
             keywords=["backend"],
@@ -252,6 +254,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             publisher=self.publisher,
             country="DE",
             viewed=True,
+            view_time=4,
             keywords=["backend"],
             div_id="id_2",
             ad_type_slug=self.text_ad_type.slug,
@@ -262,6 +265,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             publisher=self.publisher,
             country="DE",
             viewed=True,
+            view_time=4,
             uplifted=True,
             keywords=["security"],
             div_id="id_2",
@@ -273,6 +277,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             publisher=self.publisher,
             country="DE",
             viewed=True,
+            view_time=4,
             uplifted=True,
             keywords=["security"],
             div_id="id_2",
@@ -292,6 +297,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(ai1.offers, 4)
         self.assertEqual(ai1.views, 3)
         self.assertEqual(ai1.clicks, 1)
+        self.assertEqual(ai1.view_time, 16)
 
         ai2 = AdImpression.objects.filter(
             publisher=self.publisher, advertisement=self.ad2
@@ -300,6 +306,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(ai2.offers, 2)
         self.assertEqual(ai2.views, 2)
         self.assertEqual(ai2.clicks, 0)
+        self.assertEqual(ai2.view_time, 8)
 
     def test_daily_update_keywords(self):
         # Ad1 - offered/decision=4, views=3, clicks=1
