@@ -93,6 +93,7 @@ from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import generate_publisher_payout_data
 from .utils import get_ad_day
+from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
@@ -645,6 +646,7 @@ class BaseProxyView(View):
 
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
+        client_id = get_client_id(request)
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
 
@@ -725,6 +727,16 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Ratelimited view impression"
+
+        if offer and offer.client_id != client_id:
+            # Because this block doesn't set a reason, it will only log mismatched clients
+            # Not stop them.
+            log.log(
+                self.log_security_level,
+                "Mismatched client_id between offer and impression. Client ID: [%s], User agent: [%s]",
+                client_id,
+                user_agent,
+            )
 
         return reason
 
