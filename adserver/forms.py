@@ -512,6 +512,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         for ad in self.cleaned_data["advertisements"]:
             new_ad = ad.__copy__()
             new_ad.flight = instance
+            new_ad.live = True
             new_ad.save()  # Automatically gets a new slug
 
         return instance

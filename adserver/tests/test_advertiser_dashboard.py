@@ -382,8 +382,10 @@ class TestAdvertiserDashboardViews(TestCase):
             new_flight.priority_multiplier, self.flight.priority_multiplier
         )
 
-        # Ensure the ads were copied
+        # Ensure the ads were copied and live
         self.assertEqual(new_flight.advertisements.all().count(), 2)
+        for ad in new_flight.advertisements.all():
+            self.assertTrue(ad.live)
 
     def test_ad_detail_view(self):
         url = reverse(
