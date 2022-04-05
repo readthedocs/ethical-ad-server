@@ -11,8 +11,8 @@
 <ul>
   {% for flight in completed_flights %}
   <li>
-    <a href="{{ site.domain }}{{ flight.get_absolute_url }}">{{ flight.name }}</a>
-    <span> (<abbr title="{% trans 'Click-through rate' %}">{% trans 'CTR' %}</abbr>: {{ flight.ctr }}%)</span>
+    <a href="{{ site.domain }}{{ flight.get_absolute_url }}?ref=email-wrapup">{{ flight.name }}</a>
+    <span> (<abbr title="{% trans 'Click-through rate' %}">{% trans 'CTR' %}</abbr>: {{ flight.ctr|floatformat:3 }}%)</span>
   </li>
   {% endfor %}
 </ul>
@@ -22,16 +22,16 @@
 {% url "flight_list" advertiser as advertiser_url %}
 {% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length %}
 {% if current_flights and upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site.domain }}{{ advertiser_url }}">{{ current_flight_count }} flights</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flights</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
 {% elif current_flights %}
-<p>{% blocktrans %}You have <a href="{{ site.domain }}{{ advertiser_url }}">{{ current_flight_count }} flights</a> currently running.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flights</a> currently running.{% endblocktrans %}</p>
 {% elif upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site.domain }}{{ advertiser_url }}">{{ upcoming_flight_count }} flights</a> starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ upcoming_flight_count }} flights</a> starting soon.{% endblocktrans %}</p>
 {% endif %}
 {% endwith %}
 
 {% url "account" as notification_settings_url %}
 <p><small>{% blocktrans with site_name=site.name %}You are receiving this email because you run advertising with {{ site_name }}.{% endblocktrans %}</small></p>
-<p><small>{% blocktrans with site_domain=site.domain %}<a href="{{ site_domain }}{{ notification_settings_url }}">Notification Settings</a>{% endblocktrans %}</small></p>
+<p><small>{% blocktrans with site_domain=site.domain %}<a href="{{ site_domain }}{{ notification_settings_url }}?ref=email-wrapup">Notification Settings</a>{% endblocktrans %}</small></p>
 
 {% endblock body %}
