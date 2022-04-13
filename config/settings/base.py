@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
+    "adserver.analyzer",
     "simple_history",
     "django_slack",
     "djstripe",
