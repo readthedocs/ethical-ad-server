@@ -18,15 +18,7 @@
 
 <h1>{% block heading %}{% trans 'Flight' %}: {{ flight.name }}{% endblock heading %}</h1>
 
-{% if not flight.live %}
-  <div class="messages">
-    <div class="alert alert-warning">
-      <span class="fa fa-eye-slash fa-fw" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="{% trans 'This flight is disabled' %}"></span>
-      <strong>{% trans 'Disabled' %}: </strong>
-      <span>{% trans 'This flight is not currently being shown' %}</span>
-    </div>
-  </div>
-{% endif %}
+{% include "adserver/includes/flight-disabled.html" %}
 
 <section>
   {% include "adserver/includes/flight-metadata.html" %}
