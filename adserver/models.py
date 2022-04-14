@@ -1832,30 +1832,31 @@ class Offer(AdBase):
             # Prevent double refunding
             return False
 
-        # Update the denormalized aggregate impression object
-        impression = self.advertisement.impressions.get(
-            publisher=self.publisher, date=self.date.date()
-        )
-        AdImpression.objects.filter(pk=impression.pk).update(
-            **{self.impression_type: models.F(self.impression_type) - 1}
-        )
+        if self.advertisement:
+            # Update the denormalized aggregate impression object
+            impression = self.advertisement.impressions.get(
+                publisher=self.publisher, date=self.date.date()
+            )
+            AdImpression.objects.filter(pk=impression.pk).update(
+                **{self.impression_type: models.F(self.impression_type) - 1}
+            )
 
-        # Update the denormalized impressions on the Flight
-        # And the denormalized aggregate AdImpressions
-        if self.viewed:
-            Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                total_views=models.F("total_views") - 1
-            )
-            AdImpression.objects.filter(pk=impression.pk).update(
-                **{VIEWS: models.F(VIEWS) - 1}
-            )
-        if self.clicked:
-            Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                total_clicks=models.F("total_clicks") - 1
-            )
-            AdImpression.objects.filter(pk=impression.pk).update(
-                **{CLICKS: models.F(CLICKS) - 1}
-            )
+            # Update the denormalized impressions on the Flight
+            # And the denormalized aggregate AdImpressions
+            if self.viewed:
+                Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                    total_views=models.F("total_views") - 1
+                )
+                AdImpression.objects.filter(pk=impression.pk).update(
+                    **{VIEWS: models.F(VIEWS) - 1}
+                )
+            if self.clicked:
+                Flight.objects.filter(pk=self.advertisement.flight_id).update(
+                    total_clicks=models.F("total_clicks") - 1
+                )
+                AdImpression.objects.filter(pk=impression.pk).update(
+                    **{CLICKS: models.F(CLICKS) - 1}
+                )
 
         self.is_refunded = True
         self.save()
