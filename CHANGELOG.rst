@@ -5,6 +5,19 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.49.1
+---------------
+
+This release had only fixes, logging changes, and tweaks.
+
+:date: April 14, 2022
+
+ * @davidfischer: Ensure ads are live after renewing (#562)
+ * @davidfischer: Small tweaks to the wrapup email (#561)
+ * @davidfischer: Log mismatched clients between offer and impression (#560)
+
+
 Version v0.49.0
 ---------------
 
