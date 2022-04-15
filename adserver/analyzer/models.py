@@ -6,18 +6,12 @@ from jsonfield import JSONField
 from simple_history.models import HistoricalRecords
 
 from ..models import Publisher
+from .validators import KeywordsValidator
 
 
 class AnalyzedUrl(TimeStampedModel):
 
     """Analyzed keywords for a given URL."""
-
-    # Query parameters ignored by the analyzer
-    IGNORE_QUERY_PARAMS = (
-        "q",
-        "query",
-        "search",
-    )
 
     url = models.URLField(
         db_index=True,
@@ -34,7 +28,12 @@ class AnalyzedUrl(TimeStampedModel):
     )
 
     # Fields below are updated by the analyzer
-    keywords = JSONField(_("Keywords for this URL"), blank=True, null=True)
+    keywords = JSONField(
+        _("Keywords for this URL"),
+        blank=True,
+        null=True,
+        validators=[KeywordsValidator()],
+    )
     last_analyzed_date = models.DateTimeField(
         db_index=True,
         default=None,
@@ -60,3 +59,7 @@ class AnalyzedUrl(TimeStampedModel):
     def __str__(self):
         """Simple override."""
         return f"{self.keywords} on {self.url}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
