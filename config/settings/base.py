@@ -440,6 +440,13 @@ ADSERVER_DECISION_BACKEND = env(
     default="adserver.decisionengine.backends.ProbabilisticFlightBackend",
 )
 
+# The backend to be used by the ad server
+# for topic and keyword analysis
+ADSERVER_ANALYZER_BACKEND = env(
+    "ADSERVER_ANALYZER_BACKEND",
+    default="adserver.analyzer.backends.NaiveKeywordAnalyzerBackend",
+)
+
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 

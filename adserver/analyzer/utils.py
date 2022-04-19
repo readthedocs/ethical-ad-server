@@ -1,7 +1,14 @@
 """Helper utilities for the adserver analyzer."""
 from urllib import parse as urlparse
 
+from django.conf import settings
+from django.utils.module_loading import import_string
+
 from .constants import IGNORED_QUERY_PARAMS
+
+
+def get_url_analyzer_backend():
+    return import_string(settings.ADSERVER_ANALYZER_BACKEND)
 
 
 def normalize_url(url):

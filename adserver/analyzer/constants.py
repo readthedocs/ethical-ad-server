@@ -4,4 +4,11 @@ IGNORED_QUERY_PARAMS = (
     "q",
     "query",
     "search",
+    "utm_campaign",
+    "utm_medium",
+    "utm_source",
+    "utm_label",
+    "utm_keyword",
+    "utm_content",
+    "ref",
 )
