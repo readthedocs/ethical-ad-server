@@ -5,6 +5,24 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v0.50.0
+---------------
+
+There were a few small tweaks and bug fixes in this release.
+The big change was some new tasks to test offline keyword analysis
+which is not yet integrated in when deciding which ad to show.
+
+:date: April 20, 2022
+
+ * @davidfischer: Guide advertisers on upcoming flights (#567)
+ * @davidfischer: Refunds handle null offers (#566)
+ * @davidfischer: Offline keyword and topic analysis (#564)
+ * @davidfischer: Ensure ads are live after renewing (#562)
+ * @davidfischer: Small tweaks to the wrapup email (#561)
+ * @davidfischer: Log mismatched clients between offer and impression (#560)
+
+
 Version v0.49.0
 ---------------
 
