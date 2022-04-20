@@ -992,6 +992,8 @@ class SupportForm(forms.Form):
             {
                 "name": self.request.user.get_full_name(),
                 "email": self.request.user.email,
+                "subject": self.request.GET.get("subject", ""),
+                "body": self.request.GET.get("body", ""),
             }
         )
 

@@ -1,0 +1,21 @@
+{% load humanize %}
+{% load i18n %}
+
+
+{% if not flight.live %}
+  <div class="messages">
+
+    <div class="alert alert-warning">
+    {% if flight.state == "Upcoming" %}
+      <span class="fa fa-eye-slash fa-fw" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="{% trans 'This flight is upcoming' %}"></span>
+      <strong>{% trans 'Upcoming' %}: </strong>
+      {% url "support" as support_url %}
+      <span>{% blocktrans with flight_name=flight.name|urlencode %}Your flight is not set to start automatically. When your ads are uploaded and you're ready to start your flight, please <a href="{{ support_url }}?subject=Flight+ready&body=Flight+{{ flight_name }}+is+ready+to+start.+Please+review+my+ads+and+start+it.">contact our team</a>.{% endblocktrans %}</span>
+    {% else %}
+      <span class="fa fa-eye-slash fa-fw" aria-hidden="true" data-toggle="tooltip" title="" data-original-title="{% trans 'This flight is finished or disabled' %}"></span>
+      <strong>{% trans 'Disabled or Finished' %}: </strong>
+      <span>{% trans 'This flight is not currently being shown' %}</span>
+    {% endif %}
+    </div>
+  </div>
+{% endif %}
