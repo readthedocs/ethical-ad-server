@@ -16,6 +16,9 @@ LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 # unless you run `collectstatic` before running tests
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
+# Celery should be always eager - there's no distributed celery workers in test
+CELERY_TASK_ALWAYS_EAGER = True
+
 # Set the GeoIP path to something that doesn't exist
 # This will ensure that the test suite matches what's run in CI
 # There will be no IP geolocation done in testing

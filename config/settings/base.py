@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
+    "adserver.analyzer",
     "simple_history",
     "django_slack",
     "djstripe",
@@ -437,6 +438,13 @@ ADSERVER_ADMIN_URL = "admin"
 ADSERVER_DECISION_BACKEND = env(
     "ADSERVER_DECISION_BACKEND",
     default="adserver.decisionengine.backends.ProbabilisticFlightBackend",
+)
+
+# The backend to be used by the ad server
+# for topic and keyword analysis
+ADSERVER_ANALYZER_BACKEND = env(
+    "ADSERVER_ANALYZER_BACKEND",
+    default="adserver.analyzer.backends.NaiveKeywordAnalyzerBackend",
 )
 
 # Whether Do Not Track is enabled for the ad server
