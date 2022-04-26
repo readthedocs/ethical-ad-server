@@ -8,8 +8,6 @@ from django.db import models
 from django.test import override_settings
 from django.test import TestCase
 
-from ..constants import CLICKS
-from ..constants import VIEWS
 from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
@@ -17,7 +15,6 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import Publisher
-from .test_publisher_dashboard import TestPublisherDashboardViews
 
 
 User = get_user_model()
