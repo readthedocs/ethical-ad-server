@@ -74,11 +74,34 @@
     </div> <!-- /row -->
     <p class="text-right mb-5"><a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
 
-    <div class="row">
-      <div class="col min-vh-50">
-        {% metabase_question_embed metabase_publisher_performance publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
+    {% if publisher_new %}
+      {# Publisher onboarding workflow #}
+      <div class="row">
+        <div class="col">
+          <h3>{% trans 'There are three steps to getting approved for paid ads and to start receiving payouts.' %}</h3>
+          <ol class="mt-5 lead">
+            <li>
+              {% url "publisher_embed" publisher.slug as embed_url %}
+              <p>{% blocktrans %}Setup your ads with our <a href="{{ embed_url }}">ad client embed</a>. You are already be approved for unpaid ads.{% endblocktrans %}</p>
+            </li>
+            <li>
+              <p>{% blocktrans %}After setting up unpaid ads on your site, ensure that views are being counted in this dashboard.{% endblocktrans %}</p>
+            </li>
+            <li>
+              {% url "support" as support_url %}
+              {% url "publisher_settings" publisher.slug as publisher_settings_url %}
+              <p>{% blocktrans %}<a href="{{ support_url }}?subject=Paid+ads+approval&body=I+would+like+to+be+approved+for+paid+ads+on+my+site.">Request approval</a> for paid ads. You will also need to configure your payout preferences in your <a href="{{ publisher_settings_url }}">settings</a>.{% endblocktrans %}</p>
+            </li>
+          </ol>
+        </div>
       </div>
-    </div>
+    {% else %}
+      <div class="row">
+        <div class="col min-vh-50">
+          {% metabase_question_embed metabase_publisher_performance publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
+        </div>
+      </div>
+    {% endif %}
 
   </section>
 {% endblock content_container %}

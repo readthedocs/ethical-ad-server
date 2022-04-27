@@ -2151,6 +2151,7 @@ class PublisherMainView(
         context.update(
             {
                 "publisher": self.publisher,
+                "publisher_new": self.is_publisher_new(),
                 "report": report,
                 "start_date": start_date,
                 "end_date": end_date,
@@ -2160,6 +2161,15 @@ class PublisherMainView(
             }
         )
         return context
+
+    def is_publisher_new(self):
+        """Publishers are new if they aren't approved for paid campaigns and they've never had an ad offer."""
+        # Notably, checking paid campaigns first should make this check lightning fast
+        # for existing publishers since they're mostly approved for paid campaigns.
+        return (
+            not self.publisher.allow_paid_campaigns
+            and not AdImpression.objects.filter(publisher=self.publisher).exists()
+        )
 
     def get_object(self, queryset=None):
         self.publisher = get_object_or_404(

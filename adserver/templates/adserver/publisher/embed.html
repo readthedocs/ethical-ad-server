@@ -15,27 +15,28 @@
   <section>
     <h1>{% blocktrans %}Publisher Embed for {{ publisher }}{% endblocktrans %}</h1>
 
-    <p>
+    <p>{% blocktrans with publisher_slug=publisher.slug %}
       This code will allow you to get started with showing ads on your site.
-      You publisher Id is <strong>{{ publisher.slug }}</strong>,
+      You publisher Id is <strong>{{ publisher_slug }}</strong>,
       you can use this for all integrations.
+      {% endblocktrans %}
     </p>
 
     <pre><code>&lt;script async src=&quot;https://media.ethicalads.io/media/client/ethicalads.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;!-- Show a text ad --&gt;
+&lt;!-- {% trans 'Show a text ad' %} --&gt;
 &lt;div data-ea-publisher=&quot;{{ publisher.slug }}&quot; data-ea-type=&quot;text&quot;&gt;&lt;/div&gt;
 
-&lt;!-- Show an image ad --&gt;
+&lt;!-- {% trans 'Show an image ad' %} --&gt;
 &lt;div data-ea-publisher=&quot;{{ publisher.slug }}&quot; data-ea-type=&quot;image&quot;&gt;&lt;/div&gt;</code></pre>
 
     <p>
-      You can find full documentation and more information about the client in our <a href="https://github.com/readthedocs/ethical-ad-client">GitHub repo</a>.
+      {% blocktrans %}The <a href="https://ethical-ad-client.readthedocs.io/">full documentation</a> has more information about the client and its options.{% endblocktrans %}
     </p>
 
     {% if adserver_publisher_policy %}
     <p>
-    Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for full terms around ad placements.
+    {% blocktrans %}Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for full terms around ad placements.{% endblocktrans %}
     </p>
     {% endif %}
   </section>

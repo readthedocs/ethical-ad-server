@@ -19,7 +19,6 @@ from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
 from ..staff.forms import StartPublisherPayoutForm
 from ..tasks import daily_update_impressions
-from .test_publisher_dashboard import TestPublisherDashboardViews
 
 User = get_user_model()
 
@@ -206,6 +205,8 @@ class CreatePublisherTest(TestCase):
 
 class PublisherPayoutTests(TestCase):
     def setUp(self):
+        from .test_publisher_dashboard import TestPublisherDashboardViews  # noqa
+
         TestPublisherDashboardViews.setUp(self)
 
         # Create offers to pay out last month

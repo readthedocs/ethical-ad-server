@@ -3,6 +3,7 @@ from unittest import mock
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
 
@@ -78,6 +79,8 @@ class TestPublisherDashboardViews(TestCase):
             image=None,
         )
 
+        self.factory = RequestFactory()
+
     def test_publisher_overview(self):
         url = reverse("publisher_main", args=[self.publisher1.slug])
 
@@ -89,6 +92,38 @@ class TestPublisherDashboardViews(TestCase):
         self.client.force_login(self.staff_user)
         resp = self.client.get(url)
         self.assertContains(resp, "too small to draw conclusions")
+
+        # This isn't there because they're approved for paid.
+        self.assertNotContains(
+            resp,
+            "There are three steps to getting approved for paid ads and to start receiving payouts.",
+        )
+
+        self.publisher1.allow_paid_campaigns = False
+        self.publisher1.save()
+
+        resp = self.client.get(url)
+        self.assertContains(
+            resp,
+            "There are three steps to getting approved for paid ads and to start receiving payouts.",
+        )
+
+        # Offer an ad
+        request = self.factory.get("/")
+        self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher1,
+            ad_type_slug=self.ad_type1,
+            div_id="foo",
+            keywords=None,
+        )
+
+        # After offering an ad, the publisher onboarding shouldn't appear
+        resp = self.client.get(url)
+        self.assertNotContains(
+            resp,
+            "There are three steps to getting approved for paid ads and to start receiving payouts.",
+        )
 
     def test_publisher_embed_code(self):
         url = reverse("publisher_embed", args=[self.publisher1.slug])
