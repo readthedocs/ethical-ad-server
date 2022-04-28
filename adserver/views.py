@@ -209,6 +209,7 @@ class AdvertiserMainView(
         context.update(
             {
                 "advertiser": self.advertiser,
+                "advertiser_new": self.is_advertiser_new(),
                 "report": report,
                 "flights": flights,
                 "start_date": start_date,
@@ -219,6 +220,12 @@ class AdvertiserMainView(
             }
         )
         return context
+
+    def is_advertiser_new(self):
+        """Advertisers are new if there's never been an ad impression for them."""
+        return not AdImpression.objects.filter(
+            advertisement__flight__campaign__advertiser_id=self.advertiser.id
+        ).exists()
 
     def get_object(self, queryset=None):
         self.advertiser = get_object_or_404(

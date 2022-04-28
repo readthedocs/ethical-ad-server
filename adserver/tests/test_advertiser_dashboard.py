@@ -14,6 +14,7 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
+from ..models import Publisher
 from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
 
@@ -26,6 +27,10 @@ class TestAdvertiserDashboardViews(TestCase):
     """Test the advertiser dashboard interface for creating and updating ads."""
 
     def setUp(self):
+        self.publisher = get(
+            Publisher, slug="test-publisher", allow_paid_campaigns=True
+        )
+
         self.advertiser = get(
             Advertiser, name="Test Advertiser", slug="test-advertiser"
         )
@@ -146,6 +151,29 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.flight.name)
+
+        # New advertiser - gets the first time experience
+        self.assertContains(
+            response,
+            "There are a few steps to getting started with your first ad campaign with us",
+        )
+
+        # Offer an ad
+        request = self.factory.get("/")
+        self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.ad_type1,
+            div_id="foo",
+            keywords=None,
+        )
+
+        response = self.client.get(url)
+        self.assertNotContains(
+            response,
+            "There are a few steps to getting started with your first ad campaign with us",
+        )
+        self.assertContains(response, "Welcome back")
 
     def test_flight_list_view(self):
         url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
