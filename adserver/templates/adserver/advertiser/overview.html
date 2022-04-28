@@ -69,8 +69,8 @@
           <h3>{% trans 'There are a few steps to getting started with your first ad campaign with us.' %}</h3>
           <ol class="mt-5 lead">
             <li>
-              {% url "flight_list" advertiser.slug as "flight_list" %}
-              <p>{% blocktrans %}View the upcoming <a href="{{ flight_list }}">flights</a> set up for you and make sure the content and geographic targeting matches your customer focus. The price of your campaign depends on your chosen targeting.{% endblocktrans %}</p>
+              {% url "flight_list" advertiser.slug as flight_list_url %}
+              <p>{% blocktrans %}View the upcoming <a href="{{ flight_list_url }}">flights</a> set up for you and make sure the content and geographic targeting matches your customer focus. The price of your campaign depends on your chosen targeting.{% endblocktrans %}</p>
             </li>
             <li>
               {% url "support" as support_url %}
@@ -89,9 +89,9 @@
           <h3>{% trans 'Welcome back.' %}</h3>
           <ul class="mt-5 lead">
             <li>
-              {% url "advertiser_report" advertiser.slug as "report_url" %}
-              {% url "flight_list" advertiser.slug as "flight_list" %}
-              <p>{% blocktrans %}You can always look at <a href="{{ flight_list }}">past flights</a> or check your past <a href="{{ advertiser_report }}">ad performance</a> for any timeframe.{% endblocktrans %}</p>
+              {% url "advertiser_report" advertiser.slug as report_url %}
+              {% url "flight_list" advertiser.slug as flight_list_url %}
+              <p>{% blocktrans %}You can always look at <a href="{{ flight_list_url }}">past flights</a> or check your past <a href="{{ advertiser_report }}">ad performance</a> for any timeframe.{% endblocktrans %}</p>
             </li>
             <li>
               {% url "support" as support_url %}
