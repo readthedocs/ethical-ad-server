@@ -10,6 +10,7 @@ from django_dynamic_fixture import get
 from . import tasks
 from ..models import Offer
 from ..models import Publisher
+from ..tests.common import BaseAdModelsTestCase
 from .backends import NaiveKeywordAnalyzerBackend
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
@@ -148,10 +149,11 @@ class TestNaiveAnalyzer(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
-class TestTasks(TestCase):
+class TestTasks(BaseAdModelsTestCase):
     def setUp(self):
+        super().setUp()
+
         self.url = "https://example.com"
-        self.publisher = get(Publisher)
         self.analyzed_url = AnalyzedUrl.objects.create(
             url=self.url,
             publisher=self.publisher,
@@ -159,6 +161,9 @@ class TestTasks(TestCase):
             visits_since_last_analyzed=10,
             last_analyzed_date=timezone.now() - datetime.timedelta(days=20),
         )
+
+        self.campaign.campaign_type = "paid"
+        self.campaign.save()
 
     @responses.activate
     def test_analyze_url(self):
@@ -182,47 +187,69 @@ class TestTasks(TestCase):
         self.assertEqual(self.analyzed_url.keywords, ["backend"])
         self.assertEqual(self.analyzed_url.visits_since_last_analyzed, 0)
 
-    @responses.activate
-    def test_daily_visited_urls(self):
+    def test_daily_visited_urls_aggregation(self):
         url2 = "https://example.com/path/"
+        yesterday = timezone.now() - datetime.timedelta(days=1)
 
-        # Ad an offer for a page
+        # Ad a few offers for a page
         get(
             Offer,
             publisher=self.publisher,
             url=url2,
+            advertisement=self.ad1,
             div_id="p1",
             viewed=True,
-            date=timezone.now(),
+            date=yesterday,
+        )
+        get(
+            Offer,
+            publisher=self.publisher,
+            url=url2,
+            advertisement=self.ad1,
+            div_id="p1",
+            viewed=True,
+            date=yesterday,
+        )
+        get(
+            Offer,
+            publisher=self.publisher,
+            url=url2,
+            advertisement=self.ad1,
+            div_id="p1",
+            viewed=False,  # NOTE!! Not viewed!
+            date=yesterday,
         )
 
-        responses.add(
-            responses.GET,
-            url2,
-            body="""
-            <html><body>
-            <div role='main'>This is a page about blockchain. Yay, blockchain</div>
-            </body></html>""",
-        )
-
-        tasks.daily_visited_urls()
+        tasks.daily_visited_urls_aggregation()
 
         analyzed_url = AnalyzedUrl.objects.filter(
             url=url2, publisher=self.publisher
         ).first()
         self.assertIsNotNone(analyzed_url)
-        self.assertEqual(analyzed_url.keywords, ["blockchain"])
+        self.assertEqual(analyzed_url.visits_since_last_analyzed, 2)
 
     @responses.activate
-    def test_weekly_analyze_urls(self):
+    def test_daily_analyze_urls(self):
+        tasks.daily_analyze_urls()
+        self.analyzed_url.refresh_from_db()
+
+        # No URL analyzed since it hasn't been visited "enough"
+        self.assertEqual(self.analyzed_url.visits_since_last_analyzed, 10)
+
+        # Setup a response
         responses.add(
             responses.GET,
             self.url,
-            body="""<html><body></body></html>""",
+            body="""<html><body>python python python Python Python</body></html>""",
         )
-        tasks.weekly_analyze_urls()
+
+        # Set the URL for re-analysis
+        self.analyzed_url.visits_since_last_analyzed = 100
+        self.analyzed_url.save()
+
+        tasks.daily_analyze_urls()
         self.analyzed_url.refresh_from_db()
 
         # Analyzed URL has been updated
-        self.assertEqual(self.analyzed_url.keywords, [])
+        self.assertEqual(self.analyzed_url.keywords, ["python"])
         self.assertEqual(self.analyzed_url.visits_since_last_analyzed, 0)

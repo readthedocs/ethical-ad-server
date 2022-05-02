@@ -41,6 +41,7 @@ class AnalyzedUrl(TimeStampedModel):
         blank=True,
         help_text=_("Last time the ad server analyzed this URL"),
     )
+    # This is only accurate to the day
     last_ad_served_date = models.DateTimeField(
         default=None,
         null=True,

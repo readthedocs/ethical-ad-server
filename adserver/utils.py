@@ -5,10 +5,12 @@ import logging
 import os
 import re
 from dataclasses import dataclass
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 
 import IP2Proxy
+from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
@@ -19,6 +21,8 @@ from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.encoding import force_str
 from django.utils.http import urlencode
+from django.utils.timezone import is_naive
+from django.utils.timezone import utc
 from django_countries import countries
 from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
@@ -53,6 +57,27 @@ class GeolocationData:
 def get_ad_day():
     """Return a datetime that is the start of the current UTC day."""
     return timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def get_day(day=None):
+    """
+    Get the start and end time for a given day.
+
+    Always return two datetimes with timezone.
+    If day is `None`, use today.
+    If `day` is a datetime or date object, use that day but remove any time data.
+    Otherwise, attempt to convert from iso8601.
+    """
+    start_date = get_ad_day()
+    if day:
+        if not isinstance(day, (datetime, date)):
+            day = parse_iso8601(day)
+        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        if is_naive(start_date):
+            start_date = utc.localize(start_date)
+    end_date = start_date + timedelta(days=1)
+
+    return start_date, end_date
 
 
 def parse_date_string(date_str):
