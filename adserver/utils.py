@@ -64,7 +64,7 @@ def get_day(day=None):
     Get the start and end time for a given day.
 
     Always return two datetimes with timezone.
-    If day is `None`, use today.
+    If `day` is `None`, use today.
     If `day` is a datetime or date object, use that day but remove any time data.
     Otherwise, attempt to convert from iso8601.
     """
