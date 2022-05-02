@@ -228,6 +228,23 @@ class TestTasks(BaseAdModelsTestCase):
         self.assertIsNotNone(analyzed_url)
         self.assertEqual(analyzed_url.visits_since_last_analyzed, 2)
 
+        # Add another view and make sure the aggregation adds it correctly
+        get(
+            Offer,
+            publisher=self.publisher,
+            url=url2,
+            advertisement=self.ad1,
+            div_id="p1",
+            viewed=True,
+            date=timezone.now(),
+        )
+        tasks.daily_visited_urls_aggregation(timezone.now().today())
+        analyzed_url = AnalyzedUrl.objects.filter(
+            url=url2, publisher=self.publisher
+        ).first()
+        self.assertIsNotNone(analyzed_url)
+        self.assertEqual(analyzed_url.visits_since_last_analyzed, 3)
+
     @responses.activate
     def test_daily_analyze_urls(self):
         tasks.daily_analyze_urls()

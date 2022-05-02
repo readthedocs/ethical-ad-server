@@ -95,7 +95,7 @@ def daily_visited_urls_aggregation(day=None):
 
         if not created:
             # If the object wasn't created, add the visits and set the ad last served date
-            url_obj.update(
+            AnalyzedUrl.objects.filter(pk=url_obj.pk).update(
                 last_ad_served_date=timezone.now(),
                 visits_since_last_analyzed=models.F("visits_since_last_analyzed")
                 + visits,
