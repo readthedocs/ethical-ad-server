@@ -3,7 +3,6 @@ import datetime
 import logging
 from collections import defaultdict
 
-from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
@@ -12,8 +11,6 @@ from django.db.models import F
 from django.db.models import Q
 from django.db.models import Sum
 from django.template.loader import render_to_string
-from django.utils.timezone import is_naive
-from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
 
@@ -45,25 +42,10 @@ from .reports import PublisherReport
 from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
+from .utils import get_day
 from config.celery_app import app
 
 log = logging.getLogger(__name__)  # noqa
-
-
-def _get_day(day):
-    """Get the start and end time with support for celery-encoded strings, dates, and datetimes."""
-    start_date = get_ad_day()
-    if day:
-        log.debug("Got day: %s", day)
-        if not isinstance(day, (datetime.datetime, datetime.date)):
-            log.debug("Converting day from string")
-            day = parse_iso8601(day)
-        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        if is_naive(start_date):
-            start_date = utc.localize(start_date)
-    end_date = start_date + datetime.timedelta(days=1)
-
-    return (start_date, end_date)
 
 
 @app.task()
@@ -73,7 +55,7 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     if not geo and not region:
         log.error("geo or region required, please pass one as True")
@@ -175,7 +157,7 @@ def daily_update_placements(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     log.info("Updating PlacementImpressions for %s-%s", start_date, end_date)
 
@@ -221,7 +203,7 @@ def daily_update_impressions(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     log.info("Updating AdImpressions for %s-%s", start_date, end_date)
 
@@ -266,7 +248,7 @@ def daily_update_keywords(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     log.info("Updating KeywordImpression for %s-%s", start_date, end_date)
 
@@ -342,7 +324,7 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     log.info("Updating RegionTopic's for %s-%s", start_date, end_date)
 
@@ -458,7 +440,7 @@ def daily_update_uplift(day=None):
 
     :arg day: An optional datetime object representing a day
     """
-    start_date, end_date = _get_day(day)
+    start_date, end_date = get_day(day)
 
     log.info("Updating uplift for %s-%s", start_date, end_date)
 
@@ -507,7 +489,7 @@ def update_previous_day_reports(day=None):
 
     :arg day: An optional datetime object representing a day.
     """
-    start_date, _ = _get_day(day)
+    start_date, _ = get_day(day)
 
     if not day:
         # If not specified,
