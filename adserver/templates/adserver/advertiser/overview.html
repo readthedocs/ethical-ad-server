@@ -67,17 +67,28 @@
       <div class="row mb-5">
         <div class="col">
           <h3>{% trans 'There are a few steps to getting started with your first ad campaign with us.' %}</h3>
-          <ol class="mt-5 lead">
+          <ol class="mt-5 lead fa-ul">
+            {% url "flight_list" advertiser.slug as flight_list_url %}
             <li>
-              {% url "flight_list" advertiser.slug as flight_list_url %}
+              <span class="fa-li fa fa-check"></span>
               <p>{% blocktrans %}View the upcoming <a href="{{ flight_list_url }}">flights</a> set up for you and make sure the content and geographic targeting matches your customer focus. The price of your campaign depends on your chosen targeting.{% endblocktrans %}</p>
             </li>
             <li>
-              {% url "support" as support_url %}
-              <p>{% blocktrans %}Once your flights are set up, we will issue you an invoice. You can upload your ad creatives to your flights.{% endblocktrans %}</p>
+              {% if are_ads_set_up %}
+                <span class="fa-li fa fa-check"></span>
+              {% else %}
+                <span class="fa-li fa fa-square-o"></span>
+              {% endif %}
+              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>.{% endblocktrans %}</p>
             </li>
             <li>
-              <p>{% blocktrans %}Once the invoice is paid, we can start your flight and start sending traffic to you. We can also set your flight to start automatically on a specific date.{% endblocktrans %}</p>
+              {% if has_paid_invoice %}
+                <span class="fa-li fa fa-check"></span>
+              {% else %}
+                <span class="fa-li fa fa-square-o"></span>
+              {% endif %}
+              {% url "advertiser_stripe_portal" advertiser.slug as billing_portal_url %}
+              <p>{% blocktrans %}Before we can start sending traffic to you, please pay your <a href="{{ billing_portal_url }}">first invoice</a>.{% endblocktrans %}</p>
             </li>
           </ol>
         </div>

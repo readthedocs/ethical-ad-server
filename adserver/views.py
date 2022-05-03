@@ -38,6 +38,8 @@ from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
+from djstripe.enums import InvoiceStatus
+from djstripe.models import Invoice
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
@@ -210,6 +212,8 @@ class AdvertiserMainView(
             {
                 "advertiser": self.advertiser,
                 "advertiser_new": self.is_advertiser_new(),
+                "are_ads_set_up": self.are_ads_set_up(),
+                "has_paid_invoice": self.has_paid_invoice(),
                 "report": report,
                 "flights": flights,
                 "start_date": start_date,
@@ -225,6 +229,17 @@ class AdvertiserMainView(
         """Advertisers are new if there's never been an ad impression for them."""
         return not AdImpression.objects.filter(
             advertisement__flight__campaign__advertiser_id=self.advertiser.id
+        ).exists()
+
+    def are_ads_set_up(self):
+        return Advertisement.objects.filter(
+            flight__campaign__advertiser_id=self.advertiser.id
+        ).exists()
+
+    def has_paid_invoice(self):
+        return Invoice.objects.filter(
+            customer=self.advertiser.djstripe_customer,
+            status=InvoiceStatus.paid,
         ).exists()
 
     def get_object(self, queryset=None):
