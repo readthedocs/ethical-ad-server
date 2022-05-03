@@ -88,7 +88,7 @@
                 <span class="fa-li fa fa-square-o"></span>
               {% endif %}
               {% url "advertiser_stripe_portal" advertiser.slug as billing_portal_url %}
-              <p>{% blocktrans %}Before we can start sending traffic to you, please pay your <a href="{{ billing_portal_url }}">first invoice</a>.{% endblocktrans %}</p>
+              <p>{% blocktrans %}Pay your <a href="{{ billing_portal_url }}">first invoice</a> and we will start sending traffic to you.{% endblocktrans %}</p>
             </li>
           </ol>
         </div>
