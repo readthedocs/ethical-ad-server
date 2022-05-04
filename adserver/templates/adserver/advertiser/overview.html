@@ -62,11 +62,62 @@
     </div>
     <p class="text-right mb-5"><a href="{% url 'advertiser_report' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
 
-    <div class="row mb-5">
-      <div class="col min-vh-50">
-        {% metabase_question_embed metabase_advertiser_performance advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+    {% if advertiser_new %}
+      {# Advertiser onboarding workflow #}
+      <div class="row mb-5">
+        <div class="col">
+          <h3>{% trans 'There are a few steps to getting started with your first ad campaign with us.' %}</h3>
+          <ol class="mt-5 lead fa-ul">
+            {% url "flight_list" advertiser.slug as flight_list_url %}
+            <li>
+              <span class="fa-li fa fa-check"></span>
+              <p>{% blocktrans %}View the upcoming <a href="{{ flight_list_url }}">flights</a> set up for you and make sure the content and geographic targeting matches your customer focus. The price of your campaign depends on your chosen targeting.{% endblocktrans %}</p>
+            </li>
+            <li>
+              {% if are_ads_set_up %}
+                <span class="fa-li fa fa-check"></span>
+              {% else %}
+                <span class="fa-li fa fa-square-o"></span>
+              {% endif %}
+              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>.{% endblocktrans %}</p>
+            </li>
+            <li>
+              {% if has_paid_invoice %}
+                <span class="fa-li fa fa-check"></span>
+              {% else %}
+                <span class="fa-li fa fa-square-o"></span>
+              {% endif %}
+              {% url "advertiser_stripe_portal" advertiser.slug as billing_portal_url %}
+              <p>{% blocktrans %}Pay your <a href="{{ billing_portal_url }}">first invoice</a> and we will start sending traffic to you.{% endblocktrans %}</p>
+            </li>
+          </ol>
+        </div>
       </div>
-    </div>
+    {% elif report.total.views == 0 %}
+      {# Returning advertiser, but nothing to show this month #}
+      <div class="row mb-5">
+        <div class="col">
+          <h3>{% trans 'Welcome back.' %}</h3>
+          <ul class="mt-5 lead">
+            <li>
+              {% url "advertiser_report" advertiser.slug as report_url %}
+              {% url "flight_list" advertiser.slug as flight_list_url %}
+              <p>{% blocktrans %}You can always look at <a href="{{ flight_list_url }}">past flights</a> or check your past <a href="{{ advertiser_report }}">ad performance</a> for any timeframe.{% endblocktrans %}</p>
+            </li>
+            <li>
+              {% url "support" as support_url %}
+              <p>{% blocktrans %}If you're interested in running a new ad flight, please <a href="{{ support_url }}?subject=New+campaign&body=I+am+interested+in+running+a+new+campaign.">get in touch</a>.{% endblocktrans %}</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    {% else %}
+      <div class="row mb-5">
+        <div class="col min-vh-50">
+          {% metabase_question_embed metabase_advertiser_performance advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+        </div>
+      </div>
+    {% endif %}
 
     <div class="row row-cols-1">
       <div class="col">
