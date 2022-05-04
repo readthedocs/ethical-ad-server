@@ -49,6 +49,8 @@
       <dd>{{ advertisement.flight.name }}</dd>
       <dt>{% trans 'Display' %}</dt>
       <dd>{{ advertisement.ad_types.all | join:"<br>" }}</dd>
+      <dt><abbr title="{% trans 'Click through rate' %}">{% trans 'CTR' %}</abbr></dt>
+      <dd>{{ advertisement.ctr|floatformat:3 }}%</dd>{# Ad CTR actually does a full calculation #}
       {% if advertisement.link %}
         <dt>{% trans 'Click-through link' %}</dt>
         <dd><small><a href="{{ advertisement.link }}">{{ advertisement.link|truncatechars:50 }}</a></small></dd>
