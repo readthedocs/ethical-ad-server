@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.51.0
+---------------
+
+The largest changes in this release were to add helpful screens during
+onboarding of advertisers and publishers.
+Other than that, we are continuing to iterate on the offline keyword
+analysis.
+
+:date: May 4, 2022
+
+ * @davidfischer: Rework the analysis tasks (#573)
+ * @davidfischer: Tips to help with advertiser onboarding (#572)
+ * @davidfischer: Improved publisher onboarding (#571)
+ * @davidfischer: Show ad CTR on the ad detail screen (#570)
+ * @dependabot[bot]: Bump django from 3.2.12 to 3.2.13 in /requirements (#569)
+
+
 Version v0.50.0
 ---------------
 
