@@ -3,6 +3,8 @@ import datetime
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import models
 from django.utils import timezone
 
@@ -61,6 +63,10 @@ def daily_visited_urls_aggregation(day=None):
 
     start_date, end_date = get_day(day)
 
+    log.debug("Calculating daily visited URLs for %s - %s", start_date, end_date)
+
+    validator = URLValidator(schemes=("http", "https"))
+
     # Query the offers table for distinct URLs
     for obj in (
         Offer.objects.using(settings.REPLICA_SLUG)
@@ -83,6 +89,17 @@ def daily_visited_urls_aggregation(day=None):
             continue
 
         normalized_url = normalize_url(url)
+
+        try:
+            # Ensure the URL is valid
+            validator(normalized_url)
+        except ValidationError:
+            log.warning(
+                "Invalid normalized URL. normalized=%s, original=%s",
+                normalized_url,
+                url,
+            )
+            continue
 
         url_obj, created = AnalyzedUrl.objects.get_or_create(
             url=normalized_url,
