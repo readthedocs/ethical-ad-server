@@ -1230,6 +1230,32 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
         return context
 
 
+class AdvertiserKeywordReportView(
+    AdvertiserAccessMixin, GeoReportMixin, BaseReportView
+):
+
+    """A report for an advertiser broken down by geo."""
+
+    template_name = "adserver/reports/advertiser-keyword.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "metabase_advertiser_keywords": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_KEYWORD_CTR"
+                ),
+            }
+        )
+
+        return context
+
+
 class StaffAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""
