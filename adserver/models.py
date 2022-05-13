@@ -9,6 +9,7 @@ from collections import Counter
 import bleach
 import djstripe.models as djstripe_models
 from django.conf import settings
+from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -158,6 +159,17 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         default=True,
         help_text="These are ads for EthicalAds itself. Shown only when no paid ads are available.",
     )
+    daily_cap = models.DecimalField(
+        _("Daily maximum earn cap"),
+        max_digits=8,
+        decimal_places=2,
+        default=None,
+        blank=True,
+        null=True,
+        help_text=_(
+            "A daily maximum this publisher can earn after which only unpaid ads are shown."
+        ),
+    )
 
     # Payout information
     skip_payouts = models.BooleanField(
@@ -270,6 +282,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return return_keywords
         return []
 
+    @property
+    def daily_earn_cache_key(self):
+        today = get_ad_day().date()
+        return f"daily-earn::{self.slug}::{today:%Y-%m-%d}"
+
     def total_payout_sum(self):
         """The total amount ever paid out to this publisher."""
         total = self.payouts.filter(status=PAID).aggregate(
@@ -287,6 +304,20 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         if self.payout_method == PAYOUT_PAYPAL and self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
         return ""
+
+    def get_daily_earn(self):
+        """Get how much this publisher has earned today."""
+        cache_key = self.daily_earn_cache_key
+        return cache.get(cache_key, default=0.0)
+
+    def increment_daily_earn(self, delta):
+        """Increment how much this publisher has earned today."""
+        cache_key = self.daily_earn_cache_key
+        try:
+            cache.incr(cache_key, delta=delta)
+        except ValueError:
+            # Cache key doesn't exist for today
+            cache.set(cache_key, value=delta, timeout=60 * 60 * 24)
 
 
 class PublisherGroup(TimeStampedModel):

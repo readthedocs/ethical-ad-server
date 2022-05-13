@@ -782,6 +782,12 @@ class BaseProxyView(View):
                 request, self.impression_type, publisher=publisher, offer=offer
             )
 
+            # Update the publisher daily earn for cap calculations
+            if self.impression_type == CLICKS and advertisement.flight.cpc:
+                publisher.increment_daily_earn(float(advertisement.flight.cpc))
+            if self.impression_type == VIEWS and advertisement.flight.cpm:
+                publisher.increment_daily_earn(float(advertisement.flight.cpm) / 1000)
+
         return ignore_reason
 
     def get(self, request, advertisement_id, nonce):
