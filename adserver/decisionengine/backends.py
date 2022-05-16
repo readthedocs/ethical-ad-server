@@ -78,6 +78,15 @@ class BaseAdDecisionBackend:
         ):
             self.campaign_types.append(HOUSE_CAMPAIGN)
 
+        # Remove paid ads if this publisher exceeds their daily cap
+        if (
+            PAID_CAMPAIGN in self.campaign_types
+            and self.publisher.daily_cap
+            and self.publisher.get_daily_earn() >= self.publisher.daily_cap
+        ):
+            log.debug("Publisher has hit their daily cap. publisher=%s", self.publisher)
+            self.campaign_types.remove(PAID_CAMPAIGN)
+
         self.url = kwargs.get("url") or ""
 
         # When set, only return a specific ad or ads from a campaign

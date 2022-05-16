@@ -249,6 +249,9 @@ class BaseApiTest(TestCase):
 
         self.unauth_client = Client()
 
+        # Clear the cache - for some reason, some cache values seem to linger between tests
+        cache.clear()
+
 
 class AdDecisionApiTests(BaseApiTest):
     def test_get_request(self):
@@ -1475,6 +1478,47 @@ class AdvertisingIntegrationTests(BaseApiTest):
         # Offer is accepted - URL is set to None
         self.assertIsNotNone(offer)
         self.assertIsNone(offer.url)
+
+    def test_publisher_daily_cap(self):
+        # Add a daily cap for this publisher
+        self.publisher1.daily_cap = 1.75
+        self.publisher1.save()
+
+        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+
+        # Simulate 2 views/clicks
+        for i in range(2):
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200, resp.content)
+            resp_data = resp.json()
+            self.assertTrue("nonce" in resp_data, resp.content)
+            nonce = resp_data["nonce"]
+
+            # Simulate an ad view/click
+            # Note: this flight is $1 CPC
+            view_url = reverse(
+                "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+            )
+            click_url = reverse(
+                "click-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": nonce}
+            )
+
+            self.proxy_client.get(view_url)
+            resp = self.proxy_client.get(click_url)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
+
+            self.assertAlmostEqual(
+                self.publisher1.get_daily_earn(), (i + 1) * self.flight.cpc
+            )
+
+        # Now that we've hit the daily cap, we won't get a paid ad
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {})
 
 
 class TestProxyViews(BaseApiTest):
