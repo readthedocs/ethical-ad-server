@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from urllib.parse import urlparse
 
 import IP2Proxy
 from celery.utils.iso8601 import parse_iso8601
@@ -164,6 +165,18 @@ def get_client_country(request):
 
 def get_country_name(country_code):
     return COUNTRY_DICT.get(country_code, country_code)
+
+
+def get_domain_from_url(url):
+    if not url:
+        return None
+
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return None
+
+    return parsed.netloc
 
 
 def anonymize_ip_address(ip_address):
