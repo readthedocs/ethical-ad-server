@@ -48,6 +48,7 @@ from .constants import CLICKS
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID
+from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .constants import VIEWS
 from .forms import AccountForm
 from .forms import AdvertisementForm
@@ -1778,6 +1779,179 @@ class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView
         context.update({"publisher": publisher})
 
         return context
+
+
+class FallbackAdsMixin:
+    def dispatch(self, request, *args, **kwargs):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+
+        self.advertiser = Advertiser.objects.filter(publisher=self.publisher).first()
+        self.flight = Flight.objects.filter(
+            campaign__advertiser=self.advertiser,
+            campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
+        ).first()
+
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PublisherFallbackAdsView(
+    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, DetailView
+):
+
+    """Displays a list of fallback ads."""
+
+    model = Flight
+    template_name = "adserver/publisher/fallback-ads-list.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+
+        self.advertiser = Advertiser.objects.filter(publisher=self.publisher).first()
+        self.flight = Flight.objects.filter(
+            campaign__advertiser=self.advertiser,
+            campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
+        ).first()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "publisher": self.publisher,
+                "advertisement_list": self.flight.advertisements.order_by(
+                    "-live", "name"
+                ),
+            }
+        )
+
+        return context
+
+    def get_object(self, queryset=None):
+        if not self.advertiser or not self.flight:
+            log.error("Publisher %s is not set up correctly for fallback ads.")
+            raise Http404
+
+        return self.flight
+
+
+class PublisherFallbackAdsDetailView(
+    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, DetailView
+):
+
+    """Displays a single fallback ad."""
+
+    model = Advertisement
+    template_name = "adserver/publisher/fallback-ads-detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher})
+        return context
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            Advertisement,
+            flight__campaign__advertiser__publisher=self.publisher,
+            slug=self.kwargs["advertisement_slug"],
+        )
+
+
+class PublisherFallbackAdsUpdateView(
+    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, UpdateView
+):
+
+    """Update a fallback ad."""
+
+    form_class = AdvertisementForm
+    model = Advertisement
+    template_name = "adserver/publisher/fallback-ads-update.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ad_name = form.cleaned_data["name"]
+        messages.success(self.request, _("Successfully saved %(ad)s") % {"ad": ad_name})
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher})
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        ad = self.get_object()
+        kwargs["flight"] = ad.flight
+        return kwargs
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            Advertisement,
+            flight__campaign__advertiser__publisher=self.publisher,
+            slug=self.kwargs["advertisement_slug"],
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_fallback_ads_detail",
+            kwargs={
+                "publisher_slug": self.publisher.slug,
+                "advertisement_slug": self.object.slug,
+            },
+        )
+
+
+class PublisherFallbackAdsCreateView(
+    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, CreateView
+):
+
+    """Create a fallback ad."""
+
+    form_class = AdvertisementForm
+    model = Advertisement
+    template_name = "adserver/publisher/fallback-ads-create.html"
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ad_name = form.cleaned_data["name"]
+        messages.success(self.request, _("Successfully saved %(ad)s") % {"ad": ad_name})
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "publisher": self.publisher,
+                "flight": self.flight,
+                "ad_types": self.flight.campaign.allowed_ad_types(
+                    exclude_deprecated=True
+                )[:5],
+            }
+        )
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        kwargs["initial"] = {
+            "live": True,
+            "ad_types": AdType.objects.filter(default_enabled=True),
+        }
+        return kwargs
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_fallback_ads_detail",
+            kwargs={
+                "publisher_slug": self.publisher.slug,
+                "advertisement_slug": self.object.slug,
+            },
+        )
 
 
 class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):

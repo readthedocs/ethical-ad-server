@@ -307,7 +307,11 @@ class CreatePublisherForm(forms.Form):
 
     def create_publisher_advertiser_account(self, publisher):
         """Create the publisher's house ads account."""
-        advertiser = Advertiser.objects.create(name=publisher.name, slug=publisher.slug)
+        advertiser = Advertiser.objects.create(
+            name=publisher.name,
+            slug=publisher.slug,
+            publisher=publisher,
+        )
         campaign = Campaign.objects.create(
             advertiser=advertiser,
             name=publisher.name,
@@ -318,12 +322,13 @@ class CreatePublisherForm(forms.Form):
         if pub_group:
             campaign.publisher_groups.add(pub_group)
 
-        flight_name = f"{publisher.name} House Ads Flight"
+        flight_name = f"{publisher.name} House Ads"
         flight = Flight.objects.create(
             campaign=campaign,
             name=flight_name,
             slug=slugify(flight_name),
             sold_impressions=999_999_999,
+            live=True,
             targeting_parameters={
                 "include_publishers": [publisher.slug],
             },
