@@ -1,4 +1,5 @@
 """Core models for the ad server."""
+import collections
 import datetime
 import html
 import logging
@@ -10,6 +11,7 @@ import bleach
 import djstripe.models as djstripe_models
 from django.conf import settings
 from django.core.cache import cache
+from django.core.cache import caches
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -96,6 +98,128 @@ class IndestructibleModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Topic(TimeStampedModel, models.Model):
+
+    """Topics able to be targeted by the ad server."""
+
+    # Topics are cached for 30m
+    # We don't want to repeatedly hit the database for data that rarely changes
+    CACHE_KEY = "keyword-topic-mapping"
+    CACHE_TIMEOUT = 60 * 30
+
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    def __str__(self):
+        """String representation."""
+        return self.slug
+
+    @classmethod
+    def load(cls):
+        """Load keyword and topic mappings from the cache or database."""
+        topics = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
+        if not topics:
+            topics = cls.load_db()
+        return topics
+
+    @classmethod
+    def load_db(cls):
+        """Load keyword and topic mappings from database and cache it."""
+        # topic -> list of keyword slugs
+        topics = collections.defaultdict(list)
+
+        for topic in Topic.objects.all().prefetch_related():
+            topics[topic.slug] = [kw.slug for kw in topic.keywords.all()]
+
+        caches[settings.CACHE_LOCAL_ALIAS].set(
+            cls.CACHE_KEY, value=topics, timeout=cls.CACHE_TIMEOUT
+        )
+
+        return topics
+
+
+class Keyword(TimeStampedModel, models.Model):
+
+    """A keyword for a topic on the ad server."""
+
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    topics = models.ManyToManyField(
+        Topic,
+        blank=True,
+        related_name="keywords",
+    )
+
+    def __str__(self):
+        """String representation."""
+        return self.slug
+
+
+class Region(TimeStampedModel, models.Model):
+
+    """A region able to be targeted by the ad server."""
+
+    # Regions are cached for 30m
+    # We don't want to repeatedly hit the database for data that rarely changes
+    CACHE_KEY = "country-region-mapping"
+    CACHE_TIMEOUT = 60 * 30
+
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    # Lower order takes precedence
+    # When mapping country to a single region, the lowest order region is returned
+    order = models.PositiveSmallIntegerField(
+        _("Order"),
+        default=0,
+        help_text=_(
+            "When mapping country to a single region, the lowest order region is returned."
+        ),
+    )
+
+    def __str__(self):
+        """String representation."""
+        return self.slug
+
+    @classmethod
+    def load(cls):
+        """Load country to region mappings from the cache or database."""
+        regions = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
+        if not regions:
+            regions = cls.load_db()
+        return regions
+
+    @classmethod
+    def load_db(cls):
+        """Load country to region mapping from the DB and cache it."""
+        # region (in order) -> list of countries
+        regions = collections.defaultdict(list)
+
+        for country_region in (
+            CountryRegion.objects.all().select_related().order("order")
+        ):
+            regions[country_region.region.slug].append(country_region.country.code)
+
+        caches[settings.CACHE_LOCAL_ALIAS].set(
+            cls.CACHE_KEY, value=regions, timeout=cls.CACHE_TIMEOUT
+        )
+
+        return regions
+
+
+class CountryRegion(TimeStampedModel, models.Model):
+
+    """Countries in targeted regions."""
+
+    country = CountryField()
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        """String representation."""
+        return f"{self.country.name} ({self.country.code})"
 
 
 class Publisher(TimeStampedModel, IndestructibleModel):
