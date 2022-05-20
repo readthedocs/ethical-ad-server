@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.52.0
+---------------
+
+The main change this release is turn on the daily analysis tasks.
+These will scan websites where we server ads to try to understand them
+and target better.
+
+:date: May 20, 2022
+
+ * @davidfischer: Add a daily cap for publishers (#579)
+ * @davidfischer: Enable URL analyzer tasks (#578)
+ * @davidfischer: Add an advertiser keyword report (#577)
+ * @davidfischer: Handle invalid URLs in analysis (#576)
+ * @davidfischer: Remove the left nav when printing (#575)
+
 Version v0.51.0
 ---------------
 
