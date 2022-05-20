@@ -33,6 +33,9 @@ class TestValidators(TestCase):
         validator({"include_metro_codes": [1, 2]})
         validator({"mobile_traffic": "exclude"})
         validator({"mobile_traffic": "only"})
+        validator({"include_regions": ["us-ca", "eu"]})
+        validator({"exclude_regions": ["exclude"]})
+        validator({"include_topics": ["blockchain"]})
 
         # Unknown (old) parameters - these raise an error
         self.assertRaises(
@@ -61,3 +64,9 @@ class TestValidators(TestCase):
         )
         self.assertRaises(ValidationError, validator, {"include_metro_codes": ["USA"]})
         self.assertRaises(ValidationError, validator, {"mobile_traffic": "unknown"})
+        self.assertRaises(
+            ValidationError, validator, {"include_regions": ["invalid-region"]}
+        )
+        self.assertRaises(
+            ValidationError, validator, {"include_topics": ["invalid-topic"]}
+        )

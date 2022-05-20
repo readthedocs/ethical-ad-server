@@ -58,6 +58,15 @@
         {% if flight.targeting_parameters.include_metro_codes %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_metro_codes|join:", " %}Include Metros/DMAs: {{ value }}{% endblocktrans %}</li>
         {% endif %}
+        {% if flight.targeting_parameters.include_regions %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_regions|join:", " %}Regions: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.exclude_regions %}
+         <li>{% blocktrans with value=flight.targeting_parameters.exclude_regions|join:", " %}Regions: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_topics %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_topics|join:", " %}Topics: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
         {% if flight.targeting_parameters.include_keywords %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
         {% endif %}

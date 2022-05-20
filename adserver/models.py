@@ -1,5 +1,4 @@
 """Core models for the ad server."""
-import collections
 import datetime
 import html
 import logging
@@ -120,14 +119,14 @@ class Topic(TimeStampedModel, models.Model):
         """Load keyword and topic mappings from the cache or database."""
         topics = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
         if not topics:
-            topics = cls.load_db()
+            topics = cls._load_db()
         return topics
 
     @classmethod
-    def load_db(cls):
+    def _load_db(cls):
         """Load keyword and topic mappings from database and cache it."""
         # topic -> list of keyword slugs
-        topics = collections.defaultdict(list)
+        topics = {}
 
         for topic in Topic.objects.all().prefetch_related():
             topics[topic.slug] = [kw.slug for kw in topic.keywords.all()]
@@ -186,19 +185,20 @@ class Region(TimeStampedModel, models.Model):
         """Load country to region mappings from the cache or database."""
         regions = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
         if not regions:
-            regions = cls.load_db()
+            regions = cls._load_db()
         return regions
 
     @classmethod
-    def load_db(cls):
+    def _load_db(cls):
         """Load country to region mapping from the DB and cache it."""
         # region (in order) -> list of countries
-        regions = collections.defaultdict(list)
+        regions = {}
 
-        for country_region in (
-            CountryRegion.objects.all().select_related().order("order")
+        for region in (
+            Region.objects.all().order_by("order").prefetch_related("countryregion_set")
         ):
-            regions[country_region.region.slug].append(country_region.country.code)
+            countries = [cr.country.code for cr in region.countryregion_set.all()]
+            regions[region.slug] = countries
 
         caches[settings.CACHE_LOCAL_ALIAS].set(
             cls.CACHE_KEY, value=regions, timeout=cls.CACHE_TIMEOUT
@@ -734,6 +734,24 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_countries", [])
 
     @property
+    def included_regions(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_regions", [])
+
+    @property
+    def excluded_regions(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("exclude_regions", [])
+
+    @property
+    def included_topics(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_topics", [])
+
+    @property
     def included_keywords(self):
         if not self.targeting_parameters:
             return []
@@ -794,6 +812,20 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
+        # Check region groupings as well
+        if self.included_regions or self.excluded_regions:
+            # Only load regions if we have to
+            regions = Region.load()
+            if self.included_regions and not any(
+                geo_data.country in regions[reg] for reg in self.included_regions
+            ):
+                return False
+
+            if self.excluded_regions and any(
+                geo_data.country in regions[reg] for reg in self.excluded_regions
+            ):
+                return False
+
         return True
 
     def show_to_keywords(self, keywords):
@@ -812,6 +844,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_keywords:
             # If any keyworks from the page in the exclude list, don't show this flight
             if keyword_set.intersection(self.excluded_keywords):
+                return False
+
+        # Check topics (groupings of keywords)
+        if self.included_topics:
+            topics = Topic.load()
+            topic_keyword_set = set(*[topics[slug] for slug in self.included_topics])
+            if not keyword_set.intersection(topic_keyword_set):
                 return False
 
         return True

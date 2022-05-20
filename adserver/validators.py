@@ -24,6 +24,8 @@ class TargetingParametersValidator(BaseValidator):
         "country_code": _("%(code)s is not a valid country code"),
         "state_province_code": _("%(code)s is not a valid state/province code"),
         "metro_code": _("%(code)s is not a valid metro code"),
+        "region": _("%(value)s is not a valid region"),
+        "topic": _("%(value)s is not a valid topic"),
         "mobile": _(f"%(value)s must be one of {mobile_traffic_values}"),
         "str": _("%(word)s must be a string"),
     }
@@ -33,6 +35,9 @@ class TargetingParametersValidator(BaseValidator):
         "include_state_provinces": "_validate_state_provinces",
         "include_metro_codes": "_validate_metro_codes",
         "exclude_countries": "_validate_country_codes",
+        "include_regions": "_validate_regions",
+        "exclude_regions": "_validate_regions",
+        "include_topics": "_validate_topics",
         "include_keywords": "_validate_strs",
         "exclude_keywords": "_validate_strs",
         "mobile_traffic": "_validate_mobile",
@@ -85,6 +90,22 @@ class TargetingParametersValidator(BaseValidator):
     def _validate_mobile(self, value):
         if value not in self.mobile_traffic_values:
             raise ValidationError(self.messages["mobile"], params={"value": value})
+
+    def _validate_regions(self, slugs):
+        from .models import Region  # noqa
+
+        regions = Region.load()
+        for slug in slugs:
+            if slug not in regions:
+                raise ValidationError(self.messages["region"], params={"value": slug})
+
+    def _validate_topics(self, slugs):
+        from .models import Topic  # noqa
+
+        topics = Topic.load()
+        for slug in slugs:
+            if slug not in topics:
+                raise ValidationError(self.messages["topic"], params={"value": slug})
 
     def _validate_strs(self, words):
         for word in words:
