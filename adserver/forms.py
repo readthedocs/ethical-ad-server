@@ -33,18 +33,8 @@ from .models import Advertisement
 from .models import Campaign
 from .models import Flight
 from .models import Publisher
-from .regiontopics import africa
-from .regiontopics import backend_web
-from .regiontopics import data_science
-from .regiontopics import devops
-from .regiontopics import eu_aus_nz
-from .regiontopics import exclude
-from .regiontopics import frontend_web
-from .regiontopics import latin_america
-from .regiontopics import python
-from .regiontopics import security_privacy
-from .regiontopics import us_ca
-from .regiontopics import wider_apac
+from .models import Region
+from .models import Topic
 from .validators import TargetingParametersValidator
 
 
@@ -120,6 +110,18 @@ class FlightForm(FlightMixin, forms.ModelForm):
     we would need a way to let folks make adjustments and it automatically changes the price.
     """
 
+    include_regions = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+    exclude_regions = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+    include_topics = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
     include_countries = forms.CharField(
         max_length=1024,
         required=False,
@@ -140,7 +142,13 @@ class FlightForm(FlightMixin, forms.ModelForm):
         """Set the flight form helper and initial data."""
         super().__init__(*args, **kwargs)
 
+        self.regions = Region.objects.all().order_by("order", "slug")
+        self.topics = Topic.objects.all().order_by("slug")
+
         if self.instance.pk:
+            self.fields["include_regions"].initial = self.instance.included_regions
+            self.fields["exclude_regions"].initial = self.instance.excluded_regions
+            self.fields["include_topics"].initial = self.instance.included_topics
             self.fields["include_countries"].initial = ", ".join(
                 self.instance.included_countries
             )
@@ -150,6 +158,12 @@ class FlightForm(FlightMixin, forms.ModelForm):
             self.fields["include_keywords"].initial = ", ".join(
                 self.instance.included_keywords
             )
+
+        self.fields["include_regions"].choices = [
+            (r.slug, r.slug) for r in self.regions
+        ]
+        self.fields["exclude_regions"].choices = self.fields["include_regions"].choices
+        self.fields["include_topics"].choices = [(t.slug, t.slug) for t in self.topics]
 
         self.helper = FormHelper()
 
@@ -187,86 +201,12 @@ class FlightForm(FlightMixin, forms.ModelForm):
             Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
-                Div(
-                    "include_countries",
-                    Div(
-                        HTML(
-                            format_html(
-                                """
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">US / Canada</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">US / CA / EU / AU / NZ</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">EU / AU / NZ</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">APAC</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">Latin America</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_countries">Africa</a></li>
-                                </ul>
-                            """,
-                                ", ".join(us_ca),
-                                ", ".join(us_ca + eu_aus_nz),
-                                ", ".join(eu_aus_nz),
-                                ", ".join(wider_apac),
-                                ", ".join(latin_america),
-                                ", ".join(africa),
-                            )
-                        ),
-                        css_class="small",
-                    ),
-                ),
-                Div(
-                    "exclude_countries",
-                    Div(
-                        HTML(
-                            format_html(
-                                """
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">US / Canada</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">US / CA / EU / AU / NZ</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">EU / AU / NZ</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">APAC</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Latin America</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Africa</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_exclude_countries">Exclude</a></li>
-                                </ul>
-                            """,
-                                ", ".join(us_ca),
-                                ", ".join(us_ca + eu_aus_nz),
-                                ", ".join(eu_aus_nz),
-                                ", ".join(wider_apac),
-                                ", ".join(latin_america),
-                                ", ".join(africa),
-                                ", ".join(exclude),
-                            )
-                        ),
-                        css_class="small",
-                    ),
-                ),
-                Div(
-                    "include_keywords",
-                    Div(
-                        HTML(
-                            format_html(
-                                """
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">data science/machine learning</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">security/privacy</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">devops</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">frontend</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">backend</a></li>
-                                    <li class="list-inline-item"><a class="ea-update-field" href="#" data-value="{}" data-target-field="#id_include_keywords">python</a></li>
-                                </ul>
-                            """,
-                                ", ".join(data_science),
-                                ", ".join(security_privacy),
-                                ", ".join(devops),
-                                ", ".join(frontend_web),
-                                ", ".join(backend_web),
-                                ", ".join(python),
-                            )
-                        ),
-                        css_class="small",
-                    ),
-                ),
+                Div("include_regions"),
+                Div("exclude_regions"),
+                Div("include_topics"),
+                Div("include_countries"),
+                Div("exclude_countries"),
+                Div("include_keywords"),
                 css_class="my-3",
             ),
             Submit("submit", _("Update flight")),
@@ -302,6 +242,15 @@ class FlightForm(FlightMixin, forms.ModelForm):
             # This can happen if the flight was setup with no targeting at all
             self.instance.targeting_parameters = {}
 
+        self.instance.targeting_parameters["include_regions"] = self.cleaned_data[
+            "include_regions"
+        ]
+        self.instance.targeting_parameters["exclude_regions"] = self.cleaned_data[
+            "exclude_regions"
+        ]
+        self.instance.targeting_parameters["include_topics"] = self.cleaned_data[
+            "include_topics"
+        ]
         self.instance.targeting_parameters["include_countries"] = [
             cc.strip()
             for cc in self.cleaned_data["include_countries"].split(",")
@@ -322,12 +271,16 @@ class FlightForm(FlightMixin, forms.ModelForm):
         # If a flight has one of these rare targeting options already, saving the form won't affect it
 
         # Handle when targeting is totally removed
-        if not self.instance.targeting_parameters["include_countries"]:
-            del self.instance.targeting_parameters["include_countries"]
-        if not self.instance.targeting_parameters["exclude_countries"]:
-            del self.instance.targeting_parameters["exclude_countries"]
-        if not self.instance.targeting_parameters["include_keywords"]:
-            del self.instance.targeting_parameters["include_keywords"]
+        for key in (
+            "include_countries",
+            "exclude_countries",
+            "include_keywords",
+            "include_regions",
+            "exclude_regions",
+            "include_topics",
+        ):
+            if not self.instance.targeting_parameters[key]:
+                del self.instance.targeting_parameters[key]
 
         return super().save(commit)
 
