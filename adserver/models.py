@@ -108,11 +108,12 @@ class Topic(TimeStampedModel, models.Model):
     CACHE_KEY = "keyword-topic-mapping"
     CACHE_TIMEOUT = 60 * 30
 
+    name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
     def __str__(self):
         """String representation."""
-        return self.slug
+        return self.name
 
     @classmethod
     def load(cls):
@@ -164,6 +165,7 @@ class Region(TimeStampedModel, models.Model):
     CACHE_KEY = "country-region-mapping"
     CACHE_TIMEOUT = 60 * 30
 
+    name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
     # Lower order takes precedence
@@ -178,7 +180,7 @@ class Region(TimeStampedModel, models.Model):
 
     def __str__(self):
         """String representation."""
-        return self.slug
+        return self.name
 
     @classmethod
     def load(cls):
@@ -219,7 +221,7 @@ class CountryRegion(TimeStampedModel, models.Model):
 
     def __str__(self):
         """String representation."""
-        return f"{self.country.name} ({self.country.code})"
+        return f"{self.country.name}"
 
 
 class Publisher(TimeStampedModel, IndestructibleModel):
@@ -780,6 +782,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
                 "flight_slug": self.slug,
             },
         )
+
+    def get_include_regions(self):
+        return Region.objects.filter(slug__in=self.included_regions)
+
+    def get_exclude_regions(self):
+        return Region.objects.filter(slug__in=self.excluded_regions)
+
+    def get_include_topics(self):
+        return Topic.objects.filter(slug__in=self.included_topics)
 
     def get_include_countries_display(self):
         included_country_codes = self.included_countries

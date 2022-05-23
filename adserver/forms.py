@@ -160,10 +160,10 @@ class FlightForm(FlightMixin, forms.ModelForm):
             )
 
         self.fields["include_regions"].choices = [
-            (r.slug, r.slug) for r in self.regions
+            (r.slug, r.name) for r in self.regions
         ]
         self.fields["exclude_regions"].choices = self.fields["include_regions"].choices
-        self.fields["include_topics"].choices = [(t.slug, t.slug) for t in self.topics]
+        self.fields["include_topics"].choices = [(t.slug, t.name) for t in self.topics]
 
         self.helper = FormHelper()
 

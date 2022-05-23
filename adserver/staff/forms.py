@@ -42,7 +42,7 @@ class CreateAdvertiserForm(forms.Form):
     # TODO: Make these configurable in the web UI as a dropdown of common values.
     DEFAULT_CPM = 5
     DEFAULT_NUM_IMPRESSIONS = 200000
-    DEFAULT_REGION_TARGETING = ["us-ca"]
+    DEFAULT_REGION_TARGETING = ["us-ca", "eu-au-nz"]
     DEFAULT_TARGETED_GROUPS = ("ethicalads-network", "readthedocs")
 
     # Advertiser information

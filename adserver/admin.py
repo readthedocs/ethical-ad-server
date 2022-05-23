@@ -86,10 +86,13 @@ class KeywordAdmin(admin.ModelAdmin):
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     inlines = (KeywordInline,)
-    list_display = ("slug",)
+    list_display = (
+        "name",
+        "slug",
+    )
     list_per_page = 1000
     ordering = ("slug",)
-    search_fields = ("slug",)
+    search_fields = ("name", "slug")
 
 
 @admin.register(CountryRegion)
@@ -128,12 +131,13 @@ class CountryInline(admin.TabularInline):
 class RegionAdmin(admin.ModelAdmin):
     inlines = (CountryInline,)
     list_display = (
+        "name",
         "slug",
         "order",
     )
     list_per_page = 1000
     ordering = ("order", "slug")
-    search_fields = ("slug",)
+    search_fields = ("name", "slug")
 
 
 class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
