@@ -57,7 +57,7 @@ stripe>=2.48.0,<3.0
 dj-stripe==2.5.1
 
 # JWT used by Metabase embedding
-PyJWT==2.1.0
+PyJWT==2.4.0
 
 # Used by the keyword/topic analyzer
 beautifulsoup4==4.11.1
