@@ -355,7 +355,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
 
     # Publisher specific advertiser account
-    publisher = models.ForeignKey(
+    publisher = models.OneToOneField(
         Publisher,
         null=True,
         blank=True,
