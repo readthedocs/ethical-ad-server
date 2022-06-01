@@ -10,6 +10,10 @@
     <dt>{% trans 'Community ad' %}</dt>
     <dd>{% trans 'This ad is done for the benefit of the community' %}</dd>
   {% endif %}
+  {% if flight.campaign.campaign_type == 'publisher-house' %}
+    <dt>{% trans 'Publisher house ad' %}</dt>
+    <dd>{% trans 'House ads controlled by the publisher' %}</dd>
+  {% endif %}
   {% if flight.campaign.campaign_type == 'house' %}
     <dt>{% trans 'House ad' %}</dt>
     <dd>{% trans 'This is a house advertisement' %}</dd>
@@ -60,6 +64,18 @@
         {% endif %}
         {% if flight.targeting_parameters.include_keywords %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_publishers %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_publishers|join:", " %}Include publishers: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.exclude_publishers %}
+         <li>{% blocktrans with value=flight.targeting_parameters.exclude_publishers|join:", " %}Exclude publishers: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_domains %}
+         <li>{% blocktrans with value=flight.targeting_parameters.include_domains|join:", " %}Include domains: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.targeting_parameters.exclude_domains %}
+         <li>{% blocktrans with value=flight.targeting_parameters.exclude_domains|join:", " %}Exclude domains: {{ value }}{% endblocktrans %}</li>
         {% endif %}
         {% if flight.targeting_parameters.mobile_traffic %}
          <li>{% blocktrans with value=flight.targeting_parameters.mobile_traffic %}Mobile traffic: {{ value }}{% endblocktrans %}</li>

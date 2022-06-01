@@ -58,6 +58,7 @@ from .utils import get_client_country
 from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
+from .utils import get_domain_from_url
 from .validators import TargetingParametersValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -353,6 +354,16 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
 
+    # Publisher specific advertiser account
+    publisher = models.OneToOneField(
+        Publisher,
+        null=True,
+        blank=True,
+        default=None,
+        on_delete=models.PROTECT,
+        help_text=_("Used for advertiser accounts associated with a publisher"),
+    )
+
     djstripe_customer = models.ForeignKey(
         djstripe_models.Customer,
         verbose_name=_("Stripe Customer"),
@@ -622,6 +633,30 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_keywords", [])
 
     @property
+    def included_publishers(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_publishers", [])
+
+    @property
+    def excluded_publishers(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("exclude_publishers", [])
+
+    @property
+    def included_domains(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_domains", [])
+
+    @property
+    def excluded_domains(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("exclude_domains", [])
+
+    @property
     def state(self):
         today = get_ad_day().date()
         if self.live and self.start_date <= today:
@@ -702,6 +737,26 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return False
         if mobile_traffic_targeting == "only" and not is_mobile:
             return False
+
+        return True
+
+    def show_on_publisher(self, publisher):
+        if self.included_publishers:
+            return publisher.slug in self.included_publishers
+
+        if self.excluded_publishers:
+            return publisher.slug not in self.excluded_publishers
+
+        return True
+
+    def show_on_domain(self, url):
+        domain = get_domain_from_url(url)
+
+        if self.included_domains:
+            return domain in self.included_domains
+
+        if self.excluded_domains:
+            return domain not in self.excluded_domains
 
         return True
 

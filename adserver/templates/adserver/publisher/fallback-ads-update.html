@@ -1,0 +1,40 @@
+{% extends "adserver/publisher/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load ad_extras %}
+
+
+{% block title %}{% trans 'Fallback ad: ' %}{{ advertisement.name }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'publisher_fallback_ads' publisher.slug %}">{% trans 'Fallback ads' %}</a></li>
+  <li class="breadcrumb-item active"><a href="{% url 'publisher_fallback_ads_detail' publisher.slug advertisement.slug %}">{{ advertisement.name }}</a></li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Fallback ad: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
+
+<div class="row">
+
+  <div class="col-md">
+    {% crispy form form.helper %}
+  </div>
+
+  {# Preview the ad in all its ad types #}
+  <div class="col-md ml-md-5">
+    <h5>{% trans 'Preview' %}</h5>
+
+    {% for ad_type in advertisement.ad_types.all %}
+      {% include "adserver/includes/ad-preview.html" %}
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock content_container %}

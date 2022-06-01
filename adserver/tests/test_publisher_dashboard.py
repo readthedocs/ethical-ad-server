@@ -9,6 +9,7 @@ from django_dynamic_fixture import get
 
 from ..constants import CLICKS
 from ..constants import PAID_CAMPAIGN
+from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..constants import VIEWS
 from ..models import AdType
 from ..models import Advertisement
@@ -376,3 +377,173 @@ class TestPublisherDashboardViews(TestCase):
 
             self.publisher1.refresh_from_db()
             self.assertEqual(self.publisher1.stripe_connected_account_id, account_id)
+
+
+class TestPublisherFallbackAdsViews(TestCase):
+
+    """Test fallback ads for the publisher."""
+
+    def setUp(self):
+        self.publisher = get(Publisher, slug="test-publisher")
+        self.publisher_advertiser = get(
+            Advertiser,
+            name="Test Advertiser",
+            slug="test-advertiser",
+            publisher=self.publisher,
+        )
+
+        self.user = get(get_user_model(), email="test1@example.com")
+        self.staff_user = get(get_user_model(), is_staff=True)
+
+        self.campaign = get(
+            Campaign,
+            name="Test Campaign",
+            slug="test-campaign",
+            advertiser=self.publisher_advertiser,
+            campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
+        )
+
+        self.flight = get(
+            Flight,
+            name="Test Flight",
+            slug="test-flight",
+            campaign=self.campaign,
+            live=True,
+            cpc=0,
+            sold_clicks=0,
+            targeting_parameters={
+                "include_publishers": [self.publisher.slug],
+            },
+        )
+
+        self.ad_type1 = get(AdType, name="Ad Type", has_image=False)
+        self.ad1 = get(
+            Advertisement,
+            name="Test Ad 1",
+            slug="test-ad-1",
+            flight=self.flight,
+            ad_type=self.ad_type1,
+            image=None,
+            headline="Headline",
+            content="Content",
+            cta="CTA",
+            text="",
+        )
+
+    def test_fallback_ads_list(self):
+        url = reverse("publisher_fallback_ads", args=[self.publisher.slug])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Test Ad 1")
+
+    def test_fallback_ads_detail(self):
+        url = reverse(
+            "publisher_fallback_ads_detail", args=[self.publisher.slug, self.ad1.slug]
+        )
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Test Ad 1")
+
+    def test_fallback_ads_update(self):
+        url = reverse(
+            "publisher_fallback_ads_update", args=[self.publisher.slug, self.ad1.slug]
+        )
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Test Ad 1")
+
+        # Update the ad
+        data = {
+            "name": "New Name",
+            "live": True,
+            "link": "http://example.com",
+            "headline": "Some Company: ",
+            "content": "Sample text",
+            "image": "",
+            "ad_types": [self.ad_type1.pk],
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 302, response.content)
+
+        # Verify the DB was updated
+        self.ad1.refresh_from_db()
+        self.assertEqual(self.ad1.name, data["name"])
+
+    def test_fallback_ads_create(self):
+        url = reverse("publisher_fallback_ads_create", args=[self.publisher.slug])
+
+        # Anonymous - redirect to login
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # No access to publisher
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        self.user.publishers.add(self.publisher)
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Create fallback ad")
+
+        # Create a new fallback ad
+        data = {
+            "name": "New Fallback Ad",
+            "live": True,
+            "link": "http://example.com",
+            "headline": "Some Company: ",
+            "content": "Sample text",
+            "image": "",
+            "ad_types": [self.ad_type1.pk],
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.assertTrue(
+            Advertisement.objects.filter(flight=self.flight, name=data["name"]).exists()
+        )

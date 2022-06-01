@@ -36,6 +36,10 @@ from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
 from .views import PublisherEmbedView
+from .views import PublisherFallbackAdsCreateView
+from .views import PublisherFallbackAdsDetailView
+from .views import PublisherFallbackAdsUpdateView
+from .views import PublisherFallbackAdsView
 from .views import PublisherGeoReportView
 from .views import PublisherKeywordReportView
 from .views import PublisherMainView
@@ -316,6 +320,26 @@ urlpatterns = [
         r"publisher/oauth/stripe/return/",
         publisher_stripe_oauth_return,
         name="publisher_stripe_oauth_return",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/fallback-ads/",
+        PublisherFallbackAdsView.as_view(),
+        name="publisher_fallback_ads",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/fallback-ads/create/",
+        PublisherFallbackAdsCreateView.as_view(),
+        name="publisher_fallback_ads_create",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/fallback-ads/<slug:advertisement_slug>/",
+        PublisherFallbackAdsDetailView.as_view(),
+        name="publisher_fallback_ads_detail",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/fallback-ads/<slug:advertisement_slug>/update/",
+        PublisherFallbackAdsUpdateView.as_view(),
+        name="publisher_fallback_ads_update",
     ),
     path(
         r"publisher/<slug:publisher_slug>/settings/",

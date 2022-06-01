@@ -19,6 +19,7 @@ from djstripe.models import Customer
 from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
+from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
@@ -299,7 +300,43 @@ class CreatePublisherForm(forms.Form):
 
         update_change_reason(publisher, self.message)
 
+        # Create this publisher's advertiser account
+        self.create_publisher_advertiser_account(publisher)
+
         return publisher
+
+    def create_publisher_advertiser_account(self, publisher):
+        """Create the publisher's house ads account."""
+        advertiser = Advertiser.objects.create(
+            name=publisher.name,
+            slug=publisher.slug,
+            publisher=publisher,
+        )
+        campaign = Campaign.objects.create(
+            advertiser=advertiser,
+            name=publisher.name,
+            slug=publisher.slug,
+            campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
+        )
+        pub_group = PublisherGroup.objects.filter(slug=self.DEFAULT_GROUP).first()
+        if pub_group:
+            campaign.publisher_groups.add(pub_group)
+
+        flight_name = f"{publisher.name} House Ads"
+        flight = Flight.objects.create(
+            campaign=campaign,
+            name=flight_name,
+            slug=slugify(flight_name),
+            sold_impressions=999_999_999,
+            live=True,
+            targeting_parameters={
+                "include_publishers": [publisher.slug],
+            },
+        )
+
+        update_change_reason(advertiser, self.message)
+        update_change_reason(campaign, self.message)
+        update_change_reason(flight, self.message)
 
     def save(self):
         """Create the publisher and associated objects. Send the invitation to the user account."""

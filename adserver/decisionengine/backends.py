@@ -10,6 +10,7 @@ from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
+from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import Flight
 from ..utils import get_ad_day
 from ..utils import get_client_user_agent
@@ -72,6 +73,8 @@ class BaseAdDecisionBackend:
             and COMMUNITY_CAMPAIGN in requested_campaign_types
         ):
             self.campaign_types.append(COMMUNITY_CAMPAIGN)
+        if PUBLISHER_HOUSE_CAMPAIGN in requested_campaign_types:
+            self.campaign_types.append(PUBLISHER_HOUSE_CAMPAIGN)
         if (
             self.publisher.allow_house_campaigns
             and HOUSE_CAMPAIGN in requested_campaign_types
@@ -237,6 +240,14 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_to_mobile(self.user_agent.is_mobile):
             return False
 
+        # Skip if this flight is ineligible for this publisher
+        if not flight.show_on_publisher(self.publisher):
+            return False
+
+        # Skip if we shouldn't show this flight on this domain
+        if not flight.show_on_domain(self.url):
+            return False
+
         # Skip if there are no clicks or views needed today (ad pacing)
         if flight.weighted_clicks_needed_today() <= 0:
             return False
@@ -294,6 +305,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         paid_flights = []
         affiliate_flights = []
         community_flights = []
+        publisher_house_flights = []
         house_flights = []
 
         for flight in flights:
@@ -303,6 +315,8 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 affiliate_flights.append(flight)
             elif flight.campaign.campaign_type == COMMUNITY_CAMPAIGN:
                 community_flights.append(flight)
+            elif flight.campaign.campaign_type == PUBLISHER_HOUSE_CAMPAIGN:
+                publisher_house_flights.append(flight)
             else:
                 house_flights.append(flight)
 
@@ -314,6 +328,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             paid_flights,
             affiliate_flights,
             community_flights,
+            publisher_house_flights,
             house_flights,
         ):
             # Choose a flight based on the impressions needed
