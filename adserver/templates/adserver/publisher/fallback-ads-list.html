@@ -1,0 +1,74 @@
+{% extends "adserver/publisher/overview.html" %}
+{% load humanize %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Fallback ads' %} - {{ publisher }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Fallback ads' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% trans 'Fallback ads' %}</h1>
+
+<p>{% blocktrans %}Fallback ads are displayed on your site when the network has no paid ads available to be shown. If you have multiple fallback ads, one will be chosen randomly. If you disable all fallback ads, either one of our house ads or no at all will be returned when there isn't a paid ad available.{% endblocktrans %}</p>
+
+
+{% url 'publisher_fallback_ads_create' publisher.slug as create_ad_url %}
+<section class="mt-5">
+  <div class="row">
+    <h5 class="col-md-8">{% trans 'Advertisements' %}</h5>
+
+    <aside class="col-md-4 text-right">
+      <a href="{{ create_ad_url }}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
+        <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Create fallback ad' %}</span>
+      </a>
+    </aside>
+  </div>
+
+  {% if advertisement_list %}
+    <div class="table-responsive" id="advertisement-list">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th><strong>{% trans 'Fallback ad' %}</strong></th>
+            <th><strong>{% trans 'Name' %}</strong></th>
+            <th><strong>{% trans 'Ad types' %}</strong></th>
+            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ad in advertisement_list %}
+            <tr>
+              <td>
+                {% if ad.image %}
+                  <a href="{% url 'publisher_fallback_ads_detail' publisher.slug ad.slug %}">
+                    <img src="{{ ad.image.url }}" width="120">
+                  </a>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'publisher_fallback_ads_detail' publisher.slug ad.slug %}" {% if not ad.live %}class="disabled"{% endif %}>{{ ad.name }}</a>
+                {% if not ad.live %}
+                  <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
+                {% endif %}
+              </td>
+              <td>{{ ad.ad_types.all | join:"<br>" }}</td>
+              <td>{{ ad.ctr|floatformat:3 }}%</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-center">{% blocktrans %}There are no fallback ads yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+  {% endif %}
+</section>
+
+{% endblock content_container %}

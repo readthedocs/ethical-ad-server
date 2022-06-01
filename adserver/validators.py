@@ -40,6 +40,10 @@ class TargetingParametersValidator(BaseValidator):
         "include_topics": "_validate_topics",
         "include_keywords": "_validate_strs",
         "exclude_keywords": "_validate_strs",
+        "include_publishers": "_validate_strs",
+        "exclude_publishers": "_validate_strs",
+        "include_domains": "_validate_strs",
+        "exclude_domains": "_validate_strs",
         "mobile_traffic": "_validate_mobile",
     }
 

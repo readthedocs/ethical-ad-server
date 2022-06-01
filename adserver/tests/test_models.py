@@ -121,6 +121,58 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertTrue(self.flight.show_to_keywords(["django"]))
         self.assertFalse(self.flight.show_to_keywords(["django", "rails"]))
 
+    def test_publisher_targeting(self):
+        self.flight.targeting_parameters["include_publishers"] = [self.publisher.slug]
+        self.flight.save()
+        self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.targeting_parameters["include_publishers"] = [
+            "another-publisher-slug"
+        ]
+        self.flight.save()
+        self.assertFalse(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.targeting_parameters = {"exclude_publishers": [self.publisher.slug]}
+        self.flight.save()
+        self.assertFalse(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.targeting_parameters["exclude_publishers"] = [
+            "another-publisher-slug"
+        ]
+        self.flight.save()
+        self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+    def test_domain_targeting(self):
+        self.flight.targeting_parameters["include_domains"] = ["example.com"]
+        self.flight.save()
+        self.assertTrue(
+            self.flight.show_on_domain("https://example.com/path/to/resource")
+        )
+
+        self.flight.targeting_parameters["include_domains"] = ["another-example.com"]
+        self.flight.save()
+        self.assertFalse(
+            self.flight.show_on_domain("https://example.com/path/to/resource")
+        )
+
+        self.flight.targeting_parameters = {
+            "exclude_domains": ["bad-domain.com", "example.com"]
+        }
+        self.flight.save()
+        self.assertFalse(
+            self.flight.show_on_domain("https://example.com/path/to/resource")
+        )
+
+        # If only using exclude, show on blank/unknown URLs
+        self.assertTrue(self.flight.show_on_domain(None))
+        self.assertTrue(self.flight.show_on_domain(""))
+
+        self.flight.targeting_parameters["exclude_domains"] = ["bad-domain.com"]
+        self.flight.save()
+        self.assertTrue(
+            self.flight.show_on_domain("https://example.com/path/to/resource")
+        )
+
     def test_start_date_math(self):
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=14)
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
