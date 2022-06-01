@@ -94,7 +94,7 @@ class TargetingParametersValidator(BaseValidator):
     def _validate_regions(self, slugs):
         from .models import Region  # noqa
 
-        regions = Region.load()
+        regions = Region.load_from_cache()
         for slug in slugs:
             if slug not in regions:
                 raise ValidationError(self.messages["region"], params={"value": slug})
@@ -102,7 +102,7 @@ class TargetingParametersValidator(BaseValidator):
     def _validate_topics(self, slugs):
         from .models import Topic  # noqa
 
-        topics = Topic.load()
+        topics = Topic.load_from_cache()
         for slug in slugs:
             if slug not in topics:
                 raise ValidationError(self.messages["topic"], params={"value": slug})

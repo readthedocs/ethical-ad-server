@@ -116,7 +116,7 @@ class Topic(TimeStampedModel, models.Model):
         return self.name
 
     @classmethod
-    def load(cls):
+    def load_from_cache(cls):
         """Load keyword and topic mappings from the cache or database."""
         topics = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
         if not topics:
@@ -183,7 +183,7 @@ class Region(TimeStampedModel, models.Model):
         return self.name
 
     @classmethod
-    def load(cls):
+    def load_from_cache(cls):
         """Load country to region mappings from the cache or database."""
         regions = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
         if not regions:
@@ -826,7 +826,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # Check region groupings as well
         if self.included_regions or self.excluded_regions:
             # Only load regions if we have to
-            regions = Region.load()
+            regions = Region.load_from_cache()
             if self.included_regions and not any(
                 geo_data.country in regions[reg] for reg in self.included_regions
             ):
@@ -859,7 +859,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         # Check topics (groupings of keywords)
         if self.included_topics:
-            topics = Topic.load()
+            topics = Topic.load_from_cache()
             topic_keyword_set = set(*[topics[slug] for slug in self.included_topics])
             if not keyword_set.intersection(topic_keyword_set):
                 return False
