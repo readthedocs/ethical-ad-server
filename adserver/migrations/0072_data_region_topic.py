@@ -671,7 +671,7 @@ def forwards(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("adserver", "0070_region_topic_modeling"),
+        ("adserver", "0071_region_topic_modeling"),
     ]
 
     operations = [

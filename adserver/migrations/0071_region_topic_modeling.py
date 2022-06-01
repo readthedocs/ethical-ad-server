@@ -9,7 +9,7 @@ from django.db import models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adserver', '0068_add_publisher_daily_cap'),
+        ('adserver', '0070_data_publisher_advertiser_accounts'),
     ]
 
     operations = [
