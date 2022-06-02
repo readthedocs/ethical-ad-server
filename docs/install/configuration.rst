@@ -168,7 +168,7 @@ This will set the address of the database used by the ad server.
 While any database supported by Django will work, PostgreSQL is preferred
 (eg. ``psql://username:password@127.0.0.1:5432/database``)
 See Django's :doc:`database documentation <django:ref/databases>`
-and the :ref:`DATABASES setting <django:ref/settings:database>` for details.
+and the ``DATABASES`` setting for details.
 
 
 DEBUG
