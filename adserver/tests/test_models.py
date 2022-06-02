@@ -54,6 +54,14 @@ class TestAdModels(BaseAdModelsTestCase):
         # Unknown geo
         self.assertFalse(self.flight.show_to_geo(GeolocationData()))
 
+        # Test regions
+        self.flight.targeting_parameters = {"include_regions": ["us-ca", "eu"]}
+        self.flight.save()
+
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("FR")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("AU")))
+
     def test_geo_exclude(self):
         self.assertTrue(self.flight.show_to_geo(GeolocationData("AZ")))
 
@@ -63,6 +71,17 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertTrue(self.flight.show_to_geo(GeolocationData("UK")))
         self.assertFalse(self.flight.show_to_geo(GeolocationData("AZ")))
         self.assertFalse(self.flight.show_to_geo(GeolocationData("US")))
+
+        # Test regions
+        self.flight.targeting_parameters = {
+            "exclude_regions": ["exclude", "south-asia"]
+        }
+        self.flight.save()
+
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("FR")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("CN")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("IN")))
 
     def test_geo_state_metro_include(self):
         self.assertTrue(self.flight.show_to_geo(GeolocationData("US", "CA", 825)))

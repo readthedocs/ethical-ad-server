@@ -43,33 +43,7 @@ class CreateAdvertiserForm(forms.Form):
     # TODO: Make these configurable in the web UI as a dropdown of common values.
     DEFAULT_CPM = 5
     DEFAULT_NUM_IMPRESSIONS = 200000
-    DEFAULT_COUNTRY_TARGETING = [
-        # North America
-        "US",
-        "CA",
-        # Core Europe
-        "DE",
-        "GB",
-        "FR",
-        "IT",
-        "ES",
-        "CH",
-        "NL",
-        "PT",
-        "AT",
-        "BE",
-        "IE",
-        "GR",
-        "SE",
-        "DK",
-        "NO",
-        "FI",
-        # Bundled into Europe
-        "IL",
-        # Australia and New Zealand
-        "AU",
-        "NZ",
-    ]
+    DEFAULT_REGION_TARGETING = ["us-ca", "eu-au-nz"]
     DEFAULT_TARGETED_GROUPS = ("ethicalads-network", "readthedocs")
 
     # Advertiser information
@@ -167,7 +141,7 @@ class CreateAdvertiserForm(forms.Form):
             cpm=self.DEFAULT_CPM,
             sold_impressions=self.DEFAULT_NUM_IMPRESSIONS,
             targeting_parameters={
-                "include_countries": self.DEFAULT_COUNTRY_TARGETING,
+                "include_regions": self.DEFAULT_REGION_TARGETING,
             },
         )
 

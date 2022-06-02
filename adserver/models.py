@@ -10,6 +10,7 @@ import bleach
 import djstripe.models as djstripe_models
 from django.conf import settings
 from django.core.cache import cache
+from django.core.cache import caches
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -97,6 +98,131 @@ class IndestructibleModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Topic(TimeStampedModel, models.Model):
+
+    """Topics able to be targeted by the ad server."""
+
+    # Topics are cached for 30m
+    # We don't want to repeatedly hit the database for data that rarely changes
+    CACHE_KEY = "keyword-topic-mapping"
+    CACHE_TIMEOUT = 60 * 30
+
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    def __str__(self):
+        """String representation."""
+        return self.name
+
+    @classmethod
+    def load_from_cache(cls):
+        """Load keyword and topic mappings from the cache or database."""
+        topics = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
+        if not topics:
+            topics = cls._load_db()
+        return topics
+
+    @classmethod
+    def _load_db(cls):
+        """Load keyword and topic mappings from database and cache it."""
+        # topic -> list of keyword slugs
+        topics = {}
+
+        for topic in Topic.objects.all().prefetch_related():
+            topics[topic.slug] = [kw.slug for kw in topic.keywords.all()]
+
+        caches[settings.CACHE_LOCAL_ALIAS].set(
+            cls.CACHE_KEY, value=topics, timeout=cls.CACHE_TIMEOUT
+        )
+
+        return topics
+
+
+class Keyword(TimeStampedModel, models.Model):
+
+    """A keyword for a topic on the ad server."""
+
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    topics = models.ManyToManyField(
+        Topic,
+        blank=True,
+        related_name="keywords",
+    )
+
+    def __str__(self):
+        """String representation."""
+        return self.slug
+
+
+class Region(TimeStampedModel, models.Model):
+
+    """A region able to be targeted by the ad server."""
+
+    # Regions are cached for 30m
+    # We don't want to repeatedly hit the database for data that rarely changes
+    CACHE_KEY = "country-region-mapping"
+    CACHE_TIMEOUT = 60 * 30
+
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    # Lower order takes precedence
+    # When mapping country to a single region, the lowest order region is returned
+    order = models.PositiveSmallIntegerField(
+        _("Order"),
+        default=0,
+        help_text=_(
+            "When mapping country to a single region, the lowest order region is returned."
+        ),
+    )
+
+    def __str__(self):
+        """String representation."""
+        return self.name
+
+    @classmethod
+    def load_from_cache(cls):
+        """Load country to region mappings from the cache or database."""
+        regions = caches[settings.CACHE_LOCAL_ALIAS].get(cls.CACHE_KEY)
+        if not regions:
+            regions = cls._load_db()
+        return regions
+
+    @classmethod
+    def _load_db(cls):
+        """Load country to region mapping from the DB and cache it."""
+        # region (in order) -> list of countries
+        regions = {}
+
+        for region in (
+            Region.objects.all().order_by("order").prefetch_related("countryregion_set")
+        ):
+            countries = [cr.country.code for cr in region.countryregion_set.all()]
+            regions[region.slug] = countries
+
+        caches[settings.CACHE_LOCAL_ALIAS].set(
+            cls.CACHE_KEY, value=regions, timeout=cls.CACHE_TIMEOUT
+        )
+
+        return regions
+
+
+class CountryRegion(TimeStampedModel, models.Model):
+
+    """Countries in targeted regions."""
+
+    country = CountryField()
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        """String representation."""
+        return f"{self.country.name}"
 
 
 class Publisher(TimeStampedModel, IndestructibleModel):
@@ -621,6 +747,24 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_countries", [])
 
     @property
+    def included_regions(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_regions", [])
+
+    @property
+    def excluded_regions(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("exclude_regions", [])
+
+    @property
+    def included_topics(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("include_topics", [])
+
+    @property
     def included_keywords(self):
         if not self.targeting_parameters:
             return []
@@ -674,6 +818,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             },
         )
 
+    def get_include_regions(self):
+        return Region.objects.filter(slug__in=self.included_regions)
+
+    def get_exclude_regions(self):
+        return Region.objects.filter(slug__in=self.excluded_regions)
+
+    def get_include_topics(self):
+        return Topic.objects.filter(slug__in=self.included_topics)
+
     def get_include_countries_display(self):
         included_country_codes = self.included_countries
         return [COUNTRY_DICT.get(cc, "Unknown") for cc in included_country_codes]
@@ -705,6 +858,20 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
+        # Check region groupings as well
+        if self.included_regions or self.excluded_regions:
+            # Only load regions if we have to
+            regions = Region.load_from_cache()
+            if self.included_regions and not any(
+                geo_data.country in regions[reg] for reg in self.included_regions
+            ):
+                return False
+
+            if self.excluded_regions and any(
+                geo_data.country in regions[reg] for reg in self.excluded_regions
+            ):
+                return False
+
         return True
 
     def show_to_keywords(self, keywords):
@@ -723,6 +890,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_keywords:
             # If any keyworks from the page in the exclude list, don't show this flight
             if keyword_set.intersection(self.excluded_keywords):
+                return False
+
+        # Check topics (groupings of keywords)
+        if self.included_topics:
+            topics = Topic.load_from_cache()
+            topic_keyword_set = set(*[topics[slug] for slug in self.included_topics])
+            if not keyword_set.intersection(topic_keyword_set):
                 return False
 
         return True

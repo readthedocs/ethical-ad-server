@@ -160,14 +160,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Caching
 # Using a local memory cache for development and testing
-# and a more hardened cache in production
+# although production typically uses Redis
 # See: https://docs.djangoproject.com/en/3.2/topics/cache/
 # --------------------------------------------------------------------------
+CACHE_LOCAL_ALIAS = "local"
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "",
-    }
+    },
+    # Used in production as well as a fast local read-through cache
+    CACHE_LOCAL_ALIAS: {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "fast-local",
+    },
 }
 
 

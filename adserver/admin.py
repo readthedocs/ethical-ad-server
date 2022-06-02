@@ -24,16 +24,20 @@ from .models import Advertisement
 from .models import Advertiser
 from .models import Campaign
 from .models import Click
+from .models import CountryRegion
 from .models import Flight
 from .models import GeoImpression
+from .models import Keyword
 from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherPayout
+from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import Topic
 from .models import UpliftImpression
 from .models import View
 from .utils import calculate_ctr
@@ -54,6 +58,86 @@ class RemoveDeleteMixin:
         self, request, obj=None
     ):  # pylint: disable=unused-argument
         return False
+
+
+class KeywordInline(admin.TabularInline):
+
+    """For inlining the keywords on the topic admin."""
+
+    model = Keyword.topics.through
+
+    can_delete = False
+    extra = 0
+    fields = ("keyword",)
+    list_select_related = ("keyword",)
+    readonly_fields = fields
+    show_change_link = True
+
+
+@admin.register(Keyword)
+class KeywordAdmin(admin.ModelAdmin):
+    list_display = ("slug",)
+    list_filter = ("topics",)
+    list_per_page = 500
+    ordering = ("slug",)
+    search_fields = ("slug",)
+
+
+@admin.register(Topic)
+class TopicAdmin(admin.ModelAdmin):
+    inlines = (KeywordInline,)
+    list_display = (
+        "name",
+        "slug",
+    )
+    list_per_page = 1000
+    ordering = ("slug",)
+    search_fields = ("name", "slug")
+
+
+@admin.register(CountryRegion)
+class CountryRegionAdmin(admin.ModelAdmin):
+    list_display = (
+        "country",
+        "region",
+    )
+    list_filter = ("region",)
+    list_per_page = 500
+    ordering = ("country", "region__order")
+    search_fields = ("country", "region__slug")
+
+
+class CountryInline(admin.TabularInline):
+
+    """For inlining the countries on the region admin."""
+
+    model = CountryRegion
+
+    can_delete = False
+    extra = 0
+    fields = (
+        "country",
+        "country_code",
+    )
+    list_select_related = ("region",)
+    readonly_fields = fields
+    show_change_link = True
+
+    def country_code(self, obj):
+        return obj.country.code
+
+
+@admin.register(Region)
+class RegionAdmin(admin.ModelAdmin):
+    inlines = (CountryInline,)
+    list_display = (
+        "name",
+        "slug",
+        "order",
+    )
+    list_per_page = 1000
+    ordering = ("order", "slug")
+    search_fields = ("name", "slug")
 
 
 class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
@@ -935,7 +1019,7 @@ class PublisherGroupAdmin(SimpleHistoryAdmin):
     readonly_fields = ("modified", "created")
 
 
-class RegionAdmin(admin.ModelAdmin):
+class RegionImpressionAdmin(admin.ModelAdmin):
     readonly_fields = (
         "__str__",
         "date",
@@ -983,4 +1067,4 @@ if settings.DEBUG:
     admin.site.register(PlacementImpression, PlacementImpressionAdmin)
     admin.site.register(KeywordImpression, KeywordImpressionAdmin)
     admin.site.register(RegionTopicImpression, RegionTopicAdmin)
-    admin.site.register(RegionImpression, RegionAdmin)
+    admin.site.register(RegionImpression, RegionImpressionAdmin)

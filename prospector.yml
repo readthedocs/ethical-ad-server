@@ -29,6 +29,7 @@ pylint:
     - too-many-arguments
     - too-many-locals
     - consider-using-f-string
+    - cyclic-import
 
 mccabe:
   run: true

@@ -50,6 +50,30 @@
     <dt>{% trans 'Targeting parameters' %}</dt>
     <dd>
       <ul>
+        {% if flight.targeting_parameters.include_regions %}
+          <li>
+            <span>{% trans 'Include regions: ' %}</span>
+            {% for region in flight.get_include_regions %}
+              <span title="{{ region.countryregion_set.all|join:', ' }}" data-toggle="tooltip">{{ region.name }}</span><span>{% if not forloop.last %}, </span>{% endif %}
+            {% endfor %}
+          </li>
+        {% endif %}
+        {% if flight.targeting_parameters.exclude_regions %}
+          <li>
+            <span>{% trans 'Exclude regions: ' %}</span>
+            {% for region in flight.get_exclude_regions %}
+              <span title="{{ region.countryregion_set.all|join:', ' }}" data-toggle="tooltip">{{ region.name }}</span><span>{% if not forloop.last %}, </span>{% endif %}
+            {% endfor %}
+          </li>
+        {% endif %}
+        {% if flight.targeting_parameters.include_topics %}
+          <li>
+            <span>{% trans 'Topics: ' %}</span>
+            {% for topic in flight.get_include_topics %}
+              <span title="{{ topic.keywords.all|join:', ' }}" data-toggle="tooltip">{{ topic.name }}</span><span>{% if not forloop.last %}, </span>{% endif %}
+            {% endfor %}
+          </li>
+        {% endif %}
         {% if flight.targeting_parameters.include_countries %}
          <li>{% blocktrans with value=flight.get_include_countries_display|join:', ' %}Include countries: {{ value }}{% endblocktrans %}</li>
         {% endif %}
