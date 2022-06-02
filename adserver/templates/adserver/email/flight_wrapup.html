@@ -19,7 +19,7 @@
 
 <p>{% blocktrans %}How did conversions look on your end? If you have any questions or you would like to renew your flight, please reply to this email.{% endblocktrans %}</p>
 
-{% url "flight_list" advertiser as advertiser_url %}
+{% url "flight_list" advertiser.slug as advertiser_url %}
 {% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length %}
 {% if current_flights and upcoming_flights %}
 <p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flights</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
