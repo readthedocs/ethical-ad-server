@@ -6,6 +6,28 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.53.0
+---------------
+
+Outside of dependency fixes, this release had two major features.
+Firstly, region and topic modeling are moved into the DB.
+Flights can target by region or topic.
+Secondly, we allow publishers to setup their own house ads.
+
+:date: June 3, 2022
+
+ * @davidfischer: Some dependency fixes (#588)
+ * @davidfischer: Puts the notification settings on the same line (#587)
+ * @ericholscher: Fix flight list URL (#586)
+ * @davidfischer: Docs fix for the DATABASES setting (#585)
+ * @dependabot[bot]: Bump pyjwt from 2.1.0 to 2.4.0 in /requirements (#584)
+ * @davidfischer: Region & topic modeling (#583)
+ * @dependabot[bot]: Bump moment from 2.29.1 to 2.29.2 (#563)
+ * @dependabot[bot]: Bump minimist from 1.2.5 to 1.2.6 (#555)
+ * @dependabot[bot]: Bump ajv from 6.10.2 to 6.12.6 (#528)
+ * @dependabot[bot]: Bump node-sass from 4.14.1 to 7.0.0 (#523)
+
+
 Version v0.52.0
 ---------------
 
