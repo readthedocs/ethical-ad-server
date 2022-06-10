@@ -1008,7 +1008,7 @@ class PublisherPayoutAdmin(SimpleHistoryAdmin):
     list_select_related = ("publisher",)
     model = PublisherPayout
     readonly_fields = ("modified", "created")
-    search_fields = ("publisher__name",)
+    search_fields = ("publisher__name", "pk")
 
 
 class PublisherGroupAdmin(SimpleHistoryAdmin):
