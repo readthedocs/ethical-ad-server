@@ -451,7 +451,7 @@ ADSERVER_DECISION_BACKEND = env(
 # for topic and keyword analysis
 ADSERVER_ANALYZER_BACKEND = env(
     "ADSERVER_ANALYZER_BACKEND",
-    default="adserver.analyzer.backends.NaiveKeywordAnalyzerBackend",
+    default="adserver.analyzer.backends.TextacyAnalyzerBackend",
 )
 
 # Whether Do Not Track is enabled for the ad server

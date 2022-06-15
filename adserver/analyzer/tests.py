@@ -12,6 +12,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..tests.common import BaseAdModelsTestCase
 from .backends import NaiveKeywordAnalyzerBackend
+from .backends import TextacyAnalyzerBackend
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
 from .utils import normalize_url
@@ -64,7 +65,7 @@ class TestUtils(TestCase):
     def test_get_analyzer_class(self):
         self.assertEqual(
             get_url_analyzer_backend(),
-            NaiveKeywordAnalyzerBackend,
+            TextacyAnalyzerBackend,
         )
 
 
@@ -119,6 +120,69 @@ class TestNaiveAnalyzer(TestCase):
         self.assertEqual(
             self.analyzer.analyze(),
             ["devops", "frontend"],  # Backend doesn't appear enough
+        )
+
+    @responses.activate
+    def test_analyzer_fail(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            status=404,
+        )
+        self.assertIsNone(self.analyzer.analyze())
+
+        responses.reset()
+
+        responses.add(
+            responses.GET,
+            self.url,
+            status=500,
+        )
+        self.assertIsNone(self.analyzer.analyze())
+
+        responses.reset()
+
+        responses.add(
+            responses.GET,
+            self.url,
+            body=requests.exceptions.ConnectTimeout(),
+        )
+        self.assertIsNone(self.analyzer.analyze())
+
+
+class TestTextacyAnalyzerBackend(TestCase):
+    def setUp(self):
+        self.url = "https://example.com"
+        self.analyzer = TextacyAnalyzerBackend(self.url)
+
+    @responses.activate
+    def test_analyzer_success(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            body="""
+            <html>
+            <head>
+            </head>
+            <body>
+                <!-- Ignored: blockchain blockchain blockchain -->
+
+                <!-- Nav is also ignored since there's a "main" -->
+                <nav>data science, data science, data science</nav>
+
+                <!-- Only this should be used -->
+                <main>
+                <p>Data science and machine learning are important</p>
+                <p>With Data science and machine learning you can analyze text</p>
+                <p>DevOps is less critical here</p>
+                </main>
+            </body>
+            </html>
+            """,
+        )
+        self.assertEqual(
+            self.analyzer.analyze(),
+            ["data-science", "machine-learning", "devops"],
         )
 
     @responses.activate
