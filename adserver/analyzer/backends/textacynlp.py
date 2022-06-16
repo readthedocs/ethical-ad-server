@@ -1,10 +1,14 @@
 """Textacy/Spacy-based keyword analyzer that lemmatizes and uses textrank for keyphrase extraction."""
 import collections
+import logging
 
 import textacy
 from textacy import preprocessing
 
 from .naive import NaiveKeywordAnalyzerBackend
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
@@ -71,6 +75,7 @@ class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
         for phrase, weight in textacy.extract.keyterms.textrank(
             doc, normalize="lemma", position_bias=True, topn=self.TOP_PHRASE_COUNT
         ):
+            log.debug(f"Key phrase: {phrase}")
             # Check if the phrases we are interested in finding
             # appear in the keyterms as analyzed by textrank
             for keyphrase in self.keyword_corpus:
