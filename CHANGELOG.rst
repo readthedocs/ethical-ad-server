@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v0.54.0
+---------------
+
+The topic analyzer now uses a very basic machine learning model
+to determine the topic and keywords for a page.
+
+:date: June 20, 2022
+
+ * @davidfischer: Mention publisher-house campaign type in docs (#593)
+ * @davidfischer: Add a textacy/spacy-based analyzer model (#591)
+ * @agjohnson: Add admin search for payout pk (#590)
+
+
 Version v0.53.0
 ---------------
 
