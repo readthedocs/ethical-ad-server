@@ -66,7 +66,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :<json array keywords: An optional ``|`` delimited string of case-insensitive keywords
             that describe content on the page where the ad is requested (eg. ``python|docker|kubernetes``).
             Used for ad targeting and is additive with any publisher settings.
-        :<json array campaign_types: An optional ``|`` delimited string of campaign types (eg. ``paid|community|house``)
+        :<json array campaign_types: An optional ``|`` delimited string of campaign types (eg. ``paid|publisher-house|community|house``)
             which can be used to limit to just certain types of ads.
             Can only further reduce campaign types, not allow ones prohibited for the publisher.
         :<json string url: The URL of the requesting page. This is where the ad will appear.
@@ -88,7 +88,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
         :>json string display_type: The slug of type of ad (eg. sidebar)
         :>json string div_id: The <div> ID where the ad will be inserted
-        :>json string campaign_type: The type of campaign this as is from (eg. house, community, paid)
+        :>json string campaign_type: The type of campaign this as is from (eg. house, community, publisher-house, paid)
 
         An example::
 
