@@ -59,7 +59,7 @@ dockerstop:
 # Use this command to inspect the container, run management commands,
 # or run anything else on the Django container
 dockershell:
-	docker-compose -f $(DOCKER_CONFIG) run --rm django /bin/ash
+	docker-compose -f $(DOCKER_CONFIG) run --rm django /bin/bash
 
 # Get the GeoIP databases from DB-IP
 geoip:

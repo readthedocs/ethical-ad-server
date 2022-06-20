@@ -86,9 +86,9 @@ services:
     volumes:
       - .:/app
 
-  metabase:
-    image: metabase/metabase
-    ports:
-      - ${ETHICALADS_METABASE_PORT:-3000}:3000
-    volumes:
-      - local_metabase_data:/metabase-data
+#  metabase:
+#    image: metabase/metabase
+#    ports:
+#      - ${ETHICALADS_METABASE_PORT:-3000}:3000
+#    volumes:
+#      - local_metabase_data:/metabase-data

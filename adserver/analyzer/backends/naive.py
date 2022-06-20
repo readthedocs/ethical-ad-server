@@ -3,7 +3,7 @@ import collections
 
 from bs4 import BeautifulSoup
 
-from ... import regiontopics as topics
+from ...models import Topic
 from .base import BaseAnalyzerBackend
 
 
@@ -31,17 +31,12 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         """Overrides to get the keyword corpus."""
         super().__init__(url, **kwargs)
 
-        self.keyword_corpus = (
-            topics.data_science
-            + topics.backend_web
-            + topics.frontend_web
-            + topics.security_privacy
-            + topics.devops
-            + topics.python
-            + topics.game_dev
-            + topics.blockchain
-            + topics.techwriting
-        )
+        self.topics = Topic.load_from_cache()
+        self.keyword_corpus = []
+
+        for topic in self.topics:
+            for kw in self.topics[topic]:
+                self.keyword_corpus.append(kw)
 
     def analyze_response(self, resp):
         """Analyze an HTTP response and return a list of keywords/topics for the URL."""
@@ -55,11 +50,14 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
             # If no results, go to the next selector
             # If results are found, use these and stop looking at the selectors
             if results:
-                text = results[0].get_text().replace("\n", " ")
+                text = self.preprocess_text(results[0].get_text())
                 keywords = self.analyze_text(text)
                 break
 
         return keywords
+
+    def preprocess_text(self, text):
+        return text.replace("\n", " ")
 
     def analyze_text(self, text):
         """Analyze a large string of text for keyword extraction."""

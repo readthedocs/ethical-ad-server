@@ -62,6 +62,7 @@ mailhog
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule.db
 celerybeat.pid
 
 

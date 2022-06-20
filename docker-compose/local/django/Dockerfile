@@ -1,22 +1,31 @@
-FROM python:3.8-alpine
+FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 ENV PYTHONUNBUFFERED 1
 
-RUN apk update \
-  # psycopg2 dependencies
-  && apk add --virtual build-deps gcc python3-dev musl-dev \
-  && apk add postgresql-dev \
-  # Pillow dependencies
-  && apk add jpeg-dev zlib-dev freetype-dev lcms2-dev openjpeg-dev tiff-dev tk-dev tcl-dev \
-  # CFFI dependencies
-  && apk add libffi-dev py-cffi \
-  # Translations dependencies
-  && apk add gettext \
-  # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
-  && apk add postgresql-client \
-  # Needed to build Python Cryptography on Alpine Linux
-  # https://cryptography.io/en/latest/installation.html#alpine
-  && apk add openssl-dev cargo
+RUN apt-get -y update
+RUN apt-get -y install \
+        curl \
+        g++ \
+        git-core \
+        libevent-dev \
+        libpq-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        locales \
+        build-essential \
+        python3-pip \
+        python3-dev \
+        libmysqlclient-dev \
+        libfreetype6 \
+        libjpeg-dev \
+        sqlite \
+        netcat \
+        telnet \
+        lsb-release
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
@@ -35,6 +44,13 @@ RUN chmod +x /start-celeryworker
 
 COPY ./docker-compose/local/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
+
+# Ensure that ``python`` is in the PATH so that ``./manage.py`` works
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Setup the locale
+RUN locale-gen en_US.UTF-8
+RUN dpkg-reconfigure locales
 
 WORKDIR /app
 
