@@ -811,7 +811,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     @classmethod
     def order_flights(cls, flights):
-        """Orders flights by our normal ordering of state, then date, then name."""
+        """
+        Orders flights by our normal ordering of state, then date, then name.
+
+        Previously, we were using database ordering, but that cannot deterministically
+        order flights by state. Flights can be upcoming if they start after today
+        or if they start before today (but end after today) but aren't live.
+        """
         state_order = {
             FLIGHT_STATE_CURRENT: 0,
             FLIGHT_STATE_UPCOMING: 1,
