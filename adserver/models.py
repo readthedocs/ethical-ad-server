@@ -809,6 +809,25 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return FLIGHT_STATE_UPCOMING
         return FLIGHT_STATE_PAST
 
+    @classmethod
+    def order_flights(cls, flights):
+        """
+        Orders flights by our normal ordering of state, then date, then name.
+
+        Previously, we were using database ordering, but that cannot deterministically
+        order flights by state. Flights can be upcoming if they start after today
+        or if they start before today (but end after today) but aren't live.
+        """
+        state_order = {
+            FLIGHT_STATE_CURRENT: 0,
+            FLIGHT_STATE_UPCOMING: 1,
+            FLIGHT_STATE_PAST: 2,
+        }
+        return sorted(
+            flights,
+            key=lambda f: (state_order[f.state], -1 * f.start_date.toordinal(), f.name),
+        )
+
     def get_absolute_url(self):
         return reverse(
             "flight_detail",

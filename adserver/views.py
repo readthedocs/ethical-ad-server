@@ -202,8 +202,8 @@ class AdvertiserMainView(
         flights = [
             f
             for f in (
-                Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-                    "-live", "start_date", "name"
+                Flight.order_flights(
+                    Flight.objects.filter(campaign__advertiser=self.advertiser)
                 )
             )
             if f.state in (FLIGHT_STATE_UPCOMING, FLIGHT_STATE_CURRENT)
@@ -268,8 +268,8 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs["advertiser_slug"]
         )
-        return Flight.objects.filter(campaign__advertiser=self.advertiser).order_by(
-            "-live", "-start_date", "name"
+        return Flight.order_flights(
+            Flight.objects.filter(campaign__advertiser=self.advertiser)
         )
 
 
@@ -1034,10 +1034,10 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         report = AdvertiserReport(queryset)
         report.generate()
 
-        flights = (
-            Flight.objects.filter(campaign__advertiser=advertiser)
-            .order_by("-live", "start_date", "name")
-            .select_related("campaign")
+        flights = Flight.order_flights(
+            Flight.objects.filter(campaign__advertiser=advertiser).select_related(
+                "campaign"
+            )
         )
 
         context.update(
