@@ -641,7 +641,7 @@ class DecisionEngineTests(TestCase):
             publisher=self.publisher,
             url=url,
         )
-        self.assertEqual(backend.keywords, ["foo", "bar"])
+        self.assertEqual(sorted(backend.keywords), ["bar", "foo"])
 
     def test_publisher_excluded(self):
         flights = self.probabilistic_backend.get_candidate_flights()
