@@ -1,0 +1,22 @@
+Document Collections, Journals and Proceedings
+In addition to the manuals, FAQs, the R Journal and its predecessor R News, the following sites may be of interest to R users:
+
+Browsable HTML versions of the manuals, help pages and NEWS for the developing versions of R “R-patched” and “R-devel”, updated daily.
+CRAN has a growing list of contributed documentation in a variety of languages.
+A list of books and other publications related to R.
+The Journal of Statistical Software features R-related articles like package guides on a regular basis.
+Proceedings from the International Workshops on Distributed Statistical Computing.
+Smaller Collections and Single Documents
+R guides and documentation not contained in the contributed documentation section of CRAN:
+
+Sigal Blay maintains a web page with “Technical Notes on the R Programming Language”.
+Wei-Chen Chen maintains a web page with notes on “The Exploration of Statistic Software R”.
+David Rossiter maintains a web page with several (geo-)statistics tutorials using R.
+David Hiebeler maintains a tutorial “Matlab/R Reference” in PDF with some Matlab functions.
+K. A. Garrett et al have written several papers on “Ecology and epidemiology in the R programming environment” published as part of the The Plant Health Instructor (URL change on 2011-02-01).
+Benjamin Yakir has written a book named “Introduction to Statistical Thinking (With R, Without Calculus)”. Both the PDF document and data sets are available from the webpage.
+Avril Coghlan maintains
+“A Little Book of R for Biomedical Statistics”
+“A Little Book of R for Time Series”
+“A Little Book of R for Multivariate Analysis”
+which can be browsed as HTML and downloaded as PDF.
