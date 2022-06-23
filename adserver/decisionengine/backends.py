@@ -5,6 +5,8 @@ import random
 from django.db import models
 from user_agents import parse
 
+from ..analyzer.models import AnalyzedUrl
+from ..analyzer.utils import normalize_url
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
@@ -36,6 +38,7 @@ class BaseAdDecisionBackend:
         self.publisher = publisher
 
         self.ad_types = [p["ad_type"] for p in self.placements]
+        self.url = kwargs.get("url") or ""
 
         self.geolocation = request.geo
 
@@ -53,6 +56,16 @@ class BaseAdDecisionBackend:
                 self.publisher.keywords,
             )
             merged_keywords = set(self.keywords) | set(self.publisher.keywords)
+            self.keywords = list(merged_keywords)
+
+        analyzer_keywords = self.get_analyzer_keywords()
+        if analyzer_keywords:
+            log.debug(
+                "Adding keywords from the analyzer: url=%s keywords=%s",
+                self.url,
+                analyzer_keywords,
+            )
+            merged_keywords = set(self.keywords) | set(analyzer_keywords)
             self.keywords = list(merged_keywords)
 
         # Publishers can request certain campaign types
@@ -90,11 +103,23 @@ class BaseAdDecisionBackend:
             log.debug("Publisher has hit their daily cap. publisher=%s", self.publisher)
             self.campaign_types.remove(PAID_CAMPAIGN)
 
-        self.url = kwargs.get("url") or ""
-
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")
+
+    def get_analyzer_keywords(self):
+        """Get keywords for this URL from the analyzer."""
+        if not self.url:
+            return None
+
+        normalized_url = normalize_url(self.url)
+        analyzed_url = AnalyzedUrl.objects.filter(
+            url=normalized_url, publisher=self.publisher
+        ).first()
+        if analyzed_url:
+            return analyzed_url.keywords
+
+        return None
 
     def get_ad_and_placement(self):
         """
