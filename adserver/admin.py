@@ -619,19 +619,26 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
             if flight.cpc:
                 message_components.append("per click")
-                unit_amount = int(flight.cpc * 100)  # Convert to US cents
+                unit_amount = flight.cpc * 100  # Convert to US cents
                 quantity = flight.sold_clicks
             elif flight.cpm:
-                message_components.append("per 1k impressions")
-                unit_amount = int(flight.cpm * 100)  # Convert to US cents
-                quantity = flight.sold_impressions // 1000
+                priced_by_view = bool(flight.sold_impressions % 1000)
+                if priced_by_view:
+                    print(unit_amount, quantity)
+                    unit_amount = flight.cpm / 10  # Convert to US cents
+                    message_components.append("${:.2f} CPM".format(flight.cpm))
+                    quantity = flight.sold_impressions
+                else:
+                    unit_amount = flight.cpm * 100  # Convert to US cents
+                    message_components.append("per 1k impressions")
+                    quantity = flight.sold_impressions // 1000
 
             # Amounts, prices, and description can be customized before sending
             stripe.InvoiceItem.create(
                 customer=advertiser.djstripe_customer.id,
                 description=" - ".join(message_components),
                 quantity=quantity,
-                unit_amount=unit_amount,  # in US cents
+                unit_amount_decimal=unit_amount,  # in US cents
                 currency="USD",
                 metadata={
                     "Advertiser": advertiser.slug,
