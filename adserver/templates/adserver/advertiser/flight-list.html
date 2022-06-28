@@ -39,6 +39,7 @@
               <th><strong>{% blocktrans %}{{ state }} flights{% endblocktrans %}</strong></th>
               <th><strong>{% trans 'Start date' %}</strong></th>
               <th><strong>{% trans 'End date' %}</strong></th>
+              <th><strong>{% trans 'Budget' %}</strong></th>
               <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
             </tr>
           </thead>
@@ -53,6 +54,7 @@
                 </td>
                 <td>{{ flight.start_date }}</td>
                 <td>{{ flight.end_date }}</td>
+                <td>${{ flight.projected_total_value|floatformat:2 }}</td>
                 <td>{{ flight.ctr|floatformat:3 }}%</td>
               </tr>
             {% endfor %}
