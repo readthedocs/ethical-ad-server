@@ -3,11 +3,11 @@
 
 
 {% block body %}
-<p>{% blocktrans %}Hi,{% endblocktrans %}</p>
+<p>{% blocktrans %}Hello {{ advertiser.name }} team,{% endblocktrans %}</p>
 
-<p>{% blocktrans with site_name=site.name %}Thank you for advertising with {{ site_name }}!{% endblocktrans %}</p>
+<p>{% blocktrans with site_name=site.name %}Thanks again for advertising with {{ site_name }}!{% endblocktrans %}</p>
 
-<p>{% blocktrans %}Your ad flight has wrapped up:{% endblocktrans %}</p>
+<p>{% blocktrans with pluralized_flights=completed_flights|pluralize %}You have {{ completed_flights }} flight{{ pluralized_flights }} that have finished:{% endblocktrans %}</p>
 <ul>
   {% for flight in completed_flights %}
   <li>
@@ -17,16 +17,20 @@
   {% endfor %}
 </ul>
 
-<p>{% blocktrans %}How did conversions look on your end? If you have any questions or you would like to renew your flight, please reply to this email.{% endblocktrans %}</p>
+<p>{% blocktrans %}
+  How did conversions look on your end? 
+  If you have any questions or you would like to renew your flight, please reply to this email. 
+  We can run another campaign with the same creative and budget, or adjust things based on your feedback around what's converting best.
+{% endblocktrans %}</p>
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
-{% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length %}
+{% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length pluralized_flights=current_flight_count|pluralize %}
 {% if current_flights and upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flights</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_flights }}</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
 {% elif current_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flights</a> currently running.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_flights }}</a> currently running.{% endblocktrans %}</p>
 {% elif upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ upcoming_flight_count }} flights</a> starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ upcoming_flight_count }} flight{{ pluralized_flights }}</a> starting soon.{% endblocktrans %}</p>
 {% endif %}
 {% endwith %}
 
