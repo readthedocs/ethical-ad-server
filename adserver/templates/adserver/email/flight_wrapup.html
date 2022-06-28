@@ -17,7 +17,11 @@
   {% endfor %}
 </ul>
 
-<p>{% blocktrans %}How did conversions look on your end? If you have any questions or you would like to renew your flight, please reply to this email.{% endblocktrans %}</p>
+<p>{% blocktrans %}
+  How did conversions look on your end? 
+  If you have any questions or you would like to renew your flight, please reply to this email. 
+  We can run another campaign with the same creative and budget, or adjust things based on your feedback around what's converting best.
+{% endblocktrans %}</p>
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
 {% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length pluralized_flights=current_flight_count|pluralize %}
