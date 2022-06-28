@@ -7,7 +7,7 @@
 
 <p>{% blocktrans with site_name=site.name %}Thanks again for advertising with {{ site_name }}!{% endblocktrans %}</p>
 
-<p>{% blocktrans %}You have {{ completed_flights }} flight{{ completed_flights|pluralize }} that have finished:{% endblocktrans %}</p>
+<p>{% blocktrans with pluralized_flights=completed_flights|pluralize %}You have {{ completed_flights }} flight{{ pluralized_flights }} that have finished:{% endblocktrans %}</p>
 <ul>
   {% for flight in completed_flights %}
   <li>
