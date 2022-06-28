@@ -126,9 +126,30 @@ DATABASES = {
     )
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
-
-ADSERVER_OFFER_DB_TABLE = env("ADSERVER_OFFER_DB_TABLE", default=None)
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+# If you plan to roll the Offer table, you should take the following steps:
+# * Update the ADSERVER_OFFER_DB_TABLE env with the correct table name
+# * Run the following SQL:
+# ```
+# CREATE TABLE "adserver_offer_2022_07" ("created" timestamp with time zone NOT NULL, "modified" timestamp with time zone NOT NULL, "date" timestamp with time zone NOT NULL, "ip" inet NOT NULL, "user_agent" varchar(1000) NULL, "client_id" varchar(1000) NULL, "country" varchar(2) NULL, "url" varchar(10000) NULL, "browser_family" varchar(1000) NULL, "os_family" varchar(1000) NULL, "keywords" text NULL, "div_id" varchar(100) NULL, "ad_type_slug" varchar(100) NULL, "is_bot" boolean NOT NULL, "is_mobile" boolean NOT NULL, "is_refunded" boolean NOT NULL, "id" uuid NOT NULL PRIMARY KEY, "viewed" boolean NOT NULL, "clicked" boolean NOT NULL, "uplifted" boolean NULL, "view_time" integer NULL CHECK ("view_time" >= 0), "advertisement_id" integer NULL, "publisher_id" integer NULL);
+# ALTER TABLE "adserver_offer_2022_07" ADD CONSTRAINT "adserver_offer_2022_07__advertisement_id_154ae817_fk_adserver_" FOREIGN KEY ("advertisement_id") REFERENCES "adserver_advertisement" ("id") DEFERRABLE INITIALLY DEFERRED;
+# ALTER TABLE "adserver_offer_2022_07" ADD CONSTRAINT "adserver_offer_2022_07__publisher_id_d9abea3b_fk_adserver_" FOREIGN KEY ("publisher_id") REFERENCES "adserver_publisher" ("id") DEFERRABLE INITIALLY DEFERRED;
+# CREATE INDEX "adserver_offer_2022_07_date_cc145c38" ON "adserver_offer_2022_07" ("date");
+# CREATE INDEX "adserver_offer_2022_07_advertisement_id_154ae817" ON "adserver_offer_2022_07" ("advertisement_id");
+# CREATE INDEX "adserver_offer_2022_07_publisher_id_d9abea3b" ON "adserver_offer_2022_07" ("publisher_id");
+# ```
+# * Re-run the nightly tasks against the old table:
+# ```
+# ADSERVER_OFFER_DB_TABLE=adserver_offer_2021_11 django-admin shell
+# ```
+# from adserver import tasks
+# tasks.update_previous_day_reports()
+# ```
+# * Then backup & truncate the old offers table:
+# django-admin archive_offers --start-date 2021-11-01 --end-date 2022-07-01
+ADSERVER_OFFER_DB_TABLE = env("ADSERVER_OFFER_DB_TABLE", default=None)
+
 
 # Add support for a read replica, mostly used in reporting.
 DATABASE_ROUTERS = env("DATABASE_ROUTER", default=[])
