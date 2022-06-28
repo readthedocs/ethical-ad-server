@@ -18,8 +18,8 @@
 </ul>
 
 <p>{% blocktrans %}
-  How did conversions look on your end? 
-  If you have any questions or you would like to renew your flight, please reply to this email. 
+  How did conversions look on your end?
+  If you have any questions or you would like to renew your flight, please reply to this email.
   We can run another campaign with the same creative and budget, or adjust things based on your feedback around what's converting best.
 {% endblocktrans %}</p>
 
@@ -37,7 +37,7 @@
 {% url "account" as notification_settings_url %}
 <p>
   <small>{% blocktrans with site_name=site.name %}You are receiving this email because you run advertising with {{ site_name }}.{% endblocktrans %} </small>
-  <small>{% blocktrans with site_domain=site.domain %}Adjust your <a href="{{ site_domain }}{{ notification_settings_url }}?ref=email-wrapup">notification settings</a>{% endblocktrans %}.</small>
+  <small>{% blocktrans with site_domain=site.domain %}Adjust your <a href="{{ site_domain }}{{ notification_settings_url }}?ref=email-wrapup">notification settings</a>{% endblocktrans %} in our dashboard.</small>
 </p>
 
 {% endblock body %}
