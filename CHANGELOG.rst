@@ -1,3 +1,4 @@
+
 CHANGELOG
 =========
 
@@ -5,6 +6,17 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v0.54.1
+---------------
+
+This release has a few small advertiser management updates.
+
+:date: June 28, 2022
+
+ * @ericholscher: Show budget in manage ads flight list (#601)
+ * @ericholscher: Add ability to create invoices for exact view amounts (#600)
+ * @ericholscher: Cleanup copy in end of flight email a little (#599)
+ * @dependabot[bot]: Bump ansi-regex from 4.1.0 to 4.1.1 (#594)
 
 Version v0.54.0
 ---------------
