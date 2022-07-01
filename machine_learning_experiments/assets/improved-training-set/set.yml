@@ -6,151 +6,26 @@
 #  - each entry can have zero or more "topics"
 
 
+- url: "https://ipyvolume.readthedocs.io/en/latest/"
+  topics: ["datascience"]
 - url: "https://papermill.readthedocs.io/en/latest/usage-parameterize.html"
   topics: ["datascience"]
-  text: >
-    Parameterize¶
-    See also
-
-    Workflow reference
-
-    Generally, the first workflow step when using papermill is to parameterize the notebook.
-
-    To do this, tag notebook cells with parameters. These parameters are later used when the notebook is executed or run.
-
-    Designate parameters for a cell
-    To parameterize a notebook, designate a cell with the tag parameters.
-
-    _images/parameters.png
-    Notebook
-    If using the Jupyter Notebook interface
-
-    Activate the tagging toolbar by navigating to View, Cell Toolbar, and then Tags
-
-    Enter parameters into a textbox at the top right of a cell
-
-    Click Add tag
-
-    JupyterLab 3.0+
-    If using JupyterLab v3 or above:
-
-    Select the cell to parameterize
-
-    Click the property inspector in the right sidebar (double gear icon)
-
-    Type “parameters” in the “Add Tag” box and hit “Enter”.
-
-    _images/lab3_parameters.png
-    JupyterLab 2.0 - 2.2.x
-    If using the JupyterLab interface
-
-    Select the cell to parameterize
-
-    Click the property inspector on the left side (double gear icon)
-
-    Type “parameters” in the “Add Tag” box and hit “Enter”.
-
-    _images/lab_parameters.png
-    JupyterLab < 2.0
-    If using JupyterLab < 2.0, consider using the jupyterlab-celltags extension.
-
-    Select the cell to parameterize
-
-    Click the cell inspector (wrench icon)
-
-    Type “parameters” in the “Add Tag” box and hit “Enter”.
-
-    If the extension is not installed, you can manually add the tag by editing the Cell Metadata field in the cell inspector by adding “tags”:[“parameters”].
-
-    Learn more about the jupyter notebook format and metadata fields here.
 - url: "https://papermill.readthedocs.io/en/latest/index.html"
   topics: ["datascience"]
-  text: >
-    Welcome to papermill
-    Papermill is a tool for parameterizing and executing Jupyter Notebooks.
 
-    Papermill lets you:
-
-    parameterize notebooks
-
-    execute notebooks
-
-    This opens up new opportunities for how notebooks can be used. For example:
-
-    Perhaps you have a financial report that you wish to run with different values on the first or last day of a month or at the beginning or end of the year, using parameters makes this task easier.
-
-    Do you want to run a notebook and depending on its results, choose a particular notebook to run next? You can now programmatically execute a workflow without having to copy and paste from notebook to notebook manually.
-
-    Python Version Support
-    This library currently supports python 3.7+ versions. As minor python versions are officially sunset by the python org papermill will similarly drop support in the future.
 # DjangoPackages has relatively short meaningful text.
 # And our heuristic that gets the "main" content doesn't work well on Django packages.
 # Hopefully this helps our classifier learn on short data.
 - url: "https://djangopackages.org/packages/p/django-two-factor-auth/"
   topics: ["backend"]
-  text: >
-    Packages ›› django-two-factor-auth
-    Complete Two-Factor Authentication for Django providing the easiest integration into most Django projects.
 - url: "https://djangopackages.org/packages/p/django-crispy-forms/"
   topics: ["backend"]
-  text: >
-    Packages ›› django-crispy-forms
-    The best way to have DRY Django forms. The app provides a tag and filter that lets you quickly render forms in a div format while providing an enormous amount of capability to configure and control the rendered HTML.
+
+# Flask's homepage actually doesn't go into great detail in what Flask actually is
+# Also a lot of the content is just a TOC.
+- url: "https://flask.palletsprojects.com/en/2.1.x/"
+  topics: ["backend"]
 - url: "https://flask.palletsprojects.com/en/2.1.x/installation/"
   topics: ["backend"]
-  text: >
-    Python Version
-    We recommend using the latest version of Python. Flask supports Python 3.7 and newer.
-
-    Dependencies
-    These distributions will be installed automatically when installing Flask.
-
-    Werkzeug implements WSGI, the standard Python interface between applications and servers.
-
-    Jinja is a template language that renders the pages your application serves.
-
-    MarkupSafe comes with Jinja. It escapes untrusted input when rendering templates to avoid injection attacks.
-
-    ItsDangerous securely signs data to ensure its integrity. This is used to protect Flask’s session cookie.
-
-    Click is a framework for writing command line applications. It provides the flask command and allows adding custom management commands.
-
-    Optional dependencies
-    These distributions will not be installed automatically. Flask will detect and use them if you install them.
-
-    Blinker provides support for Signals.
-
-    python-dotenv enables support for Environment Variables From dotenv when running flask commands.
-
-    Watchdog provides a faster, more efficient reloader for the development server.
-
-    greenlet
-    You may choose to use gevent or eventlet with your application. In this case, greenlet>=1.0 is required. When using PyPy, PyPy>=7.3.7 is required.
-
-    These are not minimum supported versions, they only indicate the first versions that added necessary features. You should use the latest versions of each.
-
-    Virtual environments
-    Use a virtual environment to manage the dependencies for your project, both in development and in production.
-
-    What problem does a virtual environment solve? The more Python projects you have, the more likely it is that you need to work with different versions of Python libraries, or even Python itself. Newer versions of libraries for one project can break compatibility in another project.
-
-    Virtual environments are independent groups of Python libraries, one for each project. Packages installed for one project will not affect other projects or the operating system’s packages.
-
-    Python comes bundled with the venv module to create virtual environments.
 - url: "https://flask.palletsprojects.com/en/2.1.x/advanced_foreword/"
   topics: ["backend", "security"]
-  text: >
-    Foreword for Experienced Programmers
-    Thread-Locals in Flask
-    One of the design decisions in Flask was that simple tasks should be simple; they should not take a lot of code and yet they should not limit you. Because of that, Flask has a few design choices that some people might find surprising or unorthodox. For example, Flask uses thread-local objects internally so that you don’t have to pass objects around from function to function within a request in order to stay threadsafe. This approach is convenient, but requires a valid request context for dependency injection or when attempting to reuse code which uses a value pegged to the request. The Flask project is honest about thread-locals, does not hide them, and calls out in the code and documentation where they are used.
-
-    Develop for the Web with Caution
-    Always keep security in mind when building web applications.
-
-    If you write a web application, you are probably allowing users to register and leave their data on your server. The users are entrusting you with data. And even if you are the only user that might leave data in your application, you still want that data to be stored securely.
-
-    Unfortunately, there are many ways the security of a web application can be compromised. Flask protects you against one of the most common security problems of modern web applications: cross-site scripting (XSS). Unless you deliberately mark insecure HTML as secure, Flask and the underlying Jinja2 template engine have you covered. But there are many more ways to cause security problems.
-
-    The documentation will warn you about aspects of web development that require attention to security. Some of these security concerns are far more complex than one might think, and we all sometimes underestimate the likelihood that a vulnerability will be exploited - until a clever attacker figures out a way to exploit our applications. And don’t think that your application is not important enough to attract an attacker. Depending on the kind of attack, chances are that automated bots are probing for ways to fill your database with spam, links to malicious software, and the like.
-
-    Flask is no different from any other framework in that you the developer must build with caution, watching for exploits when building to your requirements.
