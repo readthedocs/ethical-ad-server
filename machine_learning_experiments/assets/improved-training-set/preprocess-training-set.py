@@ -22,6 +22,8 @@ PREPROCESSOR = preprocessing.make_pipeline(
     preprocessing.normalize.unicode,
     preprocessing.remove.punctuation,
     preprocessing.normalize.whitespace,
+    # Removes inline SVGs and *some* malformed HTML
+    preprocessing.remove.html_tags,
 )
 
 
@@ -45,10 +47,15 @@ def preprocess_training_set(infile):
     session = CachedSession("trainingset-urls-cache")
 
     new_training_set = []
+    seen_urls = set()
 
     data = yaml.safe_load(infile)
     for dat in data:
-        url = dat["url"]
+        url = dat["url"].strip()
+
+        if url in seen_urls:
+            print(f"Duplicate url: {url}")
+        seen_urls.add(url)
 
         try:
             resp = session.get(url, timeout=3)

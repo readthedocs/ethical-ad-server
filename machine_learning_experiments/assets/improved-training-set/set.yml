@@ -6,13 +6,217 @@
 #  - each entry can have zero or more "topics"
 
 
+##############################################################################
+# Datascience/ML
+##############################################################################
 - url: "https://ipyvolume.readthedocs.io/en/latest/"
   topics: ["datascience"]
 - url: "https://papermill.readthedocs.io/en/latest/usage-parameterize.html"
   topics: ["datascience"]
 - url: "https://papermill.readthedocs.io/en/latest/index.html"
   topics: ["datascience"]
+- url: "https://gpy.readthedocs.io/en/deploy/index.html"
+  topics: ["datascience"]
+- url: "https://gpy.readthedocs.io/en/deploy/tuto_creating_new_models.html"
+  topics: ["datascience"]
+# Pegasus is a little light on details, but generally science
+- url: "https://pegasus.readthedocs.io/en/stable/index.html"
+  topics: ["datascience"]
+- url: "https://pegasus.readthedocs.io/en/stable/installation.html"
+  topics: ["datascience"]
+- url: "https://docs.paraview.org/en/v5.9.1/UsersGuide/introduction.html"
+  topics: ["datascience"]
+- url: "https://docs.paraview.org/en/v5.9.1/UsersGuide/understandingData.html"
+  topics: ["datascience"]
+- url: "https://docs.paraview.org/en/v5.9.1/UsersGuide/selectingData.html"
+  topics: ["datascience"]
+- url: "https://docs.paraview.org/en/latest/ReferenceManual/vtkNumPyIntegration.html"
+  topics: ["datascience"]
+- url: "https://docs.ckan.org/en/2.9/user-guide.html"
+  topics: ["datascience"]
+# While it contains the phrase "sysadmin", it is not really devops
+- url: "https://docs.ckan.org/en/2.9/sysadmin-guide.html"
+  topics: ["datascience"]
+- url: "https://calfem-for-python.readthedocs.io/en/latest/calfem_mesh_guide.html"
+  topics: ["datascience"]
+- url: "https://calfem-for-python.readthedocs.io/en/latest/calfem_examples.html"
+  topics: ["datascience"]
+- url: "https://deepxde.readthedocs.io/en/latest/user/installation.html"
+  topics: ["datascience"]  # Not as detailed but mentions TensorFlow/etc.
+- url: "https://deepxde.readthedocs.io/en/latest/demos/pinn_forward/helmholtz.2d.dirichlet.html"
+  topics: ["datascience"]
+- url: "https://deepxde.readthedocs.io/en/latest/demos/pinn_forward/poisson.1d.dirichlet.html"
+  topics: ["datascience"]
+# Hopefully the model learns that installing with Conda means datasci
+- url: "https://docs.h5py.org/en/latest/quick.html"
+  topics: ["datascience"]
+- url: "https://docs.h5py.org/en/latest/high/dataset.html"
+  topics: ["datascience"]
+- url: "https://docs.h5py.org/en/latest/build.html"
+  topics: ["datascience"]
+# This is just a source file
+#- url: "https://docs.pymc.io/en/latest/_modules/aesara/tensor/math.html"
+#  topics: ["datascience"]
+- url: "https://docs.pymc.io/en/latest/installation.html"
+  topics: ["datascience"]
+- url: "https://docs.pymc.io/en/latest/learn/core_notebooks/pymc_overview.html"
+  topics: ["datascience"]
+- url: "https://docs.pymc.io/en/latest/learn/core_notebooks/dimensionality.html"
+  topics: ["datascience"]
+- url: "https://docs.xlwings.org/en/stable/index.html"
+  topics: ["datascience"]
+- url: "https://docs.xlwings.org/en/stable/quickstart.html"
+  topics: ["datascience"]
+- url: "https://docs.xlwings.org/en/stable/converters.html"
+  topics: ["datascience"]
+- url: "https://dosma.readthedocs.io/en/latest/"
+  topics: ["datascience"]
+- url: "https://dosma.readthedocs.io/en/latest/guide_basic.html"
+  topics: ["datascience"]
+- url: "https://dosma.readthedocs.io/en/latest/usage.html"
+  topics: ["datascience"]
+# Just source
+#- url: "https://factor-analyzer.readthedocs.io/en/latest/_modules/factor_analyzer/factor_analyzer.html"
+#  topics: ["datascience"]
+- url: "https://factor-analyzer.readthedocs.io/en/latest/index.html"
+  topics: [ "datascience" ]
+# Not super data science but uses Conda
+- url: "https://gcsfs.readthedocs.io/en/latest/index.html"
+  topics: ["datascience"]
+- url: "https://gcsfs.readthedocs.io/en/latest/fuse.html"
+  topics: ["datascience", "devops"]
+- url: "https://geopandas.org/en/stable/getting_started/introduction.html"
+  topics: ["datascience"]
+- url: "https://geopandas.org/en/stable/getting_started.html"
+  topics: ["datascience"]
+- url: "https://geopandas.org/en/stable/community/ecosystem.html"
+  topics: ["datascience"]
+- url: "https://horovod.readthedocs.io/en/stable/summary_include.html"
+  topics: ["datascience"]
+- url: "https://horovod.readthedocs.io/en/stable/troubleshooting_include.html"
+  topics: ["datascience"]
+- url: "https://horovod.readthedocs.io/en/stable/install_include.html"
+  topics: ["datascience"]
+- url: "https://immcantation.readthedocs.io/en/stable/tutorials/tutorials.html"
+  topics: ["datascience"]
+- url: "https://impedancepy.readthedocs.io/en/latest/index.html"
+  topics: ["datascience"]
+- url: "https://ipyparallel.readthedocs.io/en/latest/tutorial/demos.html"
+  topics: ["datascience"]
+- url: "https://ipyrad.readthedocs.io/en/latest/3-installation.html"
+  topics: ["datascience"]
+- url: "https://jarvis-tools.readthedocs.io/en/master/intro.html"
+  topics: ["datascience"]
+- url: "https://jarvis-tools.readthedocs.io/en/master/tutorials.html"
+  topics: ["datascience"]
+# Not the best
+- url: "https://jarvis-tools.readthedocs.io/en/master/publications.html"
+  topics: ["datascience"]
+- url: "https://jupyter-client.readthedocs.io/en/latest/messaging.html"
+  topics: ["datascience"]
+- url: "https://koalas.readthedocs.io/en/latest/user_guide/faq.html"
+  topics: ["datascience"]
+- url: "https://mmocr.readthedocs.io/en/latest/training.html"
+  topics: ["datascience"]
+- url: "https://mplhep.readthedocs.io/en/latest/api.html"
+  topics: ["datascience"]
+# Plotting soccer with MatPlotLib. Cool...
+- url: "https://mplsoccer.readthedocs.io/en/latest/gallery/pitch_setup/plot_pitches.html"
+  topics: [ "datascience" ]
+- url: "https://mplsoccer.readthedocs.io/en/latest/gallery/pitch_plots/plot_heatmap.html"
+  topics: ["datascience"]
+- url: "https://neuronaldynamics-exercises.readthedocs.io/en/latest/intro.html"
+  topics: ["datascience"]
+- url: "https://neuronaldynamics-exercises.readthedocs.io/en/latest/exercises/hopfield-network.html"
+  topics: ["datascience"]
+- url: "https://pandasdmx.readthedocs.io/en/v1.0/index.html"
+  topics: ["datascience"]
+- url: "https://pandasdmx.readthedocs.io/en/v1.0/walkthrough.html"
+  topics: ["datascience"]
+- url: "https://proplot.readthedocs.io/en/latest/1dplots.html"
+  topics: ["datascience"]
+- url: "https://pydataset.readthedocs.io/en/latest/example.html"
+  topics: ["datascience"]
+- url: "https://pysubgroup.readthedocs.io/en/latest/tutorials/introduction.html"
+  topics: ["datascience"]
+- url: "https://pythonforundergradengineers.com/category/matplotlib.html"
+  topics: ["datascience"]
+- url: "https://pythonforundergradengineers.com/bar-plot-with-error-bars-jupyter-matplotlib.html"
+  topics: ["datascience"]
+- url: "https://pytorch3d.readthedocs.io/en/latest/overview.html"
+  topics: ["datascience"]
+# Just source code. Probably not the best
+#- url: "https://pytorch3d.readthedocs.io/en/latest/_modules/pytorch3d/structures/pointclouds.html"
+#  topics: ["datascience"]
+# Autogenerated, but probably OK
+- url: "https://pytorch3d.readthedocs.io/en/latest/modules/renderer/lighting.html"
+  topics: ["datascience"]
+- url: "https://rasterio.readthedocs.io/en/latest/intro.html"
+  topics: ["datascience"]
+- url: "https://rasterio.readthedocs.io/en/latest/quickstart.html"
+  topics: ["datascience"]
+- url: "https://rasterio.readthedocs.io/en/latest/api/rasterio._io.html"
+  topics: ["datascience"]
+- url: "https://recordlinkage.readthedocs.io/en/latest/installation.html"
+  topics: ["datascience"]
+- url: "https://richdem.readthedocs.io/en/latest/intro.html"
+  topics: ["datascience"]
+- url: "https://richdem.readthedocs.io/en/latest/examples_python.html"
+  topics: ["datascience"]
+# Pure API docs...
+- url: "https://rtd.feast.dev/en/latest/index.html"
+  topics: ["datascience"]
+- url: "https://scikit-fdiff.readthedocs.io/en/latest/"
+  topics: ["datascience"]
+- url: "https://scikit-posthocs.readthedocs.io/en/latest/generated/scikit_posthocs.posthoc_nemenyi_friedman/"
+  topics: ["datascience"]
+- url: "https://scipy-cookbook.readthedocs.io/index.html"
+  topics: ["datascience"]
+- url: "https://scipy-cookbook.readthedocs.io/items/Matplotlib_AdjustingImageSize.html"
+  topics: ["datascience"]
+- url: "https://seaborn-image.sarthakjariwala.com/en/latest/api/imgplot.html"
+  topics: ["datascience"]
+- url: "https://slicer.readthedocs.io/en/latest/developer_guide/slicer.html"
+  topics: ["datascience"]
+- url: "https://streamz.readthedocs.io/en/latest/plotting.html"
+  topics: ["datascience"]
+- url: "https://tensorflownet.readthedocs.io/en/latest/HelloWorld.html"
+  topics: ["datascience"]
+- url: "https://tensorflownet.readthedocs.io/en/latest/Constant.html"
+  topics: ["datascience"]
+- url: "https://tensorflownet.readthedocs.io/en/latest/Queue.html"
+  topics: ["datascience"]
+- url: "https://tensorflownet.readthedocs.io/en/latest/ConvolutionNeuralNetwork.html"
+  topics: ["datascience"]
+- url: "https://torchdyn.readthedocs.io/en/latest/index.html"
+  topics: ["datascience"]
+- url: "https://torchdyn.readthedocs.io/en/latest/tutorials/quickstart.html"
+  topics: ["datascience"]
+- url: "https://torchio.readthedocs.io/index.html"
+  topics: ["datascience"]
+- url: "https://torchio.readthedocs.io/quickstart.html"
+  topics: ["datascience"]
+- url: "https://torchio.readthedocs.io/datasets.html"
+  topics: ["datascience"]
 
+
+##############################################################################
+# Security/Privacy
+##############################################################################
+
+
+##############################################################################
+# FrontEnd
+##############################################################################
+- url: "https://robkendal.co.uk/blog/2020-02-20-creating-a-react-code-editor-and-syntax-highlighter"
+  topics: ["frontend"]
+- url: "https://robkendal.co.uk/blog/how-to-fix-property-does-not-exist-on-window-type-in-typescript"
+  topics: ["frontend"]
+
+
+##############################################################################
+# Backend
+##############################################################################
 # DjangoPackages has relatively short meaningful text.
 # And our heuristic that gets the "main" content doesn't work well on Django packages.
 # Hopefully this helps our classifier learn on short data.
@@ -29,3 +233,161 @@
   topics: ["backend"]
 - url: "https://flask.palletsprojects.com/en/2.1.x/advanced_foreword/"
   topics: ["backend", "security"]
+- url: "https://dynaconf.readthedocs.io/en/docs_223/guides/usage.html"
+  topics: ["backend", "devops"]  # Doesn't fit super cleanly into either topic
+- url: "https://dynaconf.readthedocs.io/en/docs_223/guides/django.html"
+  topics: ["backend"]
+
+
+##############################################################################
+# DevOps
+##############################################################################
+- url: "https://docs.nemslinux.com/en/latest/config/networking.html"
+  topics: ["devops"]
+- url: "https://docs.nemslinux.com/en/latest/gettingstarted/introduction.html"
+  topics: ["devops"]
+- url: "https://docs.nemslinux.com/en/latest/gettingstarted/add_first_host.html"
+  topics: ["devops"]
+
+
+##############################################################################
+# Tech Writing
+##############################################################################
+- url: "https://sphinx-automodapi.readthedocs.io/en/latest/"
+  topics: ["techwriting"]
+# Sphinx specific but also very C++/Doxygen
+- url: "https://exhale.readthedocs.io/en/latest/"
+  topics: ["techwriting"]
+- url: "https://exhale.readthedocs.io/en/latest/usage.html"
+  topics: ["techwriting"]
+- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/create_project.html"
+  topics: ["techwriting"]
+- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/glossary_terms.html"
+  topics: ["techwriting"]  # Does mention Git a few times...
+- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html"
+  topics: ["techwriting"]
+- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-mkdocs.html"
+  topics: ["techwriting"]
+- url: "https://docs.readthedocs.io/en/stable/intro/import-guide.html"
+  topics: ["techwriting"]  # Also talks about Git/Bitbucket quite a bit
+- url: "https://docs.readthedocs.io/en/stable/guides/cross-referencing-with-sphinx.html"
+  topics: ["techwriting"]
+- url: "https://www.sphinx-doc.org/en/master/"
+  topics: ["techwriting"]
+- url: "https://www.sphinx-doc.org/en/master/tutorial/getting-started.html"
+  topics: ["techwriting"]
+- url: "https://www.sphinx-doc.org/en/master/tutorial/first-steps.html"
+  topics: ["techwriting"]
+- url: "https://mkdocs.readthedocs.io/en/stable/"
+  topics: ["techwriting"]
+- url: "https://mkdocs.readthedocs.io/en/stable/getting-started/"
+  topics: ["techwriting"]
+- url: "https://mkdocs.readthedocs.io/en/stable/user-guide/writing-your-docs/"
+  topics: ["techwriting"]
+# Not actually hosted by us...
+- url: "https://docutils.sourceforge.io/rst.html"
+  topics: ["techwriting"]
+
+
+##############################################################################
+# Game Dev
+##############################################################################
+- url: "https://docs.godotengine.org/en/stable/development/cpp/introduction_to_godot_development.html"
+  topics: ["game-dev"]
+- url: "https://docs.godotengine.org/en/stable/about/introduction.html"
+  topics: ["game-dev"]
+- url: "https://docs.godotengine.org/en/stable/getting_started/first_3d_game/index.html"
+  topics: ["game-dev"]
+- url: "https://minerl.readthedocs.io/en/latest/tutorials/minerl_tools.html"
+  topics: ["game-dev"]
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/tour.html"
+  topics: ["game-dev"]
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/starting-dialog.html"
+  topics: ["game-dev"]
+# The intro page is a little short
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/index.html"
+  topics: ["game-dev"]
+- url: "https://hump.readthedocs.io/en/latest/"
+  topics: ["game-dev"]
+# Playing cards, but still a "game" I suppose
+- url: "https://pydealer.readthedocs.io/en/latest/"
+  topics: ["game-dev"]
+- url: "https://pydealer.readthedocs.io/en/latest/usage.html"
+  topics: ["game-dev"]
+# Not actually gaming - this is a framework for social science?
+#- url: "https://otree.readthedocs.io/en/latest/tutorial/part3.html"
+#  topics: ["game-dev"]
+
+# Modrinth doesn't actually say much about "games" exactly.
+# The classifier will hopefully get smart but this might be a hard one.
+- url: "https://modrinth.com/mod/sandwichable"
+  topics: ["game-dev"]
+- url: "https://modrinth.com/mod/excavated_variants"
+  topics: ["game-dev"]
+- url: "https://modrinth.com/mod/thatorthis"
+  topics: ["game-dev"]
+- url: "https://modrinth.com/mod/trufflez-arcanum"
+  topics: ["game-dev"]
+
+
+##############################################################################
+# Blockchain
+##############################################################################
+- url: "https://docs.soliditylang.org/en/v0.8.15/"
+  topics: ["blockchain"]
+- url: "https://docs.soliditylang.org/en/v0.8.15/introduction-to-smart-contracts.html"
+  topics: ["blockchain"]
+- url: "https://hyperledger-fabric.readthedocs.io/en/release-2.2/getting_started.html"
+  topics: ["blockchain"]
+# This page doesn't have a ton of Blockchain keywords...
+- url: "https://hyperledger-fabric.readthedocs.io/en/release-2.2/developapps/developing_applications.html"
+  topics: ["blockchain"]
+- url: "https://hyperledger-fabric.readthedocs.io/en/release-2.2/Fabric-FAQ.html"
+  topics: ["blockchain"]
+- url: "https://docs.bigchaindb.com/en/latest/about-bigchaindb.html"
+  topics: ["blockchain"]
+- url: "https://docs.bigchaindb.com/en/latest/properties.html"
+  topics: ["blockchain"]
+# Multiple DB/Mongo references, talks about SQL, etc.
+- url: "https://docs.bigchaindb.com/en/latest/query.html"
+  topics: ["blockchain", "devops"]
+- url: "https://forex-python.readthedocs.io/en/latest/"
+  topics: ["blockchain"]
+- url: "https://python-bitcoinlib.readthedocs.io/en/latest/started.html"
+  topics: ["blockchain"]
+- url: "https://bitcoinlib.readthedocs.io/en/latest/"
+  topics: ["blockchain"]
+- url: "https://bitcoinlib.readthedocs.io/en/latest/source/_static/manuals.security.html"
+  topics: ["blockchain", "security"]
+- url: "https://bitcoinlib.readthedocs.io/en/latest/source/_static/manuals.setup-bitcoind-connection.html"
+  topics: ["blockchain", "security"]
+- url: "https://ethereumjs.readthedocs.io/en/latest/introduction.html"
+  topics: ["blockchain"]
+- url: "https://ethereum-solidity.readthedocs.io/en/latest/installing-solidity.html"
+  topics: [ "blockchain" ]
+- url: "https://ethereum-solidity.readthedocs.io/en/latest/solidity-by-example.html"
+  topics: [ "blockchain" ]
+
+
+##############################################################################
+# No Topic
+##############################################################################
+- url: "https://pyscaffold.org/en/stable/index.html"
+  topics: []  # Python but not really any other category
+# Does mention "testing" but still no topic
+- url: "https://pyscaffold.org/en/stable/reasons.html"
+  topics: []  # Python but not really any other category
+- url: "https://pyscaffold.org/en/stable/features.html"
+  topics: []
+# Just glyphs and codes
+# These pages have a ton of inline SVGs which should be stripped by our preprocessor
+# Also a bunch of the HTML is malformed (eg. < span>)
+- url: "https://graphemica.com/"
+  topics: []
+- url: "https://graphemica.com/0001"
+  topics: []
+# Vehicle Navigation library?
+- url: "https://docs-a1.readthedocs.io/en/latest/getting_started.html"
+  topics: []
+- url: "https://docs-a1.readthedocs.io/en/latest/communication_messaging.html"
+  topics: []
