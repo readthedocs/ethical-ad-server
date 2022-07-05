@@ -755,7 +755,7 @@ class BaseProxyView(View):
             # Because this block doesn't set a reason, it will only log mismatched clients
             # Not stop them.
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "Mismatched client_id between offer and impression. Client ID: [%s], User agent: [%s]",
                 client_id,
                 user_agent,
