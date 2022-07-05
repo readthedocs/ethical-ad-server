@@ -914,7 +914,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # Check topics (groupings of keywords)
         if self.included_topics:
             topics = Topic.load_from_cache()
-            topic_keyword_set = set(*[topics[slug] for slug in self.included_topics])
+            topic_keyword_set = set()
+            for topic_slug in self.included_topics:
+                for kw in topics[topic_slug]:
+                    topic_keyword_set.add(kw)
+
             if not keyword_set.intersection(topic_keyword_set):
                 return False
 

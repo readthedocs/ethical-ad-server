@@ -121,6 +121,16 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertTrue(self.flight.show_to_keywords(["django"]))
         self.assertFalse(self.flight.show_to_keywords(["django", "rails"]))
 
+        self.flight.targeting_parameters = {
+            "include_topics": ["backend-web", "frontend-web"]
+        }
+        self.flight.save()
+
+        self.assertFalse(self.flight.show_to_keywords([]))
+        self.assertTrue(self.flight.show_to_keywords(["django"]))
+        self.assertTrue(self.flight.show_to_keywords(["javascript"]))
+        self.assertFalse(self.flight.show_to_keywords(["devops"]))
+
     def test_publisher_targeting(self):
         self.flight.targeting_parameters["include_publishers"] = [self.publisher.slug]
         self.flight.save()
