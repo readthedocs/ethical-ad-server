@@ -1,3 +1,10 @@
+"""
+Build an ML training set from the training data in `set.yml` (or the specified file).
+
+The first time this is run, it can take a while.
+It goes out and fetches data from the web.
+For future runs, the URLs are cached.
+"""
 import argparse
 import json
 import sys
@@ -18,6 +25,16 @@ MAIN_CONTENT_SELECTORS = (
     "main",
     "body",
 )
+REMOVE_CONTENT_SELECTORS = (
+    "[role=navigation]",
+    "[role=search]",
+    ".headerlink",
+    "nav",
+    "footer",
+    "div.header",
+    # Django Packages specific
+    "#myrotatingnav",
+)
 PREPROCESSOR = preprocessing.make_pipeline(
     preprocessing.normalize.unicode,
     preprocessing.remove.punctuation,
@@ -30,6 +47,10 @@ PREPROCESSOR = preprocessing.make_pipeline(
 def preprocess_html(html):
     """Preprocesses HTML into text for our model."""
     soup = BeautifulSoup(html, features="html.parser")
+
+    for selector in REMOVE_CONTENT_SELECTORS:
+        for nodes in soup.select(selector):
+            nodes.decompose()
 
     for selector in MAIN_CONTENT_SELECTORS:
         results = soup.select(selector, limit=1)
