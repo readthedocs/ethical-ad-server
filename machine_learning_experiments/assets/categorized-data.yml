@@ -315,6 +315,27 @@
   topics: ["frontend"]
 - url: "https://www.growingwiththeweb.com/data-structures/splay-tree/overview/"
   topics: ["frontend"]
+- url: "https://clientjs.cf/"
+  topics: ["frontend"]
+- url: "https://mui.com/material-ui/getting-started/overview/"
+  topics: ["frontend"]
+- url: "https://mui.com/material-ui/guides/typescript/"
+  topics: ["frontend"]
+- url: "https://mui.com/material-ui/guides/content-security-policy/"
+  topics: ["frontend", "security"]
+- url: "https://bootstrap-table.com/docs/getting-started/introduction/"
+  topics: ["frontend"]
+# Possibly datascience too?
+- url: "http://docs.mathjax.org/en/latest/basic/mathjax.html"
+  topics: ["frontend", "techwriting"]
+- url: "http://docs.mathjax.org/en/latest/basic/mathematics.html"
+  topics: ["frontend", "techwriting"]
+- url: "https://react-jsonschema-form.readthedocs.io/en/v1.8.1/"
+  topics: ["frontend"]
+- url: "https://kilianvalkhof.com/2020/javascript/supercharging-input-type-number/"
+  topics: ["frontend"]
+- url: "https://robkendal.co.uk/blog/2021-09-03-sending-contact-forms-with-next-js-and-wordpress"
+  topics: ["frontend"]
 
 
 ##############################################################################
@@ -731,13 +752,29 @@
 - url: "https://bitcoinlib.readthedocs.io/en/latest/source/_static/manuals.setup-bitcoind-connection.html"
   topics: ["blockchain", "security"]
 - url: "https://ethereumjs.readthedocs.io/en/latest/introduction.html"
-  topics: ["blockchain"]
+  topics: ["blockchain", "frontend"]
 - url: "https://ethereum-solidity.readthedocs.io/en/latest/installing-solidity.html"
   topics: ["blockchain"]
 - url: "https://ethereum-solidity.readthedocs.io/en/latest/solidity-by-example.html"
   topics: ["blockchain"]
 - url: "https://ewasm.readthedocs.io/en/mkdocs/"
   topics: ["blockchain"]
+- url: "https://ethereum-on-arm-documentation.readthedocs.io/en/latest/index.html"
+  topics: ["blockchain"]
+- url: "https://ethereum-on-arm-documentation.readthedocs.io/en/latest/quick-guide/recommended-hardware.html"
+  topics: ["blockchain", "hardware"]
+- url: "https://web3js.readthedocs.io/en/v1.5.2/index.html"
+  topics: ["blockchain"]
+- url: "https://web3js.readthedocs.io/en/v1.5.2/getting-started.html"
+  topics: ["blockchain"]
+- url: "https://mythril-classic.readthedocs.io/en/master/about.html"
+  topics: ["blockchain", "security"]
+- url: "https://mythril-classic.readthedocs.io/en/master/security-analysis.html"
+  topics: ["blockchain", "security"]
+- url: "https://electrum.readthedocs.io/en/latest/faq.html"
+  topics: ["blockchain"]
+- url: "https://electrum.readthedocs.io/en/latest/2fa.html"
+  topics: ["blockchain", "security"]
 
 
 ##############################################################################
@@ -750,6 +787,10 @@
 - url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/"
   topics: ["hardware"]
 - url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/ros_compatibility/"
+  topics: ["hardware"]
+- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/introduction.html"
+  topics: ["hardware"]
+- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/gpio_extension_board.html"
   topics: ["hardware"]
 
 

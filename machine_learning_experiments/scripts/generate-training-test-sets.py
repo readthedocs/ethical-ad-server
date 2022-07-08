@@ -100,7 +100,7 @@ def preprocess_training_set(infile):
                     "labels": dat["topics"],
                     # Not sure if these are necessary
                     # "keywords": [],
-                    # "meta": {"url": url},
+                    "meta": {"url": url},
                 }
             )
 
