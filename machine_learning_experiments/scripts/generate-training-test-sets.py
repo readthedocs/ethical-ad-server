@@ -7,6 +7,7 @@ For future runs, the URLs are cached.
 """
 import argparse
 import json
+import random
 import sys
 from collections import Counter
 
@@ -133,6 +134,9 @@ def write_train_test_sets(
 
     print("Writing Training & Test Sets")
     print("=" * 80)
+
+    # Randomize the dataset order so we can randomly split into train/test sets
+    random.shuffle(processed_set)
 
     print(f"Writing {train_set_file.name} ({len(processed_set[:split_set])} items)...")
     train_set_file.write(json.dumps(processed_set[:split_set], indent=2))

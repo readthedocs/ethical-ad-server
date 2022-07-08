@@ -466,7 +466,7 @@
   topics: ["devops", "backend"]
 - url: "https://django-mysql.readthedocs.io/en/latest/queryset_extensions.html"
   topics: ["devops", "backend"]
-- url: "https://django-redis-chs.readthedocs.io/zh_CN/latest/"
+- url: "https://django-redis-cache.readthedocs.io/en/latest/intro_quick_start.html"
   topics: ["devops", "backend"]
 - url: "https://docker-k8s-lab.readthedocs.io/en/latest/docker/docker-compose-lb-scale.html"
   topics: ["devops"]
