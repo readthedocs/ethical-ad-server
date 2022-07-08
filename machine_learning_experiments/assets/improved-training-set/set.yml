@@ -222,6 +222,8 @@
 ##############################################################################
 - url: "https://cuckoo.readthedocs.io/en/latest/introduction/what/"
   topics: ["security"]
+- url: "https://ansible-pan.readthedocs.io/en/latest/examples.html"
+  topics: ["security", "devops"]
 - url: "https://ansible-pan.readthedocs.io/en/latest/index.html"
   topics: ["security", "devops"]
 - url: "https://bind9.readthedocs.io/en/latest/index.html"
