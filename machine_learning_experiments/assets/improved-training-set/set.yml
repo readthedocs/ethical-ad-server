@@ -522,7 +522,7 @@
 - url: "https://glances.readthedocs.io/en/latest/aoa/cpu.html"
   topics: ["devops"]
 - url: "https://google-auth.readthedocs.io/en/stable/user-guide.html"
-  topics: ["devops"]
+  topics: ["devops", "security"]
 - url: "https://graphite.readthedocs.io/en/latest/overview.html"
   topics: ["devops"]
 - url: "https://graphite.readthedocs.io/en/latest/admin-webapp.html"
