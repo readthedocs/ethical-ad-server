@@ -1,11 +1,8 @@
-"""
-Script that loads data into Spacy
-"""
+"""Script that loads data into Spacy."""
 from pathlib import Path
 
 import spacy
 import srsly
-import textacy
 import typer
 from spacy.tokens import DocBin
 from textacy import preprocessing
@@ -26,6 +23,7 @@ def main(
     input_path: Path = typer.Argument(..., exists=True, dir_okay=False),
     output_path: Path = typer.Argument(..., dir_okay=False),
 ):
+    """Load specified input files into a Spacy document."""
     nlp = spacy.blank("en")
     doc_bin = DocBin()
     preprocessor = preprocessing.make_pipeline(

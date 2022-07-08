@@ -81,6 +81,7 @@ media
 
 # Development database
 db.sqlite3
+trainingset-urls-cache.sqlite
 
 # Sphinx docs output
 _build

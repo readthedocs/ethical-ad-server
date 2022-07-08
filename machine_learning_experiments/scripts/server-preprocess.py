@@ -11,13 +11,15 @@ python test.py
 """
 import json
 import random
-import time
 
 from adserver.models import Keyword
 
+
 prefix = "rtd-"
+
 # Write the training set to the tmp directory
-dataset = json.load(open(f"/tmp/{prefix}training-set.json"))
+with open(f"/tmp/{prefix}training-set.json", "r", encoding="utf-8") as fd:
+    dataset = json.load(fd)
 
 training_set = []
 

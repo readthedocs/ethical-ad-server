@@ -1,5 +1,5 @@
 """
-Build an ML training set from the training data in `set.yml` (or the specified file).
+Build an ML training set from the training data in the specified YAML training set file.
 
 The first time this is run, it can take a while.
 It goes out and fetches data from the web.
@@ -9,7 +9,6 @@ import argparse
 import json
 import sys
 from collections import Counter
-from pathlib import Path
 
 import requests
 import urllib3
@@ -19,7 +18,6 @@ from requests_cache import CachedSession
 from textacy import preprocessing
 
 
-BASE_DIR = Path(__file__).parent
 MAIN_CONTENT_SELECTORS = (
     "[role='main']",
     "main",
@@ -64,6 +62,7 @@ def preprocess_html(html):
 
 
 def preprocess_training_set(infile):
+    """Loop through our training set and fetch the actual URL contents."""
     # Setup the cache so we don't hammer these sites
     session = CachedSession("trainingset-urls-cache")
 
@@ -101,7 +100,7 @@ def print_training_set_details(new_training_set):
         for topic in topics:
             topic_counter[topic] += 1
 
-    print(f"Training Set Details")
+    print("Training Set Details")
     print("=" * 80)
     print(f"Total Training Set Items:\t\t{len(new_training_set)}")
 
@@ -110,16 +109,13 @@ def print_training_set_details(new_training_set):
 
 
 if __name__ == "__main__":
-    default_filepath = BASE_DIR / "set.yml"
-
     parser = argparse.ArgumentParser(
         description="Preprocess the specified YAML training set."
     )
     parser.add_argument(
         "infile",
-        nargs="?",
+        nargs="1",
         type=argparse.FileType("r"),
-        default=open(default_filepath, "r"),
         help="Path to a YAML training set file",
     )
 
