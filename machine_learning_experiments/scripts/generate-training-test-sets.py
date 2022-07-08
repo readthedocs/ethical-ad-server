@@ -1,5 +1,5 @@
 """
-Build an ML training set from the training data in the specified YAML training set file.
+Build an ML training and test set from the categorized data YAML file.
 
 The first time this is run, it can take a while.
 It goes out and fetches data from the web.
@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 from requests_cache import CachedSession
 from textacy import preprocessing
 
+
+DEFAULT_TRAIN_TEST_SPLIT = 0.8
 
 MAIN_CONTENT_SELECTORS = (
     "[role='main']",
@@ -73,8 +75,15 @@ def preprocess_training_set(infile):
     for dat in data:
         url = dat["url"].strip()
 
+        if "topics" not in dat:
+            # The key has to be there but the array can be empty
+            print(f"No topics for {url}...")
+            continue
+
         if url in seen_urls:
             print(f"Duplicate url: {url}")
+            continue
+
         seen_urls.add(url)
 
         try:
@@ -84,8 +93,15 @@ def preprocess_training_set(infile):
             continue
 
         if resp.ok:
-            dat["text"] = preprocess_html(resp.content)
-            new_training_set.append(dat)
+            new_training_set.append(
+                {
+                    "text": preprocess_html(resp.content),
+                    "labels": dat["topics"],
+                    # Not sure if these are necessary
+                    # "keywords": [],
+                    # "meta": {"url": url},
+                }
+            )
 
     return new_training_set
 
@@ -94,18 +110,35 @@ def print_training_set_details(new_training_set):
     topic_counter = Counter()
 
     for dat in new_training_set:
-        topics = dat["topics"]
+        topics = dat["labels"]
         if not topics:
             topic_counter["notopic"] += 1
         for topic in topics:
             topic_counter[topic] += 1
 
-    print("Training Set Details")
+    print("Training/Test Set Details")
     print("=" * 80)
-    print(f"Total Training Set Items:\t\t{len(new_training_set)}")
+    print(f"Total Training/Test Set Items:\t\t\t{len(new_training_set)}")
 
     for topic, count in topic_counter.most_common(10):
-        print(f"Training Set Items for '{topic}':\t{count}")
+        print(f"Training/Test Set Items for '{topic}':\t\t{count}")
+
+    print("\n")
+
+
+def write_train_test_sets(
+    processed_set, train_set_file, test_set_file, split_percentage
+):
+    split_set = int(len(processed_training_set) * split_percentage)
+
+    print("Writing Training & Test Sets")
+    print("=" * 80)
+
+    print(f"Writing {train_set_file.name} ({len(processed_set[:split_set])} items)...")
+    train_set_file.write(json.dumps(processed_set[:split_set], indent=2))
+
+    print(f"Writing {test_set_file.name} ({len(processed_set[split_set:])} items)...")
+    test_set_file.write(json.dumps(processed_set[split_set:], indent=2))
 
 
 if __name__ == "__main__":
@@ -114,22 +147,41 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "infile",
-        nargs="1",
         type=argparse.FileType("r"),
         help="Path to a YAML training set file",
     )
 
     parser.add_argument(
         "-o",
-        "--outfile",
-        nargs="?",
+        "--training-outfile",
         type=argparse.FileType("w"),
         default=sys.stdout,
-        help="Path to write the processed training set.",
+        help="Path to write the processed training set (eg. train.json).",
+    )
+
+    parser.add_argument(
+        "-f",
+        "--test-outfile",
+        type=argparse.FileType("w"),
+        default=sys.stdout,
+        help="Path to write the processed test set(eg. test.json).",
+    )
+
+    parser.add_argument(
+        "--split",
+        type=float,
+        default=DEFAULT_TRAIN_TEST_SPLIT,
+        help="The percentage to split between training and test set [0, 1]",
     )
     args = parser.parse_args()
 
+    if args.split > 1 or args.split < 0:
+        parser.error(
+            f"The training/test split must be between 0 and 1 [default: {DEFAULT_TRAIN_TEST_SPLIT}]"
+        )
+
     processed_training_set = preprocess_training_set(args.infile)
     print_training_set_details(processed_training_set)
-
-    args.outfile.write(json.dumps(processed_training_set, indent=2))
+    write_train_test_sets(
+        processed_training_set, args.training_outfile, args.test_outfile, args.split
+    )

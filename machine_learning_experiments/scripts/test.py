@@ -18,7 +18,7 @@ except ImportError:
 root = pathlib.Path(__file__).parent.resolve()
 
 ea_nlp = en_ethicalads_topics.load()
-print(f'EA version: {ea_nlp._meta["version"]}')
+print(f'EA version: {ea_nlp._meta["version"]}\n')
 
 preprocessor = preprocessing.make_pipeline(
     preprocessing.normalize.unicode,
@@ -33,8 +33,9 @@ for f in os.listdir(f"{root}/inputs"):
         contents = fd.read()
     input_str = preprocessor(contents)
 
-    print(f)
+    print(f"{f} classification")
+    print("=" * 80)
 
     ea_output = ea_nlp(input_str)
-    print("EA")
     pprint.pprint(sorted(ea_output.cats.items(), key=lambda x: x[1], reverse=True))
+    print("\n")

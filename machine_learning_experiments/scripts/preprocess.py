@@ -8,14 +8,15 @@ from spacy.tokens import DocBin
 from textacy import preprocessing
 
 topic_list = [
-    "data-science",
-    "backend-web",
-    "frontend-web",
-    "security-privacy",
+    "datascience",
+    "backend",
+    "frontend",
+    "security",
     "devops",
-    "python",
     "game-dev",
     "blockchain",
+    "techwriting",
+    "hardware",
 ]
 
 
