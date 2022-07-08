@@ -217,6 +217,14 @@
 - url: "https://qsiprep.readthedocs.io/en/latest/quickstart.html"
   topics: ["datascience"]
 
+# Conda official docs
+- url: "https://docs.conda.io/en/latest/"
+  topics: ["datascience"]
+- url: "https://docs.conda.io/projects/conda/en/latest/dev-guide/deep-dive-install.html"
+  topics: ["datascience"]
+- url: "https://docs.conda.io/projects/conda/en/latest/dev-guide/deep-dive-solvers.html"
+  topics: ["datascience"]
+
 ##############################################################################
 # Security/Privacy
 ##############################################################################
@@ -246,14 +254,9 @@
   topics: ["security"]
 - url: "https://docs.celeryq.dev/projects/kombu/en/stable/userguide/serialization.html"
   topics: ["security", "devops"]
-#- url: "https://docs.godotengine.org/en/stable/classes/class_packetpeer.html"
-#  topics: ["security"]
-
 # Mentions security but not necessarily the best example
 - url: "https://docs.gunicorn.org/en/stable/community.html"
   topics: ["security"]
-#- url: "https://docs.podman.io/en/latest/markdown/podman-info.1.html"
-#  topics: ["security"]
 - url: "https://docs.pylonsproject.org/projects/pyramid/en/latest/narr/viewconfig.html"
   topics: ["security"]
 - url: "https://flask-dance.readthedocs.io/en/latest/providers.html"
@@ -280,8 +283,6 @@
 - url: "http://manual.cytoscape.org/en/stable/Node_and_Edge_Column_Data.html"
   topics: ["frontend"]
 - url: "https://ae-scripting.docsforadobe.dev/introduction/objectmodel.html"
-  topics: ["frontend"]
-- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/ros_compatibility/"
   topics: ["frontend"]
 - url: "https://doc-kurento.readthedocs.io/en/latest/features/kurento_client.html"
   topics: ["frontend"]
@@ -369,7 +370,7 @@
 - url: "https://djangopackages.org/grids/g/widgets/"
   topics: ["backend"]
 - url: "https://djangopackages.org/packages/p/django-chartjs/"
-  topics: ["backend", "frontend-web"]
+  topics: ["backend", "frontend"]
 - url: "https://docs.celeryq.dev/en/master/userguide/canvas.html"
   topics: ["backend", "devops"]
 # Looks like the Flask docs in Chinese...
@@ -380,7 +381,7 @@
 - url: "https://dynaconf.readthedocs.io/en/docs_223/guides/sensitive_secrets.html"
   topics: ["backend", "security"]
 - url: "https://ewasm.readthedocs.io/en/mkdocs/README/"
-  topics: ["backend"]
+  topics: ["backend", "blockchain"]
 - url: "https://flask-autoindex.readthedocs.io/en/latest/"
   topics: ["backend"]
 - url: "https://flask-awscognito.readthedocs.io/en/latest/"
@@ -401,6 +402,8 @@
   topics: ["backend"]
 - url: "https://django-treebeard.readthedocs.io/en/latest/al_tree.html"
   topics: ["backend", "devops"]
+- url: "https://django-testing-docs.readthedocs.io/en/latest/basic_unittests.html"
+  topics: ["backend"]
 
 
 ##############################################################################
@@ -465,9 +468,6 @@
   topics: ["devops", "backend"]
 - url: "https://django-redis-chs.readthedocs.io/zh_CN/latest/"
   topics: ["devops", "backend"]
-
-- url: "https://django-testing-docs.readthedocs.io/en/latest/basic_unittests.html"
-  topics: ["devops"]
 - url: "https://docker-k8s-lab.readthedocs.io/en/latest/docker/docker-compose-lb-scale.html"
   topics: ["devops"]
 - url: "https://docker-py.readthedocs.io/en/stable/"
@@ -507,7 +507,7 @@
 - url: "https://esrally.readthedocs.io/en/stable/recipes.html"
   topics: ["devops"]
 - url: "https://express-cassandra.readthedocs.io/en/latest/"
-  topics: ["devops"]
+  topics: ["devops", "backend"]
 - url: "https://f1tenth.readthedocs.io/en/stable/getting_started/software_setup/software_jetson.html"
   topics: ["devops"]
 - url: "https://f5-ts-with-prometheus-udf.readthedocs.io/en/latest/index.html"
@@ -535,9 +535,6 @@
   topics: ["devops"]
 - url: "https://lda.readthedocs.io/en/latest/"
   topics: ["devops", "datascience"]
-- url: "https://mido.readthedocs.io/en/latest/backends/rtmidi.html"
-  topics: ["devops"]
-
 - url: "https://mybinder-sre.readthedocs.io/en/latest/"
   topics: ["devops"]
 - url: "https://napalm.readthedocs.io/en/latest/tutorials/ansible-napalm.html"
@@ -548,9 +545,6 @@
   topics: ["devops"]
 - url: "https://nfcpy.readthedocs.io/en/latest/overview.html"
   topics: ["devops"]
-# Not quite sure how to classify this if at all
-#- url: "https://olefile.readthedocs.io/en/latest/olefile.html"
-#  topics: ["devops"]
 - url: "https://openfast.readthedocs.io/en/latest/source/install/index.html"
   topics: ["devops", "datascience"]
 - url: "https://pg-auto-failover.readthedocs.io/en/master/intro.html"
@@ -739,9 +733,24 @@
 - url: "https://ethereumjs.readthedocs.io/en/latest/introduction.html"
   topics: ["blockchain"]
 - url: "https://ethereum-solidity.readthedocs.io/en/latest/installing-solidity.html"
-  topics: [ "blockchain" ]
+  topics: ["blockchain"]
 - url: "https://ethereum-solidity.readthedocs.io/en/latest/solidity-by-example.html"
-  topics: [ "blockchain" ]
+  topics: ["blockchain"]
+- url: "https://ewasm.readthedocs.io/en/mkdocs/"
+  topics: ["blockchain"]
+
+
+##############################################################################
+# Hardware
+##############################################################################
+- url: "https://mido.readthedocs.io/en/latest/roadmap.html"
+  topics: ["hardware"]
+- url: "https://mido.readthedocs.io/en/latest/backends/rtmidi.html"
+  topics: ["hardware"]
+- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/"
+  topics: ["hardware"]
+- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/ros_compatibility/"
+  topics: ["hardware"]
 
 
 ##############################################################################
