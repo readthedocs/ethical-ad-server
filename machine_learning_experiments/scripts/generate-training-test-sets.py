@@ -135,8 +135,15 @@ def write_train_test_sets(
     print("Writing Training & Test Sets")
     print("=" * 80)
 
-    # Randomize the dataset order so we can randomly split into train/test sets
+    # "Randomize" the dataset order so we can randomly split into train/test sets
+    # We use a deterministic seed so we don't get different results when building the model
+    # again and again. The goal is just to shuffle them so the test/train sets are a good representation
+    random.seed(987654321)
     random.shuffle(processed_set)
+
+    # This is just a protection in case random is ever used again.
+    # This just sets to the seed back to an unknowable value
+    random.seed()
 
     print(f"Writing {train_set_file.name} ({len(processed_set[:split_set])} items)...")
     train_set_file.write(json.dumps(processed_set[:split_set], indent=2))

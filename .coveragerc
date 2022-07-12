@@ -29,6 +29,8 @@ omit =
     adserver/management/commands/adtype-templates/*.html
     adserver/router.py
 
+    machine_learning_experiments/
+
 [report]
 # Regexes for lines to exclude from consideration
 exclude_lines =

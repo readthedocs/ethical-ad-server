@@ -13,6 +13,7 @@ ignore-paths:
   - manage.py
   - tests.py
   - tests/
+  - machine_learning_experiments/
 
 ignore-patterns:
   - /migrations/

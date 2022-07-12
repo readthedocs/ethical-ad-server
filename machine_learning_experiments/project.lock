@@ -1,66 +1,66 @@
 preprocess:
   cmd: python -m spacy run preprocess
   script:
-    - python scripts/preprocess.py assets/combined-set1.json corpus/combined-set1.spacy
-    - python scripts/preprocess.py assets/combined-set2.json corpus/combined-set2.spacy
+    - python scripts/preprocess.py assets/train.json corpus/train.spacy
+    - python scripts/preprocess.py assets/test.json corpus/test.spacy
   deps:
-    - path: assets/combined-set1.json
-      md5: 51d0f3c24ebd63a8dcfd222dcfd6805b
-    - path: assets/combined-set2.json
-      md5: d88ce8929d9bff04c0e7caffe828ee3b
+    - path: assets/train.json
+      md5: 869e0a5114156c21ceaab8d59db9fef0
+    - path: assets/test.json
+      md5: c2d09cd7bf1d2126fff9bf73551cdf5f
     - path: scripts/preprocess.py
-      md5: 17156a4fd6ebf2fae6ff49d96f58aa1b
+      md5: 2ac06597e1fdc5ec04b72b756a2f4a5b
   outs:
-    - path: corpus/combined-set1.spacy
-      md5: 02e1f3b4c653482d4ee9fb16a7359330
-    - path: corpus/combined-set2.spacy
-      md5: b16339f0188be9f6dc79b0ff1b5c21fe
+    - path: corpus/train.spacy
+      md5: 16007ae98479c5b91036d3a35f9572c3
+    - path: corpus/test.spacy
+      md5: d35432611d687345dc99d680ee7c7ddd
   spacy_version: 3.3.1
-  spacy_git_version: 5fb597f77
+  spacy_git_version: Unknown
 train:
   cmd: python -m spacy run train
   script:
-    - python -m spacy train configs/config.cfg --output training/ --paths.train corpus/combined-set1.spacy
-      --paths.dev corpus/combined-set2.spacy --gpu-id -1
+    - python -m spacy train configs/config.cfg --output training/ --paths.train corpus/train.spacy
+      --paths.dev corpus/test.spacy --gpu-id -1
   deps:
-    - path: corpus/combined-set1.spacy
-      md5: 02e1f3b4c653482d4ee9fb16a7359330
-    - path: corpus/combined-set2.spacy
-      md5: b16339f0188be9f6dc79b0ff1b5c21fe
+    - path: corpus/train.spacy
+      md5: 16007ae98479c5b91036d3a35f9572c3
+    - path: corpus/test.spacy
+      md5: d35432611d687345dc99d680ee7c7ddd
     - path: configs/config.cfg
       md5: 0fd5325def4c5acfab1987f47ea95f2a
   outs:
     - path: training/model-best
-      md5: acdab42b88d3afb0e89c2e2fd117c390
+      md5: 4b181d44ddc7bdff800cca79fd3df089
   spacy_version: 3.3.1
-  spacy_git_version: 5fb597f77
+  spacy_git_version: Unknown
 evaluate:
   cmd: python -m spacy run evaluate
   script:
-    - python -m spacy evaluate training/model-best corpus/combined-set2.spacy --output
-      training/metrics.json --gpu-id -1
+    - python -m spacy evaluate training/model-best corpus/test.spacy --output training/metrics.json
+      --gpu-id -1
   deps:
-    - path: corpus/combined-set2.spacy
-      md5: b16339f0188be9f6dc79b0ff1b5c21fe
+    - path: corpus/test.spacy
+      md5: d35432611d687345dc99d680ee7c7ddd
     - path: training/model-best
-      md5: acdab42b88d3afb0e89c2e2fd117c390
+      md5: 4b181d44ddc7bdff800cca79fd3df089
   outs:
     - path: training/metrics.json
-      md5: 4fd721d1122966dff30ef71cf13a5d0f
+      md5: c248938c6d657192bfe7ca625ab72a4e
   spacy_version: 3.3.1
-  spacy_git_version: 5fb597f77
+  spacy_git_version: Unknown
 package:
   cmd: python -m spacy run package
   script:
-    - python -m spacy package --name ethicalads_topics --version 20220623_11_34_40
+    - python -m spacy package --name ethicalads_topics --version 20220708_16_07_06
       training/model-best packages
   deps:
-    - path: corpus/combined-set2.spacy
-      md5: b16339f0188be9f6dc79b0ff1b5c21fe
+    - path: corpus/test.spacy
+      md5: d35432611d687345dc99d680ee7c7ddd
     - path: training/model-best
-      md5: acdab42b88d3afb0e89c2e2fd117c390
+      md5: 4b181d44ddc7bdff800cca79fd3df089
   outs:
     - path: packages/{vars.name}
       md5: null
   spacy_version: 3.3.1
-  spacy_git_version: 5fb597f77
+  spacy_git_version: Unknown
