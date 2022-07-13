@@ -88,3 +88,7 @@ _build
 
 # GeoIP data files
 geoip/*
+
+# ML models for topic classification
+trainingset-urls-cache.sqlite
+/machine_learning_experiments/assets/*.json

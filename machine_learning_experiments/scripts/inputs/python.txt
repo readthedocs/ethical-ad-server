@@ -1,0 +1,109 @@
+Running pip
+pip is a command line program. When you install pip, a pip command is added to your system, which can be run from the command prompt as follows:
+
+
+Unix/macOS
+python -m pip <pip arguments>
+python -m pip executes pip using the Python interpreter you specified as python. So /usr/bin/python3.7 -m pip means you are executing pip for your interpreter located at /usr/bin/python3.7.
+
+
+Windows
+Installing Packages
+pip supports installing from PyPI, version control, local projects, and directly from distribution files.
+
+The most common scenario is to install from PyPI using Requirement Specifiers
+
+
+Unix/macOS
+python -m pip install SomePackage            # latest version
+python -m pip install SomePackage==1.0.4     # specific version
+python -m pip install 'SomePackage>=1.0.4'     # minimum version
+
+Windows
+For more information and examples, see the pip install reference.
+
+Basic Authentication Credentials
+This is now covered in Authentication.
+
+netrc Support
+This is now covered in Authentication.
+
+Keyring Support
+This is now covered in Authentication.
+
+Using a Proxy Server
+When installing packages from PyPI, pip requires internet access, which in many corporate environments requires an outbound HTTP proxy server.
+
+pip can be configured to connect through a proxy server in various ways:
+
+using the --proxy command-line option to specify a proxy in the form scheme://[user:passwd@]proxy.server:port
+
+using proxy in a Config file
+
+by setting the standard environment-variables http_proxy, https_proxy and no_proxy.
+
+using the environment variable PIP_USER_AGENT_USER_DATA to include a JSON-encoded string in the user-agent variable used in pip’s requests.
+
+Requirements Files
+“Requirements files” are files containing a list of items to be installed using pip install like so:
+
+
+Unix/macOS
+python -m pip install -r requirements.txt
+
+Windows
+Details on the format of the files are here: Requirements File Format.
+
+Logically, a Requirements file is just a list of pip install arguments placed in a file. Note that you should not rely on the items in the file being installed by pip in any particular order.
+
+In practice, there are 4 common uses of Requirements files:
+
+Requirements files are used to hold the result from pip freeze for the purpose of achieving Repeatable Installs. In this case, your requirement file contains a pinned version of everything that was installed when pip freeze was run.
+
+
+Unix/macOS
+python -m pip freeze > requirements.txt
+python -m pip install -r requirements.txt
+
+Windows
+Requirements files are used to force pip to properly resolve dependencies. pip 20.2 and earlier doesn’t have true dependency resolution, but instead simply uses the first specification it finds for a project. E.g. if pkg1 requires pkg3>=1.0 and pkg2 requires pkg3>=1.0,<=2.0, and if pkg1 is resolved first, pip will only use pkg3>=1.0, and could easily end up installing a version of pkg3 that conflicts with the needs of pkg2. To solve this problem, you can place pkg3>=1.0,<=2.0 (i.e. the correct specification) into your requirements file directly along with the other top level requirements. Like so:
+
+pkg1
+pkg2
+pkg3>=1.0,<=2.0
+Requirements files are used to force pip to install an alternate version of a sub-dependency. For example, suppose ProjectA in your requirements file requires ProjectB, but the latest version (v1.3) has a bug, you can force pip to accept earlier versions like so:
+
+ProjectA
+ProjectB<1.3
+Requirements files are used to override a dependency with a local patch that lives in version control. For example, suppose a dependency SomeDependency from PyPI has a bug, and you can’t wait for an upstream fix. You could clone/copy the src, make the fix, and place it in VCS with the tag sometag. You’d reference it in your requirements file with a line like so:
+
+git+https://myvcs.com/some_dependency@sometag#egg=SomeDependency
+If SomeDependency was previously a top-level requirement in your requirements file, then replace that line with the new line. If SomeDependency is a sub-dependency, then add the new line.
+
+It’s important to be clear that pip determines package dependencies using install_requires metadata, not by discovering requirements.txt files embedded in projects.
+
+See also:
+
+Requirements File Format
+
+pip freeze
+
+“setup.py vs requirements.txt” (an article by Donald Stufft)
+
+Constraints Files
+Constraints files are requirements files that only control which version of a requirement is installed, not whether it is installed or not. Their syntax and contents is a subset of Requirements Files, with several kinds of syntax not allowed: constraints must have a name, they cannot be editable, and they cannot specify extras. In terms of semantics, there is one key difference: Including a package in a constraints file does not trigger installation of the package.
+
+Use a constraints file like so:
+
+
+Unix/macOS
+python -m pip install -c constraints.txt
+
+Windows
+Constraints files are used for exactly the same reason as requirements files when you don’t know exactly what things you want to install. For instance, say that the “helloworld” package doesn’t work in your environment, so you have a local patched version. Some things you install depend on “helloworld”, and some don’t.
+
+One way to ensure that the patched version is used consistently is to manually audit the dependencies of everything you install, and if “helloworld” is present, write a requirements file to use when installing that thing.
+
+Constraints files offer a better way: write a single constraints file for your organisation and use that everywhere. If the thing being installed requires “helloworld” to be installed, your fixed version specified in your constraints file will be used.
+
+Constraints file support was added in pip 7.1. In Changes to the pip dependency resolver in 20.3 (2020) we did a fairly comprehensive overhaul, removing several undocumented and unsupported quirks from the previous implementation, and stripped constraints files down to being purely a way to specify global (version) limits for packages.
