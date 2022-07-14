@@ -1,5 +1,6 @@
 import datetime
 
+import pytest
 import requests
 import responses
 from django.core.exceptions import ValidationError
@@ -11,6 +12,7 @@ from . import tasks
 from ..models import Offer
 from ..models import Publisher
 from ..tests.common import BaseAdModelsTestCase
+from .backends import EthicalAdsTopicsBackend
 from .backends import NaiveKeywordAnalyzerBackend
 from .backends import TextacyAnalyzerBackend
 from .models import AnalyzedUrl
@@ -211,6 +213,38 @@ class TestTextacyAnalyzerBackend(TestCase):
             body=requests.exceptions.ConnectTimeout(),
         )
         self.assertIsNone(self.analyzer.analyze())
+
+
+class TestEthicalAdsTopicsBackend(TestCase):
+    def setUp(self):
+        self.url = "https://example.com"
+
+        try:
+            self.analyzer = EthicalAdsTopicsBackend(self.url)
+        except IOError:
+            pytest.skip()
+
+    @responses.activate
+    def test_analyzer_not_long_enough(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            body="""
+                <html>
+                <head>
+                </head>
+                <body>
+                    <main>
+                    <p>Not long enough</p>
+                    </main>
+                </body>
+                </html>
+                """,
+        )
+        self.assertEqual(
+            self.analyzer.analyze(),
+            [],
+        )
 
 
 class TestTasks(BaseAdModelsTestCase):
