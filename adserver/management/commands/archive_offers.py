@@ -89,7 +89,7 @@ class Command(BaseCommand):
         # Using the date params as an f-string is suboptimal but these are validated
         query = f"""
             COPY (
-                SELECT * FROM adserver_offer
+                SELECT * FROM {settings.ADSERVER_OFFER_DB_TABLE}
                 WHERE date >= '{day:%Y-%m-%d}' AND date < '{end_day:%Y-%m-%d}'
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
@@ -175,7 +175,7 @@ class Command(BaseCommand):
         self.stdout.write(_("Deleting archived offers for %s...") % day)
 
         end_day = day + datetime.timedelta(days=1)
-        query = "DELETE FROM adserver_offer WHERE date >= %s AND date < %s"
+        query = f"DELETE FROM {settings.ADSERVER_OFFER_DB_TABLE} WHERE date >= %s AND date < %s"
 
         self.stdout.write(_("- Executing SQL:"))
         self.stdout.write(query % (day, end_day))
@@ -199,7 +199,7 @@ class Command(BaseCommand):
         with connections["default"].cursor() as cursor:
             # Run an analyze so the DB statistics are up to date
             # This will help future queries run quickly after this change
-            cursor.execute("ANALYZE VERBOSE adserver_offer;")
+            cursor.execute(f"ANALYZE VERBOSE {settings.ADSERVER_OFFER_DB_TABLE};")
 
         self.stdout.write(self.style.SUCCESS(_("Successfully updated DB statistics.")))
 
