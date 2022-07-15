@@ -17,7 +17,7 @@ from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
-from django.db import connection
+from django.db import connections
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -93,7 +93,7 @@ class Command(BaseCommand):
                 WHERE date >= '{day:%Y-%m-%d}' AND date < '{end_day:%Y-%m-%d}'
                 ORDER BY date
             ) TO STDOUT WITH CSV HEADER"""
-        with connection[settings.REPLICA_SLUG].cursor() as cursor:
+        with connections[settings.REPLICA_SLUG].cursor() as cursor:
             with open(output_file, "wb") as fd:
                 # https://www.psycopg.org/docs/cursor.html#cursor.copy_expert
                 cursor.copy_expert(query, fd)
@@ -181,7 +181,7 @@ class Command(BaseCommand):
         self.stdout.write(query % (day, end_day))
 
         # Always delete from the default.
-        with connection["default"].cursor() as cursor:
+        with connections["default"].cursor() as cursor:
             # Offers are normally immutable so the delete has to be run as raw sql
             cursor.execute(
                 query,
@@ -196,7 +196,7 @@ class Command(BaseCommand):
     def update_db_stats(self):
         """Updates DB stats after these changes."""
         self.stdout.write(_("Updating database statistics..."))
-        with connection.cursor() as cursor:
+        with connections["default"].cursor() as cursor:
             # Run an analyze so the DB statistics are up to date
             # This will help future queries run quickly after this change
             cursor.execute("ANALYZE VERBOSE adserver_offer;")
