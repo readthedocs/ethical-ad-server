@@ -110,7 +110,7 @@ class TestArchiveOffers(TestCase):
                 stderr=self.err,
             )
 
-    @patch("django.db.connection")
+    @patch("django.db.connections")
     def test_archive_offers(self, conn_mock):
         management.call_command(
             "archive_offers",
@@ -135,7 +135,7 @@ class TestArchiveOffers(TestCase):
         self.assertTrue("Skipping deleting archived offers" in output)
 
     @override_settings(BACKUPS_STORAGE="django.core.files.storage.FileSystemStorage")
-    @patch("django.db.connection")
+    @patch("django.db.connections")
     def test_archive_offers_storage(self, conn_mock):
         management.call_command(
             "archive_offers",
