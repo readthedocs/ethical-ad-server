@@ -90,7 +90,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     # Cache for 24 hours so we can finish payouts
     CACHE_SECONDS = 3600 * 24
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(
+        self, **kwargs
+    ):  # pylint: disable=too-many-boolean-expressions
         context = super().get_context_data(**kwargs)
 
         publisher_slug = self.request.GET.get("publisher")
