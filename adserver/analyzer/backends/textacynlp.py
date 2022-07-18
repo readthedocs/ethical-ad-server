@@ -24,12 +24,15 @@ class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
     # Minimum phrase length where each word isn't required to be in the output phrase
     MIN_PHRASE_LENGTH = 6
 
+    MODEL_NAME = "en_core_web_md"
+
     def __init__(self, url, **kwargs):
         """Overrides to lemmatize keywords."""
         super().__init__(url, **kwargs)
 
+        # Raises IOError if the model is not installed!
         self.pretrained_model = textacy.load_spacy_lang(
-            "en_core_web_md", disable=("parser",)
+            self.MODEL_NAME, disable=("parser",)
         )
 
         self.preprocessor = preprocessing.make_pipeline(
