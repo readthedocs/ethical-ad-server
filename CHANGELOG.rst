@@ -1,10 +1,29 @@
-
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v0.55.0
+---------------
+
+The large change in this release is to add a machine learning
+topic classifier that uses a custom trained model.
+This release also contained minor dependency updates and bugfixes.
+
+:date: July 18, 2022
+
+ * @ericholscher: Fix archive_offers db code (#611)
+ * @davidfischer: Add the topic classifier backend (#609)
+ * @dependabot[bot]: Bump django from 3.2.13 to 3.2.14 in /requirements (#607)
+ * @davidfischer: Downgrade mismatched client log to debug (#606)
+ * @davidfischer: Fix multi topic targeting bug (#605)
+ * @ericholscher: Fix email going to advertisers (#604)
+ * @ericholscher: Add a comment that explains what to do when swapping the offers table (#603)
+ * @ericholscher: Add initial ML experimentation (#597)
+
 
 Version v0.54.1
 ---------------
