@@ -203,6 +203,13 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'publisher_users' publisher.slug %}">
+                  <span class="fa fa-users fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Authorized users' %}</span>
+                </a>
+              </li>
+
             </ul>
           {% endif %}
 

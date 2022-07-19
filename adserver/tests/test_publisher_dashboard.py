@@ -36,11 +36,11 @@ class TestPublisherDashboardViews(TestCase):
         )
 
         self.password = "(@*#$&ASDFKJ"
-        self.user = get(get_user_model(), email="test1@example.com")
+        self.user = get(get_user_model(), name="Test User", email="test1@example.com")
         self.user.set_password(self.password)
         self.user.save()
 
-        self.staff_user = get(get_user_model(), is_staff=True)
+        self.staff_user = get(get_user_model(), name="Staff User", is_staff=True)
 
         # Copied from test_reports.py
         # TODO: Extract into a base class?
@@ -377,6 +377,135 @@ class TestPublisherDashboardViews(TestCase):
 
             self.publisher1.refresh_from_db()
             self.assertEqual(self.publisher1.stripe_connected_account_id, account_id)
+
+    def test_authorized_users(self):
+        url = reverse(
+            "publisher_users",
+            kwargs={
+                "publisher_slug": self.publisher1.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.user.publishers.add(self.publisher1)
+        self.client.force_login(self.user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.user.name)
+        self.assertContains(response, self.user.email)
+
+        self.user.publishers.remove(self.publisher1)
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self.user.name)
+        self.assertContains(response, "There are no authorized users")
+
+    def test_authorized_users_remove(self):
+        url = reverse(
+            "publisher_users_remove",
+            kwargs={
+                "publisher_slug": self.publisher1.slug,
+                "user_id": self.user.id,
+            },
+        )
+
+        # User must be present or the request will 404
+        self.user.publishers.add(self.publisher1)
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.user.name)
+        self.assertContains(response, self.user.email)
+
+        # Remove the user from the publisher
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.user.publishers.count(), 0)
+
+        # This user is no longer part of this publisher
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_authorized_users_invite(self):
+        url = reverse(
+            "publisher_users_invite",
+            kwargs={
+                "publisher_slug": self.publisher1.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.user.publishers.add(self.publisher1)
+        self.client.force_login(self.user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invite user to")
+
+        response = self.client.post(
+            url,
+            data={"name": "Another User", "email": "another@example.com"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")
+
+    def test_authorized_users_invite_existing(self):
+        User = get_user_model()
+
+        url = reverse(
+            "publisher_users_invite",
+            kwargs={
+                "publisher_slug": self.publisher1.slug,
+            },
+        )
+
+        self.user.publishers.add(self.publisher1)
+        self.client.force_login(self.user)
+
+        name = "Another User"
+        email = "another@example.com"
+
+        response = self.client.post(
+            url,
+            data={"name": name, "email": email},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")
+        self.assertEqual(User.objects.filter(email=email).count(), 1)
+
+        # Invite the same user again to check that the user isn't created again
+        response = self.client.post(
+            url,
+            data={"name": "Yet Another User", "email": email},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully invited")
+        self.assertEqual(User.objects.filter(email=email).count(), 1)
+        self.assertEqual(User.objects.filter(name=name).count(), 1)
+
+        # The 2nd request didn't create a user or update the user's name
+        self.assertEqual(User.objects.filter(name="Yet Another User").count(), 0)
 
 
 class TestPublisherFallbackAdsViews(TestCase):

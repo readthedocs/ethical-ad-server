@@ -2261,6 +2261,107 @@ class StaffPublisherReportView(BaseReportView):
         return context
 
 
+class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, ListView):
+
+    """Authorized users for a publisher."""
+
+    context_object_name = "users"
+    model = get_user_model()
+    template_name = "adserver/publisher/users.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher})
+        return context
+
+    def get_queryset(self):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs.get("publisher_slug", "")
+        )
+        return self.publisher.user_set.all()
+
+
+class PublisherAuthorizedUsersInviteView(
+    PublisherAccessMixin, UserPassesTestMixin, CreateView
+):
+
+    """Invite additional authorized users for a publisher."""
+
+    form_class = InviteUserForm
+    model = get_user_model()
+    template_name = "adserver/publisher/users-invite.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs.get("publisher_slug", "")
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        self.object.publishers.add(self.publisher)
+        messages.success(
+            self.request,
+            _("Successfully invited %(user)s to %(publisher)s")
+            % {"user": self.object.email, "publisher": self.publisher},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_users", kwargs={"publisher_slug": self.publisher.slug}
+        )
+
+
+class PublisherAuthorizedUsersRemoveView(
+    PublisherAccessMixin, UserPassesTestMixin, TemplateView
+):
+
+    """
+    Remove authorized users for a publisher.
+
+    This doesn't remove or deactivate the user - just removes them from the publisher.
+    """
+
+    template_name = "adserver/publisher/users-remove.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs.get("publisher_slug", "")
+        )
+        self.user = get_object_or_404(
+            get_user_model(), pk=self.kwargs["user_id"], publishers=self.publisher
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if self.user == self.request.user:
+            messages.error(self.request, _("You cannot remove your own access"))
+        else:
+            self.user.publishers.remove(self.publisher)
+            messages.success(
+                self.request,
+                _("Successfully removed %(user)s from %(publisher)s")
+                % {"user": self.user.email, "publisher": self.publisher},
+            )
+        return redirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"publisher": self.publisher, "user": self.user})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "publisher_users", kwargs={"publisher_slug": self.publisher.slug}
+        )
+
+
 class StaffUpliftReportView(AllReportMixin, BaseReportView):
 
     """An uplift report for all publishers."""

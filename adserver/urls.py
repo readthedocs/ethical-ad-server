@@ -35,6 +35,9 @@ from .views import FlightRenewView
 from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
+from .views import PublisherAuthorizedUsersInviteView
+from .views import PublisherAuthorizedUsersRemoveView
+from .views import PublisherAuthorizedUsersView
 from .views import PublisherEmbedView
 from .views import PublisherFallbackAdsCreateView
 from .views import PublisherFallbackAdsDetailView
@@ -355,6 +358,21 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/payouts/<uuid:pk>/",
         PublisherPayoutDetailView.as_view(),
         name="publisher_payout",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/users/",
+        PublisherAuthorizedUsersView.as_view(),
+        name="publisher_users",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/users/invite/",
+        PublisherAuthorizedUsersInviteView.as_view(),
+        name="publisher_users_invite",
+    ),
+    path(
+        r"publisher/<slug:publisher_slug>/users/<int:user_id>/remove/",
+        PublisherAuthorizedUsersRemoveView.as_view(),
+        name="publisher_users_remove",
     ),
     # User account management
     path(r"accounts/settings/", AccountOverviewView.as_view(), name="account"),
