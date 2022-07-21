@@ -5,16 +5,16 @@ preprocess:
     - python scripts/preprocess.py assets/test.json corpus/test.spacy
   deps:
     - path: assets/train.json
-      md5: 869e0a5114156c21ceaab8d59db9fef0
+      md5: d9226c075be8263fe92f257b02ea1e8e
     - path: assets/test.json
-      md5: c2d09cd7bf1d2126fff9bf73551cdf5f
+      md5: cf8fda9a2c0b6ea9a5067c49b589c1b9
     - path: scripts/preprocess.py
-      md5: 2ac06597e1fdc5ec04b72b756a2f4a5b
+      md5: fbb10acc739ce777cfce661c52946e15
   outs:
     - path: corpus/train.spacy
-      md5: 16007ae98479c5b91036d3a35f9572c3
+      md5: a74836ff63b4548e39f5c1d05d07c5e2
     - path: corpus/test.spacy
-      md5: d35432611d687345dc99d680ee7c7ddd
+      md5: 3e9d0eb02268639e48ab7755062fa97d
   spacy_version: 3.3.1
   spacy_git_version: Unknown
 train:
@@ -24,14 +24,14 @@ train:
       --paths.dev corpus/test.spacy --gpu-id -1
   deps:
     - path: corpus/train.spacy
-      md5: 16007ae98479c5b91036d3a35f9572c3
+      md5: 8854b65ae114479737c96cec8e6203f2
     - path: corpus/test.spacy
-      md5: d35432611d687345dc99d680ee7c7ddd
+      md5: cbc4d1ee25f1b99d244b85c865ff6809
     - path: configs/config.cfg
       md5: 0fd5325def4c5acfab1987f47ea95f2a
   outs:
     - path: training/model-best
-      md5: 4b181d44ddc7bdff800cca79fd3df089
+      md5: fc6485f64e73538a467b2cc3242dec15
   spacy_version: 3.3.1
   spacy_git_version: Unknown
 evaluate:
@@ -41,24 +41,24 @@ evaluate:
       --gpu-id -1
   deps:
     - path: corpus/test.spacy
-      md5: d35432611d687345dc99d680ee7c7ddd
+      md5: cbc4d1ee25f1b99d244b85c865ff6809
     - path: training/model-best
-      md5: 4b181d44ddc7bdff800cca79fd3df089
+      md5: fc6485f64e73538a467b2cc3242dec15
   outs:
     - path: training/metrics.json
-      md5: c248938c6d657192bfe7ca625ab72a4e
+      md5: 9ead92a636f3eb11f4139e4a71ea0a21
   spacy_version: 3.3.1
   spacy_git_version: Unknown
 package:
   cmd: python -m spacy run package
   script:
-    - python -m spacy package --name ethicalads_topics --version 20220708_16_07_06
+    - python -m spacy package --name ethicalads_topics --version 20220720_16_24_43
       training/model-best packages
   deps:
     - path: corpus/test.spacy
-      md5: d35432611d687345dc99d680ee7c7ddd
+      md5: cbc4d1ee25f1b99d244b85c865ff6809
     - path: training/model-best
-      md5: 4b181d44ddc7bdff800cca79fd3df089
+      md5: fc6485f64e73538a467b2cc3242dec15
   outs:
     - path: packages/{vars.name}
       md5: null
