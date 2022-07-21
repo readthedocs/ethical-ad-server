@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.0.0
+---------------
+
+The big change here is to use our topic analyzer/ML model
+as part of our ad decision process.
+This is a huge milestone and we're making this our v1.0.0 release!
+
+:date: July 21, 2022
+
+ * @davidfischer: Use analyzer keyword findings in ad decision (#598)
+ * @davidfischer: Fix up the model for release (#615)
+
+
 Version v0.55.0
 ---------------
 
