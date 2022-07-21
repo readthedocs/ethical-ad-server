@@ -39,6 +39,10 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
     MAX_KEYWORDS = 3
     MIN_KEYWORD_OCCURRENCES = 2
 
+    # Some models have limits but beyond ~100k characters
+    # we probably aren't learning more
+    MAX_INPUT_LENGTH = 100_000
+
     def __init__(self, url, **kwargs):
         """Overrides to get the keyword corpus."""
         super().__init__(url, **kwargs)
@@ -73,7 +77,7 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         return keywords
 
     def preprocess_text(self, text):
-        return text.replace("\n", " ")
+        return text.replace("\n", " ")[: self.MAX_INPUT_LENGTH]
 
     def analyze_text(self, text):
         """Analyze a large string of text for keyword extraction."""
