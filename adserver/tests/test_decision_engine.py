@@ -7,6 +7,7 @@ from django.test.client import RequestFactory
 from django_dynamic_fixture import get
 from user_agents import parse
 
+from ..analyzer.models import AnalyzedUrl
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import CLICKS
 from ..constants import COMMUNITY_CAMPAIGN
@@ -613,9 +614,34 @@ class DecisionEngineTests(TestCase):
             request=self.request, placements=self.placements, publisher=self.publisher
         )
 
-        self.assertTrue(
-            self.backend.keywords, ["foo", "bar", "baz", "machine-learning"]
+        self.assertEqual(
+            sorted(self.backend.keywords), ["bar", "baz", "foo", "machine-learning"]
         )
+
+    def test_analyzer_keywords(self):
+        url = "http://example.com"
+
+        backend = AdvertisingEnabledBackend(
+            request=self.request,
+            placements=self.placements,
+            publisher=self.publisher,
+            url=url,
+        )
+        self.assertEqual(backend.keywords, [])
+
+        AnalyzedUrl.objects.create(
+            url=url,
+            publisher=self.publisher,
+            keywords=["foo", "bar"],
+        )
+
+        backend = AdvertisingEnabledBackend(
+            request=self.request,
+            placements=self.placements,
+            publisher=self.publisher,
+            url=url,
+        )
+        self.assertEqual(sorted(backend.keywords), ["bar", "foo"])
 
     def test_publisher_excluded(self):
         flights = self.probabilistic_backend.get_candidate_flights()
