@@ -4,6 +4,11 @@ Build an ML training and test set from the categorized data YAML file.
 The first time this is run, it can take a while.
 It goes out and fetches data from the web.
 For future runs, the URLs are cached.
+
+cd machine_learning_experiments/
+# Generate training and test set from the categorized data (Yaml file)
+python scripts/generate-training-test-sets.py -o assets/train.json -f assets/test.json assets/categorized-data.yml
+python -m spacy project run all . --vars.train=train --vars.dev=test --vars.name=ethicalads_topics --vars.version=`date "+%Y%m%d_%H_%M_%S"`
 """
 import argparse
 import json

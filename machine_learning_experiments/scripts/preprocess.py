@@ -13,10 +13,10 @@ topic_list = [
     "frontend",
     "security",
     "devops",
-    "game-dev",
+    # "game-dev",
     "blockchain",
-    "techwriting",
-    "hardware",
+    # "techwriting",
+    # "hardware",
 ]
 
 

@@ -1,5 +1,8 @@
 # EthicalAds Topic Classifier Training Set
 #
+# This can be split into a test and train set with the following command:
+#  > python scripts/generate-training-test-sets.py -o assets/train.json -f assets/test.json assets/categorized-data.yml
+#
 # Notes:
 #  - the text is not pre-processed
 #  - the URL is mostly just for data completeness
@@ -216,6 +219,22 @@
   topics: ["datascience"]
 - url: "https://qsiprep.readthedocs.io/en/latest/quickstart.html"
   topics: ["datascience"]
+- url: "https://textacy.readthedocs.io/en/latest/"
+  topics: ["datascience"]
+- url: "https://textacy.readthedocs.io/en/latest/quickstart.html"
+  topics: ["datascience"]
+- url: "https://streamz.readthedocs.io/en/latest/"
+  topics: ["datascience"]
+- url: "https://ml-cheatsheet.readthedocs.io/en/latest/linear_regression.html"
+  topics: ["datascience"]
+- url: "https://xgboost.readthedocs.io/en/latest/index.html"
+  topics: ["datascience"]
+- url: "https://xgboost.readthedocs.io/en/latest/get_started.html"
+  topics: ["datascience"]
+- url: "https://scikit-survival.readthedocs.io/en/stable/user_guide/index.html"
+  topics: ["datascience"]
+- url: "https://shap-lrjball.readthedocs.io/en/latest/index.html"
+  topics: ["datascience"]
 
 # Conda official docs
 - url: "https://docs.conda.io/en/latest/"
@@ -271,6 +290,50 @@
   topics: ["security"]
 - url: "https://poshc2.readthedocs.io/en/latest/index.html"
   topics: ["security"]
+- url: "https://pycryptodome.readthedocs.io/en/latest/src/introduction.html"
+  topics: ["security"]
+- url: "https://pycryptodome.readthedocs.io/en/latest/src/features.html"
+  topics: ["security"]
+- url: "https://cryptography.io/en/latest/"
+  topics: ["security"]
+- url: "https://cryptography.io/en/latest/fernet/"
+  topics: ["security"]
+- url: "https://cryptography.io/en/latest/openssl/"
+  topics: ["security"]
+- url: "https://cryptography.io/en/latest/installation/"
+  topics: ["security", "devops"]
+- url: "https://sshuttle.readthedocs.io/en/stable/overview.html"
+  topics: ["security"]
+- url: "https://sshuttle.readthedocs.io/en/stable/usage.html"
+  topics: ["security"]
+- url: "https://docs.zeek.org/en/master/about.html"
+  topics: ["security"]
+- url: "https://docs.zeek.org/en/master/monitoring.html"
+  topics: ["security"]
+- url: "https://suricata.readthedocs.io/en/suricata-6.0.5/what-is-suricata.html"
+  topics: ["security"]
+- url: "https://suricata.readthedocs.io/en/suricata-6.0.5/quickstart.html"
+  topics: ["security"]
+- url: "https://flask-security-too.readthedocs.io/en/stable/"
+  topics: ["security", "backend"]
+- url: "https://elastalert2.readthedocs.io/en/latest/elastalert.html"
+  topics: ["security", "devops"]
+- url: "https://elastalert2.readthedocs.io/en/latest/running_elastalert.html"
+  topics: ["security", "devops"]
+- url: "https://elastalert2.readthedocs.io/en/latest/elasticsearch_security_privileges.html"
+  topics: ["security"]
+- url: "https://jakeydocs.readthedocs.io/en/latest/security/authorization/roles.html"
+  topics: ["security"]
+- url: "https://jakeydocs.readthedocs.io/en/latest/security/app-secrets.html"
+  topics: ["security"]
+- url: "https://pynacl.readthedocs.io/en/latest/password_hashing/"
+  topics: ["security"]
+- url: "https://pynacl.readthedocs.io/en/latest/public/"
+  topics: ["security"]
+- url: "https://pynacl.readthedocs.io/en/latest/signing/"
+  topics: ["security"]
+- url: "https://thumbor.readthedocs.io/en/latest/security.html"
+  topics: ["security"]
 
 
 ##############################################################################
@@ -325,16 +388,32 @@
   topics: ["frontend", "security"]
 - url: "https://bootstrap-table.com/docs/getting-started/introduction/"
   topics: ["frontend"]
+- url: "https://bootstrap-table.com/docs/api/table-options/"
+  topics: ["frontend"]
+- url: "https://bootstrap-table.com/docs/extensions/auto-refresh/"
+  topics: ["frontend"]
 # Possibly datascience too?
 - url: "http://docs.mathjax.org/en/latest/basic/mathjax.html"
-  topics: ["frontend", "techwriting"]
+  topics: ["frontend"]  # techwriting
 - url: "http://docs.mathjax.org/en/latest/basic/mathematics.html"
-  topics: ["frontend", "techwriting"]
+  topics: ["frontend"]  # techwriting
 - url: "https://react-jsonschema-form.readthedocs.io/en/v1.8.1/"
   topics: ["frontend"]
 - url: "https://kilianvalkhof.com/2020/javascript/supercharging-input-type-number/"
   topics: ["frontend"]
 - url: "https://robkendal.co.uk/blog/2021-09-03-sending-contact-forms-with-next-js-and-wordpress"
+  topics: ["frontend"]
+- url: "https://useaxentix.com/"
+  topics: ["frontend"]
+- url: "https://mincong.io/en/query-params-vue.js/"
+  topics: ["frontend"]
+- url: "https://mincong.io/en/use-component-in-vue-js/"
+  topics: ["frontend"]
+- url: "https://paperless-ng.readthedocs.io/en/latest/"
+  topics: ["frontend", "backend"]
+- url: "https://neutralino.js.org/docs/how-to/use-a-frontend-library/"
+  topics: ["frontend"]
+- url: "https://neutralino.js.org/docs/"
   topics: ["frontend"]
 
 
@@ -425,6 +504,10 @@
   topics: ["backend", "devops"]
 - url: "https://django-testing-docs.readthedocs.io/en/latest/basic_unittests.html"
   topics: ["backend"]
+- url: "https://kotti.readthedocs.io/en/latest/first_steps/overview.html"
+  topics: ["backend"]
+- url: "https://kotti.readthedocs.io/en/latest/index.html"
+  topics: ["backend"]
 
 
 ##############################################################################
@@ -512,8 +595,6 @@
 - url: "https://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html"
   topics: ["devops"]
 - url: "https://docs.vyos.io/en/equuleus/automation/vyos-ansible.html"
-  topics: ["devops"]
-- url: "https://elastalert2.readthedocs.io/en/latest/elastalert.html"
   topics: ["devops"]
 - url: "https://elastalert2.readthedocs.io/en/latest/recipes/faq.html"
   topics: ["devops"]
@@ -628,96 +709,8 @@
   topics: ["devops"]
 - url: "https://zoneminder.readthedocs.io/en/stable/installationguide/redhat.html"
   topics: ["devops"]
-
-
-##############################################################################
-# Tech Writing
-##############################################################################
-- url: "https://sphinx-automodapi.readthedocs.io/en/latest/"
-  topics: ["techwriting"]
-# Sphinx specific but also very C++/Doxygen
-- url: "https://exhale.readthedocs.io/en/latest/"
-  topics: ["techwriting"]
-- url: "https://exhale.readthedocs.io/en/latest/usage.html"
-  topics: ["techwriting"]
-- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/create_project.html"
-  topics: ["techwriting"]
-- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/glossary_terms.html"
-  topics: ["techwriting"]  # Does mention Git a few times...
-- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html"
-  topics: ["techwriting"]
-- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-mkdocs.html"
-  topics: ["techwriting"]
-- url: "https://docs.readthedocs.io/en/stable/intro/import-guide.html"
-  topics: ["techwriting"]  # Also talks about Git/Bitbucket quite a bit
-- url: "https://docs.readthedocs.io/en/stable/guides/cross-referencing-with-sphinx.html"
-  topics: ["techwriting"]
-- url: "https://www.sphinx-doc.org/en/master/"
-  topics: ["techwriting"]
-- url: "https://www.sphinx-doc.org/en/master/tutorial/getting-started.html"
-  topics: ["techwriting"]
-- url: "https://www.sphinx-doc.org/en/master/tutorial/first-steps.html"
-  topics: ["techwriting"]
-- url: "https://mkdocs.readthedocs.io/en/stable/"
-  topics: ["techwriting"]
-- url: "https://mkdocs.readthedocs.io/en/stable/getting-started/"
-  topics: ["techwriting"]
-- url: "https://mkdocs.readthedocs.io/en/stable/user-guide/writing-your-docs/"
-  topics: ["techwriting"]
-# Not actually hosted by us...
-- url: "https://docutils.sourceforge.io/rst.html"
-  topics: ["techwriting"]
-- url: "https://sphinx-design.readthedocs.io/en/furo-theme/cards.html"
-  topics: ["techwriting"]
-- url: "https://sphinx-design.readthedocs.io/en/furo-theme/badges_buttons.html"
-  topics: ["techwriting"]
-
-
-##############################################################################
-# Game Dev
-##############################################################################
-- url: "https://docs.godotengine.org/en/stable/development/cpp/introduction_to_godot_development.html"
-  topics: ["game-dev"]
-- url: "https://docs.godotengine.org/en/stable/about/introduction.html"
-  topics: ["game-dev"]
-- url: "https://docs.godotengine.org/en/stable/getting_started/first_3d_game/index.html"
-  topics: ["game-dev"]
-- url: "https://docs.godotengine.org/de/stable/getting_started/first_2d_game/03.coding_the_player.html"
-  topics: ["game-dev"]
-- url: "https://docs.godotengine.org/en/3.1/getting_started/step_by_step/signals.html"
-  topics: ["game-dev"]
-- url: "https://docs.godotengine.org/en/stable/classes/class_collisionobject.html"
-  topics: ["game-dev"]
-- url: "https://minerl.readthedocs.io/en/latest/tutorials/minerl_tools.html"
-  topics: ["game-dev"]
-- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/tour.html"
-  topics: ["game-dev"]
-- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/starting-dialog.html"
-  topics: ["game-dev"]
-# The intro page is a little short
-- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/index.html"
-  topics: ["game-dev"]
-- url: "https://hump.readthedocs.io/en/latest/"
-  topics: ["game-dev"]
-# Playing cards, but still a "game" I suppose
-- url: "https://pydealer.readthedocs.io/en/latest/"
-  topics: ["game-dev"]
-- url: "https://pydealer.readthedocs.io/en/latest/usage.html"
-  topics: ["game-dev"]
-# Not actually gaming - this is a framework for social science?
-#- url: "https://otree.readthedocs.io/en/latest/tutorial/part3.html"
-#  topics: ["game-dev"]
-
-# Modrinth doesn't actually say much about "games" exactly.
-# The classifier will hopefully get smart but this might be a hard one.
-- url: "https://modrinth.com/mod/sandwichable"
-  topics: ["game-dev"]
-- url: "https://modrinth.com/mod/excavated_variants"
-  topics: ["game-dev"]
-- url: "https://modrinth.com/mod/thatorthis"
-  topics: ["game-dev"]
-- url: "https://modrinth.com/mod/trufflez-arcanum"
-  topics: ["game-dev"]
+- url: "https://pymodbustcp.readthedocs.io/en/latest/package/class_ModbusClient.html"
+  topics: ["devops"]
 
 
 ##############################################################################
@@ -762,7 +755,7 @@
 - url: "https://ethereum-on-arm-documentation.readthedocs.io/en/latest/index.html"
   topics: ["blockchain"]
 - url: "https://ethereum-on-arm-documentation.readthedocs.io/en/latest/quick-guide/recommended-hardware.html"
-  topics: ["blockchain", "hardware"]
+  topics: ["blockchain"]  # also hardware
 - url: "https://web3js.readthedocs.io/en/v1.5.2/index.html"
   topics: ["blockchain"]
 - url: "https://web3js.readthedocs.io/en/v1.5.2/getting-started.html"
@@ -775,23 +768,28 @@
   topics: ["blockchain"]
 - url: "https://electrum.readthedocs.io/en/latest/2fa.html"
   topics: ["blockchain", "security"]
-
-
-##############################################################################
-# Hardware
-##############################################################################
-- url: "https://mido.readthedocs.io/en/latest/roadmap.html"
-  topics: ["hardware"]
-- url: "https://mido.readthedocs.io/en/latest/backends/rtmidi.html"
-  topics: ["hardware"]
-- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/"
-  topics: ["hardware"]
-- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/ros_compatibility/"
-  topics: ["hardware"]
-- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/introduction.html"
-  topics: ["hardware"]
-- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/gpio_extension_board.html"
-  topics: ["hardware"]
+- url: "https://python-binance.readthedocs.io/en/latest/margin.html"
+  topics: ["blockchain"]
+- url: "https://python-binance.readthedocs.io/en/latest/overview.html"
+  topics: ["blockchain"]
+- url: "https://docs.ccxt.com/en/latest/exchange-markets.html"
+  topics: ["blockchain"]
+- url: "https://docs.ccxt.com/en/latest/manual.html"
+  topics: ["blockchain"]
+- url: "https://ethereum-etl.readthedocs.io/en/latest/"
+  topics: ["blockchain"]
+- url: "https://ethereum-etl.readthedocs.io/en/latest/exporting-the-blockchain/"
+  topics: ["blockchain"]
+- url: "https://ethereum-etl.readthedocs.io/en/latest/quickstart/"
+  topics: ["blockchain"]
+- url: "https://remix-ide.readthedocs.io/en/latest/run.html"
+  topics: ["blockchain"]
+- url: "https://remix-ide.readthedocs.io/en/latest/index.html"
+  topics: ["blockchain"]
+- url: "https://eth-brownie.readthedocs.io/en/stable/index.html"
+  topics: ["blockchain"]
+- url: "https://eth-brownie.readthedocs.io/en/stable/compile.html"
+  topics: ["blockchain"]
 
 
 ##############################################################################
@@ -832,4 +830,121 @@
 - url: "https://pycairo.readthedocs.io/en/latest/index.html"
   topics: []
 - url: "https://ros2-industrial-workshop.readthedocs.io/en/latest/_source/navigation/ROS2-Cartographer.html"
+  topics: []
+- url: "https://camelot-py.readthedocs.io/en/master/user/how-it-works.html"
+  topics: []
+- url: "https://bitburner.readthedocs.io/en/latest/shortcuts.html"
+  topics: []
+- url: "https://routinehub.co/category/finance/"
+  topics: []
+- url: "https://pycodestyle.pycqa.org/en/latest/intro.html"
+  topics: []  # Testing/Code style
+- url: "https://abundantcode.com/how-to-open-display-settings-from-command-line-in-windows-10/"
+  topics: []
+- url: "https://coderseditor.com/"
+  topics: []
+
+# Hardware
+- url: "https://mido.readthedocs.io/en/latest/roadmap.html"
+  topics: []
+- url: "https://mido.readthedocs.io/en/latest/backends/rtmidi.html"
+  topics: []
+- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/"
+  topics: []
+- url: "https://carla.readthedocs.io/projects/ros-bridge/en/latest/ros_compatibility/"
+  topics: []
+- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/introduction.html"
+  topics: []
+- url: "https://docs.sunfounder.com/projects/davinci-kit/en/latest/gpio_extension_board.html"
+  topics: []
+- url: "https://ezdxf.readthedocs.io/en/stable/introduction.html"
+  topics: []  # AutoCad related
+
+
+# Tech Writing
+- url: "https://sphinx-automodapi.readthedocs.io/en/latest/"
+  topics: []
+# Sphinx specific but also very C++/Doxygen
+- url: "https://exhale.readthedocs.io/en/latest/"
+  topics: []
+- url: "https://exhale.readthedocs.io/en/latest/usage.html"
+  topics: []
+- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/create_project.html"
+  topics: []
+- url: "https://sublime-and-sphinx-guide.readthedocs.io/en/latest/glossary_terms.html"
+  topics: []  # Does mention Git a few times...
+- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html"
+  topics: []
+- url: "https://docs.readthedocs.io/en/stable/intro/getting-started-with-mkdocs.html"
+  topics: []
+- url: "https://docs.readthedocs.io/en/stable/intro/import-guide.html"
+  topics: []  # Also talks about Git/Bitbucket quite a bit
+- url: "https://docs.readthedocs.io/en/stable/guides/cross-referencing-with-sphinx.html"
+  topics: []
+- url: "https://www.sphinx-doc.org/en/master/"
+  topics: []
+- url: "https://www.sphinx-doc.org/en/master/tutorial/getting-started.html"
+  topics: []
+- url: "https://www.sphinx-doc.org/en/master/tutorial/first-steps.html"
+  topics: []
+- url: "https://mkdocs.readthedocs.io/en/stable/"
+  topics: []
+- url: "https://mkdocs.readthedocs.io/en/stable/getting-started/"
+  topics: []
+- url: "https://mkdocs.readthedocs.io/en/stable/user-guide/writing-your-docs/"
+  topics: []
+# Not actually hosted by us...
+- url: "https://docutils.sourceforge.io/rst.html"
+  topics: []
+- url: "https://sphinx-design.readthedocs.io/en/furo-theme/cards.html"
+  topics: []
+- url: "https://sphinx-design.readthedocs.io/en/furo-theme/badges_buttons.html"
+  topics: []
+
+
+# Game Dev
+- url: "https://docs.godotengine.org/en/stable/development/cpp/introduction_to_godot_development.html"
+  topics: []
+- url: "https://docs.godotengine.org/en/stable/about/introduction.html"
+  topics: []
+- url: "https://docs.godotengine.org/en/stable/getting_started/first_3d_game/index.html"
+  topics: []
+- url: "https://docs.godotengine.org/de/stable/getting_started/first_2d_game/03.coding_the_player.html"
+  topics: []
+- url: "https://docs.godotengine.org/en/3.1/getting_started/step_by_step/signals.html"
+  topics: []
+- url: "https://docs.godotengine.org/en/stable/classes/class_collisionobject.html"
+  topics: []
+- url: "https://minerl.readthedocs.io/en/latest/tutorials/minerl_tools.html"
+  topics: []
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/tour.html"
+  topics: []
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/starting-dialog.html"
+  topics: []
+- url: "https://origins.readthedocs.io/en/latest/"
+  topics: []
+- url: "https://origins.readthedocs.io/en/latest/guides/data/define_origin/"
+  topics: []
+# The intro page is a little short
+- url: "https://openmw.readthedocs.io/en/latest/manuals/openmw-cs/index.html"
+  topics: []
+- url: "https://hump.readthedocs.io/en/latest/"
+  topics: []
+# Playing cards, but still a "game" I suppose
+- url: "https://pydealer.readthedocs.io/en/latest/"
+  topics: []
+- url: "https://pydealer.readthedocs.io/en/latest/usage.html"
+  topics: []
+# Not actually gaming - this is a framework for social science?
+#- url: "https://otree.readthedocs.io/en/latest/tutorial/part3.html"
+#  topics: []
+# Modrinth doesn't actually say much about "games" exactly.
+# The classifier will hopefully get smart but this might be a hard one.
+- url: "https://modrinth.com/mod/sandwichable"
+  topics: []
+- url: "https://modrinth.com/mod/excavated_variants"
+  topics: []
+- url: "https://modrinth.com/mod/thatorthis"
+  topics: []
+- url: "https://modrinth.com/mod/trufflez-arcanum"
   topics: []

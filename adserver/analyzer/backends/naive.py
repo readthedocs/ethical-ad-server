@@ -23,6 +23,18 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         "body",
     )
 
+    # CSS selectors of content that should be ignored for the purpose of analysis
+    REMOVE_CONTENT_SELECTORS = (
+        "[role=navigation]",
+        "[role=search]",
+        ".headerlink",
+        "nav",
+        "footer",
+        "div.header",
+        # Django Packages specific
+        "#myrotatingnav",
+    )
+
     MAX_WORDS_ANALYZED = 1000
     MAX_KEYWORDS = 3
     MIN_KEYWORD_OCCURRENCES = 2
@@ -43,6 +55,10 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         keywords = []
 
         soup = BeautifulSoup(resp.content, features="html.parser")
+
+        for selector in self.REMOVE_CONTENT_SELECTORS:
+            for nodes in soup.select(selector):
+                nodes.decompose()
 
         for selector in self.MAIN_CONTENT_SELECTORS:
             results = soup.select(selector, limit=1)
