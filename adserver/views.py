@@ -175,9 +175,7 @@ def dashboard(request):
     )
 
 
-class AdvertiserMainView(
-    AdvertiserAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
-):
+class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
 
     """Should be (or redirect to) the main view for an advertiser that they see when first logging in."""
 
@@ -195,10 +193,6 @@ class AdvertiserMainView(
         )
         end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
-        queryset = self.get_queryset(advertiser=self.advertiser, start_date=start_date)
-        report = AdvertiserReport(queryset)
-        report.generate()
-
         flights = [
             f
             for f in (
@@ -213,14 +207,14 @@ class AdvertiserMainView(
             {
                 "advertiser": self.advertiser,
                 "advertiser_new": self.is_advertiser_new(),
+                "has_views_this_month": self.has_views_this_month(start_date, end_date),
                 "are_ads_set_up": self.are_ads_set_up(),
                 "has_paid_invoice": self.has_paid_invoice(),
-                "report": report,
                 "flights": flights,
                 "start_date": start_date,
                 "end_date": end_date,
-                "metabase_advertiser_performance": settings.METABASE_QUESTIONS.get(
-                    "ADVERTISER_PERFORMANCE"
+                "metabase_advertiser_dashboard": settings.METABASE_DASHBOARDS.get(
+                    "ADVERTISER_FIGURES"
                 ),
             }
         )
@@ -231,6 +225,16 @@ class AdvertiserMainView(
         return not AdImpression.objects.filter(
             advertisement__flight__campaign__advertiser_id=self.advertiser.id
         ).exists()
+
+    def has_views_this_month(self, start_date, end_date):
+        """Detect if advertisers have impressions in the time frame."""
+        return (
+            not AdImpression.objects.filter(
+                advertisement__flight__campaign__advertiser_id=self.advertiser.id
+            )
+            .filter(date__gte=start_date, date__lte=end_date)
+            .exists()
+        )
 
     def are_ads_set_up(self):
         return Advertisement.objects.filter(

@@ -26,42 +26,6 @@
     <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ advertiser }} overview{% endblocktrans %}</h1>
     <p><small>Month to date overview for {{ advertiser }}.</small></p>
 
-    <div class="row row-cols-1 row-cols-md-4">
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.ctr|floatformat:3 }}%</h3>
-            <h6 class="text-muted text-center">{% trans 'CTR' %}</h6>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.views|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Views' %}</h6>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.clicks|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Clicks' %}</h6>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">${{ report.total.cost|floatformat:2|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Spend' %}</h6>
-          </div>
-        </div>
-      </div>
-    </div>
-    <p class="text-right mb-5"><a href="{% url 'advertiser_report' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
-
     {% if advertiser_new %}
       {# Advertiser onboarding workflow #}
       <div class="row mb-5">
@@ -93,7 +57,7 @@
           </ol>
         </div>
       </div>
-    {% elif report.total.views == 0 %}
+    {% elif not has_views_this_month %}
       {# Returning advertiser, but nothing to show this month #}
       <div class="row mb-5">
         <div class="col">
@@ -113,12 +77,14 @@
       </div>
     {% else %}
       <div class="row mb-5">
-        <div class="col min-vh-50">
-          {% metabase_question_embed metabase_advertiser_performance advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+        <div class="col min-vh-75">
+          {% metabase_dashboard_embed metabase_advertiser_dashboard advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
         </div>
       </div>
     {% endif %}
 
+
+    <!-- Flights -->
     <div class="row row-cols-1">
       <div class="col">
         <div class="card">

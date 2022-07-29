@@ -14,6 +14,20 @@ log = logging.getLogger(__name__)  # noqa
 register = template.Library()
 
 
+def serialize_params(params):
+    """Formats some metabase parameters so they can be JSON serialized."""
+    # These parameters must be JSON serializable to be signed
+    # Notably, dates aren't serializable by default
+    serializable_params = {}
+    for (k, val) in params.items():
+        if isinstance(val, (date, datetime)):
+            serializable_params[k] = str(val)
+        else:
+            serializable_params[k] = val
+
+    return serializable_params
+
+
 @register.simple_tag
 def metabase_question_embed(question_id, **kwargs):
     """
@@ -25,21 +39,11 @@ def metabase_question_embed(question_id, **kwargs):
         log.warning("Metabase Secret Key is not set - Graphs won't render")
         return None
 
-    # These parameters must be JSON serializable to be signed
-    # Notably, dates aren't serializable by default
-    params = {}
-    for (k, val) in kwargs.items():
-        if isinstance(val, (date, datetime)):
-            params[k] = str(val)
-        else:
-            params[k] = val
-
     payload = {
         "resource": {"question": question_id},
-        "params": params,
-        "exp": round(time.time()) + (60 * 10),
+        "params": serialize_params(kwargs),
+        "exp": round(time.time()) + (60 * 10),  # cache expiration
     }
-    log.debug(payload)
 
     token = jwt.encode(payload, settings.METABASE_SECRET_KEY, algorithm="HS256")
     iframe_url = (
@@ -51,4 +55,30 @@ def metabase_question_embed(question_id, **kwargs):
 
     return render_to_string(
         "adserver/metabase/question-iframe.html", {"iframe_url": iframe_url}
+    )
+
+
+@register.simple_tag
+def metabase_dashboard_embed(dashboard_id, **kwargs):
+    """Embeds a dashboard instead of a question."""
+    if not settings.METABASE_SECRET_KEY:
+        log.warning("Metabase Secret Key is not set - Graphs won't render")
+        return None
+
+    payload = {
+        "resource": {"dashboard": dashboard_id},
+        "params": serialize_params(kwargs),
+        "exp": round(time.time()) + (60 * 10),  # cache expiration
+    }
+
+    token = jwt.encode(payload, settings.METABASE_SECRET_KEY, algorithm="HS256")
+    iframe_url = (
+        settings.METABASE_SITE_URL
+        + "/embed/dashboard/"
+        + token
+        + "#bordered=true&titled=false"
+    )
+
+    return render_to_string(
+        "adserver/metabase/dashboard-iframe.html", {"iframe_url": iframe_url}
     )
