@@ -692,7 +692,7 @@ class BaseProxyView(View):
                 self.log_level, "Internal IP impression. User Agent: [%s]", user_agent
             )
             reason = "Internal IP"
-        elif parsed_ua.os.family == "Other" and parsed_ua.browser.family == "Other":
+        elif parsed_ua.os.family == "Other" or parsed_ua.browser.family == "Other":
             # This is probably a bot/proxy server/prefetcher/etc.
             log.log(self.log_level, "Unknown user agent impression [%s]", user_agent)
             reason = "Unrecognized user agent"
