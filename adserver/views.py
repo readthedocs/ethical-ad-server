@@ -92,11 +92,11 @@ from .reports import PublisherRegionReport
 from .reports import PublisherRegionTopicReport
 from .reports import PublisherReport
 from .reports import PublisherUpliftReport
+from .utils import anonymize_ip_address
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
 from .utils import generate_publisher_payout_data
 from .utils import get_ad_day
-from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
@@ -665,11 +665,11 @@ class BaseProxyView(View):
 
     def ignore_tracking_reason(self, request, advertisement, offer):
         """Returns a reason this impression should not be tracked or `None` if this *should* be tracked."""
+        # pylint: disable=too-many-branches
         reason = None
 
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
-        client_id = get_client_id(request)
         parsed_ua = parse_user_agent(user_agent)
         referrer = request.META.get("HTTP_REFERER")
 
@@ -750,15 +750,31 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Ratelimited view impression"
-
-        if offer and offer.client_id != client_id:
-            # Because this block doesn't set a reason, it will only log mismatched clients
-            # Not stop them.
+        if offer and offer.os_family != parsed_ua.os.family:
+            # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
             log.log(
-                self.log_level,
-                "Mismatched client_id between offer and impression. Client ID: [%s], User agent: [%s]",
-                client_id,
+                self.log_security_level,
+                "Mismatched OS between offer and impression. Publisher: [%s], Offer OS: [%s], User agent: [%s]",
+                offer.publisher,
+                offer.os_family,
                 user_agent,
+            )
+        if offer and offer.browser_family != parsed_ua.browser.family:
+            # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
+            log.log(
+                self.log_security_level,
+                "Mismatched browser between offer and impression. Publisher: [%s], Offer Browser: [%s], User agent: [%s]",
+                offer.publisher,
+                offer.browser_family,
+                user_agent,
+            )
+        if offer and offer.ip != anonymize_ip_address(ip_address):
+            # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
+            log.log(
+                self.log_security_level,
+                "Mismatched IP between offer and impression. Publisher: [%s], Offer IP (anon): [%s]",
+                offer.publisher,
+                offer.ip,
             )
 
         return reason
