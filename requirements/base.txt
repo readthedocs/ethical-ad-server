@@ -34,7 +34,7 @@ django-ratelimit==2.0.0
 django-simple-history==3.0.0
 
 # Parsing browser user agents
-user-agents==2.0
+user-agents==2.2
 
 # IP database libraries
 geoip2==2.9.0
