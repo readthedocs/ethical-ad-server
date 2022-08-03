@@ -337,10 +337,15 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         _("PayPal email address"), blank=True, null=True, default=None
     )
 
+    # Record additional details to the offer for this publisher
+    # This can be used for publishers where their traffic needs more scrutiny
+    record_offer_details = models.BooleanField(
+        default=False,
+        help_text=_("Record additional offer details for this publisher"),
+    )
+
     # This overrides settings.ADSERVER_RECORD_VIEWS for a specific publisher
     # Details of each ad view are written to the database.
-    # Setting this can result in some performance degradation and a bloated database,
-    # but note that all Offers are stored by default.
     record_views = models.BooleanField(
         default=False,
         help_text=_("Record each ad view from this publisher to the database"),
@@ -1384,7 +1389,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         country = get_client_country(request)
         url = url or request.META.get("HTTP_REFERER")
 
-        if model != Click and settings.ADSERVER_DO_NOT_TRACK:
+        if (
+            model != Click
+            and settings.ADSERVER_DO_NOT_TRACK
+            and not publisher.record_offer_details
+        ):
             # For compliance with DNT,
             # we can't store UAs indefinitely from a user merely browsing
             user_agent = None
