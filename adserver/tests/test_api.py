@@ -1607,12 +1607,19 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Bot impression")
 
-    def test_view_tracking_unknown_ua(self):
-        unknown_ua = "Unrecognized UA"
-        resp = self.client.get(self.url, HTTP_USER_AGENT=unknown_ua)
+    def test_view_tracking_unsupported_ua(self):
+        unsupported_agents = (
+            "Unrecognized UA",
+            # Too old
+            "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14",
+            "Mozilla/4.0 (compatible; MSIE 5.15; Mac_PowerPC)",
+            "Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0",
+        )
 
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp["X-Adserver-Reason"], "Unrecognized user agent")
+        for ua in unsupported_agents:
+            resp = self.client.get(self.url, HTTP_USER_AGENT=ua)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp["X-Adserver-Reason"], "Unsupported user agent")
 
     @override_settings(ADSERVER_BLOCKLISTED_USER_AGENTS=["Safari"])
     def test_view_tracking_blocked_ua(self):

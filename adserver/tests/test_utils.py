@@ -23,6 +23,7 @@ from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
 from ..utils import is_blocklisted_user_agent
 from ..utils import is_click_ratelimited
+from ..utils import is_valid_user_agent
 from ..utils import is_view_ratelimited
 from ..utils import parse_date_string
 
@@ -69,6 +70,23 @@ class UtilsTest(TestCase):
         self.assertAlmostEqual(calculate_ctr(1, 1), 100)
         self.assertAlmostEqual(calculate_ctr(1, 10), 10)
         self.assertAlmostEqual(calculate_ctr(5, 25), 20)
+
+    def test_is_valid_user_agent(self):
+        unsupported_uas = (
+            "python-requests/2.27.1",
+            "Links (2.1pre15; Linux 2.4.26 i686; 158x61)",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:5.0) Gecko/20100101 Firefox/5.0",
+            "Mozilla/5.0 (Windows; U; Win98; en-US; rv:1.4) Gecko Netscape/7.1",
+            "Mozilla/5.0 (Linux; Android 4.4.2; SM-T230NU Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Safari/537.36",
+        )
+        for ua in unsupported_uas:
+            self.assertFalse(is_valid_user_agent(ua))
+
+        supported_ua = (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
+            "Chrome/103.0.5060.134 Safari/537.36"
+        )
+        self.assertTrue(is_valid_user_agent(supported_ua))
 
     def test_blocklisted_user_agent(self):
         ua = (

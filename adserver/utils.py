@@ -26,8 +26,11 @@ from django.utils.timezone import is_naive
 from django.utils.timezone import utc
 from django_countries import countries
 from geoip2.errors import AddressNotFoundError
+from packaging.version import parse as parse_version
+from packaging.version import Version
 from ratelimit.utils import is_ratelimited
 from user_agents import parse
+from user_agents.parsers import UserAgent
 
 from .constants import PAID
 from .constants import PAID_CAMPAIGN
@@ -39,6 +42,58 @@ log = logging.getLogger(__name__)  # noqa
 # Put this here so we don't reload it on each call
 COUNTRY_DICT = dict(countries)
 COUNTRY_DICT["T1"] = "Tor"
+
+UNSUPPORTED_OS_FAMILIES = (
+    "Other",
+    "Tizen",
+    "BREW",
+    "Kindle",
+    "Roku",
+    "KaiOS",
+)
+UNSUPPORTED_BROWSER_FAMILIES = (
+    "Other",
+    "iTunes",
+    "Links",
+    "ELinks",
+    "Links",
+    "Wget",
+    "webOS Browser",
+    "Galeon",
+    "Firefox (Shiretoko)",
+    "Firefox (Minefield)",
+    "Firefox (Namoroka)",
+    "Instagram",
+    "Facebook",
+    "Camino",
+    "Snapchat",
+    "BOLT",
+)
+UNSUPPORTED_WINDOWS_VERSIONS = (
+    ("XP",),
+    ("Vista",),
+    (2000,),
+    (98,),
+    (95,),
+    ("3.1",),
+    ("NT",),
+    ("NT 4.0",),
+)
+
+# https://en.wikipedia.org/wiki/Android_version_history
+# Covers over 99% of the Android market
+MIN_ANDROID_VERSION = Version("8.0")
+
+# https://www.statista.com/statistics/1118925/mobile-apple-ios-version-share-worldwide/
+# Covers over 99% of the iOS market
+MIN_IOS_VERSION = Version("9.0")
+
+# Minimum supported by the ad client
+MIN_IE_VERSION = Version("11.0")
+
+# https://en.wikipedia.org/wiki/Firefox_version_history
+MIN_FIREFOX_VERSION = Version("52.0")
+MIN_CHROME_VERSION = Version("56.0")
 
 
 @dataclass
@@ -241,6 +296,39 @@ def is_click_ratelimited(request, ratelimits=None):
             return True
 
     return False
+
+
+def is_valid_user_agent(user_agent):
+    """Returns ``True`` if the UA appears valid and ``False`` otherwise."""
+    if not isinstance(user_agent, UserAgent):
+        user_agent = parse(user_agent)
+
+    browser_family = user_agent.browser.family
+    browser_version = parse_version(user_agent.browser.version_string)
+    os_family = user_agent.os.family
+    os_version = parse_version(user_agent.os.version_string)
+
+    if browser_family in UNSUPPORTED_BROWSER_FAMILIES:
+        return False
+    if os_family in UNSUPPORTED_OS_FAMILIES:
+        return False
+    if os_family == "Windows" and user_agent.os.version in UNSUPPORTED_WINDOWS_VERSIONS:
+        return False
+    if os_family == "Android" and os_version < MIN_ANDROID_VERSION:
+        return False
+    if os_family == "iOS" and os_version < MIN_IOS_VERSION:
+        return False
+    if browser_family == "IE" and browser_version < MIN_IE_VERSION:
+        return False
+    if browser_family == "Firefox" and browser_version < MIN_FIREFOX_VERSION:
+        return False
+    if (
+        browser_family in ("Chrome", "Chromium")
+        and browser_version < MIN_CHROME_VERSION
+    ):
+        return False
+
+    return True
 
 
 def is_blocklisted_user_agent(user_agent, blocklist_regexes=None):

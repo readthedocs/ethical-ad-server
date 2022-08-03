@@ -104,6 +104,7 @@ from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
 from .utils import is_click_ratelimited
+from .utils import is_valid_user_agent
 from .utils import is_view_ratelimited
 
 
@@ -692,10 +693,14 @@ class BaseProxyView(View):
                 self.log_level, "Internal IP impression. User Agent: [%s]", user_agent
             )
             reason = "Internal IP"
-        elif parsed_ua.os.family == "Other" or parsed_ua.browser.family == "Other":
+        elif not is_valid_user_agent(parsed_ua):
             # This is probably a bot/proxy server/prefetcher/etc.
-            log.log(self.log_level, "Unknown user agent impression [%s]", user_agent)
-            reason = "Unrecognized user agent"
+            log.log(
+                self.log_level,
+                "Unknown/unsupported user agent impression [%s]",
+                user_agent,
+            )
+            reason = "Unsupported user agent"
         elif not request.user.is_anonymous:
             log.log(self.log_level, "Ignored known user ad impression")
             reason = "Known user impression"
