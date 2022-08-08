@@ -81,7 +81,6 @@ from .models import RegionTopicImpression
 from .models import UpliftImpression
 from .regiontopics import region_list
 from .regiontopics import topic_list
-from .reports import AdvertiserGeoReport
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
@@ -1121,7 +1120,7 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
         return context
 
 
-class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportView):
+class AdvertiserGeoReportView(AdvertiserAccessMixin, BaseReportView):
 
     """A report for an advertiser broken down by geo."""
 
@@ -1132,53 +1131,15 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, GeoReportMixin, BaseReportV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        country = self.request.GET.get("country", "")
-
         advertiser_slug = kwargs.get("advertiser_slug", "")
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
-
-        flight_slug = self.request.GET.get("flight", "")
-        flight = Flight.objects.filter(
-            campaign__advertiser=advertiser, slug=flight_slug
-        ).first()
-
-        queryset = self.get_queryset(
-            advertiser=advertiser,
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-            country=country,
-            flight=flight,
-        )
-
-        report = AdvertiserGeoReport(
-            queryset,
-            # Index by date if filtering report to a single country
-            index="date" if country else None,
-            order="-date" if country else None,
-            max_results=None if country else self.LIMIT,
-        )
-        report.generate()
-
-        country_options = self.get_country_options(
-            # Don't pass the country so we get all countries
-            self.get_queryset(
-                advertiser=advertiser,
-                start_date=context["start_date"],
-                end_date=context["end_date"],
-            )
-        )
 
         context.update(
             {
                 "advertiser": advertiser,
-                "report": report,
-                "country": country,
-                "country_options": country_options,
-                "country_name": self.get_country_name(country),
-                "flights": Flight.objects.filter(
-                    campaign__advertiser=advertiser
-                ).order_by("-start_date"),
-                "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
+                "metabase_advertiser_geos": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_GEO_REPORT"
+                ),
             }
         )
 

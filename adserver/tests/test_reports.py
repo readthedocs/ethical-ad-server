@@ -379,39 +379,6 @@ class TestReportViews(TestReportsBase):
         )
 
     def test_advertiser_geo_report_contents(self):
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            country="US",
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            country="US",
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            country="US",
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            country="FR",
-            viewed=True,
-            clicked=True,
-        )
-
-        # Update reporting
-        daily_update_geos()
-
         url = reverse("advertiser_geo_report", args=[self.advertiser1.slug])
 
         # Anonymous
@@ -421,54 +388,9 @@ class TestReportViews(TestReportsBase):
 
         self.client.force_login(self.staff_user)
 
-        # All reports
-        response = self.client.get(url)
-        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
-        self.assertContains(response, "France")
-        self.assertNotContains(response, "Belgium")
-
-        # Filter reports
-        response = self.client.get(url, {"country": "US"})
-        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
-        self.assertNotContains(
-            response, '<td class="text-right"><strong>2</strong></td>'
-        )
-        response = self.client.get(url, {"country": "FR"})
-        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
-
-        # Invalid country
-        response = self.client.get(url, {"country": "foobar"})
-        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
-
-        # Verify the export URL is configured
-        self.assertContains(response, "CSV Export")
-
-        export_url = reverse(
-            "advertiser_geo_report_export", args=[self.advertiser1.slug]
-        )
-        response = self.client.get(export_url, {"country": "FR"})
-        self.assertContains(response, "Total,1")
-
-        # Filter by flight
-        response = self.client.get(url, {"flight": self.flight1.slug})
-        self.assertContains(response, "France")
-
-        advertiser1_flight2 = get(
-            Flight,
-            name="Test Flight 2",
-            slug="advertiser1-test-flight-2",
-            campaign=self.campaign,
-            live=False,
-            cpm=1.0,
-            sold_impressions=1000,
-        )
-        response = self.client.get(url, {"flight": advertiser1_flight2.slug})
-        self.assertContains(response, advertiser1_flight2.name)
-        self.assertContains(
-            response,
-            f'<option value="{advertiser1_flight2.slug}" selected>{ advertiser1_flight2.name }</option>',
-        )
-        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
+        # The data now just comes from metabase
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
 
     def test_advertiser_publisher_report_contents(self):
         get(
