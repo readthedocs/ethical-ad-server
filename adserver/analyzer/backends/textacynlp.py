@@ -61,7 +61,7 @@ class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
                 self.lemmatized_to_original_map[phrase] = keyword
 
     def preprocess_text(self, text):
-        return self.preprocessor(text).lower()
+        return self.preprocessor(text).lower()[: self.MAX_INPUT_LENGTH]
 
     def analyze_text(self, text):
         """
