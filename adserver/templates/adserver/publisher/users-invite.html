@@ -1,0 +1,30 @@
+{% extends "adserver/publisher/overview.html" %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Authorized Users Invite' %} - {{ publisher }}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'publisher_users' publisher.slug %}">{% trans 'Authorized users' %}</a>
+  </li>
+  <li class="breadcrumb-item active">{% trans 'Invite' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <section>
+    <h1>{% blocktrans %}Invite user to {{ publisher }}{% endblocktrans %}</h1>
+
+    <div class="row">
+
+      <div class="col-md-6">
+        {% crispy form form.helper %}
+      </div>
+
+    </div>
+  </section>
+{% endblock content_container %}
