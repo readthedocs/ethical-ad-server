@@ -281,15 +281,18 @@ class CreatePublisherForm(forms.Form):
 
     def create_publisher_advertiser_account(self, publisher):
         """Create the publisher's house ads account."""
+        advertiser_name = f"House ads for {publisher.name}"
+        advertiser_slug = f"pub-house-{publisher.slug}"
+
         advertiser = Advertiser.objects.create(
-            name=publisher.name,
-            slug=publisher.slug,
+            name=advertiser_name,
+            slug=advertiser_slug,
             publisher=publisher,
         )
         campaign = Campaign.objects.create(
             advertiser=advertiser,
-            name=publisher.name,
-            slug=publisher.slug,
+            name=advertiser_name,
+            slug=advertiser_slug,
             campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
         )
         pub_group = PublisherGroup.objects.filter(slug=self.DEFAULT_GROUP).first()
