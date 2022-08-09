@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import IntegrityError
+from django.test import override_settings
 from django.utils import timezone
 from django_dynamic_fixture import get
 
@@ -481,6 +482,7 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
 
+    @override_settings(ADSERVER_DO_NOT_TRACK=True)
     def test_offer_ad(self):
         request = self.factory.get("/")
         request.ip_address = "1.1.1.1"
@@ -513,8 +515,25 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertFalse(offer.viewed)
         self.assertFalse(offer.clicked)
         self.assertFalse(offer.uplifted)
+        self.assertIsNone(offer.user_agent)
         self.assertTrue("python" in offer.keywords)
         self.assertTrue("ruby" in offer.keywords)
+
+        # Test the publisher after setting record_offer_details
+        self.publisher.record_offer_details = True
+        self.publisher.save()
+
+        # Offer the ad again
+        output = self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id=div_id,
+            keywords=keywords,
+            url=url,
+        )
+        offer = Offer.objects.get(pk=output["nonce"])
+        self.assertIsNotNone(offer.user_agent)
 
     def test_refund(self):
         request = self.factory.get("/")
