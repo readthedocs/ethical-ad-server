@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.1.0
+---------------
+
+This release had a number of small changes such as some additional security logging,
+moving some reports to Metabase for performance purposes,
+and the ability to authorize users for publishers.
+
+:date: August 11, 2022
+
+ * @davidfischer: Enable recording additional publisher details (#624)
+ * @davidfischer: Log some client mismatches to the security logger (#623)
+ * @davidfischer: Update User Agent detection (#622)
+ * @davidfischer: Offload the advertiser geo report to metabase (#621)
+ * @davidfischer: Move advertiser overview mostly to metabase (#620)
+ * @davidfischer: Changes the name for new publisher house ads accounts (#619)
+ * @davidfischer: Allow the ad server docs to force a specific ad (#618)
+ * @davidfischer: Limit the model input to 100k characters (#617)
+ * @davidfischer: Add a screen for authorized users for a publisher (#613)
+
+
 Version v1.0.0
 ---------------
 
