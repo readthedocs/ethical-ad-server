@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.1.1
+---------------
+
+Fixed a minor bug with the v1.1.0 release.
+
+:date: August 11, 2022
+
+ * @davidfischer: Simple logic issue wrt showing metabase dashboard (#627)
+
+
 Version v1.1.0
 ---------------
 
