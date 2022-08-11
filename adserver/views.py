@@ -228,7 +228,7 @@ class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView)
     def has_views_this_month(self, start_date, end_date):
         """Detect if advertisers have impressions in the time frame."""
         return (
-            not AdImpression.objects.filter(
+            AdImpression.objects.filter(
                 advertisement__flight__campaign__advertiser_id=self.advertiser.id
             )
             .filter(date__gte=start_date, date__lte=end_date)
