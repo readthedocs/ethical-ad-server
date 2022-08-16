@@ -216,8 +216,16 @@ class BaseApiTest(TestCase):
         )
         self.ad.ad_types.add(self.ad_type)
 
+        self.ip_address = "8.8.8.8"
+        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+
         self.placements = [{"div_id": "a", "ad_type": self.ad_type.slug}]
-        self.data = {"placements": self.placements, "publisher": self.publisher.slug}
+        self.data = {
+            "placements": self.placements,
+            "publisher": self.publisher.slug,
+            "user_ua": self.user_agent,
+            "user_ip": self.ip_address,
+        }
         self.query_params = {
             "div_ids": "a",
             "ad_types": self.ad_type.slug,
@@ -234,9 +242,6 @@ class BaseApiTest(TestCase):
             get_user_model(), email="test-staff@example.com", is_staff=True
         )
         self.staff_token = Token.objects.create(user=self.staff_user)
-
-        self.ip_address = "8.8.8.8"
-        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
 
         self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
         self.staff_client = Client(
@@ -1005,7 +1010,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.page_url = "http://example.com"
 
     def test_ad_view_and_tracking(self):
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1097,7 +1107,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(impression.views, 0)
 
     def test_multiple_ad_offers_views(self):
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         times = 5
 
         # Simulate some offers and views
@@ -1248,7 +1263,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.publisher1.record_views = False
         self.publisher1.slug = "readthedocs-test"
         self.publisher1.save()
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1285,7 +1305,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.publisher1.record_placements = True
         self.publisher1.save()
 
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1315,7 +1340,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         )
 
     def test_record_uplift(self):
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1359,7 +1389,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         )
 
     def test_view_time(self):
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -1484,7 +1519,12 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.publisher1.daily_cap = 1.75
         self.publisher1.save()
 
-        data = {"placements": self.placements, "publisher": self.publisher1.slug}
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+        }
 
         # Simulate 2 views/clicks
         for i in range(2):
@@ -1532,6 +1572,8 @@ class TestProxyViews(BaseApiTest):
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
         self.request.user = AnonymousUser()
+        self.request.user_agent = self.user_agent
+        self.request.ip_address = self.ip_address
 
         self.offer = self.ad.offer_ad(
             request=self.request,
