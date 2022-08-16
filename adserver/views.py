@@ -753,8 +753,7 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Ratelimited view impression"
-        if offer and offer.os_family != parsed_ua.os.family:
-            # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
+        elif offer and offer.os_family != parsed_ua.os.family:
             log.log(
                 self.log_security_level,
                 "Mismatched OS between offer and impression. Publisher: [%s], Offer OS: [%s], User agent: [%s]",
@@ -762,8 +761,8 @@ class BaseProxyView(View):
                 offer.os_family,
                 user_agent,
             )
-        if offer and offer.browser_family != parsed_ua.browser.family:
-            # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
+            reason = "Mismatched OS"
+        elif offer and offer.browser_family != parsed_ua.browser.family:
             log.log(
                 self.log_security_level,
                 "Mismatched browser between offer and impression. Publisher: [%s], Offer Browser: [%s], User agent: [%s]",
@@ -771,10 +770,13 @@ class BaseProxyView(View):
                 offer.browser_family,
                 user_agent,
             )
+            reason = "Mismatched browser"
+
+        # This is out of the elif block and will be run everytime
         if offer and offer.ip != anonymize_ip_address(ip_address):
             # Because this block doesn't set a reason, it will only log mismatches. Not stop them.
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "Mismatched IP between offer and impression. Publisher: [%s], Offer IP (anon): [%s]",
                 offer.publisher,
                 offer.ip,
