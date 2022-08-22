@@ -72,10 +72,10 @@
   <h3> Payout status</h3>
   <p>
   {% if due_report.total.revenue_share > ADSERVER_MINIMUM_PAYOUT %}
-    You are eligable for a payout because your previous month balance is over ${{ ADSERVER_MINIMUM_PAYOUT }}.
+    You are <strong>eligible for a payout</strong> because your previous month balance is over ${{ ADSERVER_MINIMUM_PAYOUT }}.
     We will contact you soon to process the payout on this account.
   {% else %}
-    You are <strong>not currently eligable</strong> for a payout because your previous month's balance is below $50.
+    You are <strong>not currently eligible</strong> for a payout because your total balance is below ${{ ADSERVER_MINIMUM_PAYOUT }}.
   {% endif %}
   {% if adserver_publisher_policy %}
   Please review our <a href="{{ adserver_publisher_policy }}">publisher policy</a> for the terms of payouts.
