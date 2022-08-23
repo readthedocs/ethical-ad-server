@@ -53,4 +53,3 @@ We are currently just uploading a zipfile of the Python model,
 and then installing it in our deployment scripts into a baked build image.
 
 This can be found in our closed source ``ethicalads-ops`` repo that has custom deployment code.
-
