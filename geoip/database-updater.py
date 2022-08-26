@@ -1,3 +1,4 @@
+"""Downloads and updates various IP databases used for geolocation and proxy detection."""
 import argparse
 import io
 import os
@@ -33,6 +34,7 @@ TOR_EXIT_NODES_FILENAME = "torbulkexitlist.txt"
 
 
 def update_maxmind_dbs(outdir):
+    """Downloads the GeoIP databases from MaxMind. Requires a free MaxMind account."""
     print("Updating the GeoIP databases from MaxMind...")
 
     if not MAXMIND_LICENSE_KEY:
@@ -65,6 +67,7 @@ def update_maxmind_dbs(outdir):
 
 
 def update_ipproxy_db(outdir):
+    """Downloads the IPProxy database from IP2Location. Requires a commercial license."""
     print("Updating the IPProxy database...")
 
     if not IP2LOCATION_TOKEN:
@@ -95,6 +98,7 @@ def update_ipproxy_db(outdir):
 
 
 def update_torexit_list(outdir):
+    """Downloads the Tor exit nodes list."""
     print("Updating Tor exit nodes list...")
 
     url = TOR_EXIT_NODES_URL
