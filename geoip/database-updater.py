@@ -1,7 +1,9 @@
 import argparse
 import io
 import os
+import shutil
 import tarfile
+import zipfile
 
 import requests
 
@@ -15,11 +17,14 @@ MAXMIND_COUNTRY_DATABASE = f"https://download.maxmind.com/app/geoip_download?edi
 MAXMIND_CITY_DATABASE = f"https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={MAXMIND_LICENSE_KEY}&suffix=tar.gz"
 
 # Used for the IP2Location IP2Proxy database
-IP2LOCATION_LICENSE_KEY = os.environ.get("IP2LOCATION_LICENSE_KEY")
+IP2LOCATION_TOKEN = os.environ.get("IP2LOCATION_TOKEN")
 
+# Results in a zipfile
 IP2LOCATION_IPPROXY = (
-    f"https://www.ip2location.com/download?token={IP2LOCATION_LICENSE_KEY}&file=PX2BIN"
+    f"https://www.ip2location.com/download?token={IP2LOCATION_TOKEN}&file=PX2BIN"
 )
+# Our filename under geoip/
+IPPROXY_FILENAME = "IP2Proxy.BIN"
 
 # List of tor exit nodes which changes periodically
 # Maintained by the Tor project
@@ -62,12 +67,31 @@ def update_maxmind_dbs(outdir):
 def update_ipproxy_db(outdir):
     print("Updating the IPProxy database...")
 
-    if not IP2LOCATION_LICENSE_KEY:
+    if not IP2LOCATION_TOKEN:
         raise RuntimeError(
-            "No envvar IP2LOCATION_LICENSE_KEY. "
+            "No envvar IP2LOCATION_TOKEN. "
             "Cannot download the IP2Proxy database without this. "
             "This is a commercial product and must be purchased at ip2location.com."
         )
+
+    url = IP2LOCATION_IPPROXY
+    resp = requests.get(url)
+    if not resp.ok:
+        raise RuntimeError(
+            f"Failed to update IP2Proxy database: {url}. Status_code={resp.status_code}"
+        )
+
+    with zipfile.ZipFile(io.BytesIO(resp.content), mode="r") as myzip:
+        for member in myzip.infolist():
+            if member.filename.lower().endswith(".bin"):
+                outpath = os.path.join(outdir, IPPROXY_FILENAME)
+                print(f"Writing database to {outpath}...")
+                myzip.extract(member, path=outdir)
+                shutil.copyfile(os.path.join(outdir, member.filename), outpath)
+                break
+        else:
+            # Only taken if there was no "break" executed
+            raise RuntimeError("No .mmdb file found in the download")
 
 
 def update_torexit_list(outdir):
