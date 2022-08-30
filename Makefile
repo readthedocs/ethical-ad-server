@@ -2,13 +2,7 @@
 
 
 GEOIP_DIR = geoip
-GEOIP_CITY_FILE = dbip-city-lite.mmdb.gz
-GEOIP_COUNTRY_FILE = dbip-country-lite.mmdb.gz
-GEOIP_CITY_DB_URL = https://download.db-ip.com/free/dbip-city-lite-2021-08.mmdb.gz
-GEOIP_COUNTRY_DB_URL = https://download.db-ip.com/free/dbip-country-lite-2021-08.mmdb.gz
-
-TOR_EXIT_LIST_FILE = torbulkexitlist.txt
-TOR_EXIT_LIST_URL = https://check.torproject.org/torbulkexitlist
+GEOIP_DOWNLOADER = $(GEOIP_DIR)/database-updater.py
 
 DOCKER_CONFIG=docker-compose-local.yml
 DOCKER_IMAGE_NAME=ethicaladserver
@@ -63,10 +57,7 @@ dockershell:
 
 # Get the GeoIP databases from DB-IP
 geoip:
-	curl -o $(GEOIP_DIR)/$(GEOIP_CITY_FILE) "$(GEOIP_CITY_DB_URL)"
-	curl -o $(GEOIP_DIR)/$(GEOIP_COUNTRY_FILE) "$(GEOIP_COUNTRY_DB_URL)"
-	gunzip $(GEOIP_DIR)/$(GEOIP_CITY_FILE)
-	gunzip $(GEOIP_DIR)/$(GEOIP_COUNTRY_FILE)
+	python $(GEOIP_DOWNLOADER) --geoip-only --outdir=$(GEOIP_DIR)
 
 ipproxy:
-	curl -o $(GEOIP_DIR)/$(TOR_EXIT_LIST_FILE) "$(TOR_EXIT_LIST_URL)"
+	python $(GEOIP_DOWNLOADER) --ipproxy-only --outdir=$(GEOIP_DIR)

@@ -339,6 +339,7 @@ def get_geoipdb_geolocation(request):
 def get_ipproxy_db():
     db = None
 
+    # https://www.ip2location.com/database/px2-ip-proxytype-country
     filepath = os.path.join(settings.GEOIP_PATH, "IP2Proxy.BIN")
     if os.path.exists(filepath):
         db = IP2Proxy.IP2Proxy(filepath)
