@@ -79,6 +79,7 @@
       <div class="row mb-5">
         <div class="col min-vh-75">
           {% metabase_dashboard_embed metabase_advertiser_dashboard advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+          <p class="text-right mb-5"><a href="{% url 'advertiser_report' advertiser.slug %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
         </div>
       </div>
     {% endif %}
