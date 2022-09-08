@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.2.0
+---------------
+
+This release fixes some minor bugs, makes some logger changes,
+and makes some small changes to user messaging.
+
+:date: September 8, 2022
+
+ * @davidfischer: Replace a link that was deleted in a refactor (#635)
+ * @davidfischer: Note about campaigns running over (#634)
+ * @davidfischer: IPDB downloader/updater script (#633)
+ * @ericholscher: Clean up ML directory and improve README (#632)
+ * @davidfischer: Ignore mismatched browsers/OSs (#629)
+ * @dependabot[bot]: Bump django from 3.2.14 to 3.2.15 in /requirements (#625)
+ * @dependabot[bot]: Bump moment from 2.29.3 to 2.29.4 (#608)
+
+
 Version v1.1.1
 ---------------
 
