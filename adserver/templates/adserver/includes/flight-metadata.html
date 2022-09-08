@@ -43,7 +43,7 @@
     <dd>{{ flight.start_date }}</dd>
   {% endif %}
   {% if flight.end_date %}
-    <dt>{% trans 'Estimated end date' %}</dt>
+    <dt title="{% trans 'Note: your campaign may run beyond this date due to availability.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Estimated end date' %}</dt>
     <dd>{{ flight.end_date }}</dd>
   {% endif %}
   {% if flight.targeting_parameters %}
