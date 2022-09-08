@@ -1533,6 +1533,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         text = self.render_links(click_url)
         body = html.unescape(bleach.clean(text, tags=[], strip=True))
 
+        # Match keywords to topics
+        topics = Topic.load_from_cache()
+        topic_set = set()
+        for topic, keywords in topics.items():
+            for keyword in keywords:
+                if keyword in keywords:
+                    topic_set.add(topic)
+
         return {
             "id": self.slug,
             "text": text,
@@ -1543,6 +1551,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 view_url=view_url,
                 publisher=publisher,
                 keywords=keywords,
+                topics=topic_set,
             ),
             # Breakdown of the ad text into its component parts
             "copy": {
@@ -1684,7 +1693,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         )
 
     def render_ad(
-        self, ad_type, click_url=None, view_url=None, publisher=None, keywords=None
+        self,
+        ad_type,
+        click_url=None,
+        view_url=None,
+        publisher=None,
+        keywords=None,
+        topics=None,
     ):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
@@ -1708,9 +1723,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "link_url": click_url or self.link,
                 "view_url": view_url,
                 "text_as_html": self.render_links(link=click_url),
-                # Pass keywords so we can be smart with what landing page
+                # Pass keywords and topics so we can be smart with what landing page
                 # to link the `Ads by EthicalAds` to.
                 "keywords": keywords,
+                "topics": topics,
             }
         ).strip()
 
