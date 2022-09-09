@@ -1536,9 +1536,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Match keywords to topics
         topics = Topic.load_from_cache()
         topic_set = set()
-        for topic, keywords in topics.items():
-            for keyword in keywords:
-                if keyword in keywords:
+        for topic, topic_keywords in topics.items():
+            for topic_keyword in topic_keywords:
+                if topic_keyword in keywords:
                     topic_set.add(topic)
 
         return {
