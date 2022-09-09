@@ -1533,13 +1533,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         text = self.render_links(click_url)
         body = html.unescape(bleach.clean(text, tags=[], strip=True))
 
-        # Match keywords to topics
-        topics = Topic.load_from_cache()
+        # Match keywords to topics, only when there are keywords to match
         topic_set = set()
-        for topic, topic_keywords in topics.items():
-            for topic_keyword in topic_keywords:
-                if topic_keyword in keywords:
-                    topic_set.add(topic)
+        if keywords:
+            topics = Topic.load_from_cache()
+            for topic, topic_keywords in topics.items():
+                for topic_keyword in topic_keywords:
+                    if topic_keyword in keywords:
+                        topic_set.add(topic)
 
         return {
             "id": self.slug,
