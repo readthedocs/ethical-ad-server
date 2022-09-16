@@ -15,7 +15,7 @@ preprocess:
       md5: a74836ff63b4548e39f5c1d05d07c5e2
     - path: corpus/test.spacy
       md5: 3e9d0eb02268639e48ab7755062fa97d
-  spacy_version: 3.3.1
+  spacy_version: 3.4.1
   spacy_git_version: Unknown
 train:
   cmd: python -m spacy run train
