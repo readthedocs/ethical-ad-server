@@ -48,7 +48,8 @@ class BaseAnalyzerBackend:
 
         if resp and resp.ok:
             return self.analyze_response(resp)
-        elif not resp:
+
+        if not resp:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
