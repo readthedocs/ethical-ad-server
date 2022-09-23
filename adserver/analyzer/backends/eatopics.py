@@ -1,5 +1,11 @@
 """Spacy-based topic classifier that uses our trained model and gives a likelihood that text is about our topics."""
+import logging
+import textwrap
+
 from .textacynlp import TextacyAnalyzerBackend
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
@@ -21,6 +27,11 @@ class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
         """Analyze text and return major topics (topics we are interested in) that the text is about."""
         if len(text) < self.MIN_TEXT_LENGTH:
             return []
+
+        wrapped_output = "\n".join(
+            textwrap.wrap(text, initial_indent="    ", subsequent_indent="    ")
+        )
+        log.debug("Analyzing text of len=%s:\n%s", len(text), wrapped_output)
 
         output = self.pretrained_model(text)
         return [k for k, v in output.cats.items() if v > self.MODEL_THRESHOLD]

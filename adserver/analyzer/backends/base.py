@@ -48,6 +48,12 @@ class BaseAnalyzerBackend:
 
         if resp and resp.ok:
             return self.analyze_response(resp)
+        elif not resp:
+            log.debug("Failed to connect. Url=%s", self.url)
+        else:
+            log.debug(
+                "Failed to connect. Url=%s, Status=%s", self.url, resp.status_code
+            )
 
         # A failed request results in `None`.
         return None
