@@ -34,4 +34,5 @@ class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
         log.debug("Analyzing text of len=%s:\n%s", len(text), wrapped_output)
 
         output = self.pretrained_model(text)
+        log.debug("Model classification: %s", output.cats.items())
         return [k for k, v in output.cats.items() if v > self.MODEL_THRESHOLD]
