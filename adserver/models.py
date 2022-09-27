@@ -166,6 +166,19 @@ class Region(TimeStampedModel, models.Model):
     CACHE_KEY = "country-region-mapping"
     CACHE_TIMEOUT = 60 * 30
 
+    NON_OVERLAPPING_REGIONS = (
+        "us-ca",
+        "western-europe",
+        "eastern-europe",
+        "aus-nz",
+        "wider-apac",
+        "latin-america",
+        "africa",
+        "south-asia",
+        "exclude",
+        "global",  # This does overlap but is only used when none of the others apply
+    )
+
     name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
@@ -208,6 +221,20 @@ class Region(TimeStampedModel, models.Model):
         )
 
         return regions
+
+    @classmethod
+    def get_region_from_country_code(cls, country):
+        """Get the *nonoverlapping* region slug from the country code. Returns "other" if no others apply."""
+        regions = cls.load_from_cache()
+
+        for slug in regions:
+            if slug not in cls.NON_OVERLAPPING_REGIONS:
+                continue
+
+            if country in regions[slug]:
+                return slug
+
+        return "global"
 
 
 class CountryRegion(TimeStampedModel, models.Model):

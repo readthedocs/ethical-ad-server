@@ -885,7 +885,7 @@ class TestReportViews(TestReportsBase):
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
         get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
+        get(Offer, publisher=self.publisher1, country="MX", viewed=True, clicked=True)
 
         # Update reporting
         daily_update_geos()
@@ -905,7 +905,7 @@ class TestReportViews(TestReportsBase):
         self.assertNotContains(
             response, '<td class="text-right"><strong>2</strong></td>'
         )
-        response = self.client.get(url, {"region": "eu-aus-nz"})
+        response = self.client.get(url, {"region": "latin-america"})
         self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
 
         # Invalid country
@@ -945,7 +945,7 @@ class TestReportViews(TestReportsBase):
             advertisement=self.ad1,
             publisher=self.publisher1,
             keywords=["python"],
-            country="FR",
+            country="MX",
             viewed=True,
             clicked=True,
         )
@@ -960,7 +960,7 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
         self.assertContains(response, "us-ca:frontend")
-        self.assertContains(response, "eu-aus-nz:python")
+        self.assertContains(response, "latin-america:python")
         self.assertNotContains(response, "us-ca:python")
 
         # Filter reports
@@ -968,16 +968,16 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "<td>us-ca:frontend")
         self.assertNotContains(response, "<td>eu-aus-nz")
 
-        response = self.client.get(url, {"region": "eu-aus-nz"})
-        self.assertContains(response, "<td>eu-aus-nz:python")
+        response = self.client.get(url, {"region": "latin-america"})
+        self.assertContains(response, "<td>latin-america:python")
         self.assertNotContains(response, "<td>us-ca:python")
 
         response = self.client.get(url, {"topic": "python"})
-        self.assertContains(response, "<td>eu-aus-nz:python")
+        self.assertContains(response, "<td>latin-america:python")
         self.assertNotContains(response, "<td>us-ca:backend-web")
 
         response = self.client.get(url, {"topic": "python"})
-        self.assertContains(response, "<td>eu-aus-nz:python")
+        self.assertContains(response, "<td>latin-america:python")
         self.assertNotContains(response, "<td>us-ca:frontend-web")
 
         # 2 filters lead to a date-based view
