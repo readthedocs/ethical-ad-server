@@ -330,6 +330,30 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(ki_ad2.views, 2)
         self.assertEqual(ki_ad2.clicks, 0)
 
+        # Check with topics instead of keyword targeting
+        self.flight.targeting_parameters = {
+            # Should give same results for ad1, nothing for ad2
+            "include_topics": ["backend-web"],
+        }
+        self.flight.save()
+
+        # Ad1 - offered/decision=4, views=3, clicks=1
+        # Ad2 - offered/decisions=2, views=2, clicks=0
+        daily_update_keywords()
+
+        ki_ad1 = KeywordImpression.objects.filter(
+            keyword="backend", publisher=self.publisher, advertisement=self.ad1
+        ).first()
+        self.assertIsNotNone(ki_ad1)
+        self.assertEqual(ki_ad1.offers, 4)
+        self.assertEqual(ki_ad1.views, 3)
+        self.assertEqual(ki_ad1.clicks, 1)
+
+        ki_ad2 = KeywordImpression.objects.filter(
+            keyword="security", publisher=self.publisher, advertisement=self.ad2
+        ).first()
+        self.assertIsNone(ki_ad2)
+
     def test_daily_update_geos(self):
         # Ad1/CA - offered/decision=3, views=2, clicks=1
         # Ad1/DE - offered/decision=1, views=1, clicks=0

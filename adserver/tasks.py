@@ -28,6 +28,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import Topic
 from .models import UpliftImpression
 from .regiontopics import backend_web
 from .regiontopics import blockchain
@@ -263,6 +264,8 @@ def daily_update_keywords(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     )
 
+    all_topics = Topic.load_from_cache()
+
     for values in (
         queryset.values("publisher", "advertisement", "keywords", "viewed", "clicked")
         .annotate(
@@ -289,13 +292,21 @@ def daily_update_keywords(day=None):
         ):
             continue
 
-        publisher_keywords = set(values["keywords"])
+        page_keywords = set(values["keywords"])
         flight_targeting = values["advertisement__flight__targeting_parameters"]
+
         flight_keywords = set(flight_targeting.get("include_keywords", {}))
+        flight_topics = set(flight_targeting.get("include_topics", {}))
+
+        # If this flight targeted topics, add those as well
+        for topic in flight_topics:
+            if topic in all_topics:
+                for kw in all_topics[topic]:
+                    flight_keywords.add(kw)
 
         # Only store keywords where the advertiser targeting
         # matched the keywords on the offer
-        matched_keywords = publisher_keywords & flight_keywords
+        matched_keywords = page_keywords & flight_keywords
 
         for keyword in matched_keywords:
             impression, _ = KeywordImpression.objects.using("default").get_or_create(
