@@ -11,6 +11,14 @@ This will generate our training data and then build and train the model.
 	python -m spacy project run all . --vars.train=train --vars.dev=test --vars.name=ethicalads_topics --vars.version=`date "+%Y%m%d_%H_%M_%S"`
 
 
+### Running the analyzer
+
+After installing the analyzer (it's installed in staging already),
+you can run it against an arbitrary URL to see how that page was classified.
+
+    ADSERVER_ANALYZER_BACKEND=adserver.analyzer.backends.EthicalAdsTopicsBackend ./manage.py runmodel https://example.com
+
+
 ## 📋 project.yml
 
 The [`project.yml`](project.yml) defines the data assets required by the
