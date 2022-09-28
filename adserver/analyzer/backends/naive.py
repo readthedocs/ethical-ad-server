@@ -31,6 +31,11 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         "nav",
         "footer",
         "div.header",
+        # Remove toctrees from Sphinx
+        "div.toctree-wrapper",
+        # Remove class and function definitions from Sphinx
+        # but leave the actual docstrings/explanations
+        "dl.class dt",
         # Django Packages specific
         "#myrotatingnav",
     )
