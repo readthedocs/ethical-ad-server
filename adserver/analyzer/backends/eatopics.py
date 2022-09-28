@@ -2,6 +2,8 @@
 import logging
 import textwrap
 
+import langdetect
+
 from .textacynlp import TextacyAnalyzerBackend
 
 
@@ -23,9 +25,21 @@ class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
     # Threshold on the model
     MODEL_THRESHOLD = 0.4
 
+    def skip_classification(self, text):
+        """Return True if classification should be skipped."""
+        if len(text) < self.MIN_TEXT_LENGTH:
+            log.debug("Skipping classification. Too short.")
+            return True
+
+        if langdetect.detect(text) != "en":
+            log.debug("Skipping classification due to non-English")
+            return True
+
+        return False
+
     def analyze_text(self, text):
         """Analyze text and return major topics (topics we are interested in) that the text is about."""
-        if len(text) < self.MIN_TEXT_LENGTH:
+        if self.skip_classification(text):
             return []
 
         wrapped_output = "\n".join(

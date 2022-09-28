@@ -62,5 +62,6 @@ PyJWT==2.4.0
 # Used by the keyword/topic analyzer
 beautifulsoup4==4.11.1
 textacy==0.12.0
+langdetect==1.0.9
 # Has to be downloaded directly like this (~30MB)
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.3.0/en_core_web_md-3.3.0-py3-none-any.whl
