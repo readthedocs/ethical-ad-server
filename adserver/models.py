@@ -1542,12 +1542,26 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         text = self.render_links(click_url)
         body = html.unescape(bleach.clean(text, tags=[], strip=True))
 
+        # Match keywords to topics, only when there are keywords to match
+        topic_set = set()
+        if keywords:
+            topics = Topic.load_from_cache()
+            for topic, topic_keywords in topics.items():
+                for topic_keyword in topic_keywords:
+                    if topic_keyword in keywords:
+                        topic_set.add(topic)
+
         return {
             "id": self.slug,
             "text": text,
             "body": body,
             "html": self.render_ad(
-                ad_type, click_url=click_url, view_url=view_url, publisher=publisher
+                ad_type,
+                click_url=click_url,
+                view_url=view_url,
+                publisher=publisher,
+                keywords=keywords,
+                topics=topic_set,
             ),
             # Breakdown of the ad text into its component parts
             "copy": {
@@ -1688,7 +1702,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
         )
 
-    def render_ad(self, ad_type, click_url=None, view_url=None, publisher=None):
+    def render_ad(
+        self,
+        ad_type,
+        click_url=None,
+        view_url=None,
+        publisher=None,
+        keywords=None,
+        topics=None,
+    ):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
             # Render by the first ad type for this ad
@@ -1711,6 +1733,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "link_url": click_url or self.link,
                 "view_url": view_url,
                 "text_as_html": self.render_links(link=click_url),
+                # Pass keywords and topics so we can be smart with what landing page
+                # to link the `Ads by EthicalAds` to.
+                "keywords": keywords,
+                "topics": topics,
             }
         ).strip()
 

@@ -16,6 +16,7 @@ import random
 import sys
 from collections import Counter
 
+import langdetect
 import requests
 import urllib3
 import yaml
@@ -99,15 +100,20 @@ def preprocess_training_set(infile):
             continue
 
         if resp.ok:
+            text = preprocess_html(resp.content)
             new_training_set.append(
                 {
-                    "text": preprocess_html(resp.content),
+                    "text": text,
                     "labels": dat["topics"],
                     # Not sure if these are necessary
                     # "keywords": [],
                     "meta": {"url": url},
                 }
             )
+
+            lang = langdetect.detect(text)
+            if lang != "en":
+                print(f"Language for {url} was not english ({lang})...")
 
     return new_training_set
 
