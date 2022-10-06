@@ -1,8 +1,10 @@
 import datetime
+import io
 
 import pytest
 import requests
 import responses
+from django.core import management
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
@@ -368,3 +370,48 @@ class TestTasks(BaseAdModelsTestCase):
         # Analyzed URL has been updated
         self.assertEqual(self.analyzed_url.keywords, ["python"])
         self.assertEqual(self.analyzed_url.visits_since_last_analyzed, 0)
+
+
+class TestManagementCommands(TestCase):
+    def setUp(self):
+        self.out = io.StringIO()
+        self.err = io.StringIO()
+
+        self.url = "https://example.com"
+
+    def test_runmodel_invalid(self):
+        with self.assertRaises(ValidationError):
+            management.call_command(
+                "runmodel",
+                "invalid_url",
+                stdout=self.out,
+                stderr=self.err,
+            )
+
+    @responses.activate
+    def test_runmodel_success(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            body="""
+                <html>
+                <head>
+                </head>
+                <body>
+                    Not used keywords
+                    Backend Backend Backend
+                </body>
+                </html>
+            """,
+        )
+
+        management.call_command(
+            "runmodel",
+            self.url,
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue().strip()
+
+        self.assertTrue(output.endswith("Keywords/topics: ['backend']"))

@@ -1,5 +1,6 @@
 """Spacy-based topic classifier that uses our trained model and gives a likelihood that text is about our topics."""
 import logging
+import textwrap
 
 import langdetect
 
@@ -41,5 +42,11 @@ class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
         if self.skip_classification(text):
             return []
 
+        wrapped_output = "\n".join(
+            textwrap.wrap(text, initial_indent="    ", subsequent_indent="    ")
+        )
+        log.debug("Analyzing text of len=%s:\n%s", len(text), wrapped_output)
+
         output = self.pretrained_model(text)
+        log.debug("Model classification: %s", output.cats.items())
         return [k for k, v in output.cats.items() if v > self.MODEL_THRESHOLD]
