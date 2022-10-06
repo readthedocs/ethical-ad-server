@@ -269,6 +269,10 @@
   topics: ["datascience"]
 - url: "https://docs.deepmodeling.com/projects/deepmd/en/master/getting-started/training.html"
   topics: ["datascience"]
+- url: "https://mmcv.readthedocs.io/en/latest/get_started/introduction.html"
+  topics: ["datascience"]
+- url: "https://mmcv.readthedocs.io/en/latest/get_started/previous_versions.html"
+  topics: ["datascience"]
 
 # Conda official docs
 - url: "https://docs.conda.io/en/latest/"
@@ -1017,16 +1021,6 @@
 # Not actually gaming - this is a framework for social science?
 #- url: "https://otree.readthedocs.io/en/latest/tutorial/part3.html"
 #  topics: []
-# Modrinth doesn't actually say much about "games" exactly.
-# The classifier will hopefully get smart but this might be a hard one.
-- url: "https://modrinth.com/mod/sandwichable"
-  topics: []
-- url: "https://modrinth.com/mod/excavated_variants"
-  topics: []
-- url: "https://modrinth.com/mod/thatorthis"
-  topics: []
-- url: "https://modrinth.com/mod/trufflez-arcanum"
-  topics: []
 - url: "https://openpyxl.readthedocs.io/en/latest/print_settings.html"
   topics: []
 - url: "https://openpyxl.readthedocs.io/en/latest/datetime.html"
