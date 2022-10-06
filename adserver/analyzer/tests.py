@@ -174,8 +174,8 @@ class TestTextacyAnalyzerBackend(TestCase):
 
                 <!-- Only this should be used -->
                 <main>
-                <p>Data science and machine learning are important</p>
-                <p>With Data science and machine learning you can analyze text</p>
+                <p>machine learning is important</p>
+                <p>With machine learning you can analyze text</p>
                 <p>DevOps is less critical here</p>
                 </main>
             </body>
@@ -184,7 +184,7 @@ class TestTextacyAnalyzerBackend(TestCase):
         )
         self.assertEqual(
             self.analyzer.analyze(),
-            ["data-science", "machine-learning", "devops"],
+            ["machine-learning", "devops"],
         )
 
     @responses.activate
