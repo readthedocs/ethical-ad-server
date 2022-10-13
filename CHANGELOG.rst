@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.3.0
+---------------
+
+This release made a number of contextual targeting model improvements
+including more resources spent on training and some improvements
+around testing the model and language detection.
+
+:date: October 13, 2022
+
+ * @davidfischer: Report will use our regions and topics from the DB (#642)
+ * @davidfischer: Ignore certain Sphinx markup in ML model (#641)
+ * @davidfischer: Do language detection in the model (#639)
+ * @davidfischer: Add a management command for ease of running the model in dev (#638)
+ * @davidfischer: Add a GPU config for the model (#637)
+ * @ericholscher: Pass keywords to the ad rendering code (#610)
+
+
 Version v1.2.0
 ---------------
 
