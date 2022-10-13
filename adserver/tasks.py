@@ -26,18 +26,11 @@ from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import Topic
 from .models import UpliftImpression
-from .regiontopics import backend_web
-from .regiontopics import blockchain
-from .regiontopics import data_science
-from .regiontopics import devops
-from .regiontopics import frontend_web
-from .regiontopics import game_dev
-from .regiontopics import get_region_from_country_code
-from .regiontopics import python
-from .regiontopics import security_privacy
 from .reports import PublisherReport
 from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
@@ -113,7 +106,7 @@ def daily_update_geos(day=None, geo=True, region=True):
             )
 
         if region:
-            _region = get_region_from_country_code(country)
+            _region = Region.get_region_from_country_code(country)
 
             publisher = values["publisher"]
             advertisement = values["advertisement"]
@@ -263,6 +256,8 @@ def daily_update_keywords(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     )
 
+    all_topics = Topic.load_from_cache()
+
     for values in (
         queryset.values("publisher", "advertisement", "keywords", "viewed", "clicked")
         .annotate(
@@ -289,13 +284,21 @@ def daily_update_keywords(day=None):
         ):
             continue
 
-        publisher_keywords = set(values["keywords"])
+        page_keywords = set(values["keywords"])
         flight_targeting = values["advertisement__flight__targeting_parameters"]
+
         flight_keywords = set(flight_targeting.get("include_keywords", {}))
+        flight_topics = set(flight_targeting.get("include_topics", {}))
+
+        # If this flight targeted topics, add those as well
+        for topic in flight_topics:
+            if topic in all_topics:
+                for kw in all_topics[topic]:
+                    flight_keywords.add(kw)
 
         # Only store keywords where the advertiser targeting
         # matched the keywords on the offer
-        matched_keywords = publisher_keywords & flight_keywords
+        matched_keywords = page_keywords & flight_keywords
 
         for keyword in matched_keywords:
             impression, _ = KeywordImpression.objects.using("default").get_or_create(
@@ -316,7 +319,7 @@ def daily_update_keywords(day=None):
 
 
 @app.task()
-def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
+def daily_update_regiontopic(day=None):
     """
     Update the RegionTopicImpression index each day.
 
@@ -332,6 +335,8 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
     RegionTopicImpression.objects.using("default").filter(
         date__gte=start_date, date__lt=end_date
     ).delete()
+
+    all_topics = Topic.load_from_cache()
 
     topic_mapping = defaultdict(
         lambda: {
@@ -376,32 +381,15 @@ def daily_update_regiontopic(day=None):  # pylint: disable=too-many-branches
 
         topics = set()
         for keyword in publisher_keywords:
-            if keyword in data_science:
-                topic = "data-science"
-            elif keyword in backend_web:
-                topic = "backend-web"
-            elif keyword in frontend_web:
-                topic = "frontend-web"
-            elif keyword in security_privacy:
-                topic = "security-privacy"
-            elif keyword in devops:
-                topic = "devops"
-            elif keyword in python:
-                topic = "python"
-            elif keyword in blockchain:
-                topic = "blockchain"
-            elif keyword in game_dev:
-                topic = "game-dev"
-            else:
-                continue
-
-            topics.add(topic)
+            for topic in all_topics:
+                if keyword in all_topics[topic]:
+                    topics.add(topic)
 
         # If nothing gets set as a topic, assign it other
         if not topics:
             topics.add("other")
 
-        region = get_region_from_country_code(country)
+        region = Region.get_region_from_country_code(country)
 
         # Aggregate data into topic_mapping to save doing queries until we have everything counted
         # This is important because we can't query on keywords, so we have a lot of records that increment

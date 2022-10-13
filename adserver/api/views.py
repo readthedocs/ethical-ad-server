@@ -294,7 +294,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     ad=ad,
                     placement=placement,
                     publisher=publisher,
-                    # We need backend.keywords here to get the combined publisher/user keywords
+                    # We need backend.keywords here to get the combined publisher/user/analyzer keywords
                     keywords=backend.keywords,
                     url=url,
                     forced=forced,

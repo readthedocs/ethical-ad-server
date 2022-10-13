@@ -76,11 +76,11 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherPayout
+from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import Topic
 from .models import UpliftImpression
-from .regiontopics import region_list
-from .regiontopics import topic_list
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import PublisherAdvertiserReport
@@ -972,9 +972,11 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
             "end_date": end_date,
             "campaign_type": campaign_type,
             "region": region,
-            "region_list": region_list,
+            "region_list": Region.objects.filter(
+                slug__in=Region.NON_OVERLAPPING_REGIONS
+            ).order_by("order"),
             "topic": topic,
-            "topic_list": topic_list,
+            "topic_list": Topic.objects.all().order_by("name"),
             "limit": self.LIMIT,
         }
 

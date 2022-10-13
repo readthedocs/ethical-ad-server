@@ -252,7 +252,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             Offer,
             advertisement=self.ad1,
             publisher=self.publisher,
-            country="DE",
+            country="MX",
             viewed=True,
             view_time=4,
             keywords=["backend"],
@@ -263,7 +263,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             Offer,
             advertisement=self.ad2,
             publisher=self.publisher,
-            country="DE",
+            country="MX",
             viewed=True,
             view_time=4,
             uplifted=True,
@@ -275,7 +275,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             Offer,
             advertisement=self.ad2,
             publisher=self.publisher,
-            country="DE",
+            country="MX",
             viewed=True,
             view_time=4,
             uplifted=True,
@@ -330,10 +330,34 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(ki_ad2.views, 2)
         self.assertEqual(ki_ad2.clicks, 0)
 
+        # Check with topics instead of keyword targeting
+        self.flight.targeting_parameters = {
+            # Should give same results for ad1, nothing for ad2
+            "include_topics": ["backend-web"],
+        }
+        self.flight.save()
+
+        # Ad1 - offered/decision=4, views=3, clicks=1
+        # Ad2 - offered/decisions=2, views=2, clicks=0
+        daily_update_keywords()
+
+        ki_ad1 = KeywordImpression.objects.filter(
+            keyword="backend", publisher=self.publisher, advertisement=self.ad1
+        ).first()
+        self.assertIsNotNone(ki_ad1)
+        self.assertEqual(ki_ad1.offers, 4)
+        self.assertEqual(ki_ad1.views, 3)
+        self.assertEqual(ki_ad1.clicks, 1)
+
+        ki_ad2 = KeywordImpression.objects.filter(
+            keyword="security", publisher=self.publisher, advertisement=self.ad2
+        ).first()
+        self.assertIsNone(ki_ad2)
+
     def test_daily_update_geos(self):
         # Ad1/CA - offered/decision=3, views=2, clicks=1
-        # Ad1/DE - offered/decision=1, views=1, clicks=0
-        # Ad2/DE - offered/decisions=2, views=2, clicks=0
+        # Ad1/MX - offered/decision=1, views=1, clicks=0
+        # Ad2/MX - offered/decisions=2, views=2, clicks=0
         daily_update_geos()
 
         # Verify that the aggregation task worked correctly
@@ -345,21 +369,21 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(geo_ad1_ca.views, 2)
         self.assertEqual(geo_ad1_ca.clicks, 1)
 
-        geo_ad1_de = GeoImpression.objects.filter(
-            country="DE", publisher=self.publisher, advertisement=self.ad1
+        geo_ad1_mx = GeoImpression.objects.filter(
+            country="MX", publisher=self.publisher, advertisement=self.ad1
         ).first()
-        self.assertIsNotNone(geo_ad1_de)
-        self.assertEqual(geo_ad1_de.offers, 1)
-        self.assertEqual(geo_ad1_de.views, 1)
-        self.assertEqual(geo_ad1_de.clicks, 0)
+        self.assertIsNotNone(geo_ad1_mx)
+        self.assertEqual(geo_ad1_mx.offers, 1)
+        self.assertEqual(geo_ad1_mx.views, 1)
+        self.assertEqual(geo_ad1_mx.clicks, 0)
 
-        geo_ad2_de = GeoImpression.objects.filter(
-            country="DE", publisher=self.publisher, advertisement=self.ad2
+        geo_ad2_mx = GeoImpression.objects.filter(
+            country="MX", publisher=self.publisher, advertisement=self.ad2
         ).first()
-        self.assertIsNotNone(geo_ad2_de)
-        self.assertEqual(geo_ad2_de.offers, 2)
-        self.assertEqual(geo_ad2_de.views, 2)
-        self.assertEqual(geo_ad2_de.clicks, 0)
+        self.assertIsNotNone(geo_ad2_mx)
+        self.assertEqual(geo_ad2_mx.offers, 2)
+        self.assertEqual(geo_ad2_mx.views, 2)
+        self.assertEqual(geo_ad2_mx.clicks, 0)
 
         reg_na_ad1 = RegionImpression.objects.filter(
             region="us-ca", publisher=self.publisher, advertisement=self.ad1
@@ -369,26 +393,26 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(reg_na_ad1.views, 2)
         self.assertEqual(reg_na_ad1.clicks, 1)
 
-        reg_eu_ad1 = RegionImpression.objects.filter(
-            region="eu-aus-nz", publisher=self.publisher, advertisement=self.ad1
+        reg_latam_ad1 = RegionImpression.objects.filter(
+            region="latin-america", publisher=self.publisher, advertisement=self.ad1
         ).first()
-        self.assertIsNotNone(reg_eu_ad1)
-        self.assertEqual(reg_eu_ad1.offers, 1)
-        self.assertEqual(reg_eu_ad1.views, 1)
-        self.assertEqual(reg_eu_ad1.clicks, 0)
+        self.assertIsNotNone(reg_latam_ad1)
+        self.assertEqual(reg_latam_ad1.offers, 1)
+        self.assertEqual(reg_latam_ad1.views, 1)
+        self.assertEqual(reg_latam_ad1.clicks, 0)
 
-        reg_eu_ad2 = RegionImpression.objects.filter(
-            region="eu-aus-nz", publisher=self.publisher, advertisement=self.ad2
+        reg_latam_ad2 = RegionImpression.objects.filter(
+            region="latin-america", publisher=self.publisher, advertisement=self.ad2
         ).first()
-        self.assertIsNotNone(reg_eu_ad2)
-        self.assertEqual(reg_eu_ad2.offers, 2)
-        self.assertEqual(reg_eu_ad2.views, 2)
-        self.assertEqual(reg_eu_ad2.clicks, 0)
+        self.assertIsNotNone(reg_latam_ad2)
+        self.assertEqual(reg_latam_ad2.offers, 2)
+        self.assertEqual(reg_latam_ad2.views, 2)
+        self.assertEqual(reg_latam_ad2.clicks, 0)
 
     def test_daily_update_regiontopic(self):
         # Ad1/backend/CA - offered/decision=3, views=2, clicks=1
-        # Ad1/backend/DE - offered/decision=1, views=1, clicks=0
-        # Ad2/security/DE - offered/decisions=2, views=2, clicks=0
+        # Ad1/backend/MX - offered/decision=1, views=1, clicks=0
+        # Ad2/security/MX - offered/decisions=2, views=2, clicks=0
         daily_update_regiontopic()
 
         na_backend_ad1 = RegionTopicImpression.objects.filter(
@@ -399,21 +423,21 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(na_backend_ad1.views, 2)
         self.assertEqual(na_backend_ad1.clicks, 1)
 
-        eu_backend_ad1 = RegionTopicImpression.objects.filter(
-            region="eu-aus-nz", topic="backend-web", advertisement=self.ad1
+        latam_backend_ad1 = RegionTopicImpression.objects.filter(
+            region="latin-america", topic="backend-web", advertisement=self.ad1
         ).first()
-        self.assertIsNotNone(eu_backend_ad1)
-        self.assertEqual(eu_backend_ad1.offers, 1)
-        self.assertEqual(eu_backend_ad1.views, 1)
-        self.assertEqual(eu_backend_ad1.clicks, 0)
+        self.assertIsNotNone(latam_backend_ad1)
+        self.assertEqual(latam_backend_ad1.offers, 1)
+        self.assertEqual(latam_backend_ad1.views, 1)
+        self.assertEqual(latam_backend_ad1.clicks, 0)
 
-        eu_security_ad2 = RegionTopicImpression.objects.filter(
-            region="eu-aus-nz", topic="security-privacy", advertisement=self.ad2
+        latam_security_ad2 = RegionTopicImpression.objects.filter(
+            region="latin-america", topic="security-privacy", advertisement=self.ad2
         ).first()
-        self.assertIsNotNone(eu_security_ad2)
-        self.assertEqual(eu_security_ad2.offers, 2)
-        self.assertEqual(eu_security_ad2.views, 2)
-        self.assertEqual(eu_security_ad2.clicks, 0)
+        self.assertIsNotNone(latam_security_ad2)
+        self.assertEqual(latam_security_ad2.offers, 2)
+        self.assertEqual(latam_security_ad2.views, 2)
+        self.assertEqual(latam_security_ad2.clicks, 0)
 
     def test_daily_update_uplift(self):
         # Ad1 - offered/decision=1, views=1, clicks=1

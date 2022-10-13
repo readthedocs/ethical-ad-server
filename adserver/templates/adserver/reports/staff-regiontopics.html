@@ -21,8 +21,8 @@
   <label class="col-form-label" for="id_region">{% trans 'Region' %}</label>
   <select class="form-control" name="region" id="id_region">
     <option value="">All Regions</option>
-    {% for name in region_list %}
-      <option value="{{ name }}"{% if region == name %} selected{% endif %}>{{ name }}</option>
+    {% for reg in region_list %}
+      <option value="{{ reg.slug }}"{% if region == reg.slug %} selected{% endif %}>{{ reg.name }}</option>
     {% endfor %}
   </select>
 </div>
@@ -30,8 +30,8 @@
   <label class="col-form-label" for="id_topic">{% trans 'Topic' %}</label>
   <select class="form-control" name="topic" id="id_topic">
     <option value="">All Topics</option>
-    {% for name in topic_list %}
-      <option value="{{ name }}"{% if topic == name %} selected{% endif %}>{{ name }}</option>
+    {% for tp in topic_list %}
+      <option value="{{ tp.slug }}"{% if topic == tp.slug %} selected{% endif %}>{{ tp.name }}</option>
     {% endfor %}
   </select>
 </div>
