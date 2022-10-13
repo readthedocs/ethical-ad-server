@@ -25,6 +25,9 @@ The [`project.yml`](project.yml) defines the data assets required by the
 project, as well as the available commands and workflows. For details, see the
 [spaCy projects documentation](https://spacy.io/usage/projects).
 
+For training with a GPU, some modifications to the `project.yml` are needed.
+Specifically, set the `gpu_id` (to 0 usually) and the `config` to `gpu-efficiency.cfg`.
+
 ### ⏯ Commands
 
 The following commands are defined by the project. They

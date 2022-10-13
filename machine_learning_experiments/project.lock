@@ -15,24 +15,24 @@ preprocess:
       md5: a74836ff63b4548e39f5c1d05d07c5e2
     - path: corpus/test.spacy
       md5: 3e9d0eb02268639e48ab7755062fa97d
-  spacy_version: 3.3.1
+  spacy_version: 3.4.1
   spacy_git_version: Unknown
 train:
   cmd: python -m spacy run train
   script:
-    - python -m spacy train configs/config.cfg --output training/ --paths.train corpus/train.spacy
-      --paths.dev corpus/test.spacy --gpu-id -1
+    - python -m spacy train configs/cpu-accuracy.cfg --output training/ --paths.train
+      corpus/train.spacy --paths.dev corpus/test.spacy --gpu-id -1
   deps:
     - path: corpus/train.spacy
-      md5: 8854b65ae114479737c96cec8e6203f2
+      md5: a74836ff63b4548e39f5c1d05d07c5e2
     - path: corpus/test.spacy
-      md5: cbc4d1ee25f1b99d244b85c865ff6809
-    - path: configs/config.cfg
-      md5: 0fd5325def4c5acfab1987f47ea95f2a
+      md5: 3e9d0eb02268639e48ab7755062fa97d
+    - path: configs/cpu-accuracy.cfg
+      md5: 05220c491ba8f26848820b625e73661c
   outs:
     - path: training/model-best
-      md5: fc6485f64e73538a467b2cc3242dec15
-  spacy_version: 3.3.1
+      md5: 21185f148f56b6eacdad5140431458e2
+  spacy_version: 3.4.1
   spacy_git_version: Unknown
 evaluate:
   cmd: python -m spacy run evaluate
@@ -41,26 +41,26 @@ evaluate:
       --gpu-id -1
   deps:
     - path: corpus/test.spacy
-      md5: cbc4d1ee25f1b99d244b85c865ff6809
+      md5: 3e9d0eb02268639e48ab7755062fa97d
     - path: training/model-best
-      md5: fc6485f64e73538a467b2cc3242dec15
+      md5: 21185f148f56b6eacdad5140431458e2
   outs:
     - path: training/metrics.json
-      md5: 9ead92a636f3eb11f4139e4a71ea0a21
-  spacy_version: 3.3.1
+      md5: 6d26c4953fcf9fac8c8b0fef175ffe73
+  spacy_version: 3.4.1
   spacy_git_version: Unknown
 package:
   cmd: python -m spacy run package
   script:
-    - python -m spacy package --name ethicalads_topics --version 20220720_16_24_43
+    - python -m spacy package --name ethicalads_topics --version 20221006_10_45_28
       training/model-best packages
   deps:
     - path: corpus/test.spacy
-      md5: cbc4d1ee25f1b99d244b85c865ff6809
+      md5: 3e9d0eb02268639e48ab7755062fa97d
     - path: training/model-best
-      md5: fc6485f64e73538a467b2cc3242dec15
+      md5: 21185f148f56b6eacdad5140431458e2
   outs:
     - path: packages/{vars.name}
       md5: null
-  spacy_version: 3.3.1
+  spacy_version: 3.4.1
   spacy_git_version: Unknown
