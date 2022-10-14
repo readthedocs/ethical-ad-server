@@ -168,6 +168,7 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     )
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
+    raw_id_fields = ("djstripe_account",)
     readonly_fields = ("publisher_group_list", "modified", "created")
     search_fields = ("name", "slug")
 
@@ -217,6 +218,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     list_display = ("name", "report", "stripe_customer")
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
+    raw_id_fields = ("djstripe_customer",)
     readonly_fields = ("modified", "created")
     search_fields = ("name", "slug", "djstripe_customer__id")
 
