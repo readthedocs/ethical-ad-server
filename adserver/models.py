@@ -393,6 +393,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "Cache this publishers ad requests. Disable for special cases (eg. SaaS users)"
         ),
     )
+    cache_ads_duration = models.PositiveIntegerField(
+        default=0,
+        help_text=_(
+            "If cache_ads is True and duration > 0, "
+            "use a custom duration instead of settings.ADSERVER_STICKY_DECISION_DURATION."
+        ),
+    )
 
     # Denormalized fields
     sampled_ctr = models.FloatField(

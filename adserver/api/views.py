@@ -191,7 +191,11 @@ class AdDecisionView(GeoIpMixin, APIView):
                 keywords,
             )
             if publisher.cache_ads:
-                cache.set(cache_key, data, settings.ADSERVER_STICKY_DECISION_DURATION)
+                duration = (
+                    publisher.cache_ads_duration
+                    or settings.ADSERVER_STICKY_DECISION_DURATION
+                )
+                cache.set(cache_key, data, duration)
         else:
             referrer = url or self.request.META.get("HTTP_REFERER")
             log.info(
