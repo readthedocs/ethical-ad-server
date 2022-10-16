@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.4.0
+---------------
+
+This release contains a migration to allow us to cache ads for a publisher
+for a configurable amount of time instead of the default (5s in prod).
+
+:date: October 16, 2022
+
+ * @davidfischer: Add a custom cache time for publishers (#647)
+ * @davidfischer: Make Stripe fields into raw_id_fields (#646)
+
+
 Version v1.3.0
 ---------------
 
