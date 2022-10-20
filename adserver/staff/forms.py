@@ -50,8 +50,8 @@ class CreateAdvertiserForm(forms.Form):
     advertiser_name = forms.CharField(label=_("Advertiser name"), max_length=200)
 
     # User information
-    user_email = forms.EmailField(label=_("Email"))
     user_name = forms.CharField(label=_("Name"), max_length=200, required=False)
+    user_email = forms.EmailField(label=_("Email"))
 
     # Used to track historical changes
     message = "Added via staff interface"
