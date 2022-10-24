@@ -21,20 +21,24 @@
 
   <dt>{% trans 'Method' %}</dt>
   <dd>
-  {{ payout.publisher.get_payout_method_display }}
-  {% if payout.publisher.paypal_email %}
-  ({{ payout.publisher.paypal_email }})
-  {% endif %}
+  {{ payout.publisher.get_payout_method_display }}:
   </dd>
+
+  {% if payout.publisher.paypal_email %}
+  <dt>{% trans 'User' %}</dt>
+  <dd>
+  {{ payout.publisher.paypal_email }}
+  </dd>
+  {% endif %}
 
   <dt>{% trans 'Status' %}</dt>
   <dd>{{ payout.get_status_display }}</dd>
 
-  <dt>{% trans 'Subject' %}</dt>
-  <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
-
   <dt>{% trans 'Amount' %}</dt>
   <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+
+  <dt>{% trans 'Subject' %}</dt>
+  <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
 
   <dt>{% trans 'Action' %}</dt>
   <dd>
