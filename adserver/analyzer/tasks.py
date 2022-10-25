@@ -130,4 +130,6 @@ def daily_analyze_urls(days=7, min_visits=50):
 
     log.debug("URLs to analyze: %s", analyzed_urls.count())
     for analyzed_url in analyzed_urls:
-        analyze_url.apply_async(args=[analyzed_url.url, analyzed_url.publisher.slug])
+        analyze_url.apply_async(
+            args=[analyzed_url.url, analyzed_url.publisher.slug], queue="analyzer"
+        )
