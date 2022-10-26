@@ -1,5 +1,5 @@
 # Django itself and its requirements (pytz)
-Django==3.2.15
+Django==3.2.16
 pytz==2021.3
 
 # Asynchronous tasks
