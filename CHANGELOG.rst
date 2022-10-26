@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.5.0
+---------------
+
+This release contained some minor fixes and the larger change of splitting
+our task queue into analyzer tasks (of which there are many and they can backup the queue).
+
+:date: October 26, 2022
+
+ * @ericholscher: Use a dedicated analyzer queue for analyzer tasks (#651)
+ * @ericholscher: Make it a little bit easier to copy payout details (#650)
+ * @ericholscher: Put the name before the email in Add Advertiser form (#649)
+
+
 Version v1.4.0
 ---------------
 
