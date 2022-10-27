@@ -206,7 +206,7 @@ class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView)
             {
                 "advertiser": self.advertiser,
                 "advertiser_new": self.is_advertiser_new(),
-                "has_views_this_month": self.has_views_this_month(start_date, end_date),
+                "has_views_this_month": self.has_views_this_month(start_date),
                 "are_ads_set_up": self.are_ads_set_up(),
                 "has_paid_invoice": self.has_paid_invoice(),
                 "flights": flights,
@@ -225,13 +225,13 @@ class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView)
             advertisement__flight__campaign__advertiser_id=self.advertiser.id
         ).exists()
 
-    def has_views_this_month(self, start_date, end_date):
-        """Detect if advertisers have impressions in the time frame."""
+    def has_views_this_month(self, start_date):
+        """Detect if advertisers have impressions since the start date (first of the month)."""
         return (
             AdImpression.objects.filter(
                 advertisement__flight__campaign__advertiser_id=self.advertiser.id
             )
-            .filter(date__gte=start_date, date__lte=end_date)
+            .filter(date__gte=start_date)
             .exists()
         )
 
