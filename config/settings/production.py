@@ -119,6 +119,10 @@ CELERY_TASK_ALWAYS_EAGER = False
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL"))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
+# This setting means that workers should acknowledge a task after it is executed
+# https://docs.celeryq.dev/page/userguide/configuration.html#std:setting-task_acks_late
+CELERY_ACKS_LATE = True
+
 if env.bool("REDIS_SSL", default=False):
     CELERY_BROKER_URL = CELERY_BROKER_URL.replace("redis://", "rediss://")
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
