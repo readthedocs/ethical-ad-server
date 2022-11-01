@@ -36,6 +36,17 @@ def analyze_url(url, publisher_slug):
         log.warning("Analyzing URL for nonexistent publisher: %s", publisher_slug)
         return
 
+    # Check if we've recently analyzed the URL
+    # If we have, skip it
+    existing_record = AnalyzedUrl.objects.filter(
+        url=normalized_url, publisher=publisher
+    ).first()
+    if existing_record and existing_record.last_analyzed_date > (
+        timezone.now() - datetime.timedelta(days=7)
+    ):
+        log.warning("URL recently analyzed. Skipping.")
+        return
+
     log.debug("Analyzing url: %s", normalized_url)
 
     backend = get_url_analyzer_backend()(url)
