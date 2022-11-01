@@ -921,12 +921,16 @@ class Flight(TimeStampedModel, IndestructibleModel):
             # Only load regions if we have to
             regions = Region.load_from_cache()
             if self.included_regions and not any(
-                geo_data.country in regions[reg] for reg in self.included_regions
+                geo_data.country in regions[reg]
+                for reg in self.included_regions
+                if reg in regions
             ):
                 return False
 
             if self.excluded_regions and any(
-                geo_data.country in regions[reg] for reg in self.excluded_regions
+                geo_data.country in regions[reg]
+                for reg in self.excluded_regions
+                if reg in regions
             ):
                 return False
 
@@ -955,6 +959,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             topics = Topic.load_from_cache()
             topic_keyword_set = set()
             for topic_slug in self.included_topics:
+                # Be defensive in case the topic isn't in the cache
+                if topic_slug not in topics:
+                    log.warning(
+                        "Unknown topic being targeted. Topic=%s, Flight=%s",
+                        topic_slug,
+                        self,
+                    )
+                    continue
+
                 for kw in topics[topic_slug]:
                     topic_keyword_set.add(kw)
 
