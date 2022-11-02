@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.6.0
+---------------
+
+This release has a number of changes and fixes to the analyzer
+to try to fix some celery issues around repeated tasks
+and making our tasks reentrant.
+
+:date: November 2, 2022
+
+ * @davidfischer: Be more defensive around uncached topics/regions (#658)
+ * @davidfischer: Shuffle dependencies (#657)
+ * @davidfischer: Skip recently analyzed URLs (#656)
+ * @davidfischer: Set celery to ack late (#655)
+ * @davidfischer: Remove the end date filter (#654)
+ * @dependabot[bot]: Bump django from 3.2.15 to 3.2.16 in /requirements (#653)
+
+
+
 Version v1.5.0
 ---------------
 
