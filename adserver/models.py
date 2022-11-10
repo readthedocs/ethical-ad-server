@@ -1772,6 +1772,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # Don't do this by default as searching for a template is expensive
             template = get_template("adserver/advertisement.html")
 
+        log.debug(f"Rendering Ad. topics={topics}")
+
         return template.render(
             {
                 "ad": self,
