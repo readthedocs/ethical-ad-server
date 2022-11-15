@@ -13,24 +13,28 @@
 
 
 {% block content_container %}
+<div class="row">
 
   {% if request.user.is_staff %}
+  <div class="col-sm">
     <h2>{% trans 'Staff Reports' %}</h2>
     <p>
       {% trans 'Reports only visible to staff users.' %}
     </p>
     <ul>
-        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Staff Advertiser Report' %}</a> (<a href="{% url 'staff_advertisers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'staff_publishers_report' %}">{% trans 'Staff Publisher Report' %}</a> (<a href="{% url 'staff_publishers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'staff_regiontopic_report' %}">{% trans 'Staff Region & Topic Report' %}</a> (<a href="{% url 'staff_regiontopic_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'staff_keyword_report' %}">{% trans 'Staff Keyword Report' %}</a> (<a href="{% url 'staff_keyword_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'staff_geo_report' %}">{% trans 'Staff Geo Report' %}</a> (<a href="{% url 'staff_geo_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'staff_region_report' %}">{% trans 'Staff Region Report' %}</a> (<a href="{% url 'staff_region_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
-        <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Staff Uplift Report' %}</a> (<a href="{% url 'publisher_uplift_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_advertisers_report' %}">{% trans 'Advertiser' %}</a> (<a href="{% url 'staff_advertisers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_publishers_report' %}">{% trans 'Publisher' %}</a> (<a href="{% url 'staff_publishers_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_regiontopic_report' %}">{% trans 'Region & Topic' %}</a> (<a href="{% url 'staff_regiontopic_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_keyword_report' %}">{% trans 'Keyword' %}</a> (<a href="{% url 'staff_keyword_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_geo_report' %}">{% trans 'Geo' %}</a> (<a href="{% url 'staff_geo_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'staff_region_report' %}">{% trans 'Region' %}</a> (<a href="{% url 'staff_region_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
+        <li><a href="{% url 'publisher_uplift_report' %}">{% trans 'Uplift' %}</a> (<a href="{% url 'publisher_uplift_report' %}?start_date={{ month_start|date:'Y-m-d' }}">{% trans 'This month' %}</a>)</li>
       </ul>
+  </div>
   {% endif %}
 
   {% if publishers %}
+  <div class="col-sm">
     <h2>{% trans 'Publishers' %}</h2>
     <p>
       {% trans 'Reports for your publisher accounts.' %}
@@ -40,9 +44,11 @@
         <li><a href="{% url 'publisher_main' publisher.slug %}">{{ publisher.name }}</a></li>
       {% endfor %}
     </ul>
+  </div>
   {% endif %}
 
   {% if advertisers %}
+  <div class="col-sm">
     <h2>{% trans 'Advertisers' %}</h2>
     <p>
       {% trans 'Reports for your advertiser accounts.' %}
@@ -52,10 +58,12 @@
         <li><a href="{% url 'advertiser_main' advertiser.slug %}">{{ advertiser.name }}</a></li>
       {% endfor %}
     </ul>
+  </div>
   {% endif %}
 
   {% if not publishers and not advertisers %}
     <p>{% trans 'You do not have access to anything.' %}</p>
   {% endif %}
 
+</div>
 {% endblock content_container %}
