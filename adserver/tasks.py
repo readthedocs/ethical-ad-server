@@ -251,6 +251,15 @@ def daily_update_keywords(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     ).delete()
 
+    keyword_mapping = defaultdict(
+        lambda: {
+            "decisions": 0,
+            "offers": 0,
+            "views": 0,
+            "clicks": 0,
+        }
+    )
+
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
@@ -301,21 +310,32 @@ def daily_update_keywords(day=None):
         matched_keywords = page_keywords & flight_keywords
 
         for keyword in matched_keywords:
-            impression, _ = KeywordImpression.objects.using("default").get_or_create(
-                date=start_date,
-                publisher_id=values["publisher"],
-                advertisement_id=values["advertisement"],
-                keyword=keyword,
-            )
-            # These are a Sum because we can't query for specific keywords from Postgres,
-            # so a specific publisher and advertisement set could return the same keyword:
-            # ['python', 'django'] and ['python, 'flask'] both are `python` in this case.
-            KeywordImpression.objects.using("default").filter(pk=impression.pk).update(
-                decisions=F("decisions") + values["total_decisions"],
-                offers=F("offers") + values["total_offers"],
-                views=F("views") + values["total_views"],
-                clicks=F("clicks") + values["total_clicks"],
-            )
+            advertisement_id = values["advertisement"]
+            publisher_id = values["publisher"]
+            index = f"{advertisement_id}:{publisher_id}:{keyword}"
+
+            keyword_mapping[index]["decisions"] += values["total_decisions"]
+            keyword_mapping[index]["offers"] += values["total_offers"]
+            keyword_mapping[index]["views"] += values["total_views"]
+            keyword_mapping[index]["clicks"] += values["total_clicks"]
+
+    for data, value in keyword_mapping.items():
+        ad, publisher, keyword = data.split(":")
+        if ad == "None":
+            ad = None
+
+        impression, _ = KeywordImpression.objects.using("default").get_or_create(
+            date=start_date,
+            publisher_id=publisher,
+            advertisement_id=ad,
+            keyword=keyword,
+        )
+        KeywordImpression.objects.using("default").filter(pk=impression.pk).update(
+            decisions=F("decisions") + value["decisions"],
+            offers=F("offers") + value["offers"],
+            views=F("views") + value["views"],
+            clicks=F("clicks") + value["clicks"],
+        )
 
 
 @app.task()
