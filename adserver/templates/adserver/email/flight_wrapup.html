@@ -7,8 +7,11 @@
 
 <p>{% blocktrans with site_name=site.name %}Thanks again for advertising with {{ site_name }}!{% endblocktrans %}</p>
 
-<p>{% blocktrans with total_flights=completed_flights|length pluralized_flights=completed_flights|pluralize %}You have
-  {{ total_flights }} flight{{ pluralized_flights }} that have finished:{% endblocktrans %}</p>
+{% spaceless %}
+
+<p>{% blocktrans with total_flights=completed_flights|length pluralized_flights=completed_flights|pluralize %}
+  You have {{ total_flights }} flight{{ pluralized_flights }} that finished:
+{% endblocktrans %}</p>
 <ul>
   {% for flight in completed_flights %}
   <li>
@@ -18,10 +21,12 @@
   {% endfor %}
 </ul>
 
+{% endspaceless %}
+
 <p>{% blocktrans %}
-  How did conversions look on your end?
   If you have any questions or you would like to renew your flight, please reply to this email.
-  We can run another campaign with the same creative and budget, or adjust things based on your feedback around what's converting best.
+  We can run another campaign with the same creative and budget,
+  or adjust things based on your feedback around what's converting best.
 {% endblocktrans %}</p>
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
