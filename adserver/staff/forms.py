@@ -158,7 +158,7 @@ class CreateAdvertiserForm(forms.Form):
 
         # Create the new stripe customer
         customer = stripe.Customer.create(
-            name=user.name,
+            name=advertiser.name,
             email=user.email,
             description=f"Advertising @ {advertiser.name}",
         )
