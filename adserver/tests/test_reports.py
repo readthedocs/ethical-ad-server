@@ -594,42 +594,21 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "Total,2")
 
     def test_publisher_geo_report_contents(self):
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
-
         # Update reporting
         daily_update_geos()
 
-        self.client.force_login(self.staff_user)
         url = reverse("publisher_geo_report", args=[self.publisher1.slug])
 
-        # All reports
-        response = self.client.get(url)
-        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
-        self.assertContains(response, "France")
-        self.assertNotContains(response, "Belgium")
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
 
-        # Filter reports
-        response = self.client.get(url, {"country": "US"})
-        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
-        self.assertNotContains(
-            response, '<td class="text-right"><strong>2</strong></td>'
-        )
-        response = self.client.get(url, {"country": "FR"})
-        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
-
-        # Invalid country
-        response = self.client.get(url, {"country": "foobar"})
-        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
-
-        # Verify the export URL is configured
-        self.assertContains(response, "CSV Export")
-
-        export_url = reverse("publisher_geo_report_export", args=[self.publisher1.slug])
-        response = self.client.get(export_url, {"country": "FR"})
-        self.assertContains(response, "Total,1")
+        # No data directly on page - handled by metabase
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Geo Report for ")
 
     def test_publisher_advertiser_report_contents(self):
         self.client.force_login(self.staff_user)
@@ -660,68 +639,21 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "Total,4")
 
     def test_publisher_keyword_report_contents(self):
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            keywords=["test"],
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            keywords=["test"],
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            keywords=["test"],
-            viewed=True,
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            keywords=["awesome"],
-            viewed=True,
-            clicked=True,
-        )
-
         # Update reporting
         daily_update_keywords()
 
-        self.client.force_login(self.staff_user)
         url = reverse("publisher_keyword_report", args=[self.publisher1.slug])
 
-        # All reports
-        response = self.client.get(url)
-        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
-        self.assertContains(response, "test")
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
 
-        # Filter reports
-        response = self.client.get(url, {"keyword": "test"})
-        self.assertContains(response, '<td class="text-right"><strong>3</strong></td>')
-        self.assertNotContains(
-            response, '<td class="text-right"><strong>2</strong></td>'
-        )
-        response = self.client.get(url, {"keyword": "awesome"})
-        self.assertContains(response, '<td class="text-right"><strong>1</strong></td>')
-
-        # Invalid country
-        response = self.client.get(url, {"keyword": "foobar"})
-        self.assertContains(response, '<td class="text-right"><strong>0</strong></td>')
-
-        # Verify the export URL is configured
-        self.assertContains(response, "CSV Export")
-
-        export_url = reverse(
-            "publisher_keyword_report_export", args=[self.publisher1.slug]
-        )
-        response = self.client.get(export_url, {"keyword": "awesome"})
-        self.assertContains(response, "Total,1,1")
+        # No data directly on page - handled by metabase
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Keyword Report")
 
     def test_publisher_uplift_report_contents(self):
         self.client.force_login(self.staff_user)

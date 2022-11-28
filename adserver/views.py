@@ -1554,62 +1554,24 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
         return queryset
 
 
-class PublisherGeoReportView(PublisherAccessMixin, GeoReportMixin, BaseReportView):
+class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
 
-    """A report for a single publisher."""
+    """A report for a single publisher across countries."""
 
-    export_view = "publisher_geo_report_export"
-    impression_model = GeoImpression
     template_name = "adserver/reports/publisher-geo.html"
-    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        country = self.request.GET.get("country", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
-
-        country_options = list(
-            self.get_country_options(
-                # Don't pass the country so we get all countries
-                self.get_queryset(
-                    publisher=publisher,
-                    campaign_type=context["campaign_type"],
-                    start_date=context["start_date"],
-                    end_date=context["end_date"],
-                )
-            )
-        )
-
-        queryset = self.get_queryset(
-            publisher=publisher,
-            campaign_type=context["campaign_type"],
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-            country=country,
-            # Don't iterate over countries that aren't in the output
-            countries=set(indx[0] for indx in country_options),
-        )
-
-        report = PublisherGeoReport(
-            queryset,
-            # Index by date if filtering report to a single country
-            index="date" if country else None,
-            order="-date" if country else None,
-            max_results=None if country else self.LIMIT,
-        )
-        report.generate()
 
         context.update(
             {
                 "publisher": publisher,
-                "report": report,
-                "campaign_types": CAMPAIGN_TYPES,
-                "country": country,
-                "country_options": country_options,
-                "country_name": self.get_country_name(country),
-                "export_url": self.get_export_url(publisher_slug=publisher.slug),
+                "metabase_publisher_geos": settings.METABASE_QUESTIONS.get(
+                    "PUBLISHER_GEO_REPORT"
+                ),
             }
         )
 
@@ -1686,61 +1648,24 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
         return context
 
 
-class PublisherKeywordReportView(
-    PublisherAccessMixin, KeywordReportMixin, BaseReportView
-):
+class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
 
-    """A report for a single publisher."""
+    """A keyword report for a single publisher (generated from Metabase)."""
 
-    export_view = "publisher_keyword_report_export"
-    impression_model = KeywordImpression
     template_name = "adserver/reports/publisher-keyword.html"
-    fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        keyword = self.request.GET.get("keyword", "")
         publisher_slug = kwargs.get("publisher_slug", "")
         publisher = get_object_or_404(Publisher, slug=publisher_slug)
-
-        queryset = self.get_queryset(
-            publisher=publisher,
-            keyword=keyword,
-            campaign_type=context["campaign_type"],
-            start_date=context["start_date"],
-            end_date=context["end_date"],
-        )
-
-        report = PublisherKeywordReport(
-            queryset,
-            # Index by date if filtering report to a single country
-            index="date" if keyword else None,
-            order="-date" if keyword else None,
-            max_results=None if keyword else self.LIMIT,
-        )
-        report.generate()
-
-        keyword_options = list(
-            self.get_keyword_options(
-                # Don't pass the country so we get all countries
-                self.get_queryset(
-                    publisher=publisher,
-                    campaign_type=context["campaign_type"],
-                    start_date=context["start_date"],
-                    end_date=context["end_date"],
-                )
-            )
-        )
 
         context.update(
             {
                 "publisher": publisher,
-                "report": report,
-                "campaign_types": CAMPAIGN_TYPES,
-                "keyword": keyword,
-                "keyword_options": keyword_options,
-                "export_url": self.get_export_url(publisher_slug=publisher.slug),
+                "metabase_publisher_keywords": settings.METABASE_QUESTIONS.get(
+                    "PUBLISHER_KEYWORD_REPORT"
+                ),
             }
         )
 
