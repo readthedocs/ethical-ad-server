@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.7.0
+---------------
+
+This release contained some performance improvements to reporting
+and data aggregations as well as some minor fixes.
+
+:date: November 28, 2022
+
+ * @davidfischer: Advertiser name in Stripe should be advertiser's name (#668)
+ * @ericholscher: Add CODEOWNERS to auto-assign PR's (#666)
+ * @ericholscher: Cleanup the automated email a bit (#665)
+ * @davidfischer: Move publisher reports to metabase (#664)
+ * @davidfischer: Optimize the keyword aggregation (#663)
+ * @ericholscher: Split the dashboard view so it scales a bit better with more data (#662)
+
+
 Version v1.6.0
 ---------------
 
