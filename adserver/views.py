@@ -823,7 +823,7 @@ class BaseProxyView(View):
 
         ignore_reason = self.handle_action(request, advertisement, offer, publisher)
         message = ignore_reason or self.success_message
-        response = self.get_response(request, advertisement, publisher)
+        response = self.get_response(request, advertisement, publisher, offer=offer)
 
         # Add the reason for accepting or rejecting the impression to the headers
         # but only for staff or in DEBUG/TESTING
@@ -832,7 +832,7 @@ class BaseProxyView(View):
 
         return response
 
-    def get_response(self, request, advertisement, publisher):
+    def get_response(self, request, advertisement, publisher, offer=None):
         """Subclasses *must* override this method."""
         raise NotImplementedError
 
@@ -844,7 +844,7 @@ class AdViewProxyView(BaseProxyView):
     impression_type = VIEWS
     success_message = "Billed view"
 
-    def get_response(self, request, advertisement, publisher):
+    def get_response(self, request, advertisement, publisher, offer):
         return HttpResponse(
             "<svg><!-- View Proxy --></svg>", content_type="image/svg+xml"
         )
@@ -857,7 +857,7 @@ class AdClickProxyView(BaseProxyView):
     impression_type = CLICKS
     success_message = "Billed click"
 
-    def get_response(self, request, advertisement, publisher):
+    def get_response(self, request, advertisement, publisher, offer):
         # Allows using variables in links such as `?utm_source=${publisher}`
         template = string.Template(advertisement.link)
 
@@ -865,8 +865,19 @@ class AdClickProxyView(BaseProxyView):
         if publisher:
             publisher_slug = publisher.slug
 
+        topic_set = set()
+        if offer and offer.keywords:
+            topics = Topic.load_from_cache()
+            for topic, topic_keywords in topics.items():
+                for topic_keyword in topic_keywords:
+                    if topic_keyword in keywords:
+                        topic_set.add(topic)
+        topic_string = ",".join(topic_set)
+
         url = template.safe_substitute(
-            publisher=publisher_slug, advertisement=advertisement.slug
+            publisher=publisher_slug,
+            advertisement=advertisement.slug,
+            topics=topic_string,
         )
 
         # Append a query string param ?ea-publisher=${publisher}
@@ -886,7 +897,7 @@ class AdViewTimeProxyView(AdViewProxyView):
     error_message = "Invalid view time"
     success_message = "Updated view time"
 
-    def get_response(self, request, advertisement, publisher):
+    def get_response(self, request, advertisement, publisher, offer):
         return HttpResponse(
             "<svg><!-- View Time Proxy --></svg>", content_type="image/svg+xml"
         )
