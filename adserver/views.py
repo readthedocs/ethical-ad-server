@@ -870,7 +870,7 @@ class AdClickProxyView(BaseProxyView):
             topics = Topic.load_from_cache()
             for topic, topic_keywords in topics.items():
                 for topic_keyword in topic_keywords:
-                    if topic_keyword in keywords:
+                    if topic_keyword in offer.keywords:
                         topic_set.add(topic)
         topic_string = ",".join(topic_set)
 
