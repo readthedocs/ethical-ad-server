@@ -130,6 +130,11 @@ if env.bool("REDIS_SSL", default=False):
     CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_REQUIRED}
 
 CELERY_BEAT_SCHEDULE = {
+    # Run publisher importers every 30 minutes
+    "sync-publisher-data": {
+        "task": "adserver.tasks.run_publisher_importers",
+        "schedule": 1800,  # 30 minutes
+    },
     # Run the previous days reports
     "every-day-generate-indexes-all-reports": {
         "task": "adserver.tasks.update_previous_day_reports",
@@ -147,11 +152,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.notify_of_publisher_changes",
         # Runs on Wednesday
         "schedule": crontab(day_of_week=3, hour="5", minute="0"),
-    },
-    # Run publisher importers daily
-    "every-day-sync-publisher-data": {
-        "task": "adserver.tasks.run_publisher_importers",
-        "schedule": crontab(hour="*/2", minute="0"),
     },
     # Run analyzer tasks
     "every-day-visited-urls": {
