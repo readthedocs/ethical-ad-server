@@ -26,17 +26,17 @@
     "popper.js": "^1.16.1"
   },
   "devDependencies": {
-    "css-loader": "^3.5.3",
+    "css-loader": "^6.7.3",
     "ethical-ad-client": "git+https://github.com/readthedocs/ethical-ad-client.git",
-    "file-loader": "^2.0.0",
+    "file-loader": "^6.2.0",
     "github-changelog": "git+https://github.com/davidfischer/github-changelog.git#davidfischer/update-deps",
-    "mini-css-extract-plugin": "^0.8.2",
+    "mini-css-extract-plugin": "^2.7.2",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "sass": "^1.52.1",
-    "sass-loader": "^7.3.1",
+    "sass-loader": "^13.2.0",
     "style-loader": "^1.2.1",
     "terser-webpack-plugin": "^2.3.7",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   }
 }
