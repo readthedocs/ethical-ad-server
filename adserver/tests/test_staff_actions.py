@@ -139,35 +139,54 @@ class CreatePublisherTest(TestCase):
     def setUp(self):
         CreateAdvertiserTest.setUp(self)
 
-    def test_form(self):
-        site = "foo.com"
-        user_name = "User Name"
-        user_email = "user@example.com"
-        keywords = "frontend,bar"
-        data = {
-            "site": site,
-            "user_name": user_name,
-            "user_email": user_email,
-            "keywords": keywords,
+        self.site = "foo.com"
+        self.user_name = "User Name"
+        self.user_email = "user@example.com"
+        self.keywords = "frontend,bar"
+        self.data = {
+            "site": self.site,
+            "user_name": self.user_name,
+            "user_email": self.user_email,
+            "keywords": self.keywords,
         }
-        form = CreatePublisherForm(data=data)
+
+    def test_form(self):
+        form = CreatePublisherForm(data=self.data)
         self.assertTrue(form.is_valid())
         form.save()
 
-        self.assertTrue(Publisher.objects.filter(name=site).exists())
-        publisher = Publisher.objects.filter(name=site).first()
-        self.assertEqual(publisher.keywords, keywords.split(","))
+        self.assertTrue(Publisher.objects.filter(name=self.site).exists())
+        publisher = Publisher.objects.filter(name=self.site).first()
+        self.assertEqual(publisher.keywords, self.keywords.split(","))
         self.assertEqual(
             publisher.publisher_groups.first().slug, CreatePublisherForm.DEFAULT_GROUP
         )
 
-        user = User.objects.filter(email=user_email).first()
+        user = User.objects.filter(email=self.user_email).first()
         self.assertIsNotNone(user)
         self.assertEqual(user.publishers.count(), 1)
 
         # Publisher now exists
-        form = CreatePublisherForm(data=data)
+        form = CreatePublisherForm(data=self.data)
         self.assertFalse(form.is_valid())
+
+    def test_form_existing_user(self):
+        data = {
+            "site": self.site,
+            "user_name": self.user_name,
+            "user_email": self.user.email,  # User exists
+            "keywords": self.keywords,
+        }
+
+        form = CreatePublisherForm(data=data)
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.assertTrue(Publisher.objects.filter(name=self.site).exists())
+
+        self.assertEqual(User.objects.filter(email=self.user.email).count(), 1)
+        user = User.objects.filter(email=self.user.email).first()
+        self.assertEqual(user.publishers.count(), 1)
 
     def test_view(self):
         url = reverse("create-publisher")
@@ -187,20 +206,10 @@ class CreatePublisherTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        site = "foo.com"
-        user_name = "User Name"
-        user_email = "user@example.com"
-        keywords = "frontend,bar"
-        data = {
-            "site": site,
-            "user_name": user_name,
-            "user_email": user_email,
-            "keywords": keywords,
-        }
-        response = self.client.post(url, data=data)
+        response = self.client.post(url, data=self.data)
         self.assertEqual(response.status_code, 302)
 
-        self.assertTrue(Publisher.objects.filter(name=site).exists())
+        self.assertTrue(Publisher.objects.filter(name=self.site).exists())
 
 
 class PublisherPayoutTests(TestCase):

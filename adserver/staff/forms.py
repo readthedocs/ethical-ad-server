@@ -246,10 +246,16 @@ class CreatePublisherForm(forms.Form):
 
         return site
 
+    def get_existing_user(self):
+        """Return an existing user with the email or None if no user exists."""
+        user_email = self.cleaned_data["user_email"]
+        return User.objects.filter(email=user_email).first()
+
     def create_user(self):
         """Create the user account and send an invite email."""
         user_name = self.cleaned_data["user_name"].strip()
         user_email = self.cleaned_data["user_email"]
+
         user = User.objects.create_user(name=user_name, email=user_email, password="")
         update_change_reason(user, self.message)
         if hasattr(user, "invite_user"):
@@ -318,7 +324,12 @@ class CreatePublisherForm(forms.Form):
     def save(self):
         """Create the publisher and associated objects. Send the invitation to the user account."""
         publisher = self.create_publisher()
-        user = self.create_user()
+
+        # Get the user
+        user = self.get_existing_user()
+        if not user:
+            user = self.create_user()
+
         user.publishers.add(publisher)
 
         return publisher
