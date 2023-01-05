@@ -1,4 +1,4 @@
-name: Unit tests and code style checks
+name: Continuous Integration Checks
 
 # All branches
 on: push
@@ -6,7 +6,7 @@ on: push
 jobs:
   build:
 
-    name: Build and Validate
+    name: Unit tests and code style checks
     runs-on: ubuntu-latest
 
     steps:
