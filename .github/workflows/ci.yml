@@ -17,5 +17,5 @@ jobs:
 
       - name: Run CI
         run: |
-          pip install requirements/testing.txt
+          pip install -r requirements/testing.txt
           tox
