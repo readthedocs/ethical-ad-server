@@ -754,7 +754,7 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     list_per_page = 500
     list_select_related = ("advertiser",)
     raw_id_fields = ("advertiser",)
-    readonly_fields = ("campaign_report", "total_value", "modified", "created")
+    readonly_fields = ("campaign_report", "modified", "created")
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
@@ -773,11 +773,6 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     def num_flights(self, obj):
         return obj.num_flights or 0
-
-    def ctr(self, obj):
-        clicks = self.total_clicks(obj)
-        views = self.total_views(obj)
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
