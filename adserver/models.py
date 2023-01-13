@@ -1883,6 +1883,68 @@ class AdImpression(BaseImpression):
         return "%s on %s" % (self.advertisement, self.date)
 
 
+class AdvertiserImpression(BaseImpression):
+
+    """
+    Create a daily index by advertiser (and nothing else).
+
+    Indexed one per advertiser per day.
+    """
+
+    advertiser = models.ForeignKey(
+        Advertiser,
+        related_name="advertiser_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+    spend = models.DecimalField(
+        _("Daily spend"), max_digits=8, decimal_places=2, default=0
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("advertiser", "date")
+        verbose_name_plural = _("Advertiser impressions")
+
+    def __str__(self):
+        """Simple override."""
+        return "%s on %s" % (self.advertiser, self.date)
+
+
+class PublisherImpression(BaseImpression):
+
+    """
+    Create a daily index by publisher (and nothing else).
+
+    Indexed one per publisher per day.
+    """
+
+    publisher = models.ForeignKey(
+        Publisher,
+        related_name="publisher_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+    revenue = models.DecimalField(
+        _("Daily revenue"),
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        help_text=_(
+            "This value has not been multiplied by the revenue share percentage"
+        ),
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "date")
+        verbose_name_plural = _("Publisher impressions")
+
+    def __str__(self):
+        """Simple override."""
+        return "%s on %s" % (self.publisher, self.date)
+
+
 class PlacementImpression(BaseImpression):
 
     """

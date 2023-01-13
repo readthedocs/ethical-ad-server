@@ -7,18 +7,22 @@ from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
 from ..models import AdImpression
+from ..models import AdvertiserImpression
 from ..models import GeoImpression
 from ..models import KeywordImpression
 from ..models import Offer
 from ..models import PlacementImpression
+from ..models import PublisherImpression
 from ..models import RegionImpression
 from ..models import RegionTopicImpression
 from ..models import UpliftImpression
 from ..tasks import calculate_publisher_ctrs
+from ..tasks import daily_update_advertisers
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
+from ..tasks import daily_update_publishers
 from ..tasks import daily_update_regiontopic
 from ..tasks import daily_update_uplift
 from ..tasks import notify_of_completed_flights
@@ -307,6 +311,34 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(ai2.views, 2)
         self.assertEqual(ai2.clicks, 0)
         self.assertEqual(ai2.view_time, 8)
+
+    def test_daily_update_advertiser_impressions(self):
+        # Advertiser1 - offered/decision=6, views=5, clicks=1, spend=$2
+        daily_update_impressions()
+        daily_update_advertisers()
+
+        # Verify that the aggregation task worked correctly
+        ai = AdvertiserImpression.objects.filter(advertiser=self.advertiser).first()
+        self.assertIsNotNone(ai)
+        self.assertEqual(ai.decisions, 6)
+        self.assertEqual(ai.offers, 6)
+        self.assertEqual(ai.views, 5)
+        self.assertEqual(ai.clicks, 1)
+        self.assertAlmostEqual(float(ai.spend), 2.0)
+
+    def test_daily_update_publisher_impressions(self):
+        # Publisher - offered/decision=6, views=5, clicks=1, revenue=$2
+        daily_update_impressions()
+        daily_update_publishers()
+
+        # Verify that the aggregation task worked correctly
+        pi = PublisherImpression.objects.filter(publisher=self.publisher).first()
+        self.assertIsNotNone(pi)
+        self.assertEqual(pi.decisions, 6)
+        self.assertEqual(pi.offers, 6)
+        self.assertEqual(pi.views, 5)
+        self.assertEqual(pi.clicks, 1)
+        self.assertAlmostEqual(float(pi.revenue), 2.0)
 
     def test_daily_update_keywords(self):
         # Ad1 - offered/decision=4, views=3, clicks=1
