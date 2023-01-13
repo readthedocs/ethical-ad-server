@@ -66,5 +66,7 @@ spacy==3.4.1
 # Spacy transformers is listed in the production requirements
 # It installs PyTorch which is hundreds of MB
 langdetect==1.0.9
+# Our use of textacy has an incompatibility with networkx v3
+networkx<3.0
 # Has to be downloaded directly like this (~30MB)
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl

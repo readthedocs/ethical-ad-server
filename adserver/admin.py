@@ -341,24 +341,8 @@ class AdvertisementMixin:
             f'<img src="{obj.image.url}" style="max-width: {self.MAX_IMAGE_WIDTH}px" />'
         )
 
-    def num_clicks(self, obj):
-        return obj.num_clicks or 0
-
-    def num_views(self, obj):
-        return obj.num_views or 0
-
     def ctr(self, obj):
         return "{:.3f}%".format(obj.ctr())
-
-    def ecpm(self, obj):
-        if not obj.flight:
-            return None  # pragma: no cover
-
-        clicks = self.num_clicks(obj)
-        views = self.num_views(obj)
-
-        cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
-        return "${:.2f}".format(calculate_ecpm(cost, views))
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -368,10 +352,7 @@ class AdvertisementMixin:
             queryset = queryset.select_related(
                 *self.list_select_related
             )  # pragma: no cover
-        queryset = queryset.annotate(
-            num_clicks=models.Sum("impressions__clicks"),
-            num_views=models.Sum("impressions__views"),
-        )
+
         return queryset
 
 
@@ -390,10 +371,6 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdm
         "slug",
         "flight",
         "live",
-        "num_views",
-        "num_clicks",
-        "ctr",
-        "ecpm",
     )
     list_display_links = ("name",)
     list_select_related = ("flight", "flight__campaign__advertiser")
@@ -405,7 +382,14 @@ class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdm
     )
     list_editable = ("live",)
     raw_id_fields = ("flight",)
-    readonly_fields = ("ad_image", "total_views", "total_clicks", "modified", "created")
+    readonly_fields = (
+        "ad_image",
+        "total_views",
+        "total_clicks",
+        "modified",
+        "created",
+        "ctr",
+    )
     search_fields = (
         "name",
         "flight__name",
@@ -456,8 +440,31 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
     readonly_fields = fields
     show_change_link = True
 
+    def num_clicks(self, obj):
+        return obj.num_clicks or 0
+
+    def num_views(self, obj):
+        return obj.num_views or 0
+
+    def ctr(self, obj):
+        return "{:.3f}%".format(obj.ctr())
+
+    def ecpm(self, obj):
+        if not obj.flight:
+            return None  # pragma: no cover
+
+        clicks = self.num_clicks(obj)
+        views = self.num_views(obj)
+
+        cost = (clicks * obj.flight.cpc) + (views * obj.flight.cpm / 1000)
+        return "${:.2f}".format(calculate_ecpm(cost, views))
+
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            num_clicks=models.Sum("impressions__clicks"),
+            num_views=models.Sum("impressions__views"),
+        )
         return queryset.prefetch_related("ad_types")
 
     def has_add_permission(self, request, obj=None):
@@ -740,19 +747,14 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         "advertiser",
         "campaign_type",
         "campaign_report",
-        "total_value",
         "num_flights",
         "num_ads",
-        "total_views",
-        "total_clicks",
-        "ctr",
-        "ecpm",
     )
     list_filter = ("campaign_type", "advertiser")
     list_per_page = 500
     list_select_related = ("advertiser",)
     raw_id_fields = ("advertiser",)
-    readonly_fields = ("campaign_report", "total_value", "modified", "created")
+    readonly_fields = ("campaign_report", "modified", "created")
     search_fields = ("name", "slug")
 
     def campaign_report(self, instance):
@@ -772,43 +774,11 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     def num_flights(self, obj):
         return obj.num_flights or 0
 
-    def total_clicks(self, obj):
-        return obj.total_clicks or 0
-
-    def total_views(self, obj):
-        return obj.total_views or 0
-
-    def total_value(self, obj):
-        return "${:.2f}".format(obj.total_value())
-
-    def ctr(self, obj):
-        clicks = self.total_clicks(obj)
-        views = self.total_views(obj)
-        return "{:.3f}%".format(calculate_ctr(clicks, views))
-
-    def ecpm(self, obj):
-        views = self.total_views(obj)
-        return "${:.2f}".format(calculate_ecpm(obj.total_value(), views))
-
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
-            campaign_total_value=models.Sum(
-                (
-                    models.F("flights__advertisements__impressions__clicks")
-                    * models.F("flights__cpc")
-                )
-                + (
-                    models.F("flights__advertisements__impressions__views")
-                    * models.F("flights__cpm")
-                    / 1000
-                ),
-                output_field=models.FloatField(),
-            ),
             num_flights=models.Count("flights", distinct=True),
             num_ads=models.Count("flights__advertisements", distinct=True),
-            total_clicks=models.Sum("flights__advertisements__impressions__clicks"),
-            total_views=models.Sum("flights__advertisements__impressions__views"),
         )
         return queryset
 
