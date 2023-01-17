@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.8.1
+---------------
+
+Fixes a node dependency issue with the previous version.
+
+:date: January 17, 2022
+
+ * @davidfischer: Upgrade node dependencies (#682)
+
+
 Version v1.8.0
 ---------------
 
