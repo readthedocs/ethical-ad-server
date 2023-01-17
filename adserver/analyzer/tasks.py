@@ -131,7 +131,7 @@ def daily_visited_urls_aggregation(day=None):
 
 
 @app.task
-def daily_analyze_urls(days=7, min_visits=50):
+def daily_analyze_urls(days=30, min_visits=100):
     """Analyze URLs that have been visited `min_visits` times but not analyzed since `days` number of days."""
     dt_cutoff = timezone.now() - datetime.timedelta(days=days)
 
