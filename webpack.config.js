@@ -2,11 +2,12 @@ const webpack = require('webpack');
 const path = require('path');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const INPUT_DIR = path.resolve(__dirname, './assets/src');
 const OUTPUT_DIR = path.resolve(__dirname, './assets/dist');
+
 
 module.exports = {
   entry: path.resolve(INPUT_DIR, 'index.js'),
@@ -16,34 +17,28 @@ module.exports = {
   },
   module: {
     rules: [{
-        test: /\.scss$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          'sass-loader'
-        ]
-    }, {
-      // the file-loader emits files directly to OUTPUT_DIR/fonts
-      test: /\.(woff(2)?|ttf|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-      loader: 'file-loader?name=./fonts/[name].[ext]',
-    }, {
-      // Image loader
-      // the file-loader emits files directly to OUTPUT_DIR/img
-      test: /\.(png|gif|jpg|jpeg|svg)$/,
-      loaders: ['file-loader?name=./img/[name].[ext]']
-    }]
+      test: /\.scss$/,
+      use: [
+        MiniCssExtractPlugin.loader,
+        'css-loader',
+        'sass-loader',
+      ],
+    }],
   },
   optimization: {
     minimizer: [
+      // https://webpack.js.org/plugins/terser-webpack-plugin/
       new TerserPlugin(),
-      new OptimizeCSSAssetsPlugin({})
-    ]
+
+      // https://webpack.js.org/plugins/css-minimizer-webpack-plugin/
+      new CssMinimizerPlugin(),
+    ],
   },
   plugins: [
+    // https://webpack.js.org/plugins/mini-css-extract-plugin/
     new MiniCssExtractPlugin({
       // Options similar to the same options in webpackOptions.output
       filename: '[name].css',
-      path: OUTPUT_DIR,
       chunkFilename: '[id].css'
     }),
 
