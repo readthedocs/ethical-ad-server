@@ -6,6 +6,36 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.8.0
+---------------
+
+Most of the changes in this release related to our ML model.
+There was a new version of the model with additional data.
+The model was also moved to its own repository https://github.com/readthedocs/ethicalads-model.
+This release also contained a number of dependency upgrades.
+
+:date: January 17, 2022
+
+ * @davidfischer: Change analyzer threshold (#683)
+ * @davidfischer: Add optimized publisher and advertiser indexes (#681)
+ * @davidfischer: Speed up the ads and campaign admin views (#680)
+ * @dependabot[bot]: Bump json5 from 1.0.1 to 1.0.2 (#679)
+ * @davidfischer: Consolidate tox into single environment (#678)
+ * @davidfischer: Use GitHub Actions for CI (#677)
+ * @davidfischer: Staff publisher form handles an existing user (#676)
+ * @dependabot[bot]: Bump json5, css-loader, file-loader, mini-css-extract-plugin, sass-loader, webpack and webpack-cli (#675)
+ * @ericholscher: Add callout on flight detail to contact us for changes. (#674)
+ * @davidfischer: Move ML experiments to the model repository (#673)
+ * @dependabot[bot]: Bump decode-uri-component from 0.2.0 to 0.2.2 (#671)
+ * @dependabot[bot]: Bump minimatch from 3.0.4 to 3.1.2 (#670)
+ * @dependabot[bot]: Bump pillow from 9.0.1 to 9.3.0 in /requirements (#667)
+ * @dependabot[bot]: Bump ssri from 7.1.0 to 7.1.1 (#644)
+ * @dependabot[bot]: Bump is-svg and postcss-svgo (#643)
+ * @davidfischer: Add more categorized data for the model (#640)
+ * @dependabot[bot]: Bump nth-check and optimize-css-assets-webpack-plugin (#630)
+ * @dependabot[bot]: Bump terser from 4.7.0 to 4.8.1 (#614)
+
+
 Version v1.7.0
 ---------------
 
