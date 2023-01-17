@@ -8,6 +8,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
 from django.db.models import Count
 from django.db.models import F
+from django.db.models import FloatField
 from django.db.models import Q
 from django.db.models import Sum
 from django.template.loader import render_to_string
@@ -20,12 +21,14 @@ from .constants import PAID_CAMPAIGN
 from .importers import psf
 from .models import AdImpression
 from .models import Advertiser
+from .models import AdvertiserImpression
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import PublisherImpression
 from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
@@ -490,6 +493,106 @@ def daily_update_uplift(day=None):
         )
 
 
+@app.task()
+def daily_update_advertisers(day=None):
+    """
+    Generate the daily index of AdvertiserImpressions.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = get_day(day)
+
+    log.info("Updating advertiser impressions for %s-%s", start_date, end_date)
+
+    # Important: uses the *already calculated* AdImpression index
+    # This should make this much faster than using the Offers table
+    queryset = AdImpression.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
+    for values in (
+        queryset.values(
+            "advertisement__flight__campaign__advertiser__name",
+            "advertisement__flight__campaign__advertiser_id",
+        )
+        .annotate(
+            total_decisions=Sum("decisions"),
+            total_offers=Sum("offers"),
+            total_views=Sum("views"),
+            total_clicks=Sum("clicks"),
+            total_spend=Sum(
+                (F("clicks") * F("advertisement__flight__cpc"))
+                + (F("views") * F("advertisement__flight__cpm") / 1000),
+                output_field=FloatField(),
+            ),
+        )
+        .filter(advertisement__isnull=False)
+        .order_by("advertisement__flight__campaign__advertiser__name")
+        .iterator()
+    ):
+        advertiser_id = values["advertisement__flight__campaign__advertiser_id"]
+        impression, _ = AdvertiserImpression.objects.using("default").get_or_create(
+            advertiser_id=advertiser_id,
+            date=start_date,
+        )
+        AdvertiserImpression.objects.using("default").filter(pk=impression.pk).update(
+            decisions=values["total_decisions"],
+            offers=values["total_offers"],
+            views=values["total_views"],
+            clicks=values["total_clicks"],
+            spend=values["total_spend"],
+        )
+
+
+@app.task()
+def daily_update_publishers(day=None):
+    """
+    Generate the daily index of PublisherImpressions.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = get_day(day)
+
+    log.info("Updating publisher impressions for %s-%s", start_date, end_date)
+
+    # Important: uses the *already calculated* AdImpression index
+    # This should make this much faster than using the Offers table
+    queryset = AdImpression.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
+    for values in (
+        queryset.values("publisher__name", "publisher_id")
+        .annotate(
+            total_decisions=Sum("decisions"),
+            total_offers=Sum("offers"),
+            total_views=Sum("views"),
+            total_clicks=Sum("clicks"),
+            total_revenue=Sum(
+                (F("clicks") * F("advertisement__flight__cpc"))
+                + (F("views") * F("advertisement__flight__cpm") / 1000),
+                output_field=FloatField(),
+            ),
+        )
+        .filter(advertisement__isnull=False)
+        .order_by("publisher__name")
+        .iterator()
+    ):
+        impression, _ = PublisherImpression.objects.using("default").get_or_create(
+            publisher_id=values["publisher_id"],
+            date=start_date,
+        )
+        PublisherImpression.objects.using("default").filter(pk=impression.pk).update(
+            decisions=values["total_decisions"],
+            offers=values["total_offers"],
+            views=values["total_views"],
+            clicks=values["total_clicks"],
+            revenue=values["total_revenue"],
+        )
+
+
 @app.task(time_limit=60 * 60 * 4)
 def update_previous_day_reports(day=None):
     """
@@ -508,6 +611,8 @@ def update_previous_day_reports(day=None):
     daily_update_geos(start_date)
     daily_update_placements(start_date)
     daily_update_impressions(start_date)
+    daily_update_advertisers(start_date)  # Important: after daily_update_impressions
+    daily_update_publishers(start_date)  # Important: after daily_update_impressions
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
     daily_update_regiontopic(start_date)
