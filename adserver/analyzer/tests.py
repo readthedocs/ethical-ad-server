@@ -259,7 +259,7 @@ class TestTasks(BaseAdModelsTestCase):
             publisher=self.publisher,
             keywords=["python", "django"],
             visits_since_last_analyzed=10,
-            last_analyzed_date=timezone.now() - datetime.timedelta(days=20),
+            last_analyzed_date=timezone.now() - datetime.timedelta(days=40),
         )
 
         self.campaign.campaign_type = "paid"
@@ -361,13 +361,13 @@ class TestTasks(BaseAdModelsTestCase):
         )
 
         # Set the URL for re-analysis
-        self.analyzed_url.visits_since_last_analyzed = 100
+        self.analyzed_url.visits_since_last_analyzed = 150
         self.analyzed_url.save()
 
         tasks.daily_analyze_urls()
         self.analyzed_url.refresh_from_db()
 
-        # Analyzed URL has been updated
+        # Analyzed URL has been updated - Django removed
         self.assertEqual(self.analyzed_url.keywords, ["python"])
         self.assertEqual(self.analyzed_url.visits_since_last_analyzed, 0)
 
