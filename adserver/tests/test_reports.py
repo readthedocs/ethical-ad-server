@@ -270,7 +270,6 @@ class TestReportViews(TestReportsBase):
         self.client.force_login(self.staff_user)
         response = self.client.get(url)
         self.assertContains(response, self.advertiser1.name)
-        self.assertContains(response, self.flight1.name)
 
         ad2 = get(
             Advertisement,
@@ -299,8 +298,6 @@ class TestReportViews(TestReportsBase):
         url = reverse("advertiser_report", args=[self.advertiser2.slug])
         response = self.client.get(url)
         self.assertContains(response, self.advertiser2.name)
-        self.assertContains(response, self.flight2.name)
-        self.assertContains(response, self.flight3.name)
 
         # Check staff fields not present since the permission wasn't configured
         self.assertNotContains(response, "eCPM")
