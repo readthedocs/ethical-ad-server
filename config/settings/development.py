@@ -35,6 +35,7 @@ LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=None))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_CREATE_MISSING_QUEUES = True
 
 CELERY_BEAT_SCHEDULE = {
     "dev-geo-index": {
@@ -51,6 +52,14 @@ CELERY_BEAT_SCHEDULE = {
     },
     "dev-uplift-index": {
         "task": "adserver.tasks.daily_update_uplift",
+        "schedule": crontab(minute="*/5"),
+    },
+    "dev-advertiser-index": {
+        "task": "adserver.tasks.daily_update_advertisers",
+        "schedule": crontab(minute="*/5"),
+    },
+    "dev-publisher-index": {
+        "task": "adserver.tasks.daily_update_publishers",
         "schedule": crontab(minute="*/5"),
     },
 }

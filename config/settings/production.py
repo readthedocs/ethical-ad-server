@@ -148,6 +148,15 @@ CELERY_BEAT_SCHEDULE = {
         # Runs on Wednesday
         "schedule": crontab(day_of_week=3, hour="5", minute="0"),
     },
+    # Very fast indexes that can be run more frequently
+    "halfhourly-advertiser-index": {
+        "task": "adserver.tasks.daily_update_advertisers",
+        "schedule": crontab(minute="*/30"),
+    },
+    "halfhourly-publisher-index": {
+        "task": "adserver.tasks.daily_update_publishers",
+        "schedule": crontab(minute="*/30"),
+    },
     # Run publisher importers daily
     "every-day-sync-publisher-data": {
         "task": "adserver.tasks.run_publisher_importers",
