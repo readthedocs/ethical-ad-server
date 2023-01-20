@@ -667,7 +667,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             # Check just under 3k just in case there's a rounding issue
             description="Includes 10% volume discount"
             if total_cost >= 290_000
-            else None,
+            else "Thanks for your business!",
             custom_fields=[
                 {"name": "Advertiser", "value": advertiser.slug},
                 {
