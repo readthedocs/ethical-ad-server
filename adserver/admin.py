@@ -589,7 +589,6 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
         This fails with a message if the flights aren't all from the same advertiser.
         """
-        # TODO: convert to using djstripe and tie FK to flights
         if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
@@ -623,6 +622,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
             return
 
+        total_cost = 0  # In US cents
         for flight in flights:
             message_components = ["Advertising", flight.name]
             unit_amount = 0
@@ -644,6 +644,8 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                     message_components.append("per 1k impressions")
                     quantity = flight.sold_impressions // 1000
 
+            total_cost += unit_amount * quantity
+
             # Amounts, prices, and description can be customized before sending
             stripe.InvoiceItem.create(
                 customer=advertiser.djstripe_customer.id,
@@ -664,6 +666,10 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
+            # Check just under 3k just in case there's a rounding issue
+            description="Includes 10% volume discount"
+            if total_cost >= 290_000
+            else "Thanks for your business!",
             custom_fields=[
                 {"name": "Advertiser", "value": advertiser.slug},
                 {
