@@ -22,6 +22,7 @@ from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
+from .models import AdvertiserImpression
 from .models import Campaign
 from .models import Click
 from .models import CountryRegion
@@ -33,6 +34,7 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
+from .models import PublisherImpression
 from .models import PublisherPayout
 from .models import Region
 from .models import RegionImpression
@@ -824,6 +826,48 @@ class AdImpressionAdmin(ImpressionsAdmin):
     readonly_fields = ("view_time",) + ImpressionsAdmin.readonly_fields
 
 
+class AdvertiserImpressionAdmin(ImpressionsAdmin):
+    date_hierarchy = "date"
+    readonly_fields = (
+        "date",
+        "advertiser",
+        "views",
+        "clicks",
+        "offers",
+        "decisions",
+        "click_to_offer_rate",
+        "view_to_offer_rate",
+        "spend",
+        "modified",
+        "created",
+    )
+    list_display = readonly_fields
+    list_filter = ("advertiser",)
+    list_select_related = ("advertiser",)
+    search_fields = ("advertiser__name",)
+
+
+class PublisherImpressionAdmin(ImpressionsAdmin):
+    date_hierarchy = "date"
+    readonly_fields = (
+        "date",
+        "publisher",
+        "views",
+        "clicks",
+        "offers",
+        "decisions",
+        "click_to_offer_rate",
+        "view_to_offer_rate",
+        "revenue",
+        "modified",
+        "created",
+    )
+    list_display = readonly_fields
+    list_filter = ("publisher",)
+    list_select_related = ("publisher",)
+    search_fields = ("publisher__name",)
+
+
 class UpliftImpressionAdmin(ImpressionsAdmin):
     pass
 
@@ -1037,6 +1081,8 @@ admin.site.register(AdType, AdTypeAdmin)
 admin.site.register(Advertisement, AdvertisementAdmin)
 admin.site.register(Flight, FlightAdmin)
 admin.site.register(Campaign, CampaignAdmin)
+admin.site.register(AdvertiserImpression, AdvertiserImpressionAdmin)
+admin.site.register(PublisherImpression, PublisherImpressionAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:
