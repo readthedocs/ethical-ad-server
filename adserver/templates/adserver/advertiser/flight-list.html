@@ -58,9 +58,22 @@
                 <td class="text-right">${{ flight.projected_total_value|floatformat:2 }}</td>
                 <td class="text-right">{{ flight.ctr|floatformat:3 }}%</td>
                 <td class="text-right">
-                  <a href="{% url 'flight_report' advertiser.slug flight.slug %}?start_date={{ flight.start_date|date:'Y-m-d' }}" title="{% trans 'View report' %}">
-                    <span class="fa fa-bar-chart fa-fw mr-2 text-muted" aria-hidden="true"></span>
-                  </a>
+                  <ul class="list-inline">
+
+                    {% if "adserver.change_flight" in perms %}
+                      <li class="list-inline-item">
+                        <a href="{% url 'flight_update' advertiser.slug flight.slug %}?start_date={{ flight.start_date|date:'Y-m-d' }}" title="{% trans 'Edit flight' %}">
+                          <span class="fa fa-pencil-square-o fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    <li class="list-inline-item">
+                      <a href="{% url 'flight_report' advertiser.slug flight.slug %}?start_date={{ flight.start_date|date:'Y-m-d' }}" title="{% trans 'View report' %}">
+                        <span class="fa fa-bar-chart fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                      </a>
+                    </li>
+                  </ul>
                 </td>
               </tr>
             {% endfor %}
