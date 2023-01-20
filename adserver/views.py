@@ -1057,18 +1057,14 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         report = AdvertiserReport(queryset)
         report.generate()
 
-        flights = Flight.order_flights(
-            Flight.objects.filter(campaign__advertiser=advertiser).select_related(
-                "campaign"
-            )
-        )
-
         context.update(
             {
                 "advertiser": advertiser,
                 "report": report,
-                "flights": flights,
                 "export_url": self.get_export_url(advertiser_slug=advertiser.slug),
+                "metabase_advertiser_dashboard": settings.METABASE_DASHBOARDS.get(
+                    "ADVERTISER_FIGURES"
+                ),
             }
         )
 
