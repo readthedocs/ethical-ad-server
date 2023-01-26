@@ -69,12 +69,14 @@ from .models import AdImpression
 from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
+from .models import AdvertiserImpression
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
+from .models import PublisherImpression
 from .models import PublisherPayout
 from .models import Region
 from .models import RegionImpression
@@ -221,16 +223,14 @@ class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView)
 
     def is_advertiser_new(self):
         """Advertisers are new if there's never been an ad impression for them."""
-        return not AdImpression.objects.filter(
-            advertisement__flight__campaign__advertiser_id=self.advertiser.id
+        return not AdvertiserImpression.objects.filter(
+            advertiser_id=self.advertiser.id
         ).exists()
 
     def has_views_this_month(self, start_date):
         """Detect if advertisers have impressions since the start date (first of the month)."""
         return (
-            AdImpression.objects.filter(
-                advertisement__flight__campaign__advertiser_id=self.advertiser.id
-            )
+            AdvertiserImpression.objects.filter(advertiser_id=self.advertiser.id)
             .filter(date__gte=start_date)
             .exists()
         )
@@ -2359,9 +2359,7 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
         return context
 
 
-class PublisherMainView(
-    PublisherAccessMixin, UserPassesTestMixin, ReportQuerysetMixin, DetailView
-):
+class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
 
     """Should be (or redirect to) the main view for a publisher that they see when first logging in."""
 
@@ -2379,19 +2377,14 @@ class PublisherMainView(
         )
         end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
 
-        queryset = self.get_queryset(publisher=self.publisher, start_date=start_date)
-        report = PublisherReport(queryset)
-        report.generate()
-
         context.update(
             {
                 "publisher": self.publisher,
                 "publisher_new": self.is_publisher_new(),
-                "report": report,
                 "start_date": start_date,
                 "end_date": end_date,
-                "metabase_publisher_performance": settings.METABASE_QUESTIONS.get(
-                    "PUBLISHER_PERFORMANCE"
+                "metabase_publisher_dashboard": settings.METABASE_DASHBOARDS.get(
+                    "PUBLISHER_FIGURES"
                 ),
             }
         )
@@ -2403,7 +2396,9 @@ class PublisherMainView(
         # for existing publishers since they're mostly approved for paid campaigns.
         return (
             not self.publisher.allow_paid_campaigns
-            and not AdImpression.objects.filter(publisher=self.publisher).exists()
+            and not PublisherImpression.objects.filter(
+                publisher=self.publisher
+            ).exists()
         )
 
     def get_object(self, queryset=None):

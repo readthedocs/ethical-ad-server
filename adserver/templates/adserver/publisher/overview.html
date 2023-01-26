@@ -25,55 +25,6 @@
     <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ publisher }} overview{% endblocktrans %}</h1>
     <p><small>Month to date overview for {{ publisher }}.</small></p>
 
-    <div class="row row-cols-1 row-cols-md-4">
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">${{ report.total.revenue_share|floatformat:2|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Revenue' %}</h6>
-            {% url 'publisher_payouts' publisher.slug as publisher_payout_url %}
-            <p class="text-muted small text-center mb-0">{% blocktrans %}See all your <a href="{{ publisher_payout_url }}">payouts</a>.{% endblocktrans %}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.ctr|floatformat:3 }}%</h3>
-            <h6 class="text-muted text-center">{% trans 'CTR' %}</h6>
-            <p class="text-muted small text-center mb-0">
-              {% if report.total.views < 3000 %}
-                <!-- The sample is too small to draw conclusions -->
-              {% elif report.total.ctr >= 0.1 %}
-                <span>{% trans 'Your CTR looks good.' %}</span>
-              {% elif report.total.ctr >= 0.05 %}
-                <span>{% blocktrans with link='https://www.ethicalads.io/publisher-guide/' %}Your CTR is OK but could use <a href="{{ link }}" target="_blank">some improvement</a>.{% endblocktrans %}</span>
-              {% else %}
-                <span>{% blocktrans with link='https://www.ethicalads.io/publisher-guide/' %}Your CTR seems low. Perhaps the quality of the placement <a href="{{ link }}" target="_blank">needs improvement</a>.{% endblocktrans %}</span>
-              {% endif %}
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.views|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Views' %}</h6>
-          </div>
-        </div>
-      </div>
-      <div class="col mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h3 class="card-title text-center">{{ report.total.clicks|intcomma }}</h3>
-            <h6 class="text-muted text-center">{% trans 'Clicks' %}</h6>
-          </div>
-        </div>
-      </div>
-    </div> <!-- /row -->
-    <p class="text-right mb-5"><a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
-
     {% if publisher_new %}
       {# Publisher onboarding workflow #}
       <div class="row">
@@ -97,10 +48,11 @@
       </div>
     {% else %}
       <div class="row">
-        <div class="col min-vh-50">
-          {% metabase_question_embed metabase_publisher_performance publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
+        <div class="col min-vh-75">
+          {% metabase_dashboard_embed metabase_publisher_dashboard publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
         </div>
       </div>
+      <p class="text-right my-5"><a href="{% url 'publisher_report' publisher.slug %}?start_date={{ start_date|date:'Y-m-d' }}">{% trans 'detailed reporting' %} &raquo;</a></p>
     {% endif %}
 
   </section>
