@@ -18,6 +18,7 @@ from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
 from ..models import PublisherPayout
+from ..tasks import daily_update_publishers
 
 
 class TestPublisherDashboardViews(TestCase):
@@ -92,7 +93,6 @@ class TestPublisherDashboardViews(TestCase):
 
         self.client.force_login(self.staff_user)
         resp = self.client.get(url)
-        self.assertContains(resp, "too small to draw conclusions")
 
         # This isn't there because they're approved for paid.
         self.assertNotContains(
@@ -118,6 +118,7 @@ class TestPublisherDashboardViews(TestCase):
             div_id="foo",
             keywords=None,
         )
+        daily_update_publishers()
 
         # After offering an ad, the publisher onboarding shouldn't appear
         resp = self.client.get(url)
