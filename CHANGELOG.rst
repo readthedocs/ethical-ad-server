@@ -6,12 +6,31 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.9.0
+---------------
+
+This change adds some additional tables to speed up looking up basic
+publisher and advertiser metrics. These tables are calculated about every
+half hour in production.
+Some additional graphs were moved to metabase.
+
+:date: January 31, 2023
+
+ * @davidfischer: Add a metabase publisher dashboard (#694)
+ * @davidfischer: Run quick indexes periodically (#691)
+ * @davidfischer: Put the advertiser overview dashboard in the report screen (#690)
+ * @davidfischer: Add the Advertiser and Publisher index to admin (#689)
+ * @davidfischer: Fix support link in flight metadata (#688)
+ * @davidfischer: Note the volume discount on invoices (#687)
+ * @davidfischer: Fix failing test (#686)
+
+
 Version v1.8.1
 ---------------
 
 Fixes a node dependency issue with the previous version.
 
-:date: January 17, 2022
+:date: January 17, 2023
 
  * @davidfischer: Upgrade node dependencies (#682)
 
@@ -24,7 +43,7 @@ There was a new version of the model with additional data.
 The model was also moved to its own repository https://github.com/readthedocs/ethicalads-model.
 This release also contained a number of dependency upgrades.
 
-:date: January 17, 2022
+:date: January 17, 2023
 
  * @davidfischer: Change analyzer threshold (#683)
  * @davidfischer: Add optimized publisher and advertiser indexes (#681)
