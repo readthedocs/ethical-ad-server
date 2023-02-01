@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.9.1
+---------------
+
+Fix a minor reporting issue created in v1.9.0.
+Also show a link to a report but only to staff for now
+(the report is available to all advertisers but not useful to all of them).
+
+:date: February 1, 2023
+
+ * @davidfischer: Show the advertiser keyword report link to staff (#697)
+ * @davidfischer: Fix a template inheritance issue with advertiser reports (#696)
+
+
 Version v1.9.0
 ---------------
 
