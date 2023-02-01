@@ -35,6 +35,9 @@ def metabase_question_embed(question_id, **kwargs):
 
     https://www.metabase.com/learn/embedding/embedding-charts-and-dashboards#an-example-using-django
     """
+    if not question_id:
+        return None
+
     if not settings.METABASE_SECRET_KEY:
         log.warning("Metabase Secret Key is not set - Graphs won't render")
         return None
@@ -61,6 +64,9 @@ def metabase_question_embed(question_id, **kwargs):
 @register.simple_tag
 def metabase_dashboard_embed(dashboard_id, **kwargs):
     """Embeds a dashboard instead of a question."""
+    if not dashboard_id:
+        return None
+
     if not settings.METABASE_SECRET_KEY:
         log.warning("Metabase Secret Key is not set - Graphs won't render")
         return None
