@@ -24,13 +24,15 @@
 
 
 {% block toc %}
-<section class="mb-5">
-  <div class="row mb-5">
-    <div class="col min-vh-75">
-      {% metabase_dashboard_embed metabase_advertiser_dashboard advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
-    </div>
-  </div>
-</section>
+  {% if metabase_advertiser_dashboard %}
+    <section class="mb-5">
+      <div class="row mb-5">
+        <div class="col min-vh-75">
+          {% metabase_dashboard_embed metabase_advertiser_dashboard advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
 {% endblock toc %}
 
 
