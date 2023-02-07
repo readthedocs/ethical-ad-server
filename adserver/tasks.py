@@ -729,7 +729,10 @@ def notify_of_completed_flights():
                 ],
             }
 
-            with mail.get_connection(settings.FRONT_BACKEND) as connection:
+            with mail.get_connection(
+                settings.FRONT_BACKEND,
+                sender_name=f"{site.name} Flight Tracker",
+            ) as connection:
                 message = mail.EmailMessage(
                     _("Advertising flight wrapup - %(name)s") % {"name": site.name},
                     render_to_string("adserver/email/flight_wrapup.html", context),
