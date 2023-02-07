@@ -737,10 +737,6 @@ def notify_of_completed_flights():
                     to=to_addresses,
                     connection=connection,
                 )
-
-                # Make this a draft instead of just sending it directly
-                message.draft = True
-
                 message.send()
 
 
