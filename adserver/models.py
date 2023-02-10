@@ -8,6 +8,7 @@ from collections import Counter
 
 import bleach
 import djstripe.models as djstripe_models
+import pytz
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache import caches
@@ -685,6 +686,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
     HIGHEST_PRIORITY_MULTIPLIER = 1000000
     LOWEST_PRIORITY_MULTIPLIER = 1
 
+    DEFAULT_INTERVAL = 60 * 60 * 24  # 24 hours
+
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
     start_date = models.DateField(
@@ -1009,13 +1012,31 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def sold_days(self):
-        # Add one to count both the start and end day
-        return max(0, (self.end_date - self.start_date).days) + 1
+    def sold_days(self, interval=DEFAULT_INTERVAL):
+        # The flight is considered to end at the end of the day on the `end_date`
+        # and start at the beginning of the day on the `start_date`
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
 
-    def days_remaining(self):
-        """Number of days left in a flight."""
-        return max(0, (self.end_date - get_ad_day().date()).days)
+        remaining_seconds = (end_datetime - start_datetime).total_seconds()
+
+        # Add one because the final interval will be a partial
+        # (eg. 23 hours, 59 minutes, 59 seconds, 999ms)
+        return max(0, int(remaining_seconds / interval)) + 1
+
+    def days_remaining(self, interval=DEFAULT_INTERVAL):
+        """Number of intervals (default = days) left in a flight."""
+        # The flight is considered to end at the end of the day on the `end_date`
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
+
+        remaining_seconds = (end_datetime - timezone.now()).total_seconds()
+        return max(0, int(remaining_seconds / interval))
 
     def views_today(self):
         # Check for a cached value that would come from an annotated queryset
@@ -1041,7 +1062,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # The aggregation can be `None` if there are no impressions
         return aggregation or 0
 
-    def views_needed_today(self):
+    def views_needed_today(self, interval=DEFAULT_INTERVAL):
         if (
             not self.live
             or self.views_remaining() <= 0
@@ -1049,8 +1070,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         ):
             return 0
 
-        if self.days_remaining() > 0:
-            flight_remaining_percentage = self.days_remaining() / self.sold_days()
+        if self.days_remaining(interval) > 0:
+            flight_remaining_percentage = self.days_remaining(
+                interval
+            ) / self.sold_days(interval)
 
             # This is how many views should be remaining this far in the flight
             flight_views_pace = int(self.sold_impressions * flight_remaining_percentage)
@@ -1059,7 +1082,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return self.views_remaining()
 
-    def clicks_needed_today(self):
+    def clicks_needed_today(self, interval=DEFAULT_INTERVAL):
         """Calculates clicks needed based on the impressions this flight's ads have."""
         if (
             not self.live
@@ -1068,8 +1091,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         ):
             return 0
 
-        if self.days_remaining() > 0:
-            flight_remaining_percentage = self.days_remaining() / self.sold_days()
+        if self.days_remaining(interval) > 0:
+            flight_remaining_percentage = self.days_remaining(
+                interval
+            ) / self.sold_days(interval)
 
             # This is how many clicks we should have remaining this far in the flight
             flight_clicks_pace = int(self.sold_clicks * flight_remaining_percentage)
@@ -1078,7 +1103,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return self.clicks_remaining()
 
-    def weighted_clicks_needed_today(self, publisher=None):
+    def weighted_clicks_needed_today(self, publisher=None, interval=DEFAULT_INTERVAL):
         """
         Calculates clicks needed taking into account a flight's priority.
 
@@ -1090,8 +1115,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         impressions_needed = 0
 
         # This is naive but we are counting a click as being worth 1,000 views
-        impressions_needed += math.ceil(self.views_needed_today() / 1000.0)
-        impressions_needed += self.clicks_needed_today()
+        impressions_needed += math.ceil(self.views_needed_today(interval) / 1000.0)
+        impressions_needed += self.clicks_needed_today(interval)
 
         if self.cpc:
             # Use the publisher CTR if available
