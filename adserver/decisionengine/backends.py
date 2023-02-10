@@ -2,6 +2,7 @@
 import logging
 import random
 
+from django.conf import settings
 from django.db import models
 from user_agents import parse
 
@@ -32,6 +33,10 @@ class BaseAdDecisionBackend:
         :param placements: possible positions for the ad to go
         :param kwargs: Any additional possible arguments for the backend
         """
+        # Use the global pacing
+        # This spaces the flight over the whole flight by interval
+        self.interval = settings.ADSERVER_PACING_INTERVAL
+
         self.request = request
         self.user_agent = parse(get_client_user_agent(request))
         self.placements = placements
@@ -273,8 +278,8 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_on_domain(self.url):
             return False
 
-        # Skip if there are no clicks or views needed today (ad pacing)
-        if flight.weighted_clicks_needed_today() <= 0:
+        # Skip if there are no clicks or views needed today/this interval (ad pacing)
+        if flight.weighted_clicks_needed_today(interval=self.interval) <= 0:
             return False
 
         return True
@@ -367,14 +372,15 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 # to the possible list of flights
                 if any(
                     (
-                        (flight.clicks_needed_today() > 0),
-                        (flight.views_needed_today() > 0),
+                        (flight.clicks_needed_today(self.interval) > 0),
+                        (flight.views_needed_today(self.interval) > 0),
                     )
                 ):
                     # NOTE: takes into account views for CPM ads
                     # Takes eCPM (CTR * CPC for CPC ads) into account
                     weighted_clicks_needed_today = flight.weighted_clicks_needed_today(
-                        self.publisher
+                        self.publisher,
+                        interval=self.interval,
                     )
 
                     flight_range.append(

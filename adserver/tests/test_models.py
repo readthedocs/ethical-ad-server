@@ -265,6 +265,10 @@ class TestAdModels(BaseAdModelsTestCase):
                 self.flight.sold_clicks - pace,
             )
 
+            # Make the flight overfulfilled
+            self.flight.total_clicks = int(self.flight.sold_clicks * 0.80)
+            self.assertEqual(self.flight.clicks_needed_today(interval), 0)
+
     def test_render_ad(self):
         ad_type1 = get(
             AdType,

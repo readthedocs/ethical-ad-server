@@ -38,7 +38,7 @@ class DecisionEngineTests(TestCase):
             Flight,
             live=True,
             campaign=self.campaign,
-            sold_clicks=1000,
+            sold_clicks=1_000,
             cpc=2.0,
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
@@ -51,7 +51,7 @@ class DecisionEngineTests(TestCase):
             live=True,
             campaign=self.campaign,
             sold_clicks=0,
-            sold_impressions=10000,
+            sold_impressions=10_000,
             cpm=3.50,
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
@@ -182,6 +182,45 @@ class DecisionEngineTests(TestCase):
         self.cpm_flight.sold_impressions = 0
         self.cpm_flight.save()
         self.assertFalse(self.backend.filter_flight(self.cpm_flight))
+
+    def test_custom_interval(self):
+        now = get_ad_day()
+
+        # Switch promo to a CPM flight
+        self.advertisement1.flight = self.cpm_flight
+        self.advertisement1.save()
+
+        # Set the interval to 1 hour
+        interval = self.backend.interval = 60 * 60
+
+        with mock.patch("adserver.models.timezone") as tz:
+            # 1 day (24 intervals) through the flight
+            tz.now.return_value = now + datetime.timedelta(days=1)
+
+            # 10_000 views over 31 days, ~13 views needed per hour
+            percent_remaining = (30 * 24 - 1) / (31 * 24)
+            pace = int(self.cpm_flight.sold_impressions * percent_remaining)
+
+            self.assertEqual(self.cpm_flight.sold_clicks, 0)
+            self.assertEqual(self.cpm_flight.sold_impressions, 10_000)
+            self.assertEqual(self.cpm_flight.sold_days(interval), 31 * 24)
+            self.assertEqual(self.cpm_flight.clicks_needed_today(interval=interval), 0)
+            self.assertEqual(
+                self.cpm_flight.views_needed_today(interval=interval), 10_000 - pace
+            )
+
+            self.assertTrue(self.backend.filter_flight(self.cpm_flight))
+
+            self.cpm_flight.total_views = 10_000 - pace - 1
+            self.cpm_flight.save()
+            self.assertEqual(self.cpm_flight.views_needed_today(interval=interval), 1)
+            self.assertTrue(self.backend.filter_flight(self.cpm_flight))
+
+            # Don't show this flight anymore. It is above pace
+            self.cpm_flight.total_views = 10_000 - pace
+            self.cpm_flight.save()
+            self.assertEqual(self.cpm_flight.views_needed_today(interval=interval), 0)
+            self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_flight_clicks(self):
         # Tests the flight_clicks_today, flight_total_clicks optimizations

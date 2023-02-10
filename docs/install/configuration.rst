@@ -154,6 +154,17 @@ If set, the support form will submit to this external URL instead of sending ema
 This can be used to connect the support form to an external help desk.
 
 
+ADSERVER_PACING_INTERVAL
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The pacing interval in seconds used to pace flights evenly.
+For example, with a 1000 click flight over 10 days,
+there will be 10 intervals, each 1 day, and the server will aim for 100 clicks per day.
+Shorter intervals (eg. an hour) spread flights more evenly across geographies.
+
+The default is 1 day (24 * 60 * 60).
+
+
 ALLOWED_HOSTS
 ~~~~~~~~~~~~~
 
