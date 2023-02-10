@@ -3,38 +3,51 @@
 # This Dockerfile is not currently used or maintained
 # but may be useful in setting up your own adserver instance.
 
-FROM python:3.8-alpine
+FROM ubuntu:20.04
 MAINTAINER Read the Docs, Inc. <support@readthedocs.org>
 
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 ENV PYTHONUNBUFFERED 1
 
-RUN apk update \
-  # psycopg2 dependencies
-  && apk add --virtual build-deps gcc python3-dev musl-dev \
-  && apk add postgresql-dev \
-  # Pillow dependencies
-  && apk add jpeg-dev zlib-dev freetype-dev lcms2-dev openjpeg-dev tiff-dev tk-dev tcl-dev \
-  # CFFI dependencies
-  && apk add libffi-dev py-cffi \
-  # Translations dependencies
-  && apk add gettext \
-  # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
-  && apk add postgresql-client \
-  # Add Node dependencies for building static files
-  && apk add nodejs npm \
-  # Ensure git is on the system - some dependencies may rely on it
-  && apk add git \
-  # Needed to build Python Cryptography on Alpine Linux
-  # https://cryptography.io/en/latest/installation.html#alpine
-  && apk add openssl-dev cargo
+RUN apt-get -y update
+RUN apt-get -y install \
+        curl \
+        g++ \
+        git-core \
+        libevent-dev \
+        libpq-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        locales \
+        build-essential \
+        python3-pip \
+        python3-dev \
+        libmysqlclient-dev \
+        libfreetype6 \
+        libjpeg-dev \
+        sqlite \
+        netcat \
+        telnet \
+        lsb-release
 
-RUN addgroup -S django \
-    && adduser -S -G django django
+# Install Node v14
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt-get -y install nodejs
+
+RUN addgroup django && useradd -g django django
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
+# Uncomment this if you need the page/topic analyzer
+# RUN pip install --no-cache-dir -r /requirements/analyzer.txt
 RUN pip install --no-cache-dir -r /requirements/production.txt \
     && rm -rf /requirements
+
+# Install node dependencies
+RUN npm install
 
 COPY ./docker-compose/production/django/start /start
 RUN chmod +x /start
@@ -60,18 +73,17 @@ COPY ./package.json /app
 COPY ./package-lock.json /app
 COPY ./webpack.config.js /app
 
+# Uncomment if you require Azure's container SSH setup
 # Allow Azure to SSH into the running container
 # Although the root password is known, port 2222 is inaccessible from the internet
 # https://docs.microsoft.com/en-us/azure/app-service/containers/configure-custom-container#enable-ssh
-RUN apk add openssh \
-     && echo "root:Docker!" | chpasswd
-COPY ./docker-compose/production/django/sshd_config /etc/ssh/
+# RUN apk add openssh && echo "root:Docker!" | chpasswd
+# COPY ./docker-compose/production/django/sshd_config /etc/ssh/
 
+RUN chown -R django:django /app
+USER django
 
 WORKDIR /app
-
-# Install node dependencies
-RUN npm install
 
 EXPOSE 2222 5000
 

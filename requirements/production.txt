@@ -18,9 +18,3 @@ django-storages[azure]==1.12.3
 # Logging and monitoring
 newrelic==7.4.0.172
 sentry-sdk==1.5.5
-
-#######################################################################
-# Machine learning production requirements
-#######################################################################
-# This installs PyTorch which is ~250MB
-spacy-transformers==1.1.8

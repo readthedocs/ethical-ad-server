@@ -32,6 +32,8 @@ COPY ./requirements /requirements
 RUN pip install --upgrade pip
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
+# Uncomment this if you need the page/topic analyzer
+# RUN pip install -r /requirements/analyzer.txt
 
 # COPY ./docker-compose/local/django/entrypoint /entrypoint
 # RUN chmod +x /entrypoint
