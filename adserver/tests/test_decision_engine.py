@@ -191,7 +191,8 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.save()
 
         # Set the interval to 1 hour
-        interval = self.backend.interval = 60 * 60
+        self.cpm_flight.pacing_interval = 60 * 60
+        self.cpm_flight.save()
 
         with mock.patch("adserver.models.timezone") as tz:
             # 1 day (24 intervals) through the flight
@@ -203,23 +204,21 @@ class DecisionEngineTests(TestCase):
 
             self.assertEqual(self.cpm_flight.sold_clicks, 0)
             self.assertEqual(self.cpm_flight.sold_impressions, 10_000)
-            self.assertEqual(self.cpm_flight.sold_days(interval), 31 * 24)
-            self.assertEqual(self.cpm_flight.clicks_needed_today(interval=interval), 0)
-            self.assertEqual(
-                self.cpm_flight.views_needed_today(interval=interval), 10_000 - pace
-            )
+            self.assertEqual(self.cpm_flight.sold_days(), 31 * 24)
+            self.assertEqual(self.cpm_flight.clicks_needed_today(), 0)
+            self.assertEqual(self.cpm_flight.views_needed_today(), 10_000 - pace)
 
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             self.cpm_flight.total_views = 10_000 - pace - 1
             self.cpm_flight.save()
-            self.assertEqual(self.cpm_flight.views_needed_today(interval=interval), 1)
+            self.assertEqual(self.cpm_flight.views_needed_today(), 1)
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             # Don't show this flight anymore. It is above pace
             self.cpm_flight.total_views = 10_000 - pace
             self.cpm_flight.save()
-            self.assertEqual(self.cpm_flight.views_needed_today(interval=interval), 0)
+            self.assertEqual(self.cpm_flight.views_needed_today(), 0)
             self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_flight_clicks(self):

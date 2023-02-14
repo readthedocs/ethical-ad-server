@@ -500,12 +500,6 @@ ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 ADSERVER_STICKY_DECISION_DURATION = 0
 
-# The pacing interval in seconds used to pace flights evenly.
-# For example, with a 1000 click flight over 10 days,
-# there will be 10 intervals (each 1 day) and we'll aim for 100 clicks per day
-# Shorter intervals (eg. an hour) spread flights more evenly across geographies
-ADSERVER_PACING_INTERVAL = env.int("ADSERVER_PACING_INTERVAL", default=24 * 60 * 60)
-
 # For customer support emails
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
 ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
