@@ -8,6 +8,7 @@ from collections import Counter
 
 import bleach
 import djstripe.models as djstripe_models
+import pytz
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache import caches
@@ -685,6 +686,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
     HIGHEST_PRIORITY_MULTIPLIER = 1000000
     LOWEST_PRIORITY_MULTIPLIER = 1
 
+    # The pacing interval in seconds used to pace flights evenly.
+    # For example, with a 1000 click flight over 10 days,
+    # there will be 10 intervals (each 1 day) and we'll aim for 100 clicks per day
+    # Shorter intervals (eg. an hour) spread flights more evenly across geographies
+    DEFAULT_PACING_INTERVAL = 60 * 60 * 24  # 24 hours
+
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
     start_date = models.DateField(
@@ -732,6 +739,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         validators=[TargetingParametersValidator()],
+    )
+
+    pacing_interval = models.PositiveIntegerField(
+        default=DEFAULT_PACING_INTERVAL,
     )
 
     # Denormalized fields
@@ -1010,12 +1021,30 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return True
 
     def sold_days(self):
-        # Add one to count both the start and end day
-        return max(0, (self.end_date - self.start_date).days) + 1
+        # The flight is considered to end at the end of the day on the `end_date`
+        # and start at the beginning of the day on the `start_date`
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
+
+        remaining_seconds = (end_datetime - start_datetime).total_seconds()
+
+        # Add one because the final interval will be a partial
+        # (eg. 23 hours, 59 minutes, 59 seconds, 999ms)
+        return max(0, int(remaining_seconds / self.pacing_interval)) + 1
 
     def days_remaining(self):
-        """Number of days left in a flight."""
-        return max(0, (self.end_date - get_ad_day().date()).days)
+        """Number of intervals (default = days) left in a flight."""
+        # The flight is considered to end at the end of the day on the `end_date`
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
+
+        remaining_seconds = (end_datetime - timezone.now()).total_seconds()
+        return max(0, int(remaining_seconds / self.pacing_interval))
 
     def views_today(self):
         # Check for a cached value that would come from an annotated queryset

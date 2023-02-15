@@ -273,7 +273,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_on_domain(self.url):
             return False
 
-        # Skip if there are no clicks or views needed today (ad pacing)
+        # Skip if there are no clicks or views needed today/this interval (ad pacing)
         if flight.weighted_clicks_needed_today() <= 0:
             return False
 
@@ -374,7 +374,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     # NOTE: takes into account views for CPM ads
                     # Takes eCPM (CTR * CPC for CPC ads) into account
                     weighted_clicks_needed_today = flight.weighted_clicks_needed_today(
-                        self.publisher
+                        self.publisher,
                     )
 
                     flight_range.append(
