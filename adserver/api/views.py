@@ -108,6 +108,10 @@ class AdDecisionView(GeoIpMixin, APIView):
     .. http:post:: /api/v1/decision/
 
         Authentication is required for this endpoint.
+
+        Please set your publisher name in the user agent of the request
+        and set the requesting user's user agent in ``user_ua``.
+
         The POST version of the API is similar to the GET version with only a few changes:
 
         :<json string publisher: **Required**. The slug of the publisher.
