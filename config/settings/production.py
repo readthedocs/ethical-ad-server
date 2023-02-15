@@ -141,7 +141,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "every-day-notify-completed-flights": {
         "task": "adserver.tasks.notify_of_completed_flights",
-        "schedule": crontab(hour="0", minute="0"),
+        "schedule": crontab(hour="5", minute="0"),
     },
     "every-week-notify-publisher-changes": {
         "task": "adserver.tasks.notify_of_publisher_changes",
