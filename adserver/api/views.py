@@ -111,6 +111,9 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Please set your publisher name in the user agent of the request
         and set the requesting user's user agent in ``user_ua``.
+        For example, if you would hit our API with the user agent ``python-requests/2.26.0``,
+        instead send something like ``python-requests/2.26.0 +YOURPUBLISHER``.
+        The actual end-user's user agent should remain unchanged.
 
         The POST version of the API is similar to the GET version with only a few changes:
 
