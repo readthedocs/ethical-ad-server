@@ -85,6 +85,7 @@ from .models import Topic
 from .models import UpliftImpression
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
+from .reports import OptimizedAdvertiserReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
@@ -1040,6 +1041,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
     """A report for one advertiser."""
 
     export_view = "advertiser_report_export"
+    report = AdvertiserReport
     template_name = "adserver/reports/advertiser.html"
 
     def get_context_data(self, **kwargs):
@@ -1054,7 +1056,7 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
             start_date=context["start_date"],
             end_date=context["end_date"],
         )
-        report = AdvertiserReport(queryset)
+        report = self.report(queryset)
         report.generate()
 
         context.update(
@@ -1248,6 +1250,8 @@ class StaffAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""
 
+    impression_model = AdvertiserImpression
+    report = OptimizedAdvertiserReport
     template_name = "adserver/reports/staff-advertisers.html"
 
     def get_context_data(self, **kwargs):
@@ -1259,19 +1263,18 @@ class StaffAdvertiserReportView(BaseReportView):
             start_date=context["start_date"], end_date=context["end_date"]
         )
         advertisers = Advertiser.objects.filter(
-            id__in=Advertisement.objects.filter(
-                id__in=impressions.values("advertisement")
-            ).values("flight__campaign__advertiser")
+            id__in=impressions.values("advertiser_id")
         )
 
         advertisers_and_reports = []
         for advertiser in advertisers:
+            # Have to filter advertisers separately
+            # Because this report uses the optimized index that doesn't join the same way
             queryset = self.get_queryset(
-                advertiser=advertiser,
                 start_date=context["start_date"],
                 end_date=context["end_date"],
-            )
-            report = AdvertiserReport(queryset)
+            ).filter(advertiser=advertiser)
+            report = self.report(queryset)
             report.generate()
 
             if report.total["views"] > 0:

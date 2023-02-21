@@ -18,13 +18,16 @@ from ..models import AdImpression
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
+from ..models import AdvertiserImpression
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
 from ..reports import AdvertiserReport
+from ..reports import OptimizedAdvertiserReport
 from ..reports import PublisherGeoReport
 from ..reports import PublisherReport
+from ..tasks import daily_update_advertisers
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
@@ -954,6 +957,18 @@ class TestReportClasses(TestReportsBase):
         # The other views didn't result in an offer/decision
         # Since they didn't go through the "offer_ad" workflow
         self.assertAlmostEqual(report.total["decisions"], 1)
+
+    def test_optimized_advertiser_report(self):
+        daily_update_advertisers()
+
+        queryset = AdvertiserImpression.objects.filter(advertiser=self.advertiser1)
+        report = OptimizedAdvertiserReport(queryset)
+        report.generate()
+
+        self.assertEqual(len(report.results), 1)
+        self.assertEqual(report.total["views"], 4)
+        self.assertEqual(report.total["clicks"], 1)
+        self.assertAlmostEqual(report.total["cost"], 2.0)
 
     def test_advertiser_flight_report(self):
         ad2 = get(

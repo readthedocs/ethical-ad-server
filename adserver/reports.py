@@ -6,6 +6,7 @@ import operator
 
 from .constants import PAID_CAMPAIGN
 from .models import AdImpression
+from .models import AdvertiserImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
@@ -117,7 +118,7 @@ class AdvertiserReport(BaseReport):
 
             # Calculate advertiser cost if the offer resulted in an ad impression
             # There's no revenue for offers with no views/clicks
-            if impression.advertisement:
+            if hasattr(impression, "advertisement"):
                 results[index]["cost"] += (
                     impression.clicks * float(impression.advertisement.flight.cpc)
                 ) + (
@@ -125,6 +126,8 @@ class AdvertiserReport(BaseReport):
                     * float(impression.advertisement.flight.cpm)
                     / 1000.0
                 )
+            elif hasattr(impression, "spend"):
+                results[index]["cost"] += float(impression.spend)
 
             # These fields must be calculated from the fields above
             results[index]["ctr"] = calculate_ctr(
@@ -150,6 +153,16 @@ class AdvertiserReport(BaseReport):
         self.total["cost"] = sum(result["cost"] for result in self.results)
         self.total["ctr"] = calculate_ctr(self.total["clicks"], self.total["views"])
         self.total["ecpm"] = calculate_ecpm(self.total["cost"], self.total["views"])
+
+
+class OptimizedAdvertiserReport(AdvertiserReport):
+
+    """A report using the optimized AdvertiserImpression index showing daily ad performance for an advertiser."""
+
+    model = AdvertiserImpression
+    index = "date"
+    order = "-date"
+    select_related_fields = ()
 
 
 class AdvertiserGeoReport(AdvertiserReport):
