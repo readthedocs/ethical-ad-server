@@ -6,6 +6,38 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.10.0
+---------------
+
+The biggest change in this release was to add the option
+to pace ads for a flight over a period shorter than a day (eg. an hour).
+This will improve the ability to balance a flight across geographic regions.
+For example, a 10 day flight targeting North America and Europe
+will attempt to fulfill 1/240th of the flight per hour
+which will better allow both regions to fulfill a part of the flight.
+This may become the default in a future version.
+
+There were also a few reporting and aggregation changes:
+
+- Adds another optimized aggregation table for paid ads for publishers
+- The staff all advertiser report now uses the optimized advertiser aggregation
+- Due to the index and report changes, it is recommended to run
+  `adserver.tasks.update_previous_day_reports` across the life
+  of your server. Otherwise, you may have some days without data.
+
+:date: February 21, 2023
+
+ * @davidfischer: Adds an index for paid impressions on publishers only (#708)
+ * @davidfischer: Use optimized indexes for staff all advertiser report (#707)
+ * @davidfischer: Publishers should set their name in the UA (#706)
+ * @dependabot[bot]: Bump django from 3.2.17 to 3.2.18 in /requirements (#705)
+ * @dependabot[bot]: Bump ipython from 8.0.1 to 8.10.0 in /requirements (#704)
+ * @davidfischer: Pace ads by a custom interval (#702)
+ * @davidfischer: Remove CircleCI from the Readme (#701)
+ * @davidfischer: Automate sending flight wrapup emails (#700)
+ * @ericholscher: Pass the `topics` to the template string for advertisers (#672)
+
+
 Version v1.9.1
 ---------------
 
