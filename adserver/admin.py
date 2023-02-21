@@ -35,6 +35,7 @@ from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherGroup
 from .models import PublisherImpression
+from .models import PublisherPaidImpression
 from .models import PublisherPayout
 from .models import Region
 from .models import RegionImpression
@@ -1089,6 +1090,7 @@ admin.site.register(Flight, FlightAdmin)
 admin.site.register(Campaign, CampaignAdmin)
 admin.site.register(AdvertiserImpression, AdvertiserImpressionAdmin)
 admin.site.register(PublisherImpression, PublisherImpressionAdmin)
+admin.site.register(PublisherPaidImpression, PublisherImpressionAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:

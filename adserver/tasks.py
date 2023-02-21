@@ -29,6 +29,7 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherImpression
+from .models import PublisherPaidImpression
 from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
@@ -563,34 +564,42 @@ def daily_update_publishers(day=None):
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     )
 
-    for values in (
-        queryset.values("publisher__name", "publisher_id")
-        .annotate(
-            total_decisions=Sum("decisions"),
-            total_offers=Sum("offers"),
-            total_views=Sum("views"),
-            total_clicks=Sum("clicks"),
-            total_revenue=Sum(
-                (F("clicks") * F("advertisement__flight__cpc"))
-                + (F("views") * F("advertisement__flight__cpm") / 1000),
-                output_field=FloatField(),
-            ),
-        )
-        .filter(advertisement__isnull=False)
-        .order_by("publisher__name")
-        .iterator()
+    for model, filters in (
+        (PublisherImpression, {}),
+        (
+            PublisherPaidImpression,
+            {"advertisement__flight__campaign__campaign_type": PAID_CAMPAIGN},
+        ),
     ):
-        impression, _ = PublisherImpression.objects.using("default").get_or_create(
-            publisher_id=values["publisher_id"],
-            date=start_date,
-        )
-        PublisherImpression.objects.using("default").filter(pk=impression.pk).update(
-            decisions=values["total_decisions"],
-            offers=values["total_offers"],
-            views=values["total_views"],
-            clicks=values["total_clicks"],
-            revenue=values["total_revenue"],
-        )
+        for values in (
+            queryset.filter(**filters)
+            .values("publisher__name", "publisher_id")
+            .annotate(
+                total_decisions=Sum("decisions"),
+                total_offers=Sum("offers"),
+                total_views=Sum("views"),
+                total_clicks=Sum("clicks"),
+                total_revenue=Sum(
+                    (F("clicks") * F("advertisement__flight__cpc"))
+                    + (F("views") * F("advertisement__flight__cpm") / 1000),
+                    output_field=FloatField(),
+                ),
+            )
+            .filter(advertisement__isnull=False)
+            .order_by("publisher__name")
+            .iterator()
+        ):
+            impression, _ = model.objects.using("default").get_or_create(
+                publisher_id=values["publisher_id"],
+                date=start_date,
+            )
+            model.objects.using("default").filter(pk=impression.pk).update(
+                decisions=values["total_decisions"],
+                offers=values["total_offers"],
+                views=values["total_views"],
+                clicks=values["total_clicks"],
+                revenue=values["total_revenue"],
+            )
 
 
 @app.task(time_limit=60 * 60 * 4)
