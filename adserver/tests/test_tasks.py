@@ -6,6 +6,7 @@ from django.test import override_settings
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
+from ..constants import HOUSE_CAMPAIGN
 from ..models import AdImpression
 from ..models import AdvertiserImpression
 from ..models import GeoImpression
@@ -13,6 +14,7 @@ from ..models import KeywordImpression
 from ..models import Offer
 from ..models import PlacementImpression
 from ..models import PublisherImpression
+from ..models import PublisherPaidImpression
 from ..models import RegionImpression
 from ..models import RegionTopicImpression
 from ..models import UpliftImpression
@@ -339,6 +341,30 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(pi.views, 5)
         self.assertEqual(pi.clicks, 1)
         self.assertAlmostEqual(float(pi.revenue), 2.0)
+
+        pi = PublisherPaidImpression.objects.filter(publisher=self.publisher).first()
+        self.assertIsNotNone(pi)
+        self.assertEqual(pi.decisions, 6)
+        self.assertEqual(pi.offers, 6)
+        self.assertEqual(pi.views, 5)
+        self.assertEqual(pi.clicks, 1)
+        self.assertAlmostEqual(float(pi.revenue), 2.0)
+
+    def test_daily_update_no_paid_impressions(self):
+        # Switch this to unpaid
+        self.flight.cpc = 0
+        self.flight.save()
+        self.campaign.campaign_type = HOUSE_CAMPAIGN
+        self.campaign.save()
+
+        daily_update_impressions()
+        daily_update_publishers()
+
+        pi = PublisherImpression.objects.filter(publisher=self.publisher).first()
+        self.assertIsNotNone(pi)
+
+        pi = PublisherPaidImpression.objects.filter(publisher=self.publisher).first()
+        self.assertIsNone(pi)
 
     def test_daily_update_keywords(self):
         # Ad1 - offered/decision=4, views=3, clicks=1
