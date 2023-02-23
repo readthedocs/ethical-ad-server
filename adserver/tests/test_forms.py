@@ -88,6 +88,7 @@ class FormTests(TestCase):
             "campaign": self.campaign.pk,
             "live": True,
             "priority_multiplier": 1,
+            "pacing_interval": 60 * 60 * 24,
             "start_date": get_ad_day().date(),
             "end_date": get_ad_day().date() + datetime.timedelta(days=2),
         }
