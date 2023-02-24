@@ -393,6 +393,27 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         return None
 
+    def get_ad_ctr_weight(self, ad):
+        """Apply the ad weighting factor based on the sampled CTR."""
+        weights = {
+            0.060: 1,
+            0.070: 2,
+            0.080: 3,
+            0.090: 4,
+            0.100: 5,
+            0.125: 6,
+            0.150: 7,
+            0.175: 8,
+            0.200: 9,
+            0.250: 10,
+        }
+        ad_weighting = 0
+        for threshold, weight in weights.items():
+            if ad.sampled_ctr >= threshold and weight > ad_weighting:
+                ad_weighting = weight
+
+        return ad_weighting
+
     def select_ad_for_flight(self, flight):
         """
         Choose an ad from the selected flight.
@@ -400,6 +421,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         Apply weighting to the ad based:
 
         - Requested placement priority
+        - Sampled ad CTR
         """
         if not flight:
             return None
@@ -429,10 +451,14 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 )
                 continue
 
+            # The ad placement priority usually based on the ad type
             # The serializer has verified that the maximum value is 10
             priority = placement.get("priority", 1)
 
-            for _ in range(priority):
+            # Give more weighting to high performing ads
+            ctr_weight = self.get_ad_ctr_weight(advertisement)
+
+            for _ in range(priority + ctr_weight):
                 weighted_ad_choices.append(advertisement)
 
         if weighted_ad_choices:

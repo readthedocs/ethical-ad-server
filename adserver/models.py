@@ -1365,6 +1365,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         help_text=_("Possible ways this ad will be displayed"),
     )
 
+    # This is used exclusively in optimizations and NOT in any reporting
+    sampled_ctr = models.FloatField(
+        default=0.0,
+        help_text=_("A periodically calculated CTR for this ad."),
+    )
+
     history = HistoricalRecords()
 
     class Meta:
