@@ -77,6 +77,7 @@ from .models import Offer
 from .models import PlacementImpression
 from .models import Publisher
 from .models import PublisherImpression
+from .models import PublisherPaidImpression
 from .models import PublisherPayout
 from .models import Region
 from .models import RegionImpression
@@ -86,6 +87,7 @@ from .models import UpliftImpression
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import OptimizedAdvertiserReport
+from .reports import OptimizedPublisherPaidReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
@@ -2053,6 +2055,8 @@ class StaffPublisherReportView(BaseReportView):
 
     # Report should always show our revenue for all publishers
     force_revshare = 70.0
+    impression_model = PublisherPaidImpression
+    report = OptimizedPublisherPaidReport
     template_name = "adserver/reports/staff-publishers.html"
 
     def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals
@@ -2086,7 +2090,6 @@ class StaffPublisherReportView(BaseReportView):
                 publisher=publisher,
                 start_date=context["start_date"],
                 end_date=context["end_date"],
-                campaign_type=context["campaign_type"],
             )
             report = self.report(queryset, force_revshare=force_revshare)
             report.generate()
@@ -2153,7 +2156,6 @@ class StaffPublisherReportView(BaseReportView):
                 "total_views": total_views,
                 "total_ctr": calculate_ctr(total_clicks, total_views),
                 "total_ecpm": calculate_ecpm(total_revenue, total_views),
-                "campaign_types": CAMPAIGN_TYPES,
                 # Make these strings to easily compare with GET args
                 "revshare_options": set(
                     str(pub.revenue_share_percentage) for pub in Publisher.objects.all()
