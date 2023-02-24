@@ -63,6 +63,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             The number and order must correspond to the ``div_ids``.
         :<json string priorities: An optional ``|`` delimited string of priorities for different ad types.
             The number and order matter, applying to ``div_ids`` and ``ad_types``.
+            The lowest priority is 1 and the maximum priority is 10.
         :<json array keywords: An optional ``|`` delimited string of case-insensitive keywords
             that describe content on the page where the ad is requested (eg. ``python|docker|kubernetes``).
             Used for ad targeting and is additive with any publisher settings.

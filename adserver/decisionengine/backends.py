@@ -397,13 +397,14 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         """
         Choose an ad from the selected flight.
 
-        Apply weighting to the ad based on the requested placement priority.
+        Apply weighting to the ad based:
+
+        - Requested placement priority
         """
         if not flight:
             return None
 
         chosen_ad = None
-        max_priority = 10
         weighted_ad_choices = []
 
         if self.ad_slug:
@@ -427,8 +428,11 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     self.placements,
                 )
                 continue
+
+            # The serializer has verified that the maximum value is 10
             priority = placement.get("priority", 1)
-            for _ in range(max_priority + 1 - priority):
+
+            for _ in range(priority):
                 weighted_ad_choices.append(advertisement)
 
         if weighted_ad_choices:
