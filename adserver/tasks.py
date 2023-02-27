@@ -671,7 +671,7 @@ def calculate_publisher_ctrs(days=7):
 
 
 @app.task()
-def calculate_ad_ctrs(days=7):
+def calculate_ad_ctrs(days=7, min_views=1_000):
     """Calculate sampled CTRs for all active ads for the last X days."""
     sample_cutoff = get_ad_day() - datetime.timedelta(days=days)
 
@@ -687,8 +687,9 @@ def calculate_ad_ctrs(days=7):
         total_views = result["total_views"] or 0
         total_clicks = result["total_clicks"] or 0
 
-        ad.sampled_ctr = calculate_ctr(total_clicks, total_views)
-        ad.save()
+        if total_views >= min_views:
+            ad.sampled_ctr = calculate_ctr(total_clicks, total_views)
+            ad.save()
 
 
 @app.task()

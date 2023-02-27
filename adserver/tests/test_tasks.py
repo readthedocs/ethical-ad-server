@@ -91,7 +91,7 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertEqual(self.publisher.sampled_ctr, 20)
 
     def test_calculate_ad_ctrs(self):
-        calculate_ad_ctrs()
+        calculate_ad_ctrs(min_views=0)
 
         self.ad1.refresh_from_db()
         self.assertAlmostEqual(self.ad1.sampled_ctr, 0.0)
@@ -120,7 +120,7 @@ class TasksTest(BaseAdModelsTestCase):
             )
 
         daily_update_impressions()
-        calculate_ad_ctrs()
+        calculate_ad_ctrs(min_views=0)
 
         self.ad1.refresh_from_db()
         self.ad2.refresh_from_db()
