@@ -208,7 +208,7 @@ class Region(TimeStampedModel, models.Model):
     @classmethod
     def _load_db(cls):
         """Load country to region mapping from the DB and cache it."""
-        # region (in order) -> list of countries
+        # Maps region (in order) -> list of countries
         regions = {}
 
         for region in (
