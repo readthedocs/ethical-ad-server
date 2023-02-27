@@ -327,7 +327,7 @@ class PublisherReport(BaseReport):
 class OptimizedPublisherPaidReport(PublisherReport):
 
     """
-    A report using the optimized PublisherPaidImpression index showing daily ad performance for an advertiser.
+    A report using the optimized PublisherPaidImpression index showing daily ad performance for a publisher.
 
     Note: only shows PAID impressions
     """
