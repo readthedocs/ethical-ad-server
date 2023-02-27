@@ -394,7 +394,16 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         return None
 
     def get_ad_ctr_weight(self, ad):
-        """Apply the ad weighting factor based on the sampled CTR."""
+        """
+        Apply the ad weighting factor based on the sampled CTR.
+
+        Give better performing ads slightly more weighting.
+        The scale ramps up based on how far different the CTRs are.
+        For example, in a flight with 2 ads, ad X with 0.1% CTR and ad Y with 0.2% CTR,
+        the chances for X are 6/16 ~= 37.5% and the chances for Y are 10/16 ~= 62.5%.
+
+        We can play a bit with these weights if we want.
+        """
         weights = {
             0.060: 1,
             0.070: 2,
@@ -416,7 +425,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
     def select_ad_for_flight(self, flight):
         """
-        Choose an ad from the selected flight filtered requested ``self.ad_types``. 
+        Choose an ad from the selected flight filtered requested ``self.ad_types``.
 
         Apply weighting to the ad based:
 
