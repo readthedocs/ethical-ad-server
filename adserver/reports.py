@@ -10,6 +10,7 @@ from .models import AdvertiserImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
+from .models import PublisherPaidImpression
 from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import UpliftImpression
@@ -229,6 +230,10 @@ class PublisherReport(BaseReport):
                 == PAID_CAMPAIGN
             ):
                 results[index]["paid_offers"] += impression.offers
+            elif self.model == PublisherPaidImpression:
+                # This is the publisher paid model
+                # All offers are paid
+                results[index]["paid_offers"] += impression.offers
 
             results[index]["index"] = self.get_index_display(index)
             results[index][self.index] = index
@@ -247,17 +252,21 @@ class PublisherReport(BaseReport):
                     * float(impression.advertisement.flight.cpm)
                     / 1000.0
                 )
-                # Support arbitrary revshare numbers on reporting
-                applied_rev_share = float(
-                    self.kwargs.get("force_revshare")
-                    or impression.publisher.revenue_share_percentage
-                )
-                results[index]["revenue_share"] = results[index]["revenue"] * (
-                    applied_rev_share / 100.0
-                )
-                results[index]["our_revenue"] = (
-                    results[index]["revenue"] - results[index]["revenue_share"]
-                )
+            elif hasattr(impression, "revenue"):
+                # For the optimized indexes, the revenue is already calculated
+                results[index]["revenue"] += float(impression.revenue)
+
+            # Support arbitrary revshare numbers on reporting
+            applied_rev_share = float(
+                self.kwargs.get("force_revshare")
+                or impression.publisher.revenue_share_percentage
+            )
+            results[index]["revenue_share"] = results[index]["revenue"] * (
+                applied_rev_share / 100.0
+            )
+            results[index]["our_revenue"] = (
+                results[index]["revenue"] - results[index]["revenue_share"]
+            )
 
             # These fields must be calculated from the fields above
             results[index]["ctr"] = calculate_ctr(
@@ -313,6 +322,20 @@ class PublisherReport(BaseReport):
             return value
 
         return super().get_index_display(index)
+
+
+class OptimizedPublisherPaidReport(PublisherReport):
+
+    """
+    A report using the optimized PublisherPaidImpression index showing daily ad performance for a publisher.
+
+    Note: only shows PAID impressions
+    """
+
+    model = PublisherPaidImpression
+    index = "date"
+    order = "-date"
+    select_related_fields = ("publisher",)
 
 
 class PublisherGeoReport(PublisherReport):

@@ -23,8 +23,10 @@ from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
+from ..models import PublisherPaidImpression
 from ..reports import AdvertiserReport
 from ..reports import OptimizedAdvertiserReport
+from ..reports import OptimizedPublisherPaidReport
 from ..reports import PublisherGeoReport
 from ..reports import PublisherReport
 from ..tasks import daily_update_advertisers
@@ -32,6 +34,7 @@ from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
 from ..tasks import daily_update_placements
+from ..tasks import daily_update_publishers
 from ..tasks import daily_update_regiontopic
 from ..tasks import daily_update_uplift
 from ..tasks import update_previous_day_reports
@@ -220,6 +223,8 @@ class TestReportViews(TestReportsBase):
         self.assertEqual(response.status_code, 200)
 
     def test_staff_publishers_report_access(self):
+        daily_update_publishers()
+
         url = reverse("staff_publishers_report")
 
         # Anonymous
@@ -957,6 +962,36 @@ class TestReportClasses(TestReportsBase):
         # The other views didn't result in an offer/decision
         # Since they didn't go through the "offer_ad" workflow
         self.assertAlmostEqual(report.total["decisions"], 1)
+
+    def test_optimized_publisher_report(self):
+        daily_update_publishers()
+
+        queryset = PublisherPaidImpression.objects.filter(publisher=self.publisher1)
+        report = OptimizedPublisherPaidReport(queryset)
+        report.generate()
+
+        self.assertEqual(len(report.results), 1)
+        self.assertEqual(report.total["views"], 4)
+        self.assertEqual(report.total["clicks"], 1)
+        self.assertAlmostEqual(report.total["revenue"], 2.0)
+        self.assertAlmostEqual(report.total["revenue_share"], 1.40)
+
+    def test_optimized_publisher_report_noresults(self):
+        # Switch over to unpaid ads
+        self.flight1.cpc = 0
+        self.flight1.campaign = self.house_campaign
+        self.flight1.save()
+
+        daily_update_impressions()
+        daily_update_publishers()
+
+        queryset = PublisherPaidImpression.objects.filter(publisher=self.publisher1)
+        report = OptimizedPublisherPaidReport(queryset)
+        report.generate()
+
+        self.assertEqual(len(report.results), 0)
+        self.assertEqual(report.total["views"], 0)
+        self.assertEqual(report.total["clicks"], 0)
 
     def test_optimized_advertiser_report(self):
         daily_update_advertisers()
