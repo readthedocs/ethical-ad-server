@@ -416,7 +416,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
     def select_ad_for_flight(self, flight):
         """
-        Choose an ad from the selected flight.
+        Choose an ad from the selected flight filtered requested ``self.ad_types``. 
 
         Apply weighting to the ad based:
 
