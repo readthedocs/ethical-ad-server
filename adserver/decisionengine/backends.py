@@ -393,13 +393,44 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         return None
 
+    def get_ad_ctr_weight(self, ad):
+        """
+        Apply the ad weighting factor based on the sampled CTR.
+
+        Give better performing ads slightly more weighting.
+        The scale ramps up based on how far different the CTRs are.
+        For example, in a flight with 2 ads, ad X with 0.1% CTR and ad Y with 0.2% CTR,
+        the chances for X are 6/16 ~= 37.5% and the chances for Y are 10/16 ~= 62.5%.
+
+        We can play a bit with these weights if we want.
+        """
+        weights = {
+            0.060: 1,
+            0.070: 2,
+            0.080: 3,
+            0.090: 4,
+            0.100: 5,
+            0.125: 6,
+            0.150: 7,
+            0.175: 8,
+            0.200: 9,
+            0.250: 10,
+        }
+        ad_weighting = 0
+        for threshold, weight in weights.items():
+            if ad.sampled_ctr >= threshold and weight > ad_weighting:
+                ad_weighting = weight
+
+        return ad_weighting
+
     def select_ad_for_flight(self, flight):
         """
-        Choose an ad from the selected flight.
+        Choose an ad from the selected flight filtered requested ``self.ad_types``.
 
         Apply weighting to the ad based:
 
         - Requested placement priority
+        - Sampled ad CTR
         """
         if not flight:
             return None
@@ -429,8 +460,13 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 )
                 continue
 
+            # The ad placement priority usually based on the ad type
             # The serializer has verified that the maximum value is 10
             priority = placement.get("priority", 1)
+
+            if flight.prioritize_ads_ctr:
+                # Give more weighting to high performing ads
+                priority += self.get_ad_ctr_weight(advertisement)
 
             for _ in range(priority):
                 weighted_ad_choices.append(advertisement)

@@ -20,6 +20,7 @@ from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
 from .importers import psf
 from .models import AdImpression
+from .models import Advertisement
 from .models import Advertiser
 from .models import AdvertiserImpression
 from .models import Flight
@@ -36,6 +37,7 @@ from .models import RegionTopicImpression
 from .models import Topic
 from .models import UpliftImpression
 from .reports import PublisherReport
+from .utils import calculate_ctr
 from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
@@ -666,6 +668,28 @@ def calculate_publisher_ctrs(days=7):
 
         publisher.sampled_ctr = report.total["ctr"]
         publisher.save()
+
+
+@app.task()
+def calculate_ad_ctrs(days=7, min_views=1_000):
+    """Calculate sampled CTRs for all active ads for the last X days."""
+    sample_cutoff = get_ad_day() - datetime.timedelta(days=days)
+
+    for ad in Advertisement.objects.filter(live=True, flight__live=True):
+        result = AdImpression.objects.filter(
+            date__gte=sample_cutoff,
+            advertisement=ad,
+        ).aggregate(
+            total_views=Sum("views"),
+            total_clicks=Sum("clicks"),
+        )
+        # These can be `None` if there are NO results in the timeframe
+        total_views = result["total_views"] or 0
+        total_clicks = result["total_clicks"] or 0
+
+        if total_views >= min_views:
+            ad.sampled_ctr = calculate_ctr(total_clicks, total_views)
+            ad.save()
 
 
 @app.task()

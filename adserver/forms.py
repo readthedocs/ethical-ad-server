@@ -93,6 +93,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "live",
             "priority_multiplier",
             "pacing_interval",
+            "prioritize_ads_ctr",
             "cpc",
             "sold_clicks",
             "cpm",

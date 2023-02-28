@@ -18,6 +18,7 @@ from ..models import PublisherPaidImpression
 from ..models import RegionImpression
 from ..models import RegionTopicImpression
 from ..models import UpliftImpression
+from ..tasks import calculate_ad_ctrs
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_advertisers
 from ..tasks import daily_update_geos
@@ -88,6 +89,44 @@ class TasksTest(BaseAdModelsTestCase):
 
         self.publisher.refresh_from_db()
         self.assertEqual(self.publisher.sampled_ctr, 20)
+
+    def test_calculate_ad_ctrs(self):
+        calculate_ad_ctrs(min_views=0)
+
+        self.ad1.refresh_from_db()
+        self.assertAlmostEqual(self.ad1.sampled_ctr, 0.0)
+
+        # Ad1: 9+1 views, 1 click
+        for _ in range(9):
+            get(Offer, advertisement=self.ad1, publisher=self.publisher, viewed=True)
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+        )
+
+        # Ad2: 5+2 views, 2 clicks
+        for _ in range(5):
+            get(Offer, advertisement=self.ad2, publisher=self.publisher, viewed=True)
+        for _ in range(2):
+            get(
+                Offer,
+                advertisement=self.ad2,
+                publisher=self.publisher,
+                viewed=True,
+                clicked=True,
+            )
+
+        daily_update_impressions()
+        calculate_ad_ctrs(min_views=0)
+
+        self.ad1.refresh_from_db()
+        self.ad2.refresh_from_db()
+
+        self.assertAlmostEqual(self.ad1.sampled_ctr, 100 * (1 / 10))
+        self.assertAlmostEqual(self.ad2.sampled_ctr, 100 * (2 / 7))
 
     @override_settings(
         # Use the memory email backend instead of front for testing
