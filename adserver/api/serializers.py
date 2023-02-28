@@ -3,6 +3,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
@@ -28,7 +29,13 @@ class AdPlacementSerializer(serializers.Serializer):
     div_id = serializers.CharField()
     ad_type = serializers.CharField(required=True)
     priority = serializers.IntegerField(
-        default=1, min_value=1, max_value=10, required=False
+        default=1,
+        min_value=1,
+        max_value=10,
+        required=False,
+        help_text=_(
+            "The lowest priority placement should be 1 (the default) while the highest possible priority is 10."
+        ),
     )
 
 
