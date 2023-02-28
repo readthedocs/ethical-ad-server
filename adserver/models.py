@@ -744,6 +744,14 @@ class Flight(TimeStampedModel, IndestructibleModel):
     pacing_interval = models.PositiveIntegerField(
         default=DEFAULT_PACING_INTERVAL,
     )
+    prioritize_ads_ctr = models.BooleanField(
+        _("Prioritize ads by CTR"),
+        default=False,
+        help_text=_(
+            "If true, the ad server will automatically show ads with higher CTRs "
+            "at a higher rate than ads with lower CTRs."
+        ),
+    )
 
     # Denormalized fields
     total_views = models.PositiveIntegerField(
