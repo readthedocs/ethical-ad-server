@@ -464,7 +464,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             # The serializer has verified that the maximum value is 10
             priority = placement.get("priority", 1)
 
-            if flight:
+            if flight.prioritize_ads_ctr:
                 # Give more weighting to high performing ads
                 priority += self.get_ad_ctr_weight(advertisement)
 
