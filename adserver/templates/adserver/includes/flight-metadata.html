@@ -126,9 +126,9 @@
     {% for invoice in flight.active_invoices %}
       <tr>
         <td>
-          {% if invoice.hosted_invoice_url %}<a href="{{ invoice.hosted_invoice_url }}" target="_blank" rel="nofollow noopener">{% endif %}
+          {% if invoice.hosted_invoice_url and not invoice.paid %}<a href="{{ invoice.hosted_invoice_url }}" target="_blank" rel="nofollow noopener">{% endif %}
             <span>{% if invoice.number %}#{{ invoice.number }}{% else %}{% trans 'Draft' %}{% endif %}</span>
-          {% if invoice.hosted_invoice_url %}</a>{% endif %}
+          {% if invoice.hosted_invoice_url and not invoice.paid %}</a>{% endif %}
         </td>
         <td>${{ invoice.total }}</td>
         <td>
@@ -141,4 +141,11 @@
     {% endfor %}
     </tbody>
   </table>
+
+  {% if advertiser.djstripe_customer %}
+  <p class='form-text small text-muted'>
+    {% url 'advertiser_stripe_portal' advertiser.slug as billing_history_url %}
+    {% blocktrans trimmed %}View all invoices in your <a href="{{ billing_history_url }}">billing history</a>.{% endblocktrans %}
+  </p>
+  {% endif %}
 {% endif %}
