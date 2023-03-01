@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.11.0
+---------------
+
+As in v1.10.0, the staff publisher report now uses the optimized table
+that only has data on publisher paid impressions. This makes it MUCH faster
+but slightly less flexible.
+The same caveat about `adserver.tasks.update_previous_day_reports` applies.
+
+We also added an experimental feature around automatically prioritizing
+the ads within a flight. With the option enabled (default is off),
+higher CTR ads will be shown at a higher rate.
+
+ * @davidfischer: Don't link to expired invoices (#715)
+ * @davidfischer: VSCode complains about #region comment (#714)
+ * @davidfischer: Prioritize ads with higher CTR (#713)
+ * @davidfischer: Define placement priority order (#712)
+ * @davidfischer: Use the optimized publisher paid index for the all publisher report (#711)
+ * @davidfischer: Make pacing interval editable in the admin (#710)
+
+
 Version v1.10.0
 ---------------
 
