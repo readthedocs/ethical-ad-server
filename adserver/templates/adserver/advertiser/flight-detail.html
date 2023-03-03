@@ -45,7 +45,7 @@
 <section class="mt-5">
 
   <div class="row">
-    <h5 class="col-md-8">{% trans 'Advertisements' %}</h5>
+    <h5 class="col-md-8">{% trans 'Live ads' %}</h5>
 
     <aside class="col-md-4 text-right">
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
@@ -59,44 +59,28 @@
     </aside>
   </div>
 
-
-  {% if advertisement_list %}
+  {% if live_ads %}
     <div class="table-responsive" id="advertisement-list">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th><strong>{% trans 'Advertisement' %}</strong></th>
-            <th><strong>{% trans 'Name' %}</strong></th>
-            <th><strong>{% trans 'Ad types' %}</strong></th>
-            <th><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ad in advertisement_list %}
-            <tr>
-              <td>
-                {% if ad.image %}
-                  <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">
-                    <img src="{{ ad.image.url }}" width="120">
-                  </a>
-                {% endif %}
-              </td>
-              <td>
-                <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}" {% if not ad.live %}class="disabled"{% endif %}>{{ ad.name }}</a>
-                {% if not ad.live %}
-                  <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
-                {% endif %}
-              </td>
-              <td>{{ ad.ad_types.all | join:"<br>" }}</td>
-              <td>{{ ad.ctr|floatformat:3 }}%</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% with live_ads as advertisements %}
+        {% include 'adserver/includes/ad-list.html' %}
+      {% endwith %}
     </div>
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
-    <p class="text-center">{% blocktrans %}There are no ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+    <p class="text-center">{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+  {% endif %}
+
+
+  {% if disabled_ads %}
+    <div class="my-5">
+      <h5 class="">{% trans 'Disabled ads' %}</h5>
+
+      <div class="table-responsive">
+        {% with disabled_ads as advertisements %}
+          {% include 'adserver/includes/ad-list.html' %}
+        {% endwith %}
+      </div>
+    </div>
   {% endif %}
 </section>
 

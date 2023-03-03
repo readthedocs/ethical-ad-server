@@ -1,0 +1,34 @@
+{% load i18n %}
+
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th width="25%"><strong>{% trans 'Advertisement' %}</strong></th>
+      <th width="35%"><strong>{% trans 'Name' %}</strong></th>
+      <th width="30%"><strong>{% trans 'Ad types' %}</strong></th>
+      <th width="20%"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ad in advertisements %}
+      <tr>
+        <td>
+          {% if ad.image %}
+            <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">
+              <img src="{{ ad.image.url }}" width="120">
+            </a>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'advertisement_detail' advertiser.slug flight.slug ad.slug %}">{{ ad.name }}</a>
+          {% if not ad.live %}
+            <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This ad is disabled' %}"></span>
+          {% endif %}
+        </td>
+        <td>{{ ad.ad_types.all | join:"<br>" }}</td>
+        <td>{{ ad.ctr|floatformat:3 }}%</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
