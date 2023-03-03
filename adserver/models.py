@@ -1941,7 +1941,7 @@ class AdvertiserImpression(BaseImpression):
         null=True,
     )
     spend = models.DecimalField(
-        _("Daily spend"), max_digits=8, decimal_places=2, default=0
+        _("Daily spend"), max_digits=10, decimal_places=4, default=0
     )
 
     class Meta:
@@ -1957,8 +1957,8 @@ class AdvertiserImpression(BaseImpression):
 class BasePublisherImpression(BaseImpression):
     revenue = models.DecimalField(
         _("Daily revenue"),
-        max_digits=8,
-        decimal_places=2,
+        max_digits=10,
+        decimal_places=4,
         default=0,
         help_text=_(
             "This value has not been multiplied by the revenue share percentage"
