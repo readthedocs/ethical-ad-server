@@ -400,21 +400,15 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         Give better performing ads slightly more weighting.
         The scale ramps up based on how far different the CTRs are.
         For example, in a flight with 2 ads, ad X with 0.1% CTR and ad Y with 0.2% CTR,
-        the chances for X are 6/16 ~= 37.5% and the chances for Y are 10/16 ~= 62.5%.
+        the chances for X are (1+2)/8 ~= 37.5% and the chances for Y are (1+4)/8 ~= 62.5%.
 
         We can play a bit with these weights if we want.
         """
         weights = {
-            0.060: 1,
-            0.070: 2,
-            0.080: 3,
-            0.090: 4,
-            0.100: 5,
-            0.125: 6,
-            0.150: 7,
-            0.175: 8,
-            0.200: 9,
-            0.250: 10,
+            0.075: 1,
+            0.100: 2,
+            0.125: 3,
+            0.150: 4,
         }
         ad_weighting = 0
         for threshold, weight in weights.items():
