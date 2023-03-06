@@ -114,6 +114,7 @@ class BaseAdDecisionBackend:
             return None
 
         if "adserver.analyzer" not in settings.INSTALLED_APPS:
+            log.debug("Not using Analyzer keywords. Analyzer is not in INSTALLED_APPS.")
             return None
 
         normalized_url = normalize_url(self.url)
