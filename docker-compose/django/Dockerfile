@@ -35,16 +35,16 @@ RUN pip install -r /requirements/production.txt
 # Uncomment this if you need the page/topic analyzer
 # RUN pip install -r /requirements/analyzer.txt
 
-# COPY ./docker-compose/local/django/entrypoint /entrypoint
+# COPY ./docker-compose/django/entrypoint /entrypoint
 # RUN chmod +x /entrypoint
 
-COPY ./docker-compose/local/django/start /start
+COPY ./docker-compose/django/start /start
 RUN chmod +x /start
 
-COPY ./docker-compose/local/django/celery/worker/start /start-celeryworker
+COPY ./docker-compose/django/celery/worker/start /start-celeryworker
 RUN chmod +x /start-celeryworker
 
-COPY ./docker-compose/local/django/celery/beat/start /start-celerybeat
+COPY ./docker-compose/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
 
 # Ensure that ``python`` is in the PATH so that ``./manage.py`` works
