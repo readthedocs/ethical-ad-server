@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.12.0
+---------------
+
+The migration in this release just adds precision to daily aggregation tables.
+We simplified the CTR weighting introduced in v1.11.0 that prioritizes ads.
+We made a UX-only change to make disabled ads very obvious.
+
+:date: March 7, 2023
+
+ * @davidfischer: Make disabled ads more obvious (#719)
+ * @davidfischer: Reduce and simplify CTR weighting (#718)
+ * @davidfischer: Add more precision to the optimized daily tables (#717)
+
+
 Version v1.11.0
 ---------------
 
@@ -17,6 +31,8 @@ The same caveat about `adserver.tasks.update_previous_day_reports` applies.
 We also added an experimental feature around automatically prioritizing
 the ads within a flight. With the option enabled (default is off),
 higher CTR ads will be shown at a higher rate.
+
+:date: March 1, 2023
 
  * @davidfischer: Don't link to expired invoices (#715)
  * @davidfischer: VSCode complains about #region comment (#714)
