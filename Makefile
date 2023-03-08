@@ -48,7 +48,7 @@ dockerstop:
 dockershell:
 	docker-compose -f $(DOCKER_CONFIG) run --rm django /bin/bash
 
-# Get the GeoIP databases from DB-IP
+# Get the GeoIP databases from DB-IP or Maxmind
 geoip:
 	python $(GEOIP_DOWNLOADER) --geoip-only --outdir=$(GEOIP_DIR)
 

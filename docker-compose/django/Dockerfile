@@ -32,11 +32,13 @@ COPY ./requirements /requirements
 RUN pip install --upgrade pip
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
-# Uncomment this if you need the page/topic analyzer
-# RUN pip install -r /requirements/analyzer.txt
 
-# COPY ./docker-compose/django/entrypoint /entrypoint
-# RUN chmod +x /entrypoint
+# Comment this if you don't need the page/topic analyzer.
+# The analyzer is used to target ads better based on page content.
+# Its requirements are huge and include PyTorch and other ML tools.
+# If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
+# in your environment file `./envs/local/django`.
+RUN pip install -r /requirements/analyzer.txt
 
 COPY ./docker-compose/django/start /start
 RUN chmod +x /start
@@ -55,5 +57,3 @@ RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
 
 WORKDIR /app
-
-# ENTRYPOINT ["/entrypoint"]

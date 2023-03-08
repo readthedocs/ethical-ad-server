@@ -8,6 +8,9 @@ To build a local Docker compose environment:
 
 .. code-block:: bash
 
+    # Create an environment file based on the sample
+    $ cp .envs/local/django.sample .envs/local/django
+
     # This command can take quite a while the first time
     $ make dockerbuild
 
