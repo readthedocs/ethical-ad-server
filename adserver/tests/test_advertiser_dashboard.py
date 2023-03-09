@@ -9,6 +9,7 @@ from django.urls import reverse
 from django_dynamic_fixture import get
 
 from ..constants import PAID_CAMPAIGN
+from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
@@ -217,6 +218,61 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
+
+    def test_flight_detail_metadata(self):
+        url = reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+
+        resp = self.client.get(url)
+        self.assertContains(resp, "Ads are chosen round-robin")
+
+        self.campaign.campaign_type = PUBLISHER_HOUSE_CAMPAIGN
+        self.campaign.save()
+
+        resp = self.client.get(url)
+        self.assertContains(resp, "House ads controlled by the publisher")
+
+        # Test some includes
+        self.flight.targeting_parameters = {
+            "include_regions": ["us-ca"],
+            "include_topics": ["security-privacy"],
+            "include_publishers": ["readthedocs"],
+            "include_domains": ["example.com"],
+        }
+        self.flight.prioritize_ads_ctr = True
+        self.flight.save()
+
+        resp = self.client.get(url)
+        # self.fail(resp.content)
+        self.assertContains(resp, "Ads with higher CTR are prioritized")
+        self.assertContains(resp, "Topics:")
+        self.assertContains(resp, "Security &amp; privacy")
+        self.assertContains(resp, "Include regions:")
+        self.assertContains(resp, "US &amp; Canada")
+        self.assertContains(resp, "Include publishers")
+        self.assertContains(resp, "Include domains")
+
+        # Test some excludes
+        self.flight.targeting_parameters = {
+            "exclude_regions": ["us-ca"],
+            "exclude_publishers": ["readthedocs"],
+            "exclude_domains": ["example.com"],
+            "mobile_traffic": "exclude",
+        }
+        self.flight.save()
+
+        resp = self.client.get(url)
+        self.assertContains(resp, "Exclude regions")
+        self.assertContains(resp, "Exclude publishers")
+        self.assertContains(resp, "Exclude domains")
+        self.assertContains(resp, "Mobile traffic: exclude")
 
     def test_flight_create_view(self):
         url = reverse(
