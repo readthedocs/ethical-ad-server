@@ -44,6 +44,7 @@ class DecisionEngineTests(TestCase):
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
             # Only show in US,CA,MX
             targeting_parameters={"include_countries": ["US", "CA", "MX"]},
+            pacing_interval=24 * 60 * 60,
         )
 
         self.cpm_flight = get(
@@ -56,6 +57,7 @@ class DecisionEngineTests(TestCase):
             start_date=get_ad_day().date(),
             end_date=get_ad_day().date() + datetime.timedelta(days=30),
             targeting_parameters={"include_countries": ["US", "CA", "MX"]},
+            pacing_interval=24 * 60 * 60,
         )
 
         self.advertisement1 = get(
@@ -77,6 +79,7 @@ class DecisionEngineTests(TestCase):
             cpc=5.0,
             # Don't show in AZ
             targeting_parameters={"exclude_countries": ["US", "AZ"]},
+            pacing_interval=24 * 60 * 60,
         )
 
         # Don't show in AZ and only for JS projects
@@ -92,7 +95,12 @@ class DecisionEngineTests(TestCase):
 
         # No filters
         self.basic_flight = get(
-            Flight, live=True, campaign=self.campaign, sold_clicks=100, cpc=0.0
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_clicks=100,
+            cpc=0.0,
+            pacing_interval=24 * 60 * 60,
         )
         self.advertisement3 = get(
             Advertisement,
@@ -707,6 +715,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=5,
             total_views=1500,
+            pacing_interval=24 * 60 * 60,
         )
         bad_ctr = get(
             Flight,
@@ -718,6 +727,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=0,
             total_views=5000,
+            pacing_interval=24 * 60 * 60,
         )
 
         # Add bonus probability for good performance
@@ -748,6 +758,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=5,
             total_views=1500,
+            pacing_interval=24 * 60 * 60,
         )
         high_cost = get(
             Flight,
@@ -759,6 +770,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=5,
             total_views=1500,
+            pacing_interval=24 * 60 * 60,
         )
 
         self.publisher.sampled_ctr = 0.2
@@ -791,6 +803,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=0,
             total_views=1500,
+            pacing_interval=24 * 60 * 60,
         )
 
         self.assertEqual(flight.clicks_needed_today(), 33)
@@ -827,6 +840,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=0,
             total_views=1500,
+            pacing_interval=24 * 60 * 60,
         )
         high = get(
             Flight,
@@ -838,6 +852,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=5,
             total_views=100,
+            pacing_interval=24 * 60 * 60,
         )
         super_high = get(
             Flight,
@@ -849,6 +864,7 @@ class DecisionEngineTests(TestCase):
             sold_clicks=1000,
             total_clicks=5,
             total_views=100,
+            pacing_interval=24 * 60 * 60,
         )
 
         # 1x
