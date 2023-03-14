@@ -186,6 +186,7 @@ class TestAdModels(BaseAdModelsTestCase):
         )
 
     def test_start_date_math(self):
+        self.flight.pacing_interval = 60 * 60 * 24
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=14)
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
         self.flight.save()

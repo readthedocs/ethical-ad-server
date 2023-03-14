@@ -690,7 +690,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     # For example, with a 1000 click flight over 10 days,
     # there will be 10 intervals (each 1 day) and we'll aim for 100 clicks per day
     # Shorter intervals (eg. an hour) spread flights more evenly across geographies
-    DEFAULT_PACING_INTERVAL = 60 * 60 * 24  # 24 hours
+    DEFAULT_PACING_INTERVAL = 60 * 60  # 1 hour
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
@@ -746,7 +746,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     )
     prioritize_ads_ctr = models.BooleanField(
         _("Prioritize ads by CTR"),
-        default=False,
+        default=True,
         help_text=_(
             "If true, the ad server will automatically show ads with higher CTRs "
             "at a higher rate than ads with lower CTRs."
