@@ -46,6 +46,16 @@
     <dt title="{% trans 'Note: your campaign may run beyond this date due to availability.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Estimated end date' %}</dt>
     <dd>{{ flight.end_date }}</dd>
   {% endif %}
+
+  <dt title="{% trans 'Determines which ad is chosen when a flight has multiple ads.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Ad selection' %} <span class="fa fa-info-circle fa-fw mr-2 text-muted" aria-hidden="true"></span></dt>
+  <dd>
+    {% if flight.prioritize_ads_ctr %}
+      <span>{% trans 'Ads with higher CTR are prioritized' %}</span>
+    {% else %}
+      <span>{% trans 'Ads are chosen round-robin, so each will be displayed about the same number of times' %}</span>
+    {% endif %}
+  </dd>
+
   {% if flight.targeting_parameters %}
     <dt>{% trans 'Targeting parameters' %}</dt>
     <dd>
