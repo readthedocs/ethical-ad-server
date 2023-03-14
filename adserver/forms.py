@@ -638,6 +638,7 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
+        self.helper.attrs = {"id": "advertisement-update"}
 
         self.fields["name"].help_text = _(
             "A helpful name for the ad which is not displayed to site visitors."
@@ -664,6 +665,10 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             del self.fields["text"]
             self.fields["content"].widget.attrs["rows"] = 3
             self.fields["content"].required = True
+
+            self.fields["headline"].widget.attrs["data-bind"] = "textInput: headline"
+            self.fields["content"].widget.attrs["data-bind"] = "textInput: content"
+            self.fields["cta"].widget.attrs["data-bind"] = "textInput: cta"
             ad_display_fields = ["headline", "content", "cta"]
         else:
             del self.fields["headline"]
@@ -685,8 +690,20 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
                 "ad_types",
                 "link",
                 "image",
-                *ad_display_fields,
                 css_class="my-3",
+            ),
+            Fieldset(
+                _("Advertisement text"),
+                Div(
+                    HTML(
+                        "<span data-bind='text: totalLength()'></span> total characters"
+                    ),
+                    # Only display on "new style" ads with the headline, content, and CTA
+                    # Simply hide it on the old style ads.
+                    data_bind="visible: totalLength() > 0",
+                    css_class="small text-muted mb-2",
+                ),
+                *ad_display_fields,
             ),
             Submit("submit", _("Save advertisement")),
         )
