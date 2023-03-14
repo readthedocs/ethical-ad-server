@@ -230,6 +230,9 @@ class TestAdvertiserDashboardViews(TestCase):
 
         self.client.force_login(self.user)
 
+        self.flight.prioritize_ads_ctr = False
+        self.flight.save()
+
         resp = self.client.get(url)
         self.assertContains(resp, "Ads are chosen round-robin")
 

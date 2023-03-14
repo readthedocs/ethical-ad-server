@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v1.13.0
+---------------
+
+In this release, we changed some flight prioritization and pacing defaults.
+New flights will weight which ads to show based on the CTR.
+In addition, we'll be defaulting to hourly pacing which we introduced in v1.10.0.
+
+:date: March 14, 2023
+
+ * @davidfischer: Change ad prioritization/pacing defaults (#722)
+ * @davidfischer: Show ad selection priority in flight metadata (#721)
+
+
 Version v1.12.0
 ---------------
 
