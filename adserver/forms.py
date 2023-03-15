@@ -1,6 +1,5 @@
 """Forms for the ad server."""
 import logging
-from datetime import timedelta
 
 import bleach
 import stripe
