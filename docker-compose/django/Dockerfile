@@ -33,16 +33,20 @@ RUN pip install --upgrade pip
 RUN pip install -r /requirements/development.txt
 RUN pip install -r /requirements/production.txt
 
-# COPY ./docker-compose/local/django/entrypoint /entrypoint
-# RUN chmod +x /entrypoint
+# Comment this if you don't need the page/topic analyzer.
+# The analyzer is used to target ads better based on page content.
+# Its requirements are huge and include PyTorch and other ML tools.
+# If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
+# in your environment file `./envs/local/django`.
+RUN pip install -r /requirements/analyzer.txt
 
-COPY ./docker-compose/local/django/start /start
+COPY ./docker-compose/django/start /start
 RUN chmod +x /start
 
-COPY ./docker-compose/local/django/celery/worker/start /start-celeryworker
+COPY ./docker-compose/django/celery/worker/start /start-celeryworker
 RUN chmod +x /start-celeryworker
 
-COPY ./docker-compose/local/django/celery/beat/start /start-celerybeat
+COPY ./docker-compose/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
 
 # Ensure that ``python`` is in the PATH so that ``./manage.py`` works
@@ -53,5 +57,3 @@ RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
 
 WORKDIR /app
-
-# ENTRYPOINT ["/entrypoint"]

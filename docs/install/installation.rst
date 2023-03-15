@@ -39,13 +39,16 @@ Building the Docker image
 .. admonition:: Production Docker support
 
     The process of setting up your own production installation is not supported by us.
-    The Docker image is provided as a template for your setup.
 
-Building the Docker image is only necessary if you need to heavily customize the ad server.
-To build this, you'll need to have Docker installed and you'll probably want the GeoIP database
-command ``geoipupdate`` installed and configured so that the ad server
-can convert IP addresses to cities and countries for ad targeting purposes.
+To run the ad server in production on your own infrastructure,
+you'll need to build a VM image or a Docker image to run the application.
+The Dockerfile in ``docker-compose/django/Dockerfile`` should be a good reference,
+but your own setup may vary a little bit.
 
-.. code-block:: bash
+Depending on your setup, you may also need the GeoIP databases from Maxmind or from DB-IP.
+If you have a Maxmind license key, you can use the command ``make geoip`` to get the databases.
+You can instead rely on a CDN like Cloudflare to match IPs to regions.
+See our ``adserver/middleware.py`` for details.
 
-    $ make geoip dockerprod
+For our own production setup, we build a VM image in a similar manner to our Dockerfile.
+This image is run on a major cloud provider using managed Redis and managed PostgreSQL.

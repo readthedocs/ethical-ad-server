@@ -34,6 +34,18 @@ then the admin interface will be available at the URL ``http://adserver.example.
 By default, this set to ``/admin``.
 
 
+ADSERVER_ANALYZER_BACKEND
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The adserver analyzer runs background tasks to analyzer pages where ads are shown.
+This classifies these pages and stores the results for when an ad decision request
+is received from that page, the best ad based on content can be used.
+These tasks can be intensive based on how frequently ads are shown.
+To disable this background analysis, set ``ADSERVER_ANALYZER_BACKEND=`` (to the empty string)
+
+The default is ``adserver.analyzer.backends.TextacyAnalyzerBackend``.
+
+
 ADSERVER_BLOCKLISTED_USER_AGENTS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -129,6 +141,7 @@ Whether to store metadata (a database record) each time an ad is viewed.
 This is ``False`` by default and can result in a bloated database and poor performance.
 It's ``True`` by default in development.
 This can be overridden on a per publisher basis by setting the ``Publisher.record_views`` flag.
+
 
 ADSERVER_STICKY_DECISION_DURATION
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

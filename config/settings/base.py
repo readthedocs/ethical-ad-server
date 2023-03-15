@@ -62,7 +62,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "adserver",
     "adserver.auth",
-    "adserver.analyzer",
     "simple_history",
     "django_slack",
     "djstripe",
@@ -477,10 +476,13 @@ ADSERVER_DECISION_BACKEND = env(
 
 # The backend to be used by the ad server
 # for topic and keyword analysis
+# Set to `None` to disable the analyzer entirely
 ADSERVER_ANALYZER_BACKEND = env(
     "ADSERVER_ANALYZER_BACKEND",
     default="adserver.analyzer.backends.TextacyAnalyzerBackend",
 )
+if ADSERVER_ANALYZER_BACKEND:
+    INSTALLED_APPS.append("adserver.analyzer")
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False

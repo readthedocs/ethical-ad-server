@@ -19,7 +19,7 @@ services:
   django: &django
     build:
       context: .
-      dockerfile: ./docker-compose/local/django/Dockerfile
+      dockerfile: ./docker-compose/django/Dockerfile
     image: ethicaladserver_local_django
     depends_on:
       - postgres
@@ -39,7 +39,7 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: ./docker-compose/production/postgres/Dockerfile
+      dockerfile: ./docker-compose/postgres/Dockerfile
     image: ethicaladserver_production_postgres
     volumes:
       - local_postgres_data:/var/lib/postgresql/data
@@ -81,7 +81,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ./docker-compose/local/frontend/Dockerfile
+      dockerfile: ./docker-compose/frontend/Dockerfile
     ports: []
     volumes:
       - .:/app

@@ -72,7 +72,6 @@ celerybeat.pid
 
 # Production settings
 .envs/*
-!.envs/local/
 .envrc
 
 # Compiled static files

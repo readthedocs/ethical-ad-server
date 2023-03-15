@@ -7,7 +7,7 @@ COPY package-lock.json /app
 
 RUN npm install
 
-COPY ./docker-compose/local/frontend/entrypoint /entrypoint
+COPY ./docker-compose/frontend/entrypoint /entrypoint
 RUN chmod +x /entrypoint
 
 ENTRYPOINT [ "/entrypoint" ]

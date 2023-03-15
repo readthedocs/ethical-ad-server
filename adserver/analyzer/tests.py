@@ -10,17 +10,22 @@ from django.test import TestCase
 from django.utils import timezone
 from django_dynamic_fixture import get
 
-from . import tasks
-from ..models import Offer
-from ..models import Publisher
-from ..tests.common import BaseAdModelsTestCase
-from .backends import EthicalAdsTopicsBackend
-from .backends import NaiveKeywordAnalyzerBackend
-from .backends import TextacyAnalyzerBackend
-from .models import AnalyzedUrl
-from .utils import get_url_analyzer_backend
-from .utils import normalize_url
-from .validators import KeywordsValidator
+try:
+    from . import tasks
+    from ..models import Offer
+    from ..models import Publisher
+    from ..tests.common import BaseAdModelsTestCase
+    from .backends import EthicalAdsTopicsBackend
+    from .backends import NaiveKeywordAnalyzerBackend
+    from .backends import TextacyAnalyzerBackend
+    from .models import AnalyzedUrl
+    from .utils import get_url_analyzer_backend
+    from .utils import normalize_url
+    from .validators import KeywordsValidator
+except ImportError:
+    pytest.skip(
+        "Skip testing the analyzer due to missing dependencies", allow_module_level=True
+    )
 
 
 class TestValidators(TestCase):

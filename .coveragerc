@@ -28,8 +28,9 @@ omit =
     adserver/management/commands/pypi_import.py
     adserver/management/commands/adtype-templates/*.html
     adserver/router.py
+    # Analyzer is conditionally skipped in testing
+    adserver/analyzer/*
 
-    machine_learning_experiments/
 
 [report]
 # Regexes for lines to exclude from consideration
