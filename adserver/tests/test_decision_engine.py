@@ -213,20 +213,22 @@ class DecisionEngineTests(TestCase):
             self.assertEqual(self.cpm_flight.sold_clicks, 0)
             self.assertEqual(self.cpm_flight.sold_impressions, 10_000)
             self.assertEqual(self.cpm_flight.sold_days(), 31 * 24)
-            self.assertEqual(self.cpm_flight.clicks_needed_today(), 0)
-            self.assertEqual(self.cpm_flight.views_needed_today(), 10_000 - pace)
+            self.assertEqual(self.cpm_flight.clicks_needed_this_interval(), 0)
+            self.assertEqual(
+                self.cpm_flight.views_needed_this_interval(), 10_000 - pace
+            )
 
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             self.cpm_flight.total_views = 10_000 - pace - 1
             self.cpm_flight.save()
-            self.assertEqual(self.cpm_flight.views_needed_today(), 1)
+            self.assertEqual(self.cpm_flight.views_needed_this_interval(), 1)
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             # Don't show this flight anymore. It is above pace
             self.cpm_flight.total_views = 10_000 - pace
             self.cpm_flight.save()
-            self.assertEqual(self.cpm_flight.views_needed_today(), 0)
+            self.assertEqual(self.cpm_flight.views_needed_this_interval(), 0)
             self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_flight_clicks(self):
@@ -345,7 +347,7 @@ class DecisionEngineTests(TestCase):
         self.assertIsNone(ad)
 
     def test_clicks_needed(self):
-        self.assertEqual(self.include_flight.clicks_needed_today(), 33)
+        self.assertEqual(self.include_flight.clicks_needed_this_interval(), 33)
 
         clicks_to_simulate = 10
         for _ in range(clicks_to_simulate):
@@ -354,12 +356,12 @@ class DecisionEngineTests(TestCase):
         # Refresh the data on the include_flight - gets the denormalized views
         self.include_flight.refresh_from_db()
 
-        self.assertEqual(self.include_flight.clicks_needed_today(), 23)
+        self.assertEqual(self.include_flight.clicks_needed_this_interval(), 23)
 
         # Set to a date in the past
         self.include_flight.end_date = get_ad_day().date() - datetime.timedelta(days=2)
         self.assertEqual(
-            self.include_flight.clicks_needed_today(),
+            self.include_flight.clicks_needed_this_interval(),
             self.include_flight.sold_clicks - clicks_to_simulate,
         )
 
@@ -368,9 +370,9 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.flight = self.cpm_flight
         self.advertisement1.save()
 
-        self.assertEqual(self.cpm_flight.clicks_needed_today(), 0)
+        self.assertEqual(self.cpm_flight.clicks_needed_this_interval(), 0)
         # 0% through the flight, 31 days
-        self.assertEqual(self.cpm_flight.views_needed_today(), 323)
+        self.assertEqual(self.cpm_flight.views_needed_this_interval(), 323)
 
         views_to_simulate = 10
         for _ in range(views_to_simulate):
@@ -379,12 +381,12 @@ class DecisionEngineTests(TestCase):
         # Refresh the data on the include_flight - gets the denormalized views
         self.cpm_flight.refresh_from_db()
 
-        self.assertEqual(self.cpm_flight.views_needed_today(), 313)
+        self.assertEqual(self.cpm_flight.views_needed_this_interval(), 313)
 
         # Set to a date in the past
         self.cpm_flight.end_date = get_ad_day().date() - datetime.timedelta(days=2)
         self.assertEqual(
-            self.cpm_flight.views_needed_today(),
+            self.cpm_flight.views_needed_this_interval(),
             self.cpm_flight.sold_impressions - views_to_simulate,
         )
 
@@ -435,8 +437,8 @@ class DecisionEngineTests(TestCase):
                 flight1.save()
                 flight2.save()
 
-                flight1_prob = flight1.weighted_clicks_needed_today()
-                flight2_prob = flight2.weighted_clicks_needed_today()
+                flight1_prob = flight1.weighted_clicks_needed_this_interval()
+                flight2_prob = flight2.weighted_clicks_needed_this_interval()
                 total = flight1_prob + flight2_prob
 
                 with mock.patch("random.randint") as randint:
@@ -731,16 +733,16 @@ class DecisionEngineTests(TestCase):
         )
 
         # Add bonus probability for good performance
-        self.assertEqual(good_ctr.clicks_needed_today(), 28)
+        self.assertEqual(good_ctr.clicks_needed_this_interval(), 28)
         weighting_boost = 10 * 2.5 * 0.333  # 10 (constant) * 2.5 (cpc) * 0.333 (ctr)
         self.assertEqual(
-            good_ctr.weighted_clicks_needed_today(), int(28 * weighting_boost)
+            good_ctr.weighted_clicks_needed_this_interval(), int(28 * weighting_boost)
         )
 
         # Don't allow down-weighting for bad performance,
         # only add bonus for good performance
-        self.assertEqual(bad_ctr.clicks_needed_today(), 33)
-        self.assertEqual(bad_ctr.weighted_clicks_needed_today(), 33)
+        self.assertEqual(bad_ctr.clicks_needed_this_interval(), 33)
+        self.assertEqual(bad_ctr.weighted_clicks_needed_this_interval(), 33)
 
     def test_cpm_weighting(self):
         # Remove existing flights
@@ -775,16 +777,21 @@ class DecisionEngineTests(TestCase):
 
         self.publisher.sampled_ctr = 0.2
 
-        self.assertEqual(low_cost.clicks_needed_today(), 28)
-        self.assertEqual(low_cost.weighted_clicks_needed_today(), 28)
-        # Publisher CTR has no effect
-        self.assertEqual(low_cost.weighted_clicks_needed_today(self.publisher), 28)
-
-        self.assertEqual(high_cost.clicks_needed_today(), 28)
-        self.assertEqual(high_cost.weighted_clicks_needed_today(), 28 * high_cost.cpm)
+        self.assertEqual(low_cost.clicks_needed_this_interval(), 28)
+        self.assertEqual(low_cost.weighted_clicks_needed_this_interval(), 28)
         # Publisher CTR has no effect
         self.assertEqual(
-            high_cost.weighted_clicks_needed_today(self.publisher), 28 * high_cost.cpm
+            low_cost.weighted_clicks_needed_this_interval(self.publisher), 28
+        )
+
+        self.assertEqual(high_cost.clicks_needed_this_interval(), 28)
+        self.assertEqual(
+            high_cost.weighted_clicks_needed_this_interval(), 28 * high_cost.cpm
+        )
+        # Publisher CTR has no effect
+        self.assertEqual(
+            high_cost.weighted_clicks_needed_this_interval(self.publisher),
+            28 * high_cost.cpm,
         )
 
     def test_publisher_weighting_bonus(self):
@@ -806,21 +813,21 @@ class DecisionEngineTests(TestCase):
             pacing_interval=24 * 60 * 60,
         )
 
-        self.assertEqual(flight.clicks_needed_today(), 33)
-        self.assertEqual(flight.weighted_clicks_needed_today(), 33)
+        self.assertEqual(flight.clicks_needed_this_interval(), 33)
+        self.assertEqual(flight.weighted_clicks_needed_this_interval(), 33)
 
         # Check publisher weighting
         self.publisher.sampled_ctr = 0.2
         weighting_bonus = 0.2 * 2.25 * 10  # (ctr) * (cpc) * (constant)
         self.assertEqual(
-            flight.weighted_clicks_needed_today(self.publisher),
+            flight.weighted_clicks_needed_this_interval(self.publisher),
             int(33 * weighting_bonus),
         )
 
         self.publisher.sampled_ctr = 2  # VERY high CTR
         weighting_bonus = 10  # capped at 10
         self.assertEqual(
-            flight.weighted_clicks_needed_today(self.publisher),
+            flight.weighted_clicks_needed_this_interval(self.publisher),
             int(33 * weighting_bonus),
         )
 
@@ -868,15 +875,19 @@ class DecisionEngineTests(TestCase):
         )
 
         # 1x
-        self.assertEqual(super_low.clicks_needed_today(), 33)
-        self.assertEqual(super_low.weighted_clicks_needed_today(), 33 * super_low.cpm)
+        self.assertEqual(super_low.clicks_needed_this_interval(), 33)
+        self.assertEqual(
+            super_low.weighted_clicks_needed_this_interval(), 33 * super_low.cpm
+        )
 
         # 2.5x
-        self.assertEqual(high.clicks_needed_today(), 28)
-        self.assertEqual(high.weighted_clicks_needed_today(), int(28 * high.cpm))
+        self.assertEqual(high.clicks_needed_this_interval(), 28)
+        self.assertEqual(
+            high.weighted_clicks_needed_this_interval(), int(28 * high.cpm)
+        )
 
         # 10x
-        self.assertEqual(super_high.clicks_needed_today(), 28)
+        self.assertEqual(super_high.clicks_needed_this_interval(), 28)
         self.assertEqual(
-            super_high.weighted_clicks_needed_today(), 28 * 10
+            super_high.weighted_clicks_needed_this_interval(), 28 * 10
         )  # maxed out
