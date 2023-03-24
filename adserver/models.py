@@ -20,6 +20,7 @@ from django.db import transaction
 from django.db.models.constraints import UniqueConstraint
 from django.template import engines
 from django.template.loader import get_template
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -1769,7 +1770,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         return report
 
-    def render_links(self, link=None):
+    def render_links(self, link=None, preview=False):
         """
         Include the link in the html text.
 
@@ -1781,6 +1782,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_html = template.render(
                 {
                     "ad": self,
+                    "preview": preview,
                 }
             ).strip()
         else:
@@ -1800,6 +1802,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         publisher=None,
         keywords=None,
         topics=None,
+        preview=False,
     ):
         """Render the ad as HTML including any proxy links for collecting view/click metrics."""
         if not ad_type:
@@ -1815,14 +1818,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # Don't do this by default as searching for a template is expensive
             template = get_template("adserver/advertisement.html")
 
+        image_preview_url = None
+        if preview:
+            # When previewing an ad (typically in the advertiser dashboard)
+            # we want to display a simple placeholder image.
+            image_preview_url = static("image-placeholder.png")
+
         return template.render(
             {
                 "ad": self,
                 "publisher": publisher,
-                "image_url": self.image.url if self.image else None,
+                "image_url": self.image.url if self.image else image_preview_url,
                 "link_url": click_url or self.link,
                 "view_url": view_url,
-                "text_as_html": self.render_links(link=click_url),
+                "text_as_html": self.render_links(link=click_url, preview=preview),
                 # Pass keywords and topics so we can be smart with what landing page
                 # to link the `Ads by EthicalAds` to.
                 "keywords": keywords,

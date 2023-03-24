@@ -27,15 +27,27 @@
   </div>
 
   <div class="col-md ml-md-5">
+    <div class="mb-5">
+      {% if ad_types %}
+        <h5>{% trans 'Ad types' %}</h5>
+
+        {% for ad_type in ad_types %}
+          <div class="mt-4">
+            <h6>{{ ad_type.name }}</h6>
+            <p class="small">{{ ad_type.description }}</p>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
     {% if ad_types %}
-      <h5>{% trans 'Ad types' %}</h5>
+    <div class="ad-previews" data-bind="visible: totalLength() > 10">
+      <h5>{% trans 'Preview' %}</h5>
 
       {% for ad_type in ad_types %}
-        <div class="mt-4">
-          <h6>{{ ad_type.name }}</h6>
-          <p class="small">{{ ad_type.description }}</p>
-        </div>
+        {% include "adserver/includes/ad-preview.html" %}
       {% endfor %}
+    </div>
     {% endif %}
   </div>
 
