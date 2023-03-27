@@ -1,6 +1,5 @@
 """Forms for the ad server."""
 import logging
-from datetime import timedelta
 
 import bleach
 import stripe
@@ -398,7 +397,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                 "campaign": self.old_flight.campaign,
                 "start_date": timezone.now().today(),
                 "end_date": timezone.now().today()
-                + timedelta(days=self.old_flight.sold_days()),
+                + (self.old_flight.end_date - self.old_flight.start_date),
                 "advertisements": self.old_flight.advertisements.filter(live=True),
             }
         )
