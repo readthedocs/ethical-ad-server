@@ -5,6 +5,16 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v1.13.1
+---------------
+
+:date: April 5, 2023
+
+This release fixes some math on renewals that happened when we moved to non-day flight durations.
+
+ * @davidfischer: Fix a bug with the renew math (#726)
+ * @mattishaden: Docker container size and ML requirements (#692)
+
 
 Version v1.13.0
 ---------------
