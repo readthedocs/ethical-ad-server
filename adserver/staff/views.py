@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.cache import cache
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -29,9 +30,10 @@ from adserver.utils import generate_publisher_payout_data
 log = logging.getLogger(__name__)  # noqa
 
 
-class CreateAdvertiserView(StaffUserMixin, FormView):
+class CreateAdvertiserView(PermissionRequiredMixin, FormView):
     form_class = CreateAdvertiserForm
     model = Advertiser
+    permission_required = "adserver.add_advertiser"
     template_name = "adserver/staff/advertiser-create.html"
 
     def form_valid(self, form):
@@ -52,9 +54,10 @@ class CreateAdvertiserView(StaffUserMixin, FormView):
         )
 
 
-class CreatePublisherView(StaffUserMixin, FormView):
+class CreatePublisherView(PermissionRequiredMixin, FormView):
     form_class = CreatePublisherForm
     model = Publisher
+    permission_required = "adserver.add_publisher"
     template_name = "adserver/staff/publisher-create.html"
 
     def form_valid(self, form):

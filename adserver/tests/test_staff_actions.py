@@ -2,6 +2,8 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
@@ -17,7 +19,6 @@ from ..models import PublisherGroup
 from ..models import PublisherPayout
 from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
-from ..staff.forms import StartPublisherPayoutForm
 from ..tasks import daily_update_impressions
 
 User = get_user_model()
@@ -36,6 +37,11 @@ class CreateAdvertiserTest(TestCase):
             name="Staff User",
             email="staff@example.com",
         )
+        perm = Permission.objects.get(
+            codename="add_advertiser",
+            content_type=ContentType.objects.get_for_model(Advertiser),
+        )
+        self.staff_user.user_permissions.add(perm)
 
         self.pub_group_rtd = get(
             PublisherGroup,
@@ -149,6 +155,12 @@ class CreatePublisherTest(TestCase):
             "user_email": self.user_email,
             "keywords": self.keywords,
         }
+
+        perm = Permission.objects.get(
+            codename="add_publisher",
+            content_type=ContentType.objects.get_for_model(Publisher),
+        )
+        self.staff_user.user_permissions.add(perm)
 
     def test_form(self):
         form = CreatePublisherForm(data=self.data)

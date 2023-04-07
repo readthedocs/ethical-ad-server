@@ -226,18 +226,24 @@
 
             <ul class="nav flex-column mb-5">
 
+              {% if 'adserver.add_advertiser' in perms %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'create-advertiser' %}">
                   <span class="fa fa-plus-circle fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Add advertiser' %}</span>
                 </a>
               </li>
+              {% endif %}
+
+              {% if 'adserver.add_publisher' in perms %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'create-publisher' %}">
                   <span class="fa fa-plus-circle fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Add publisher' %}</span>
                 </a>
               </li>
+              {% endif %}
+
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'staff-publisher-payouts' %}">
                   <span class="fa fa-money fa-fw mr-2 text-muted" aria-hidden="true"></span>
