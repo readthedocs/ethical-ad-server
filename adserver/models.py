@@ -1079,7 +1079,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # The aggregation can be `None` if there are no impressions
         return aggregation or 0
 
-    def views_needed_today(self):
+    def views_needed_this_interval(self):
         if (
             not self.live
             or self.views_remaining() <= 0
@@ -1097,7 +1097,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return self.views_remaining()
 
-    def clicks_needed_today(self):
+    def clicks_needed_this_interval(self):
         """Calculates clicks needed based on the impressions this flight's ads have."""
         if (
             not self.live
@@ -1116,7 +1116,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return self.clicks_remaining()
 
-    def weighted_clicks_needed_today(self, publisher=None):
+    def weighted_clicks_needed_this_interval(self, publisher=None):
         """
         Calculates clicks needed taking into account a flight's priority.
 
@@ -1128,8 +1128,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         impressions_needed = 0
 
         # This is naive but we are counting a click as being worth 1,000 views
-        impressions_needed += math.ceil(self.views_needed_today() / 1000.0)
-        impressions_needed += self.clicks_needed_today()
+        impressions_needed += math.ceil(self.views_needed_this_interval() / 1000.0)
+        impressions_needed += self.clicks_needed_this_interval()
 
         if self.cpc:
             # Use the publisher CTR if available

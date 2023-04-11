@@ -279,7 +279,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return False
 
         # Skip if there are no clicks or views needed today/this interval (ad pacing)
-        if flight.weighted_clicks_needed_today() <= 0:
+        if flight.weighted_clicks_needed_this_interval() <= 0:
             return False
 
         return True
@@ -372,24 +372,26 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 # to the possible list of flights
                 if any(
                     (
-                        (flight.clicks_needed_today() > 0),
-                        (flight.views_needed_today() > 0),
+                        (flight.clicks_needed_this_interval() > 0),
+                        (flight.views_needed_this_interval() > 0),
                     )
                 ):
                     # NOTE: takes into account views for CPM ads
                     # Takes eCPM (CTR * CPC for CPC ads) into account
-                    weighted_clicks_needed_today = flight.weighted_clicks_needed_today(
-                        self.publisher,
+                    weighted_clicks_needed_this_interval = (
+                        flight.weighted_clicks_needed_this_interval(
+                            self.publisher,
+                        )
                     )
 
                     flight_range.append(
                         [
                             total_clicks_needed,
-                            total_clicks_needed + weighted_clicks_needed_today,
+                            total_clicks_needed + weighted_clicks_needed_this_interval,
                             flight,
                         ]
                     )
-                    total_clicks_needed += weighted_clicks_needed_today
+                    total_clicks_needed += weighted_clicks_needed_this_interval
 
             choice = random.randint(0, total_clicks_needed)
             for min_clicks, max_clicks, flight in flight_range:

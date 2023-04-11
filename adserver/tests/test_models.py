@@ -193,7 +193,7 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertEqual(self.flight.days_remaining(), 16)
         # 15/31% through the flight, 0% through the clicks
-        self.assertEqual(self.flight.clicks_needed_today(), 484)
+        self.assertEqual(self.flight.clicks_needed_this_interval(), 484)
 
         self.flight.start_date = get_ad_day().date()
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
@@ -202,22 +202,22 @@ class TestAdModels(BaseAdModelsTestCase):
         self.flight.sold_clicks = 1000
         self.assertEqual(self.flight.days_remaining(), 30)
         self.assertEqual(self.flight.clicks_remaining(), 1000)
-        self.assertEqual(self.flight.clicks_needed_today(), 33)
+        self.assertEqual(self.flight.clicks_needed_this_interval(), 33)
 
         self.flight.sold_clicks = 950
-        self.assertEqual(self.flight.clicks_needed_today(), 31)
+        self.assertEqual(self.flight.clicks_needed_this_interval(), 31)
 
         self.flight.sold_clicks = 0
-        self.assertEqual(self.flight.clicks_needed_today(), 0)
+        self.assertEqual(self.flight.clicks_needed_this_interval(), 0)
 
         self.flight.sold_impressions = 10000
         # 0% through the views, 31 days
-        self.assertEqual(self.flight.views_needed_today(), 323)
+        self.assertEqual(self.flight.views_needed_this_interval(), 323)
 
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=15)
         self.flight.end_date = self.flight.start_date + datetime.timedelta(days=30)
         # 16/31% through the flight, 0% through the views
-        self.assertEqual(self.flight.views_needed_today(), 5162)
+        self.assertEqual(self.flight.views_needed_this_interval(), 5162)
 
     def test_custom_interval(self):
         now = get_ad_day()
@@ -243,7 +243,7 @@ class TestAdModels(BaseAdModelsTestCase):
 
             self.assertEqual(self.flight.days_remaining(), 31 * 24 - 1)
             self.assertEqual(
-                self.flight.clicks_needed_today(),
+                self.flight.clicks_needed_this_interval(),
                 self.flight.sold_clicks - pace,
             )
 
@@ -260,13 +260,13 @@ class TestAdModels(BaseAdModelsTestCase):
             # So we need all the clicks from the previous 14 days
             # plus whatever is expected in the current interval
             self.assertEqual(
-                self.flight.clicks_needed_today(),
+                self.flight.clicks_needed_this_interval(),
                 self.flight.sold_clicks - pace,
             )
 
             # Make the flight overfulfilled
             self.flight.total_clicks = int(self.flight.sold_clicks * 0.80)
-            self.assertEqual(self.flight.clicks_needed_today(), 0)
+            self.assertEqual(self.flight.clicks_needed_this_interval(), 0)
 
     def test_render_ad(self):
         ad_type1 = get(
