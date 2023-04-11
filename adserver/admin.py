@@ -655,8 +655,8 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                 unit_amount_decimal=unit_amount,  # in US cents
                 currency="USD",
                 metadata={
-                    "Advertiser": advertiser.slug,
-                    "Flight": flight.slug,
+                    "Advertiser": advertiser.slug[:30],
+                    "Flight": flight.slug[:30],
                     "Flight Start": flight.start_date.strftime("%Y-%m-%d"),
                     "Flight End": flight.end_date.strftime("%Y-%m-%d"),
                 },
