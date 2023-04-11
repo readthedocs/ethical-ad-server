@@ -486,7 +486,11 @@ class AdvertisementUpdateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"advertiser": self.advertiser})
+        context.update(
+            {
+                "advertiser": self.advertiser,
+            }
+        )
         return context
 
     def get_form_kwargs(self):
@@ -551,6 +555,8 @@ class AdvertisementCreateView(
                 "ad_types": self.flight.campaign.allowed_ad_types(
                     exclude_deprecated=True
                 )[:5],
+                # This dummy ad is used for previews only
+                "advertisement": Advertisement(),
             }
         )
         return context

@@ -240,7 +240,10 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "assets", "dist")]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "assets", "dist"),
+    os.path.join(BASE_DIR, "assets", "img"),
+]
 
 
 # User-uploaded files (ad images)

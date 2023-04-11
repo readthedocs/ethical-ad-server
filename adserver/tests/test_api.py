@@ -349,7 +349,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("</a>" in resp_json["text"])
         self.assertTrue(
             resp_json["text"].endswith(
-                "<strong>Test headline </strong><span>Test ad body</span><strong> Test CTA</strong></a>"
+                '<strong class="ea-headline">Test headline </strong><span class="ea-body">Test ad body</span><strong class="ea-cta"> Test CTA</strong></a>'
             ),
             resp_json["text"],
         )

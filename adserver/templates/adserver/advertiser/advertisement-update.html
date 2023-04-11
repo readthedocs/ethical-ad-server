@@ -29,11 +29,14 @@
 
   {# Preview the ad in all its ad types #}
   <div class="col-md ml-md-5">
-    <h5>{% trans 'Preview' %}</h5>
 
-    {% for ad_type in advertisement.ad_types.all %}
-      {% include "adserver/includes/ad-preview.html" %}
-    {% endfor %}
+    <div class="ad-previews" data-bind="visible: totalLength() > 10">
+      <h5>{% trans 'Preview' %}</h5>
+
+      {% for ad_type in advertisement.ad_types.all %}
+        {% include "adserver/includes/ad-preview.html" %}
+      {% endfor %}
+    </div>
   </div>
 
 </div>
