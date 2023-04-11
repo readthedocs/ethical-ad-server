@@ -5,12 +5,30 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v1.14.0
+---------------
+
+This release contained some dashboard UX improvements like a live ad preview
+and some minor internal refactors.
+
+:date: April 11, 2023
+
+ * @davidfischer: Use the proper permissions for adding advertisers/publishers (#732)
+ * @davidfischer: Add a filter for the dashboard home screen (#731)
+ * @davidfischer: Refactor the names of `*_today` methods (#729)
+ * @davidfischer: Display a live ad preview when editing or adding ads (#728)
+ * @dependabot[bot]: Bump sentry-sdk from 1.5.5 to 1.14.0 in /requirements (#727)
+ * @dependabot[bot]: Bump webpack from 5.75.0 to 5.76.0 (#725)
+ * @davidfischer: Show live ad preview (#167)
+
+
 Version v1.13.1
 ---------------
 
-:date: April 5, 2023
-
 This release fixes some math on renewals that happened when we moved to non-day flight durations.
+
+:date: April 5, 2023
 
  * @davidfischer: Fix a bug with the renew math (#726)
  * @mattishaden: Docker container size and ML requirements (#692)
