@@ -255,7 +255,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     auto_advance=False,  # Draft invoice
                     collection_method="send_invoice",
                     custom_fields=[
-                        {"name": "Advertiser", "value": advertiser.slug},
+                        {"name": "Advertiser", "value": advertiser.slug[:30]},
                         {
                             "name": "Estimated Start",
                             "value": flight_start.strftime("%Y-%m-%d"),
@@ -655,8 +655,8 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                 unit_amount_decimal=unit_amount,  # in US cents
                 currency="USD",
                 metadata={
-                    "Advertiser": advertiser.slug,
-                    "Flight": flight.slug,
+                    "Advertiser": advertiser.slug[:30],
+                    "Flight": flight.slug[:30],
                     "Flight Start": flight.start_date.strftime("%Y-%m-%d"),
                     "Flight End": flight.end_date.strftime("%Y-%m-%d"),
                 },
@@ -672,7 +672,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             if total_cost >= 290_000
             else "Thanks for your business!",
             custom_fields=[
-                {"name": "Advertiser", "value": advertiser.slug},
+                {"name": "Advertiser", "value": advertiser.slug[:30]},
                 {
                     "name": "Estimated Start",
                     "value": earliest_start_date.strftime("%Y-%m-%d"),
