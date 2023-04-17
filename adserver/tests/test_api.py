@@ -381,6 +381,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.publisher.unauthed_ad_decisions = True
         self.publisher.save()
 
+        # Ad does not exist
         self.data["force_ad"] = "unknown-slug"
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
@@ -411,6 +412,8 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
         # Force the same ad with the unauth/JSONP client
+        # Forcing an ad ignores campaign type checking
+        self.query_params["campaign_types"] = "house"
         self.query_params["force_ad"] = "ad-slug"
         resp = self.unauth_client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200, resp.content)
@@ -420,7 +423,8 @@ class AdDecisionApiTests(BaseApiTest):
 
     def test_force_ad_counted(self):
         # Paid ads don't count
-
+        # But ads can be forced even if the flight is not live
+        self.ad.flight.live = False
         self.ad.flight.campaign.campaign_type = "paid"
         self.ad.flight.campaign.save()
 
@@ -429,10 +433,12 @@ class AdDecisionApiTests(BaseApiTest):
         resp = self.client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
-        view_resp = self.proxy_client.get(resp.json()["view_url"])
+        self.assertTrue("id" in resp.json())
+        self.assertEqual(resp.json()["id"], "ad-slug")
+        self.proxy_client.get(resp.json()["view_url"])
         self.assertFalse(self.ad.offers.first().viewed)
 
-        # House ads are counted
+        # House ads are counted even when forced
         self.ad.flight.campaign.campaign_type = "house"
         self.ad.flight.campaign.save()
 

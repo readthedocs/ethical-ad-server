@@ -200,36 +200,39 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not self.should_display_ads():
             return Flight.objects.none()
 
-        flights = (
-            Flight.objects.filter(
-                advertisements__ad_types__slug__in=self.ad_types,
-                campaign__campaign_type__in=self.campaign_types,
-            )
-            .filter(
-                # Deprecated: remove after publisher groups are rolled out and configured in production
-                # At that point, only filter by publisher groups
-                models.Q(campaign__publishers=self.publisher)
-                | models.Q(
-                    campaign__publisher_groups__in=self.publisher.publisher_groups.all()
-                )
-            )
-            .exclude(campaign__exclude_publishers=self.publisher)
-        )
-
-        if self.campaign_types != ALL_CAMPAIGN_TYPES:
-            log.debug(
-                "Ads restricted to the following campaign types: %s",
-                self.campaign_types,
-            )
-
-        # Specifying the ad or campaign slug skips filtering by live or date
+        # If the flight is restricted by campaign or ad slug
+        # Don't restrict it by anything else (campaign type, live, flight date, publisher, etc.)
         if self.ad_slug:
-            log.debug("Restricting ad decision ad_slug=%s", self.ad_slug)
-            flights = flights.filter(advertisements__slug=self.ad_slug)
+            log.debug("Restricting ad decision by ad. ad_slug=%s", self.ad_slug)
+            flights = Flight.objects.filter(advertisements__slug=self.ad_slug)
         elif self.campaign_slug:
-            log.debug("Restricting ad decision campaign=%s", self.campaign_slug)
-            flights = flights.filter(campaign__slug=self.campaign_slug)
+            log.debug(
+                "Restricting ad decision by campaign. campaign=%s", self.campaign_slug
+            )
+            flights = Flight.objects.filter(campaign__slug=self.campaign_slug)
         else:
+            flights = (
+                Flight.objects.filter(
+                    advertisements__ad_types__slug__in=self.ad_types,
+                    campaign__campaign_type__in=self.campaign_types,
+                )
+                .filter(
+                    # Deprecated: remove after publisher groups are rolled out and configured in production
+                    # At that point, only filter by publisher groups
+                    models.Q(campaign__publishers=self.publisher)
+                    | models.Q(
+                        campaign__publisher_groups__in=self.publisher.publisher_groups.all()
+                    )
+                )
+                .exclude(campaign__exclude_publishers=self.publisher)
+            )
+
+            if self.campaign_types != ALL_CAMPAIGN_TYPES:
+                log.debug(
+                    "Ads restricted to the following campaign types: %s",
+                    self.campaign_types,
+                )
+
             flights = flights.filter(live=True, start_date__lte=get_ad_day().date())
 
             # Ensure there's a live ad of the chosen types for each flight
