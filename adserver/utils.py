@@ -293,6 +293,20 @@ def is_proxy_ip(ip):
     return False
 
 
+def is_allowed_domain(url, allowed_domains):
+    """Check if a domain is in the domain allowed list."""
+    url_domain = get_domain_from_url(url)
+
+    # If there's no domain restrictions, all URLs are allowed
+    if not allowed_domains or not url_domain:
+        return True
+
+    if url_domain in allowed_domains:
+        return True
+
+    return False
+
+
 def get_geolocation(request, force=False):
     """Gets the geolocation for this IP address."""
     if force:
