@@ -1,0 +1,38 @@
+{% extends "adserver/reports/advertiser.html" %}
+{% load humanize %}
+{% load i18n %}
+{% load metabase %}
+
+
+{% block title %}{% trans 'Advertiser Topic Report' %} - {{ advertiser }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Advertiser Topic Report for {{ advertiser }}{% endblocktrans %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Topic Report' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>{% trans 'About this report' %}</h3>
+  <p>{% trans 'This report shows your performance by topic.' %}</p>
+  <em>{% trans 'This report may include topics that you do not target with your campaigns. That is because we may categorize pages as being about more than one topic. All previous days data is complete.' %}</em>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}
+
+
+{% block summary %}
+  <div class="row mb-5">
+    <div class="col min-vh-50">
+      {% metabase_question_embed metabase_advertiser_topics advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+    </div>
+  </div>
+{% endblock summary %}

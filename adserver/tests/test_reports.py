@@ -464,6 +464,19 @@ class TestReportViews(TestReportsBase):
         resp = self.client.get(url)
         self.assertContains(resp, "Advertiser Keyword Report")
 
+    def test_advertiser_topic_report(self):
+        url = reverse("advertiser_topic_report", args=[self.advertiser1.slug])
+
+        # Anonymous
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        resp = self.client.get(url)
+        self.assertContains(resp, "Advertiser Topic Report")
+
     def test_publisher_report_access(self):
         url = reverse("publisher_report", args=[self.publisher1.slug])
         url2 = reverse("publisher_report", args=[self.publisher2.slug])
