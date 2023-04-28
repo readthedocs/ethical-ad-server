@@ -104,6 +104,7 @@ from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
+from .utils import is_allowed_domain
 from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
@@ -785,6 +786,16 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Mismatched browser"
+        elif offer.publisher.allowed_domains and not is_allowed_domain(
+            offer.url, offer.publisher.allowed_domains.split()
+        ):
+            log.log(
+                self.log_security_level,
+                "Offer URL is not on the allowed domain list. Publisher: [%s], Offer URL: [%s]",
+                offer.publisher,
+                offer.url,
+            )
+            # Note: this does not set a reason so it only logs mismatches
 
         # This is out of the elif block and will be run everytime
         if offer and offer.ip != anonymize_ip_address(ip_address):

@@ -282,6 +282,17 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         blank=True,
     )
 
+    # If this is blank, all domains are allowed
+    allowed_domains = models.CharField(
+        _("Allowed domains"),
+        max_length=1024,
+        help_text=_(
+            "A space separated list of domains where the publisher's ads can appear"
+        ),
+        default="",
+        blank=True,
+    )
+
     unauthed_ad_decisions = models.BooleanField(
         default=True,
         help_text=_(

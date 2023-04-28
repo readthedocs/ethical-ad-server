@@ -19,6 +19,7 @@ from ..utils import get_client_id
 from ..utils import get_client_user_agent
 from ..utils import get_geoipdb_geolocation
 from ..utils import get_geolocation
+from ..utils import is_allowed_domain
 from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
 from ..utils import is_blocklisted_user_agent
@@ -194,3 +195,26 @@ class UtilsTest(TestCase):
             parse_date_string("2020-01-01"),
             datetime.datetime(year=2020, month=1, day=1, tzinfo=pytz.utc),
         )
+
+    def test_is_allowed_domain(self):
+        # Check some nulls
+        self.assertTrue(is_allowed_domain("", None))
+        self.assertTrue(is_allowed_domain("http://example.com", None))
+        self.assertTrue(is_allowed_domain(None, ("not-example.com",)))
+
+        self.assertTrue(
+            is_allowed_domain("http://example.com", ("not-example.com", "example.com"))
+        )
+        self.assertTrue(
+            is_allowed_domain(
+                "https://example.com/path.html", ("not-example.com", "example.com")
+            )
+        )
+
+        self.assertFalse(is_allowed_domain("http://example.com", ("not-example.com",)))
+        self.assertFalse(
+            is_allowed_domain("https://example.com/path.html", ("not-example.com",))
+        )
+
+        # Subdomains aren't included by default
+        self.assertFalse(is_allowed_domain("http://www.example.com", ("example.com",)))
