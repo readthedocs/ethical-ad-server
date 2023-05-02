@@ -891,3 +891,9 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(
             super_high.weighted_clicks_needed_this_interval(), 28 * 10
         )  # maxed out
+
+        # Verify the days overdue priority
+        super_low.end_date = get_ad_day().date() - datetime.timedelta(days=10)
+        self.assertEqual(
+            super_low.weighted_clicks_needed_this_interval(), 10_000 * super_low.cpm
+        )
