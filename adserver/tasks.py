@@ -605,6 +605,12 @@ def daily_update_publishers(day=None):
 
 
 @app.task(time_limit=60 * 60 * 4)
+def daily_update_reports():
+    day, _ = get_day()
+    update_previous_day_reports(day)
+
+
+@app.task(time_limit=60 * 60 * 4)
 def update_previous_day_reports(day=None):
     """
     Complete all report data for the previous day.

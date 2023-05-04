@@ -38,28 +38,8 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_CREATE_MISSING_QUEUES = True
 
 CELERY_BEAT_SCHEDULE = {
-    "dev-geo-index": {
-        "task": "adserver.tasks.daily_update_geos",
-        "schedule": crontab(minute="*/5"),
-    },
-    "dev-placement-index": {
-        "task": "adserver.tasks.daily_update_placements",
-        "schedule": crontab(minute="*/5"),
-    },
-    "dev-keyword-index": {
-        "task": "adserver.tasks.daily_update_keywords",
-        "schedule": crontab(minute="*/5"),
-    },
-    "dev-uplift-index": {
-        "task": "adserver.tasks.daily_update_uplift",
-        "schedule": crontab(minute="*/5"),
-    },
-    "dev-advertiser-index": {
-        "task": "adserver.tasks.daily_update_advertisers",
-        "schedule": crontab(minute="*/5"),
-    },
-    "dev-publisher-index": {
-        "task": "adserver.tasks.daily_update_publishers",
+    "dev-update-reports": {
+        "task": "adserver.tasks.daily_update_reports",
         "schedule": crontab(minute="*/5"),
     },
 }
