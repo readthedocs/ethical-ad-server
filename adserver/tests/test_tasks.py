@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth.models import AnonymousUser
 from django.core import mail
 from django.test import override_settings
+from django.utils import timezone
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
@@ -28,6 +29,7 @@ from ..tasks import daily_update_placements
 from ..tasks import daily_update_publishers
 from ..tasks import daily_update_regiontopic
 from ..tasks import daily_update_uplift
+from ..tasks import disable_inactive_publishers
 from ..tasks import notify_of_completed_flights
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
@@ -243,6 +245,48 @@ class TasksTest(BaseAdModelsTestCase):
         notify_of_publisher_changes(min_views=1000)
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
+
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
+    def test_disable_inactive_publishers(self):
+        # Ensure there's a recipient for the email
+        self.staff_user.publishers.add(self.publisher)
+
+        backend = get_backend()
+        backend.reset_messages()
+
+        disable_inactive_publishers()
+        messages = backend.retrieve_messages()
+
+        # The publisher has not hit the threshold
+        self.assertEqual(len(messages), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+        # Set this publisher up to be inactive
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.created = timezone.now() - datetime.timedelta(days=100)
+        self.publisher.save()
+
+        disable_inactive_publishers(dry_run=True)
+        self.publisher.refresh_from_db()
+        self.assertTrue(self.publisher.allow_paid_campaigns)
+
+        # Still nothing due to dry-run
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+        # Actually disable the publishers
+        disable_inactive_publishers()
+        self.publisher.refresh_from_db()
+        self.assertFalse(self.publisher.allow_paid_campaigns)
+
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class AggregationTaskTests(BaseAdModelsTestCase):

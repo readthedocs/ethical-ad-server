@@ -842,6 +842,71 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
 
 
 @app.task()
+def disable_inactive_publishers(days=60, draft_only=False, dry_run=False):
+    """Disable publishers who haven't had a paid impression in the specified `days`."""
+    if days < 1:
+        # Prevent the misstep where days is <=0 and all publishers are marked inactive
+        return
+
+    threshold = get_ad_day() - datetime.timedelta(days=days)
+    site = get_current_site(request=None)
+
+    for publisher in Publisher.objects.filter(
+        allow_paid_campaigns=True, created__lt=threshold
+    ):
+        if not PublisherPaidImpression.objects.filter(
+            publisher=publisher, date__gte=threshold
+        ).exists():
+            log.info(
+                "Disabling paid ad approval on %s who has not shown a paid ad in at least %s days...",
+                publisher,
+                days,
+            )
+            if dry_run:
+                log.info("- Not actually disabling due to dry run")
+                continue
+
+            publisher.allow_paid_campaigns = False
+            publisher.save()
+
+            slack_message(
+                "adserver/slack/generic-message.slack",
+                {
+                    "text": f"Disabled paid ad approval on {publisher} who has not shown a paid ad in at least {days} days."
+                },
+            )
+
+            to_addresses = [u.email for u in publisher.user_set.all()]
+            context = {
+                "publisher": publisher,
+                "days": days,
+                "site": site,
+            }
+
+            if settings.FRONT_ENABLED and to_addresses:
+                with mail.get_connection(
+                    settings.FRONT_BACKEND,
+                    sender_name=f"{site.name} Admins",
+                ) as connection:
+                    message = mail.EmailMessage(
+                        _("Publisher account inactive - %(name)s")
+                        % {"name": site.name},
+                        render_to_string(
+                            "adserver/email/publisher-inactive.html", context
+                        ),
+                        from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                        to=to_addresses,
+                        connection=connection,
+                    )
+
+                    if draft_only:
+                        # Make this a draft instead of just sending it directly if specified
+                        message.draft = True
+
+                    message.send()
+
+
+@app.task()
 def run_publisher_importers():
     """
     Run a sync task for all the importers from our various publishers.
