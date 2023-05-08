@@ -756,6 +756,16 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp_json)
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+        # Ignore API keywords for this publisher - sending keywords doesn't matter
+        self.publisher.allow_api_keywords = False
+        self.publisher.save()
+        data["keywords"] = ["django", "python"]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        resp_json = resp.json()
+        self.assertEqual(resp_json, {}, resp_json)
+
     def test_sticky_decision(self):
         resp = self.client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200)

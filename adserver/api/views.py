@@ -279,8 +279,13 @@ class AdDecisionView(GeoIpMixin, APIView):
         if serializer.is_valid():
             publisher = serializer.validated_data["publisher"]
             self.check_object_permissions(request, publisher)
-            keywords = serializer.validated_data.get("keywords")
             url = serializer.validated_data.get("url")
+            keywords = serializer.validated_data.get("keywords")
+
+            # Ignore keywords from the API for certain publishers
+            if not publisher.allow_api_keywords:
+                keywords = []
+
             backend = get_ad_decision_backend()(
                 # Required parameters
                 request=request,
