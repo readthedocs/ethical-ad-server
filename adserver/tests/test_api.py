@@ -198,8 +198,6 @@ class BaseApiTest(TestCase):
             slug="campaign-slug",
             advertiser=self.advertiser1,
             publisher_groups=[self.publisher_group],
-            # Deprecated - will be removed
-            publishers=[self.publisher],
         )
         self.flight = get(
             Flight, live=True, campaign=self.campaign, sold_clicks=1000, cpc=1.0
@@ -524,7 +522,7 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.json(), {})
 
         # Allow this publisher on the campaign
-        self.campaign.publishers.add(self.publisher2)
+        self.publisher_group.publishers.add(self.publisher2)
         resp = self.client.post(
             self.url, json.dumps(data), content_type="application/json"
         )
@@ -588,10 +586,14 @@ class AdDecisionApiTests(BaseApiTest):
 
     def test_campaign_types(self):
         community_campaign = get(
-            Campaign, publishers=[self.publisher], campaign_type=COMMUNITY_CAMPAIGN
+            Campaign,
+            publisher_groups=[self.publisher_group],
+            campaign_type=COMMUNITY_CAMPAIGN,
         )
         house_campaign = get(
-            Campaign, publishers=[self.publisher], campaign_type=HOUSE_CAMPAIGN
+            Campaign,
+            publisher_groups=[self.publisher_group],
+            campaign_type=HOUSE_CAMPAIGN,
         )
 
         data = {
@@ -1005,7 +1007,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         super().setUp()
 
         self.user.publishers.add(self.publisher2)
-        self.campaign.publishers.add(self.publisher2)
+        self.publisher_group.publishers.add(self.publisher2)
 
         self.page_url = "http://example.com"
 
