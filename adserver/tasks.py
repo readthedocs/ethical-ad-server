@@ -844,8 +844,9 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
 @app.task()
 def disable_inactive_publishers(days=60, draft_only=False, dry_run=False):
     """Disable publishers who haven't had a paid impression in the specified `days`."""
-    if days < 1:
-        # Prevent the misstep where days is <=0 and all publishers are marked inactive
+    if days < 30:
+        # Prevent the misstep where days is too short and many publishers are marked inactive
+        log.warning("Disabling publishers over too short a timeframe. Task stopped.")
         return
 
     threshold = get_ad_day() - datetime.timedelta(days=days)
