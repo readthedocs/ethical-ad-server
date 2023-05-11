@@ -606,6 +606,7 @@ def daily_update_publishers(day=None):
 
 @app.task(time_limit=60 * 60 * 4)
 def daily_update_reports():
+    """Update today's report data rather than the previous day."""
     day, _ = get_day()
     update_previous_day_reports(day)
 
