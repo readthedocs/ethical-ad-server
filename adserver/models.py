@@ -621,7 +621,7 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         help_text=_("Ads for this campaign will not be shown on these publishers"),
     )
 
-    # Deprecated and scheduled for removal
+    # Deprecated and no longer used. Will be removed in future releases
     publishers = models.ManyToManyField(
         Publisher,
         related_name="campaigns",
