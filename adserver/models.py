@@ -281,6 +281,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         default="",
         blank=True,
     )
+    allow_api_keywords = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Whether to allow the ad API/client to send its own keywords for targeting."
+        ),
+    )
 
     # If this is blank, all domains are allowed
     allowed_domains = models.CharField(
