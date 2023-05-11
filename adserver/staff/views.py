@@ -212,6 +212,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
         initial["body"] = email_html
         initial["amount"] = "%.2f" % self.get_amount(self.data["due_report"])
+        initial["payout_method"] = self.publisher.get_payout_method_display()
         return initial
 
     def form_valid(self, form):
