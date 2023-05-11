@@ -1175,9 +1175,9 @@ class Flight(TimeStampedModel, IndestructibleModel):
         )
 
         # Prioritize flights the more overdue they are
-        overdue_multiplier = max(1, self.days_overdue())
+        overdue_factor = int(max(1, self.days_overdue()) ** 1.5)
 
-        return prioritized_impressions_needed * overdue_multiplier
+        return int(prioritized_impressions_needed * overdue_factor)
 
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
