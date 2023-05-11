@@ -889,7 +889,7 @@ def disable_inactive_publishers(days=60, draft_only=False, dry_run=False):
                     sender_name=f"{site.name} Admins",
                 ) as connection:
                     message = mail.EmailMessage(
-                        _("Publisher account inactive - %(name)s")
+                        _("Publisher account deactivated - %(name)s")
                         % {"name": site.name},
                         render_to_string(
                             "adserver/email/publisher-inactive.html", context
