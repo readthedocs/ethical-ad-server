@@ -1,0 +1,23 @@
+{% extends 'adserver/email/base.html' %}
+{% load i18n %}
+
+
+{% block body %}
+
+
+<p>{% blocktrans with publisher_name=publisher.name %}Hello {{ publisher_name }} team,{% endblocktrans %}</p>
+
+
+<p>
+  <strong>{% blocktrans %}Your publisher account has been marked inactive.{% endblocktrans %} </strong>
+  <span>{% blocktrans %}Your site has not shown a paid in a while and as a result, we're marking your account inactive. If you believe this was done by accident or you want to reactivate your account, please respond to this message.{% endblocktrans %}</span>
+</p>
+
+<p>
+  <span>{% blocktrans %}We are sorry to lose you as a publisher on our network and we're interested to hear your feedback on why you chose to go in another direction. If you're willing to share, please respond and let us know. This helps us tremendously in improving our product and network.{% endblocktrans %}</span>
+</p>
+
+
+<p>{% blocktrans  with site_name=site.name %}Cheers,<br>{{ site_name }} Team{% endblocktrans %}</p>
+
+{% endblock body %}
