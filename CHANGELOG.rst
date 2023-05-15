@@ -6,6 +6,37 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.0.0
+---------------
+
+The big change in this release is a task which revokes
+paid campaign authorization from publishers who don't show an ad for 60 days.
+Publishers who lose this authorization will be notified and have to re-apply.
+
+
+Backward incompatible changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``Campaign`` object had a ``publishers`` attribute which controlled which publishers
+were eligible to fulfill an advertiser campaign. This had become unwieldy long ago (deprecated pre-1.0)
+because each time a publisher was added, we needed to add them to a number of campaigns.
+Instead, we added the concept of publisher groups.
+This change finally removes the ``campaign.publishers`` attribute and ONLY uses publisher groups.
+
+:date: May 15, 2023
+
+ * @davidfischer: Stop using deprecated campaign.publishers (#745)
+ * @dependabot[bot]: Bump django from 3.2.18 to 3.2.19 in /requirements (#744)
+ * @davidfischer: Add notify completed flights to the django admin (#743)
+ * @davidfischer: Add an option to ignore publisher API keywords (#742)
+ * @davidfischer: Simplify daily-reports tasks in dev (#741)
+ * @davidfischer: Disable inactive publishers (#740)
+ * @davidfischer: Payout improvements (#739)
+ * @davidfischer: Prioritize overdue flights (#738)
+ * @davidfischer: Publisher allowed domains (#736)
+ * @davidfischer: Stripe accepts at most 30 chars for metadata (#734)
+
+
 Version v1.14.0
 ---------------
 
