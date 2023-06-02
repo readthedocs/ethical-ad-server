@@ -1820,7 +1820,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         return mark_safe(
             ad_html.replace(
-                "<a>", '<a href="%s" rel="nofollow noopener" target="_blank">' % url
+                "<a>",
+                '<a href="%s" rel="nofollow noopener sponsored" target="_blank">' % url,
             )
         )
 
