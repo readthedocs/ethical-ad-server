@@ -157,6 +157,11 @@ CELERY_BEAT_SCHEDULE = {
         # Runs on Tuesday
         "schedule": crontab(day_of_week=2, hour="6", minute="0"),
     },
+    "every-week-remove-old-report-data": {
+        "task": "adserver.tasks.remove_old_report_data",
+        # Runs on Wednesday
+        "schedule": crontab(day_of_week=3, hour="5", minute="10"),
+    },
     # Very fast indexes that can be run more frequently
     "halfhourly-advertiser-index": {
         "task": "adserver.tasks.daily_update_advertisers",
