@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import re
 import uuid
 from collections import Counter
 
@@ -23,7 +24,6 @@ from django.template.loader import get_template
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.functional import cached_property
 from django.utils.html import mark_safe
 from django.utils.text import slugify
@@ -1421,15 +1421,28 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Get a fresh reference so that "self" doesn't become the new copy
         ad = Advertisement.objects.get(pk=self.pk)
 
+        new_name = ad.name
+        new_slug = ad.slug
+
+        # Fix up names of ads that have been copied multiple times
+        while new_name.endswith(" Copy"):
+            new_name = new_name[:-5]
+        new_slug = re.sub("-copy\d*$", "", new_slug)
+
         # Get a slug that doesn't already exist
-        new_slug = ad.slug + "-copy"
+        # This tries -copy, -copy1, -copy2, etc.
+        new_slug += "-copy"
+        digit = 0
         while Advertisement.objects.filter(slug=new_slug).exists():
-            new_slug += "-" + get_random_string(3)
+            if new_slug.endswith(str(digit)):
+                new_slug = new_slug[: -len(str(digit))]
+            digit += 1
+            new_slug += str(digit)
 
         ad_types = ad.ad_types.all()
 
         ad.pk = None
-        ad.name += " Copy"
+        ad.name = new_name + " Copy"
         ad.slug = new_slug
         ad.live = False  # The new ad should always be non-live
         ad.save()

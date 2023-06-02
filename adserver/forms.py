@@ -746,6 +746,57 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         }
 
 
+class AdvertisementCopyForm(forms.Form):
+
+    """Used by advertisers to re-use their ads."""
+
+    advertisements = AdvertisementMultipleChoiceField(
+        queryset=Advertisement.objects.none(),
+        required=False,
+        help_text=_("Copy the following advertisements"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        if "flight" in kwargs:
+            self.flight = kwargs.pop("flight")
+        else:
+            raise RuntimeError("'flight' is required for the ad form")
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["advertisements"].queryset = (
+            Advertisement.objects.filter(flight__campaign=self.flight.campaign)
+            .order_by("-flight__start_date", "slug")
+            .select_related()
+            .prefetch_related("ad_types")
+        )
+
+        self.helper = FormHelper()
+        self.helper.attrs = {"id": "advertisements-copy"}
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Field(
+                    "advertisements",
+                    template="adserver/includes/widgets/advertisement-form-option.html",
+                ),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Copy existing ads")),
+        )
+
+    def save(self):
+        # Duplicate the advertisements into the new flight
+        for ad in self.cleaned_data["advertisements"]:
+            new_ad = ad.__copy__()
+            new_ad.flight = self.flight
+            new_ad.save()
+
+        return len(self.cleaned_data["advertisements"])
+
+
 class PublisherSettingsForm(forms.ModelForm):
 
     """Form for letting publishers control publisher specific settings."""
