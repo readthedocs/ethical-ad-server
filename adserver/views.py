@@ -1272,6 +1272,30 @@ class AdvertiserKeywordReportView(
         return context
 
 
+class AdvertiserTopicReportView(AdvertiserAccessMixin, BaseReportView):
+
+    """A report for an advertiser broken down by topic."""
+
+    template_name = "adserver/reports/advertiser-topic.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "metabase_advertiser_topics": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_TOPIC_PERFORMANCE"
+                ),
+            }
+        )
+
+        return context
+
+
 class StaffAdvertiserReportView(BaseReportView):
 
     """A report aggregating all advertisers."""

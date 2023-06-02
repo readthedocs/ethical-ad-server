@@ -20,6 +20,7 @@ from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
 from .views import AdvertiserStripePortalView
+from .views import AdvertiserTopicReportView
 from .views import AdViewProxyView
 from .views import AdViewTimeProxyView
 from .views import ApiTokenCreateView
@@ -169,14 +170,19 @@ urlpatterns = [
         name="advertiser_publisher_report",
     ),
     path(
+        r"advertiser/<slug:advertiser_slug>/report/publishers.csv",
+        AdvertiserPublisherReportView.as_view(export=True),
+        name="advertiser_publisher_report_export",
+    ),
+    path(
         r"advertiser/<slug:advertiser_slug>/report/keywords/",
         AdvertiserKeywordReportView.as_view(),
         name="advertiser_keyword_report",
     ),
     path(
-        r"advertiser/<slug:advertiser_slug>/report/publishers.csv",
-        AdvertiserPublisherReportView.as_view(export=True),
-        name="advertiser_publisher_report_export",
+        r"advertiser/<slug:advertiser_slug>/report/topics/",
+        AdvertiserTopicReportView.as_view(),
+        name="advertiser_topic_report",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/",
