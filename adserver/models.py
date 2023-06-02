@@ -281,6 +281,23 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         default="",
         blank=True,
     )
+    allow_api_keywords = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Whether to allow the ad API/client to send its own keywords for targeting."
+        ),
+    )
+
+    # If this is blank, all domains are allowed
+    allowed_domains = models.CharField(
+        _("Allowed domains"),
+        max_length=1024,
+        help_text=_(
+            "A space separated list of domains where the publisher's ads can appear"
+        ),
+        default="",
+        blank=True,
+    )
 
     unauthed_ad_decisions = models.BooleanField(
         default=True,
@@ -610,7 +627,7 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         help_text=_("Ads for this campaign will not be shown on these publishers"),
     )
 
-    # Deprecated and scheduled for removal
+    # Deprecated and no longer used. Will be removed in future releases
     publishers = models.ManyToManyField(
         Publisher,
         related_name="campaigns",
@@ -1045,6 +1062,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # (eg. 23 hours, 59 minutes, 59 seconds, 999ms)
         return max(0, int(remaining_seconds / self.pacing_interval)) + 1
 
+    def days_overdue(self):
+        """Number of days (NOT intervals) past the end date on the flight."""
+        # A negative number means the flight is not overdue
+        days_overdue = (self.end_date - timezone.now().date()).days * -1
+        return max(0, days_overdue)
+
     def days_remaining(self):
         """Number of intervals (default = days) left in a flight."""
         # The flight is considered to end at the end of the day on the `end_date`
@@ -1153,7 +1176,14 @@ class Flight(TimeStampedModel, IndestructibleModel):
         price_priority_value = max(float(price_priority_value), 1.0)
         price_priority_value = min(price_priority_value, 10.0)
 
-        return int(impressions_needed * self.priority_multiplier * price_priority_value)
+        prioritized_impressions_needed = int(
+            impressions_needed * self.priority_multiplier * price_priority_value
+        )
+
+        # Prioritize flights the more overdue they are
+        overdue_factor = int(max(1, self.days_overdue()) ** 1.5)
+
+        return int(prioritized_impressions_needed * overdue_factor)
 
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
@@ -1790,7 +1820,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         return mark_safe(
             ad_html.replace(
-                "<a>", '<a href="%s" rel="nofollow noopener" target="_blank">' % url
+                "<a>",
+                '<a href="%s" rel="nofollow noopener sponsored" target="_blank">' % url,
             )
         )
 

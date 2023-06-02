@@ -217,12 +217,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
                     campaign__campaign_type__in=self.campaign_types,
                 )
                 .filter(
-                    # Deprecated: remove after publisher groups are rolled out and configured in production
-                    # At that point, only filter by publisher groups
-                    models.Q(campaign__publishers=self.publisher)
-                    | models.Q(
-                        campaign__publisher_groups__in=self.publisher.publisher_groups.all()
-                    )
+                    campaign__publisher_groups__in=self.publisher.publisher_groups.all()
                 )
                 .exclude(campaign__exclude_publishers=self.publisher)
             )

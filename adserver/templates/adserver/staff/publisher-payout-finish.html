@@ -52,7 +52,7 @@
 <div id="content" class="colM delete-confirmation">
   <form method="post">
     {% csrf_token %}
-    <input type="submit" value="{% trans "Finish payout" %}">
+    <input type="submit" value="{% trans "Finish payout" %}" class="btn btn-primary">
     <p class="small">{% trans "This will mark the payout as paid" %}</p>
   </form>
 </div>

@@ -15,7 +15,10 @@ class UserAdmin(SimpleHistoryAdmin):
     actions = ("invite_user_action",)
     fieldsets = (
         (None, {"fields": ("email", "name", "password")}),
-        (_("Ad server details"), {"fields": ("advertisers", "publishers")}),
+        (
+            _("Ad server details"),
+            {"fields": ("advertisers", "publishers", "notify_on_completed_flights")},
+        ),
         (
             _("Permissions"),
             {

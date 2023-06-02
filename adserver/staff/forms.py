@@ -342,9 +342,12 @@ class StartPublisherPayoutForm(forms.Form):
     # Advertiser information
     sender = forms.CharField(label=_("Sender"), max_length=200)
     subject = forms.CharField(label=_("Subject"), max_length=200)
-    body = forms.CharField(label=_("body"), widget=forms.Textarea)
+    body = forms.CharField(label=_("Body"), widget=forms.Textarea)
     amount = forms.DecimalField(
         label=_("Amount"), disabled=True, max_digits=8, decimal_places=2
+    )
+    payout_method = forms.CharField(
+        label=_("Payout method"), disabled=True, max_length=200, required=False
     )
     archive = forms.BooleanField(
         label=_("Archive after sending?"), initial=True, required=False
@@ -386,13 +389,13 @@ class StartPublisherPayoutForm(forms.Form):
             # Author is required on drafts..
             payload["author_id"] = getattr(settings, "FRONT_AUTHOR")
 
-        log.info(
+        log.debug(
             "Sending email draft=%s archive=%s",
             self.cleaned_data["draft"],
             self.cleaned_data["archive"],
         )
         response = requests.request("POST", url, json=payload, headers=headers)
-        log.info("Response: %s", response.status_code)
+        log.debug("Response: %s", response.status_code)
 
     def save(self):
         """Do the work to save the payout."""

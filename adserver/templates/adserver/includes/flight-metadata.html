@@ -105,6 +105,10 @@
         {% if flight.targeting_parameters.exclude_publishers %}
          <li>{% blocktrans with value=flight.targeting_parameters.exclude_publishers|join:", " %}Exclude publishers: {{ value }}{% endblocktrans %}</li>
         {% endif %}
+        {% if flight.campaign.exclude_publishers.exists %}
+         {# Excluded publishers from the campaign #}
+         <li>{% blocktrans with value=flight.campaign.exclude_publishers.all|join:", " %}Exclude publishers: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
         {% if flight.targeting_parameters.include_domains %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_domains|join:", " %}Include domains: {{ value }}{% endblocktrans %}</li>
         {% endif %}

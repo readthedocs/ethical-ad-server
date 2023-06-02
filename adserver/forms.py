@@ -760,7 +760,7 @@ class PublisherSettingsForm(forms.ModelForm):
             )
             stripe_block = HTML(
                 format_html(
-                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info'>"
+                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
                     "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
                     "</a>",
                     link_obj.url,
@@ -773,7 +773,7 @@ class PublisherSettingsForm(forms.ModelForm):
             )
             stripe_block = HTML(
                 format_html(
-                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info'>"
+                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
                     "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
                     "</a>",
                     connect_url,

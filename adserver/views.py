@@ -39,6 +39,7 @@ from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
 from djstripe.enums import InvoiceStatus
+from djstripe.models import Account
 from djstripe.models import Invoice
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
@@ -48,6 +49,7 @@ from .constants import CLICKS
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID
+from .constants import PAYOUT_STRIPE
 from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .constants import VIEWS
 from .forms import AccountForm
@@ -104,6 +106,7 @@ from .utils import get_ad_day
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
+from .utils import is_allowed_domain
 from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
@@ -785,6 +788,16 @@ class BaseProxyView(View):
                 user_agent,
             )
             reason = "Mismatched browser"
+        elif offer.publisher.allowed_domains and not is_allowed_domain(
+            offer.url, offer.publisher.allowed_domains.split()
+        ):
+            log.log(
+                self.log_security_level,
+                "Offer URL is not on the allowed domain list. Publisher: [%s], Offer URL: [%s]",
+                offer.publisher,
+                offer.url,
+            )
+            # Note: this does not set a reason so it only logs mismatches
 
         # This is out of the elif block and will be run everytime
         if offer and offer.ip != anonymize_ip_address(ip_address):
@@ -1976,7 +1989,21 @@ def publisher_stripe_oauth_return(request):
 
         if response:
             connected_account_id = response["stripe_user_id"]
+
+            try:
+                # Retrieve the Stripe connected account and save it on the publisher
+                publisher.djstripe_account = Account.sync_from_stripe_data(
+                    stripe.Account.retrieve(connected_account_id)
+                )
+            except stripe.error.StripeError:
+                log.exception(
+                    "Stripe returned a connected account, but it could not be retrieved."
+                )
+
+            # Deprecated field
             publisher.stripe_connected_account_id = connected_account_id
+
+            publisher.payout_method = PAYOUT_STRIPE
             publisher.save()
             messages.success(request, _("Successfully connected your Stripe account"))
 

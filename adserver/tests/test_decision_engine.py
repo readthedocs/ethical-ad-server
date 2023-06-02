@@ -23,6 +23,7 @@ from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
+from ..models import PublisherGroup
 from ..utils import GeolocationData
 from ..utils import get_ad_day
 
@@ -32,8 +33,11 @@ class DecisionEngineTests(TestCase):
         self.publisher = get(
             Publisher, slug="test-publisher", allow_paid_campaigns=True
         )
+        self.publisher_group = get(PublisherGroup)
+        self.publisher_group.publishers.add(self.publisher)
+
         self.ad_type = get(AdType, has_image=False, slug="z")
-        self.campaign = get(Campaign, publishers=[self.publisher])
+        self.campaign = get(Campaign, publisher_groups=[self.publisher_group])
         self.include_flight = get(
             Flight,
             live=True,
@@ -546,7 +550,9 @@ class DecisionEngineTests(TestCase):
 
         # Paid
         paid_campaign = get(
-            Campaign, campaign_type=PAID_CAMPAIGN, publishers=[self.publisher]
+            Campaign,
+            campaign_type=PAID_CAMPAIGN,
+            publisher_groups=[self.publisher_group],
         )
         paid_flight = get(
             Flight,
@@ -569,7 +575,9 @@ class DecisionEngineTests(TestCase):
 
         # Affiliate
         affiliate_campaign = get(
-            Campaign, campaign_type=AFFILIATE_CAMPAIGN, publishers=[self.publisher]
+            Campaign,
+            campaign_type=AFFILIATE_CAMPAIGN,
+            publisher_groups=[self.publisher_group],
         )
         affiliate_flight = get(
             Flight,
@@ -592,7 +600,9 @@ class DecisionEngineTests(TestCase):
 
         # Community
         community_campaign = get(
-            Campaign, campaign_type=COMMUNITY_CAMPAIGN, publishers=[self.publisher]
+            Campaign,
+            campaign_type=COMMUNITY_CAMPAIGN,
+            publisher_groups=[self.publisher_group],
         )
         community_flight = get(
             Flight,
@@ -614,7 +624,9 @@ class DecisionEngineTests(TestCase):
 
         # House
         house_campaign = get(
-            Campaign, campaign_type=HOUSE_CAMPAIGN, publishers=[self.publisher]
+            Campaign,
+            campaign_type=HOUSE_CAMPAIGN,
+            publisher_groups=[self.publisher_group],
         )
         house_campaign.campaign_type = HOUSE_CAMPAIGN
         house_campaign.save()
@@ -891,3 +903,12 @@ class DecisionEngineTests(TestCase):
         self.assertEqual(
             super_high.weighted_clicks_needed_this_interval(), 28 * 10
         )  # maxed out
+
+        # Verify the days overdue priority
+        days_overdue = 10
+        super_low.end_date = get_ad_day().date() - datetime.timedelta(days=days_overdue)
+        overdue_factor = int(days_overdue**1.5)
+        self.assertEqual(
+            super_low.weighted_clicks_needed_this_interval(),
+            super_low.sold_clicks * super_low.cpm * overdue_factor,
+        )
