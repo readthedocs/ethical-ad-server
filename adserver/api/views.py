@@ -73,8 +73,9 @@ class AdDecisionView(GeoIpMixin, APIView):
         :<json string url: The URL of the requesting page. This is where the ad will appear.
         :<json string format: Format can optionally be specified as ``jsonp`` to allow a callback.
         :<json string callback: The name of the callback for a JSONP request (default is ``callback``)
-        :<json string force_ad: Limit results to a specific ad
-        :<json string force_campaign: Limit results to ads from a specific campaign
+        :<json string force_ad: Limit results to a specific ad. Forcing a specific ad will ignore ad targeting,
+            but forced ads are never counted for billing purposes.
+        :<json string force_campaign: As with ``force_ad``, limit results to ads from a specific campaign.
 
         :>json string id: The advertisement slug of the chosen ad
         :>json string text: The HTML text of only the ad without any images (see ``html`` for full HTML)
