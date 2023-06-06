@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.1.0
+---------------
+
+This release mostly contained quality of life improvements
+for setting up campaigns. The new topic report will only show the link
+to staff for now but will go public in a future release.
+
+:date: June 6, 2023
+
+ * @davidfischer: Add calculator features to flight update/renew (#752)
+ * @davidfischer: Advertiser topic report (#737)
+ * @davidfischer: Forcing an ad/campaign ignores some targeting/filtering (#735)
+
+
 Version v2.0.0
 ---------------
 
