@@ -111,6 +111,13 @@ class FlightForm(FlightMixin, forms.ModelForm):
     we would need a way to let folks make adjustments and it automatically changes the price.
     """
 
+    # This is just a helper field used in JavaScript to ease flight price computation
+    # This field is *not* displayed in the Django admin because only fields in Meta.fields are displayed
+    budget = forms.IntegerField(
+        required=False,
+        label=_("Budget"),
+    )
+
     include_regions = forms.MultipleChoiceField(
         required=False,
         widget=forms.CheckboxSelectMultiple(),
@@ -147,6 +154,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.topics = Topic.objects.all().order_by("slug")
 
         if self.instance.pk:
+            self.fields["budget"].initial = round(self.instance.projected_total_value())
             self.fields["include_regions"].initial = self.instance.included_regions
             self.fields["exclude_regions"].initial = self.instance.excluded_regions
             self.fields["include_topics"].initial = self.instance.included_topics
@@ -167,6 +175,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.fields["include_topics"].choices = [(t.slug, t.name) for t in self.topics]
 
         self.helper = FormHelper()
+        self.helper.attrs = {"id": "flight-update-form"}
 
         self.helper.layout = Layout(
             Fieldset(
@@ -178,13 +187,29 @@ class FlightForm(FlightMixin, forms.ModelForm):
                     css_class="form-row",
                 ),
                 "live",
+                Div(
+                    PrependedText(
+                        "budget",
+                        "$",
+                        min=0,
+                        data_bind="textInput: budget",
+                    ),
+                ),
                 css_class="my-3",
             ),
             Fieldset(
                 _("Per impression (CPM) flights"),
                 Div(
-                    Div("cpm", css_class="form-group col-lg-6"),
-                    Div("sold_impressions", css_class="form-group col-lg-6"),
+                    Div(
+                        PrependedText("cpm", "$", min=0, data_bind="textInput: cpm"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field(
+                            "sold_impressions", data_bind="textInput: sold_impressions"
+                        ),
+                        css_class="form-group col-lg-6",
+                    ),
                     css_class="form-row",
                 ),
                 css_class="my-3",
@@ -192,8 +217,14 @@ class FlightForm(FlightMixin, forms.ModelForm):
             Fieldset(
                 _("Per click (CPC) flights"),
                 Div(
-                    Div("cpc", css_class="form-group col-lg-6"),
-                    Div("sold_clicks", css_class="form-group col-lg-6"),
+                    Div(
+                        PrependedText("cpc", "$", min=0, data_bind="textInput: cpc"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field("sold_clicks", data_bind="textInput: sold_clicks"),
+                        css_class="form-group col-lg-6",
+                    ),
                     css_class="form-row",
                 ),
                 css_class="my-3",
@@ -380,6 +411,10 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         required=False,
         help_text=_("Renew the flight with the following advertisements"),
     )
+    budget = forms.IntegerField(
+        required=False,
+        label=_("Budget"),
+    )
 
     def __init__(self, *args, **kwargs):
         """Set the flight form helper and initial data for renewing a flight."""
@@ -389,6 +424,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
             kwargs["initial"] = {}
         kwargs["initial"].update(
             {
+                "budget": round(self.old_flight.projected_total_value()),
                 "name": self.old_flight.name,
                 "cpm": self.old_flight.cpm,
                 "cpc": self.old_flight.cpc,
@@ -409,6 +445,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
 
     def create_form_helper(self):
         helper = FormHelper()
+        helper.attrs = {"id": "flight-renew-form"}
         helper.layout = Layout(
             Fieldset(
                 "",
@@ -420,13 +457,29 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                     css_class="form-row",
                 ),
                 "live",
+                Div(
+                    PrependedText(
+                        "budget",
+                        "$",
+                        min=0,
+                        data_bind="textInput: budget",
+                    ),
+                ),
                 css_class="my-3",
             ),
             Fieldset(
                 _("Per impression (CPM) flights"),
                 Div(
-                    Div("cpm", css_class="form-group col-lg-6"),
-                    Div("sold_impressions", css_class="form-group col-lg-6"),
+                    Div(
+                        PrependedText("cpm", "$", min=0, data_bind="textInput: cpm"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field(
+                            "sold_impressions", data_bind="textInput: sold_impressions"
+                        ),
+                        css_class="form-group col-lg-6",
+                    ),
                     css_class="form-row",
                 ),
                 css_class="my-3",
@@ -434,8 +487,14 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
             Fieldset(
                 _("Per click (CPC) flights"),
                 Div(
-                    Div("cpc", css_class="form-group col-lg-6"),
-                    Div("sold_clicks", css_class="form-group col-lg-6"),
+                    Div(
+                        PrependedText("cpc", "$", min=0, data_bind="textInput: cpc"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field("sold_clicks", data_bind="textInput: sold_clicks"),
+                        css_class="form-group col-lg-6",
+                    ),
                     css_class="form-row",
                 ),
                 css_class="my-3",
