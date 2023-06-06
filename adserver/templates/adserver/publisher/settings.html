@@ -23,6 +23,18 @@
     <div class="row">
 
       <div class="col-md-8 col">
+
+        {% if publisher.allowed_domains %}
+          <fieldset class="my-3 ">
+            <legend>{% trans 'Domains' %}</legend>
+            <p class="form-text">{{ publisher.allowed_domains }}</p>
+            <p class='form-text small text-muted'>
+              {% url 'support' as support_url %}
+              {% blocktrans %}These are your domains where ads may be displayed. Please <a href="{{ support_url }}?subject=New+Publisher+Domain">let us know</a> if you plan to run ads on additional domains so we may review them.{% endblocktrans %}
+            </p>
+          </fieldset>
+        {% endif %}
+
         {% crispy form form.helper %}
       </div>
 
