@@ -672,3 +672,15 @@ class AggregationTaskTests(BaseAdModelsTestCase):
                 date=old_date.date(),
             ).exists()
         )
+
+        # Newer aggregation data are still there
+        impression_new = RegionTopicImpression.objects.filter(
+            region="us-ca",
+            topic="backend-web",
+            advertisement=self.ad1,
+            date=timezone.now(),
+        ).first()
+        self.assertIsNotNone(impression_new)
+        self.assertEqual(impression_new.offers, 3)
+        self.assertEqual(impression_new.views, 2)
+        self.assertEqual(impression_new.clicks, 1)
