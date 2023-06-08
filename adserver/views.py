@@ -789,7 +789,7 @@ class BaseProxyView(View):
             )
             reason = "Mismatched browser"
         elif offer.publisher.allowed_domains and not is_allowed_domain(
-            offer.url, offer.publisher.allowed_domains.split()
+            offer.url, offer.publisher.allowed_domains_as_list()
         ):
             log.log(
                 self.log_security_level,
