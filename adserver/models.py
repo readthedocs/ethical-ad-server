@@ -1424,25 +1424,29 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         new_name = ad.name
         new_slug = ad.slug
 
-        # Fix up names of ads that have been copied multiple times
+        # Fix up names/slugs of ads that have been copied before
+        # Remove dates and (" Copy") from the end of the name/slug
+        new_name = re.sub(" \d{4}-\d{2}-\d{2}$", "", new_name)
         while new_name.endswith(" Copy"):
             new_name = new_name[:-5]
         new_slug = re.sub("-copy\d*$", "", new_slug)
+        new_slug = re.sub("-\d{8}(-\d+)?$", "", new_slug)
 
         # Get a slug that doesn't already exist
-        # This tries -copy, -copy1, -copy2, etc.
-        new_slug += "-copy"
+        # This tries -20230501, then -20230501-1, etc.
+        new_slug += "-{}".format(timezone.now().strftime("%Y%m%d"))
         digit = 0
         while Advertisement.objects.filter(slug=new_slug).exists():
-            if new_slug.endswith(str(digit)):
-                new_slug = new_slug[: -len(str(digit))]
+            ending = f"-{digit}"
+            if new_slug.endswith(ending):
+                new_slug = new_slug[: -len(ending)]
             digit += 1
-            new_slug += str(digit)
+            new_slug += f"-{digit}"
 
         ad_types = ad.ad_types.all()
 
         ad.pk = None
-        ad.name = new_name + " Copy"
+        ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
         ad.slug = new_slug
         ad.live = False  # The new ad should always be non-live
         ad.save()
