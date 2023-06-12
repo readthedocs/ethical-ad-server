@@ -33,6 +33,8 @@ from ..tasks import disable_inactive_publishers
 from ..tasks import notify_of_completed_flights
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
+from ..tasks import remove_old_report_data
+from ..tasks import update_previous_day_reports
 from .common import BaseAdModelsTestCase
 
 
@@ -626,3 +628,59 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(pi2_ad2.offers, 2)
         self.assertEqual(pi2_ad2.views, 2)
         self.assertEqual(pi2_ad2.clicks, 0)
+
+    def test_remove_old_report_data(self):
+        # Add a very old offer
+        old_date = timezone.now() - datetime.timedelta(days=370)
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            country="CA",
+            viewed=True,
+            view_time=6,
+            clicked=True,
+            keywords=["backend"],
+            div_id="id_1",
+            ad_type_slug=self.text_ad_type.slug,
+            date=old_date,
+        )
+
+        # Run aggregations both for today and the very old day
+        update_previous_day_reports(timezone.now())
+        update_previous_day_reports(old_date)
+
+        # Check that the aggregations match
+        impression_old = RegionTopicImpression.objects.filter(
+            region="us-ca",
+            topic="backend-web",
+            advertisement=self.ad1,
+            date=old_date.date(),
+        ).first()
+        self.assertIsNotNone(impression_old)
+        self.assertEqual(impression_old.offers, 1)
+        self.assertEqual(impression_old.views, 1)
+        self.assertEqual(impression_old.clicks, 1)
+
+        # Remove old aggregation data and verify they are gone
+        remove_old_report_data()
+        self.assertFalse(
+            RegionTopicImpression.objects.filter(
+                region="us-ca",
+                topic="backend-web",
+                advertisement=self.ad1,
+                date=old_date.date(),
+            ).exists()
+        )
+
+        # Newer aggregation data are still there
+        impression_new = RegionTopicImpression.objects.filter(
+            region="us-ca",
+            topic="backend-web",
+            advertisement=self.ad1,
+            date=timezone.now(),
+        ).first()
+        self.assertIsNotNone(impression_new)
+        self.assertEqual(impression_new.offers, 3)
+        self.assertEqual(impression_new.views, 2)
+        self.assertEqual(impression_new.clicks, 1)

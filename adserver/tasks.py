@@ -647,6 +647,34 @@ def update_previous_day_reports(day=None):
 
 
 @app.task()
+def remove_old_report_data(days=366):
+    """
+    Remove old report data for selected reports from the database.
+
+    Removes:
+    - geo breakdown data
+    - placement data
+    - keyword data
+    - uplift data
+    - regiontopic data
+    """
+    old_cutoff = get_ad_day() - datetime.timedelta(days=days)
+
+    models = (
+        GeoImpression,
+        PlacementImpression,
+        KeywordImpression,
+        UpliftImpression,
+        RegionTopicImpression,
+    )
+
+    for model in models:
+        model_name = model.__name__
+        log.info("Deleting old %s before %s", model_name, old_cutoff)
+        model.objects.filter(date__lt=old_cutoff).delete()
+
+
+@app.task()
 def remove_old_client_ids(days=90):
     """Remove old Client IDs which are used for short periods for fraud prevention."""
     old_cutoff = get_ad_day() - datetime.timedelta(days=days)
