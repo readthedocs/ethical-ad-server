@@ -53,6 +53,7 @@ from .constants import PAYOUT_STRIPE
 from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .constants import VIEWS
 from .forms import AccountForm
+from .forms import AdvertisementCopyForm
 from .forms import AdvertisementForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
@@ -584,10 +585,12 @@ class AdvertisementCreateView(
         )
 
 
-class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, TemplateView):
+class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, FormView):
 
     """Create a copy of an existing ad."""
 
+    form_class = AdvertisementCopyForm
+    model = Advertisement
     template_name = "adserver/advertiser/advertisement-copy.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -599,63 +602,20 @@ class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, Template
             slug=self.kwargs["flight_slug"],
             campaign__advertiser=self.advertiser,
         )
-        self.source_advertisement = source_ad_id = None
-
-        if (
-            "source_advertisement" in request.GET
-            and request.GET["source_advertisement"].isdigit()
-        ):
-            source_ad_id = request.GET["source_advertisement"]
-        elif (
-            "source_advertisement" in request.POST
-            and request.POST["source_advertisement"].isdigit()
-        ):
-            source_ad_id = request.POST["source_advertisement"]
-
-        if source_ad_id:
-            self.source_advertisement = (
-                Advertisement.objects.filter(
-                    flight__campaign__advertiser=self.advertiser
-                )
-                .filter(pk=source_ad_id)
-                .first()
-            )
         return super().dispatch(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
-        if self.flight and self.source_advertisement:
-            new_ad = self.copy_instance()
-            messages.success(
-                self.request,
-                _("Successfully created %(ad)s from a copy.") % {"ad": new_ad},
-            )
-            return redirect(
-                reverse(
-                    "advertisement_update",
-                    kwargs={
-                        "advertiser_slug": self.advertiser.slug,
-                        "flight_slug": self.flight.slug,
-                        "advertisement_slug": new_ad.slug,
-                    },
-                )
-            )
+    def form_valid(self, form):
+        result = super().form_valid(form)
 
-        # This should basically never be taken
-        return redirect(
-            reverse(
-                "flight_detail",
-                kwargs={
-                    "advertiser_slug": self.advertiser.slug,
-                    "flight_slug": self.flight.slug,
-                },
-            )
+        # Actually copy the ads
+        ads_copied = form.save()
+
+        messages.success(
+            self.request,
+            _("Successfully copied %(ads_copied)s ads to flight '%(flight)s'")
+            % {"ads_copied": ads_copied, "flight": self.flight},
         )
-
-    def copy_instance(self):
-        instance = self.source_advertisement.__copy__()
-        instance.flight = self.flight
-        instance.save()  # Automatically gets a new slug
-        return instance
+        return result
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -663,15 +623,23 @@ class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, Template
             {
                 "advertiser": self.advertiser,
                 "flight": self.flight,
-                "advertisements": Advertisement.objects.filter(
-                    flight__campaign__advertiser=self.advertiser
-                )
-                .order_by("-created")
-                .select_related(),
-                "source_advertisement": self.source_advertisement,
             }
         )
         return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        return kwargs
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
 
 
 class BaseProxyView(View):

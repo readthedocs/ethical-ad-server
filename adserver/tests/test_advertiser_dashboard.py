@@ -581,17 +581,12 @@ class TestAdvertiserDashboardViews(TestCase):
 
         self.client.force_login(self.user)
         response = self.client.get(url)
-        self.assertContains(response, "Copy advertisement")
+        self.assertContains(response, "Re-use your previous ads")
         self.assertContains(response, self.ad1.name)
-
-        # Goes to the confirm screen
-        response = self.client.get(url, data={"source_advertisement": self.ad1.pk})
-        self.assertContains(response, "Copy advertisement")
-        self.assertContains(response, "Source advertisement")
 
         # Perform the copy
         count_ads = Advertisement.objects.all().count()
-        response = self.client.post(url, data={"source_advertisement": self.ad1.pk})
+        response = self.client.post(url, data={"advertisements": [self.ad1.pk]})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Advertisement.objects.all().count(), count_ads + 1)
 

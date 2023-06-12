@@ -3,6 +3,7 @@ import datetime
 import html
 import logging
 import math
+import re
 import uuid
 from collections import Counter
 
@@ -23,7 +24,6 @@ from django.template.loader import get_template
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.functional import cached_property
 from django.utils.html import mark_safe
 from django.utils.text import slugify
@@ -1421,15 +1421,32 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Get a fresh reference so that "self" doesn't become the new copy
         ad = Advertisement.objects.get(pk=self.pk)
 
+        new_name = ad.name
+        new_slug = ad.slug
+
+        # Fix up names/slugs of ads that have been copied before
+        # Remove dates and (" Copy") from the end of the name/slug
+        new_name = re.sub(" \d{4}-\d{2}-\d{2}$", "", new_name)
+        while new_name.endswith(" Copy"):
+            new_name = new_name[:-5]
+        new_slug = re.sub("-copy\d*$", "", new_slug)
+        new_slug = re.sub("-\d{8}(-\d+)?$", "", new_slug)
+
         # Get a slug that doesn't already exist
-        new_slug = ad.slug + "-copy"
+        # This tries -20230501, then -20230501-1, etc.
+        new_slug += "-{}".format(timezone.now().strftime("%Y%m%d"))
+        digit = 0
         while Advertisement.objects.filter(slug=new_slug).exists():
-            new_slug += "-" + get_random_string(3)
+            ending = f"-{digit}"
+            if new_slug.endswith(ending):
+                new_slug = new_slug[: -len(ending)]
+            digit += 1
+            new_slug += f"-{digit}"
 
         ad_types = ad.ad_types.all()
 
         ad.pk = None
-        ad.name += " Copy"
+        ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
         ad.slug = new_slug
         ad.live = False  # The new ad should always be non-live
         ad.save()
