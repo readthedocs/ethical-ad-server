@@ -1,9 +1,9 @@
 from datetime import timedelta
-from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
@@ -306,10 +306,16 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(list_response, "<td>$70.00</td>")
         self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
 
-    @override_settings(FRONT_TOKEN="test", FRONT_CHANNEL="test", FRONT_AUTHOR="test")
-    @patch("adserver.staff.forms.requests.request")
-    def test_create_view(self, mock_request):
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
+    def test_create_view(self):
         self.client.force_login(self.staff_user)
+
+        # Need a user otherwise the email isn't sent because there's no recipients
+        self.user.publishers.add(self.publisher1)
 
         # Start payout
         start_url = reverse(
@@ -334,10 +340,8 @@ class PublisherPayoutTests(TestCase):
         post_response = self.client.post(start_url, data=data)
         self.assertEqual(post_response.status_code, 302)
 
-        self.assertEqual(
-            mock_request.call_args[0],
-            ("POST", "https://api2.frontapp.com/channels/test/messages"),
-        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "Test subject")
 
     def test_finish_view(self):
         self.client.force_login(self.staff_user)

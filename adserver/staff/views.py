@@ -207,7 +207,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
             get_template("adserver/email/publisher-payout.html")
             .render(self.data)
             .replace("\n\n", "\n")
-        )
+        ).strip()
         initial["sender"] = "EthicalAds by Read the Docs"
         initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
         initial["body"] = email_html
