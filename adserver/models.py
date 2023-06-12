@@ -472,6 +472,9 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         today = get_ad_day().date()
         return f"daily-earn::{self.slug}::{today:%Y-%m-%d}"
 
+    def allowed_domains_as_list(self):
+        return self.allowed_domains.split()
+
     def total_payout_sum(self):
         """The total amount ever paid out to this publisher."""
         total = self.payouts.filter(status=PAID).aggregate(
