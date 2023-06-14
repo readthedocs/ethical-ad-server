@@ -1,7 +1,6 @@
 """Views for the administrator actions."""
 import logging
 
-import requests
 import stripe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field
@@ -12,6 +11,7 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -363,39 +363,39 @@ class StartPublisherPayoutForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit("submit", "Send email"))
+        self.helper.attrs = {"id": "payout-start"}
+        self.fields["body"].widget.attrs["data-bind"] = "textInput: body"
 
     def _send_email(self):
-        token = getattr(settings, "FRONT_TOKEN")
-        channel = getattr(settings, "FRONT_CHANNEL")
-
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
-
-        payload = {
-            "to": [user.email for user in self.publisher.user_set.all()],
-            "sender_name": self.cleaned_data["sender"],
-            "subject": self.cleaned_data["subject"],
-            "options": {"archive": self.cleaned_data["archive"]},
-            "body": self.cleaned_data["body"],
-        }
-
-        url = f"https://api2.frontapp.com/channels/{channel}/messages"
-        if self.cleaned_data["draft"]:
-            url = f"https://api2.frontapp.com/channels/{channel}/drafts"
-            # Allow the team to see the draft
-            payload["mode"] = "shared"
-            # Author is required on drafts..
-            payload["author_id"] = getattr(settings, "FRONT_AUTHOR")
-
         log.debug(
             "Sending email draft=%s archive=%s",
             self.cleaned_data["draft"],
             self.cleaned_data["archive"],
         )
-        response = requests.request("POST", url, json=payload, headers=headers)
-        log.debug("Response: %s", response.status_code)
+
+        backend = None  # Use the default settings.EMAIL_BACKEND
+        if settings.FRONT_ENABLED:
+            backend = settings.FRONT_BACKEND
+
+        with mail.get_connection(
+            backend,
+            sender_name=self.cleaned_data["sender"],
+        ) as connection:
+            message = mail.EmailMessage(
+                self.cleaned_data["subject"],
+                self.cleaned_data["body"],
+                from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                to=[user.email for user in self.publisher.user_set.all()],
+                connection=connection,
+            )
+
+            if self.cleaned_data["draft"]:
+                message.draft = True
+
+            if self.cleaned_data["archive"]:
+                message.archive = True
+
+            message.send()
 
     def save(self):
         """Do the work to save the payout."""
