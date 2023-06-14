@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.2.0
+--------------
+
+This release contains some upgrades to payouts and some improvements to copying ads.
+The most critical change involves a task to delete aggregation data older than a year.
+
+:date: June 14, 2023
+
+ * @davidfischer: Update the payout email (#756)
+ * @davidfischer: Rework the payout email view/form (#755)
+ * @davidfischer: Show the publisher's allowed domains (#753)
+ * @davidfischer: Improve copying ads logic (#751)
+ * @davidfischer: Keep only 1 year of geo/region/keyword/placement data (#750)
+
+
 Version v2.1.0
 ---------------
 
