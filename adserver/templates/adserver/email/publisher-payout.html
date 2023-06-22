@@ -41,7 +41,12 @@ but for now I think we can't avoid it because of linking to content on our marke
 </p>
 
 <p>
-  Please reply to this email with the name & address of the person or organization receiving this payment.
+  {% if publisher.payout_method == "stripe" %}
+    Please ensure that you have provided the name & address of the person or organization receiving this payment to Stripe
+    and then reply to this email so we can proceed with the payment.
+  {% else %}
+    Please reply to this email with the name & address of the person or organization receiving this payment.
+  {% endif %}
   Once we have this information, we will process the payment.
   These will show up in the <a href="{{ payouts_url }}">payouts dashboard</a>,
   once they have been processed.
