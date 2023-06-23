@@ -158,7 +158,8 @@ def dashboard(request):
     """The initial dashboard view."""
     if request.user.is_staff:
         publishers = Publisher.objects.order_by("-created")
-        advertisers = Advertiser.objects.order_by("-created")
+        # Filter out publisher house advertisers
+        advertisers = Advertiser.objects.filter(publisher=None).order_by("-created")
     else:
         publishers = list(request.user.publishers.all())
         advertisers = list(request.user.advertisers.all())
