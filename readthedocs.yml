@@ -3,7 +3,7 @@
 
 version: 2
 
-# Set the OS, Python version and other tools you might need
+# Set the OS & Python version
 build:
   os: ubuntu-22.04
   tools:
