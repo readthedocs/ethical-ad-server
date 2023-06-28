@@ -69,8 +69,8 @@
               <p>{% blocktrans %}You can always look at <a href="{{ flight_list_url }}">past flights</a> or check your past <a href="{{ advertiser_report }}">ad performance</a> for any timeframe.{% endblocktrans %}</p>
             </li>
             <li>
-              {% url "support" as support_url %}
-              <p>{% blocktrans %}If you're interested in running a new ad flight, please <a href="{{ support_url }}?subject=New+campaign&body=I+am+interested+in+running+a+new+campaign.">get in touch</a>.{% endblocktrans %}</p>
+              {% url "flight_request" advertiser.slug as flight_request_url %}
+              <p>{% blocktrans %}If you're ready to run a new ad flight, please <a href="{{ flight_request_url }}">request a new one</a> with your desired budget and targeting details.{% endblocktrans %}</p>
             </li>
           </ul>
         </div>

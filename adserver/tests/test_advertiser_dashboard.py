@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -473,6 +474,62 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(new_flight.advertisements.all().count(), 2)
         for ad in new_flight.advertisements.all():
             self.assertTrue(ad.live)
+
+    def test_flight_request_view(self):
+        url = reverse(
+            "flight_request",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+            },
+        )
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        # Regular user - access to this advertiser
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Request a new flight")
+
+        # Not modeled on an old flight
+        resp = self.client.get(url + "?old_flight=&next=step-2")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            "Your account manager will be notified to review your ads and targeting.",
+        )
+
+        new_name = "My New Flight"
+        today = get_ad_day().date()
+        budget = "3599"
+        note = "This is a note that should appear in the email"
+        data = {
+            "name": new_name,
+            "start_date": today,
+            "end_date": today + datetime.timedelta(days=20),
+            "advertisements": [],
+            "budget": budget,
+            "note": note,
+        }
+
+        resp = self.client.post(url, data=data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"Successfully setup a new")
+        self.assertContains(resp, f"notified your account manager")
+
+        # Email to account manager was sent with budget and note
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(mail.outbox[0].subject.startswith("New Flight Request"))
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertTrue(note in html_body)
+        self.assertTrue(budget in html_body)
+
+        new_flight = Flight.objects.filter(name=new_name).first()
+        self.assertIsNotNone(new_flight)
+        self.assertFalse(new_flight.live)
 
     def test_ad_detail_view(self):
         url = reverse(

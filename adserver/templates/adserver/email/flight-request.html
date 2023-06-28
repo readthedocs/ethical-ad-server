@@ -1,0 +1,26 @@
+{% extends 'adserver/email/base.html' %}
+{% load i18n %}
+
+
+{% block body %}
+<p>{% blocktrans %}Ads support team,{% endblocktrans %}</p>
+
+{% url "advertiser_main" advertiser.slug as advertiser_url %}
+{% url "flight_detail" advertiser.slug flight.slug as new_flight_url %}
+{% url "flight_detail" advertiser.slug old_flight.slug as old_flight_url %}
+
+<p>
+{% blocktrans with advertiser_name=advertiser.name %}
+  Advertiser <a href="{{ site_domain }}{{ advertiser_url }}">{{ advertiser_name }}</a> has requested a new flight.
+{% endblocktrans %}
+</p>
+
+<ul>
+  <li>{% trans 'New flight:' %} <a href="{{ site_domain }}{{ new_flight_url }}">{{ flight.name }}</a></li>
+  {% if old_flight %}<li>{% trans 'Modeled on previous flight:' %} <a href="{{ site_domain }}{{ old_flight_url }}">{{ old_flight.name }}</a></li>{% endif %}
+  {% for key, val in extras.items %}
+    {% if val %}<li>{{ key }}: {{ val }}</li>{% endif %}
+  {% endfor %}
+</ul>
+
+{% endblock body %}

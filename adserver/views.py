@@ -15,6 +15,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.sites.shortcuts import get_current_site
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.http import Http404
@@ -24,6 +26,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -58,6 +61,7 @@ from .forms import AdvertisementForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
 from .forms import FlightRenewForm
+from .forms import FlightRequestForm
 from .forms import InviteUserForm
 from .forms import PublisherSettingsForm
 from .forms import SupportForm
@@ -102,6 +106,7 @@ from .reports import PublisherUpliftReport
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
 from .utils import calculate_ecpm
+from .utils import generate_absolute_url
 from .utils import generate_publisher_payout_data
 from .utils import get_ad_day
 from .utils import get_client_ip
@@ -443,6 +448,112 @@ class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
                 "advertiser_slug": self.advertiser.slug,
                 "flight_slug": self.object.slug,
             },
+        )
+
+
+class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
+
+    """Create a new flight for an advertiser."""
+
+    form_class = FlightRequestForm
+    model = Flight
+    template_name = "adserver/advertiser/flight-request.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.old_flight = self.get_old_flight_or_404(self.request.GET.get("old_flight"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["advertiser"] = self.advertiser
+        kwargs["flight"] = self.old_flight
+        return kwargs
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+
+        # Notify support of the new flight
+        self.send_support_request(
+            flight,
+            {
+                "budget": form.cleaned_data["budget"],
+                "note": form.cleaned_data["note"],
+            },
+        )
+
+        messages.success(
+            self.request,
+            _(
+                "Successfully setup a new (non-live) %(flight)s and notified your account manager"
+            )
+            % {"flight": flight},
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "past_flights": Flight.objects.filter(
+                    campaign__advertiser=self.advertiser
+                ).order_by("-start_date")[:50],
+                "old_flight": self.old_flight,
+                "next": self.request.GET.get("next"),
+            }
+        )
+
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
+        )
+
+    def get_old_flight_or_404(self, old_flight_slug):
+        if old_flight_slug:
+            return get_object_or_404(
+                Flight, slug=old_flight_slug, campaign__advertiser=self.advertiser
+            )
+        return None
+
+    def send_support_request(self, new_flight, extras):
+
+        to_email = settings.ADSERVER_SUPPORT_TO_EMAIL
+        if not to_email:
+            site = get_current_site(None)
+            to_email = f"support@{site.domain}"
+            log.warning(
+                "Using the default support email address because ADSERVER_SUPPORT_TO_EMAIL is not configured"
+            )
+
+        context = {
+            "site_domain": generate_absolute_url(""),
+            "user": self.request.user,
+            "advertiser": self.advertiser,
+            "flight": new_flight,
+            "old_flight": self.old_flight,
+            "extras": extras,
+        }
+
+        mail.send_mail(
+            _("New Flight Request - %(advertiser)s")
+            % {"advertiser": self.advertiser.name},
+            message="See HTML message",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+            html_message=render_to_string(
+                "adserver/email/flight-request.html", context
+            ),
         )
 
 
