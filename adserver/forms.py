@@ -687,7 +687,7 @@ class FlightRequestForm(FlightCreateForm):
         self.instance.campaign = (
             self.old_flight.campaign
             if self.old_flight
-            else self.advertiser.campaigns.all().first()
+            else self.advertiser.campaigns.first()
         )
 
         instance = super().save(commit)
