@@ -488,7 +488,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
         messages.success(
             self.request,
             _(
-                "Successfully setup a new (non-live) %(flight)s and notified your account manager"
+                "Successfully setup a new draft %(flight)s and notified your account manager"
             )
             % {"flight": flight},
         )
