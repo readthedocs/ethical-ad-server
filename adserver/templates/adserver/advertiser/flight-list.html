@@ -25,6 +25,10 @@
       <span>{% trans 'Create flight' %}</span>
     </a>
   {% endif %}
+  <a href="{% url 'flight_request' advertiser.slug %}" class="btn btn-sm btn-outline-info mb-3" role="button" aria-pressed="true">
+    <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+    <span>{% trans 'Request a new flight' %}</span>
+  </a>
 </aside>
 
 

@@ -1,5 +1,6 @@
 """Forms for the ad server."""
 import logging
+from datetime import timedelta
 
 import bleach
 import stripe
@@ -353,9 +354,10 @@ class FlightCreateForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
-        self.fields["campaign"].queryset = Campaign.objects.filter(
-            advertiser=self.advertiser
-        )
+        if "campaign" in self.fields:
+            self.fields["campaign"].queryset = Campaign.objects.filter(
+                advertiser=self.advertiser
+            )
         self.helper = self.create_form_helper()
 
     def create_form_helper(self):
@@ -543,6 +545,170 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
             "sold_clicks",
             "cpm",
             "sold_impressions",
+        )
+        widgets = {
+            "start_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+            "end_date": forms.DateInput(
+                attrs={"type": "date", "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"}
+            ),
+        }
+
+
+class FlightRequestForm(FlightCreateForm):
+
+    """Used by advertisers to request a new flight."""
+
+    advertisements = AdvertisementMultipleChoiceField(
+        queryset=Advertisement.objects.none(),
+        required=False,
+        help_text=_("Request a new flight with the following advertisements"),
+    )
+
+    budget = forms.IntegerField(
+        label=_("Budget"),
+    )
+
+    note = forms.CharField(label=_("Note"), required=False, widget=forms.Textarea)
+
+    DEFAULT_FLIGHT_BUDGET = 3_000
+
+    def __init__(self, *args, **kwargs):
+        """Set the flight form helper and initial data for renewing a flight."""
+        self.old_flight = kwargs.pop("flight", None)
+
+        advertiser = kwargs["advertiser"]
+        default_name = f"{advertiser} - {timezone.now():%b %Y}"
+
+        if "initial" not in kwargs:
+            kwargs["initial"] = {}
+        kwargs["initial"].update(
+            {
+                "budget": round(self.old_flight.projected_total_value())
+                if self.old_flight
+                else self.DEFAULT_FLIGHT_BUDGET,
+                "name": default_name,
+                "start_date": timezone.now().today(),
+                "end_date": timezone.now().today()
+                + (
+                    (self.old_flight.end_date - self.old_flight.start_date)
+                    if self.old_flight
+                    else timedelta(days=30)
+                ),
+                "advertisements": self.old_flight.advertisements.filter(live=True)
+                if self.old_flight
+                else Advertisement.objects.none(),
+            }
+        )
+
+        # Sets self.advertiser
+        super().__init__(*args, **kwargs)
+
+        self.fields["note"].widget.attrs["rows"] = 3
+        self.fields["note"].help_text = _(
+            "Do you have any changes you'd like to make from previous flights or any special instructions?"
+        )
+        self.fields["start_date"].help_text = _("The target start date for this flight")
+        self.fields["end_date"].help_text = _(
+            "The target end date for this flight (it may go after this date)"
+        )
+        self.fields["advertisements"].queryset = (
+            self.old_flight.advertisements.all()
+            if self.old_flight
+            else Advertisement.objects.none()
+        )
+
+    def create_form_helper(self):
+        helper = FormHelper()
+        helper.attrs = {"id": "flight-request-form"}
+        helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("name"),
+                Div(
+                    Div("start_date", css_class="form-group col-lg-6"),
+                    Div("end_date", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
+                Div(
+                    PrependedText(
+                        "budget",
+                        "$",
+                        min=0,
+                        data_bind="textInput: budget",
+                    ),
+                ),
+                Field("note"),
+                css_class="my-3",
+            ),
+            Fieldset(
+                _("Advertisements"),
+                Field(
+                    "advertisements",
+                    template="adserver/includes/widgets/advertisement-form-option.html",
+                ),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Request a new flight")),
+            HTML(
+                "<p class='form-text small text-muted'>"
+                + str(
+                    _(
+                        "Your flight will not start automatically. Your account manager will be notified to review your ads and targeting."
+                    )
+                )
+                + "</p>"
+            ),
+        )
+        return helper
+
+    def save(self, commit=True):
+        assert commit, "Delayed saving is not supported on this form"
+
+        # This is already the default but we are setting it explicitly to be defensive
+        self.instance.live = False
+
+        if self.old_flight:
+            # Copy fields not in the form from the old flight if possible
+            # Otherwise, the account manager will need to set these
+            fields = (
+                "targeting_parameters",
+                "priority_multiplier",
+                "cpm",
+                "cpc",
+                "sold_impressions",
+                "sold_clicks",
+            )
+            for field in fields:
+                setattr(self.instance, field, getattr(self.old_flight, field))
+
+        # We must set the campaign
+        self.instance.campaign = (
+            self.old_flight.campaign
+            if self.old_flight
+            else self.advertiser.campaigns.first()
+        )
+
+        instance = super().save(commit)
+
+        # Duplicate the advertisements into the new flight
+        if "advertisements" in self.cleaned_data:
+            for ad in self.cleaned_data["advertisements"]:
+                new_ad = ad.__copy__()
+                new_ad.flight = instance
+                new_ad.live = True
+                new_ad.save()  # Automatically gets a new slug
+
+        return instance
+
+    class Meta:
+        model = Flight
+
+        fields = (
+            "name",
+            "start_date",
+            "end_date",
         )
         widgets = {
             "start_date": forms.DateInput(

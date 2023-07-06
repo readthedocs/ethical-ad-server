@@ -1,0 +1,57 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Request a new flight' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Request a new flight' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Request a new flight' %}{% endblock heading %}</h1>
+
+<p>{% trans 'You can base your new flight on a previous one or set up something completely different.' %}</p>
+
+<section>
+  <div class="row">
+
+    <div class="col-md-8">
+      {% if next %}
+        {% crispy form form.helper %}
+      {% else %}
+        <form>
+
+          <div class="form-group">
+
+            <label class="col-form-label" for="id_old_flight">{% trans 'Base your new flight on' %}</label>
+            <select class="form-control" name="old_flight" id="id_old_flight">
+              <option value="">{% trans 'Something completely different' %}</option>
+              <optgroup label="{% trans 'Past flights' %}">
+                {% for flight in past_flights %}
+                  <option value="{{ flight.slug }}">{{ flight.name }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
+          </div>
+
+          <input type="hidden" name="next" value="step-2" />
+          <input type="submit"  class="btn btn-primary" value="{% trans 'Next' %}">
+          <p class="help-text"></p>
+        </form>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+
+{% endblock content_container %}

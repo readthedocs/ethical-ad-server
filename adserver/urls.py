@@ -33,6 +33,7 @@ from .views import FlightCreateView
 from .views import FlightDetailView
 from .views import FlightListView
 from .views import FlightRenewView
+from .views import FlightRequestView
 from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
@@ -193,6 +194,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/create/",
         FlightCreateView.as_view(),
         name="flight_create",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/request/",
+        FlightRequestView.as_view(),
+        name="flight_request",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/",

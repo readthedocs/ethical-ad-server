@@ -22,11 +22,13 @@
 </ul>
 
 {% endspaceless %}
-
-<p>{% blocktrans %}
-  If you have any questions or you would like to renew your flight, please reply to this email.
-  We can run another campaign with the same creative and budget,
+{% url "flight_request" as flight_request_url %}
+<p>{% blocktrans with site_domain=site.domain %}
+  If you'd like to renew your flight, you can <a href="{{ site_domain }}{{ flight_request_url }}">request a new one</a>
+  with your desired budget and targeting details.
+  We can run another campaign with the same creatives,
   or adjust things based on your feedback around what's converting best.
+  If you have any questions, you can always reply to this email.
 {% endblocktrans %}</p>
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
