@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.3.1
+--------------
+
+This release just contained some refinements to emailing/slacking
+when a new flight is requested.
+
+:date: July 6, 2023
+
+ * @davidfischer: Small tweak to requesting a flight (#766)
+
+
 Version v2.3.0
 --------------
 
