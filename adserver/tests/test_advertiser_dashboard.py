@@ -5,9 +5,11 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 from django_dynamic_fixture import get
+from django_slack.utils import get_backend
 
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
@@ -475,6 +477,11 @@ class TestAdvertiserDashboardViews(TestCase):
         for ad in new_flight.advertisements.all():
             self.assertTrue(ad.live)
 
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
     def test_flight_request_view(self):
         url = reverse(
             "flight_request",
@@ -502,6 +509,9 @@ class TestAdvertiserDashboardViews(TestCase):
             "Your account manager will be notified to review your ads and targeting.",
         )
 
+        backend = get_backend()
+        backend.reset_messages()
+
         new_name = "My New Flight"
         today = get_ad_day().date()
         budget = "3599"
@@ -523,9 +533,14 @@ class TestAdvertiserDashboardViews(TestCase):
         # Email to account manager was sent with budget and note
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(mail.outbox[0].subject.startswith("New Flight Request"))
-        html_body = mail.outbox[0].alternatives[0][0]
+        html_body = mail.outbox[0].body
         self.assertTrue(note in html_body)
         self.assertTrue(budget in html_body)
+
+        # Verify the slack message was sent
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1)
+        self.assertTrue(messages[0]["text"].startswith("New flight request: User="))
 
         new_flight = Flight.objects.filter(name=new_name).first()
         self.assertIsNotNone(new_flight)

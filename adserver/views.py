@@ -41,6 +41,7 @@ from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView
+from django_slack import slack_message
 from djstripe.enums import InvoiceStatus
 from djstripe.models import Account
 from djstripe.models import Invoice
@@ -477,7 +478,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
         flight = self.object
 
         # Notify support of the new flight
-        self.send_support_request(
+        self.send_flight_request(
             flight,
             {
                 "budget": form.cleaned_data["budget"],
@@ -526,8 +527,8 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
             )
         return None
 
-    def send_support_request(self, new_flight, extras):
-
+    def send_flight_request(self, new_flight, extras):
+        """Sends a new flight request for the user."""
         to_email = settings.ADSERVER_SUPPORT_TO_EMAIL
         if not to_email:
             site = get_current_site(None)
@@ -536,8 +537,9 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
                 "Using the default support email address because ADSERVER_SUPPORT_TO_EMAIL is not configured"
             )
 
+        site_domain = generate_absolute_url("")
         context = {
-            "site_domain": generate_absolute_url(""),
+            "site_domain": site_domain,
             "user": self.request.user,
             "advertiser": self.advertiser,
             "flight": new_flight,
@@ -545,16 +547,28 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
             "extras": extras,
         }
 
-        mail.send_mail(
-            _("New Flight Request - %(advertiser)s")
-            % {"advertiser": self.advertiser.name},
-            message="See HTML message",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[to_email],
-            html_message=render_to_string(
-                "adserver/email/flight-request.html", context
-            ),
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": f"New flight request: User={self.request.user}, Flight={site_domain}{new_flight.get_absolute_url()} with {extras}."
+            },
         )
+
+        if settings.FRONT_ENABLED:
+            with mail.get_connection(
+                settings.FRONT_BACKEND,
+                sender_name=f"{site.name} New Flight Request",
+            ) as connection:
+                message = mail.EmailMessage(
+                    _("New Flight Request - %(advertiser)s")
+                    % {"advertiser": self.advertiser.name},
+                    render_to_string("adserver/email/flight-request.html", context),
+                    from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                    to=[to_email],
+                    cc=[self.request.user.email],
+                    connection=connection,
+                )
+                message.send()
 
 
 class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
