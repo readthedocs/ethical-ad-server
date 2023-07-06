@@ -424,9 +424,28 @@ class DecisionEngineTests(TestCase):
             flight.save()
 
         priority_range = [1, 2, 10, 50, 100, 10000]
+        start_date = get_ad_day().date()
+        end_date = start_date + datetime.timedelta(days=30)
+        pacing_interval = 60 * 60 * 24
 
-        flight1 = get(Flight, campaign=self.campaign, live=True, sold_clicks=100)
-        flight2 = get(Flight, campaign=self.campaign, live=True, sold_clicks=100)
+        flight1 = get(
+            Flight,
+            start_date=start_date,
+            end_date=end_date,
+            pacing_interval=pacing_interval,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=100,
+        )
+        flight2 = get(
+            Flight,
+            start_date=start_date,
+            end_date=end_date,
+            pacing_interval=pacing_interval,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=100,
+        )
 
         self.advertisement1.flight = flight1
         self.advertisement2.flight = flight2
@@ -441,8 +460,12 @@ class DecisionEngineTests(TestCase):
                 flight1.save()
                 flight2.save()
 
-                flight1_prob = flight1.weighted_clicks_needed_this_interval()
-                flight2_prob = flight2.weighted_clicks_needed_this_interval()
+                flight1_prob = flight1.weighted_clicks_needed_this_interval(
+                    self.publisher
+                )
+                flight2_prob = flight2.weighted_clicks_needed_this_interval(
+                    self.publisher
+                )
                 total = flight1_prob + flight2_prob
 
                 with mock.patch("random.randint") as randint:
