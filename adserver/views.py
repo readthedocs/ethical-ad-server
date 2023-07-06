@@ -557,7 +557,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
         if settings.FRONT_ENABLED:
             with mail.get_connection(
                 settings.FRONT_BACKEND,
-                sender_name=f"{site.name} New Flight Request",
+                sender_name=f"{site.name} Flight Tracker",
             ) as connection:
                 message = mail.EmailMessage(
                     _("New Flight Request - %(advertiser)s")
