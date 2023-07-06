@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.3.0
+--------------
+
+The big change in this release is that advertisers can now request a new flight.
+The flight will be created but may need adjustments. It is not started automatically
+but instead emails support.
+
+:date: July 6, 2023
+
+ * @davidfischer: Fix a bug that only affects test run after UTC midnight (#764)
+ * @dependabot[bot]: Bump django from 3.2.19 to 3.2.20 in /requirements (#763)
+ * @ericholscher: Update readthedocs.yml to v2 (#762)
+ * @davidfischer: Advertisers can request a new flight (#761)
+ * @davidfischer: Don't show publisher house advertisers on homescreen (#760)
+ * @davidfischer: Slight payout email tweak (#759)
+
+
 Version v2.2.0
 --------------
 
