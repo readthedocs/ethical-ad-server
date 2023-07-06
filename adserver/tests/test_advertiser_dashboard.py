@@ -541,6 +541,8 @@ class TestAdvertiserDashboardViews(TestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
         self.assertTrue(messages[0]["text"].startswith("New flight request: User="))
+        self.assertTrue(budget in messages[0]["text"])
+        self.assertTrue(note in messages[0]["text"])
 
         new_flight = Flight.objects.filter(name=new_name).first()
         self.assertIsNotNone(new_flight)
