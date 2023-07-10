@@ -22,7 +22,7 @@
 </ul>
 
 {% endspaceless %}
-{% url "flight_request" as flight_request_url %}
+{% url "flight_request" advertiser.slug as flight_request_url %}
 <p>{% blocktrans with site_domain=site.domain %}
   If you'd like to renew your flight, you can <a href="{{ site_domain }}{{ flight_request_url }}">request a new one</a>
   with your desired budget and targeting details.
