@@ -684,3 +684,25 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(impression_new.offers, 3)
         self.assertEqual(impression_new.views, 2)
         self.assertEqual(impression_new.clicks, 1)
+
+    def test_traffic_fill(self):
+        # Ad1/CA - offered/decision=3, views=2, clicks=1
+        # Ad1/MX - offered/decision=1, views=1, clicks=0
+        # Ad2/MX - offered/decisions=2, views=2, clicks=0
+        # All views/clicks on publisher1
+        self.flight.total_views = 5
+        self.flight.save()
+        update_previous_day_reports(timezone.now())
+
+        self.flight.refresh_from_db()
+
+        self.assertIsNotNone(self.flight.traffic_fill)
+        self.assertTrue("regions" in self.flight.traffic_fill)
+        self.assertTrue("countries" in self.flight.traffic_fill)
+        self.assertTrue("publishers" in self.flight.traffic_fill)
+        self.assertDictEqual(
+            self.flight.traffic_fill["countries"], {"CA": 0.4, "MX": 0.6}
+        )
+        self.assertDictEqual(
+            self.flight.traffic_fill["publishers"], {self.publisher.slug: 1.0}
+        )

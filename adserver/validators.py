@@ -20,7 +20,7 @@ class TargetingParametersValidator(BaseValidator):
 
     messages = {
         "invalid_type": _("Value must be a dict, not %(type)s"),
-        "unknown_key": _("%(key)s is not a valid targeting parameter"),
+        "unknown_key": _("%(key)s is not a valid key"),
         "country_code": _("%(code)s is not a valid country code"),
         "state_province_code": _("%(code)s is not a valid state/province code"),
         "metro_code": _("%(code)s is not a valid metro code"),
@@ -28,6 +28,7 @@ class TargetingParametersValidator(BaseValidator):
         "topic": _("%(value)s is not a valid topic"),
         "mobile": _(f"%(value)s must be one of {mobile_traffic_values}"),
         "str": _("%(word)s must be a string"),
+        "percent": _("%(value)s must be a float between [0.0, 1.0]"),
     }
 
     validators = {
@@ -95,11 +96,11 @@ class TargetingParametersValidator(BaseValidator):
         if value not in self.mobile_traffic_values:
             raise ValidationError(self.messages["mobile"], params={"value": value})
 
-    def _validate_regions(self, slugs):
+    def _validate_regions(self, region_values):
         from .models import Region  # noqa
 
         regions = Region.load_from_cache()
-        for slug in slugs:
+        for slug in region_values:
             if slug not in regions:
                 raise ValidationError(self.messages["region"], params={"value": slug})
 
@@ -115,3 +116,57 @@ class TargetingParametersValidator(BaseValidator):
         for word in words:
             if not isinstance(word, str):
                 raise ValidationError(self.messages["str"], params={"word": word})
+
+
+@deconstructible
+class TrafficFillValidator(TargetingParametersValidator):
+
+    """
+    Validator for traffic fill and cap data.
+
+    eg.
+      {
+        "publishers": {"publisher1": 0.1, "publisher2": 0.05},
+        "countries": {"us": 0.1, "ca": 0.05, "de": 0.05},
+        "regions": {"us-ca": 0.25, "eu": 0.5},
+      }
+    """
+
+    code = "traffic-validator"
+
+    validators = {
+        "countries": "_validate_countries",
+        "regions": "_validate_regions",
+        "publishers": "_validate_publishers",
+    }
+
+    def _validate_countries(self, country_values):
+        for code, value in country_values.items():
+            if code not in self.country_set:
+                raise ValidationError(
+                    self.messages["country_code"], params={"code": code}
+                )
+
+            if not isinstance(value, float) or value > 1.0 or value < 0:
+                raise ValidationError(self.messages["percent"], params={"value": value})
+
+    def _validate_regions(self, region_values):
+        from .models import Region  # noqa
+
+        regions = Region.load_from_cache()
+        for slug, value in region_values.items():
+            if slug not in regions:
+                raise ValidationError(self.messages["region"], params={"value": slug})
+
+            if not isinstance(value, float) or value > 1.0 or value < 0:
+                raise ValidationError(self.messages["percent"], params={"value": value})
+
+    def _validate_publishers(self, publisher_values):
+        for publisher_slug, value in publisher_values.items():
+            if not isinstance(publisher_slug, str):
+                raise ValidationError(
+                    self.messages["str"], params={"word": publisher_slug}
+                )
+
+            if not isinstance(value, float) or value > 1.0 or value < 0:
+                raise ValidationError(self.messages["percent"], params={"value": value})

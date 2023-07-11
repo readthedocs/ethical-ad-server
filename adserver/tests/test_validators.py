@@ -6,6 +6,7 @@ from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..validators import TargetingParametersValidator
+from ..validators import TrafficFillValidator
 
 
 class TestValidators(TestCase):
@@ -73,4 +74,19 @@ class TestValidators(TestCase):
         )
         self.assertRaises(
             ValidationError, validator, {"include_topics": ["invalid-topic"]}
+        )
+
+    def test_traffic_cap_validator(self):
+        validator = TrafficFillValidator(message="Test Message")
+
+        validator({})
+        validator({"countries": {"US": 0.1, "CA": 0.1}})
+        validator({"regions": {"us-ca": 0.1}})
+        validator({"publishers": {"pub-slug": 0.1}})
+
+        # Invalid
+        self.assertRaises(ValidationError, validator, {"countries": {"XXX": 0.1}})
+        self.assertRaises(ValidationError, validator, {"countries": {"US": "a"}})
+        self.assertRaises(
+            ValidationError, validator, {"regions": {"invalid-region": 0.1}}
         )
