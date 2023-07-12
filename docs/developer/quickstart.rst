@@ -43,8 +43,8 @@ This section is more to document steps than to encourage you to develop outside 
 Requirements
 ~~~~~~~~~~~~
 
-- Python 3.8
-- Nodejs (tested with v12.3)
+- Python 3.10
+- Nodejs (tested with v14)
 
 Front-end assets
 ~~~~~~~~~~~~~~~~
