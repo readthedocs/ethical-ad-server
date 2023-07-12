@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.4.0
+--------------
+
+The big change in this release was to implement traffic caps
+which allow us to shape how flights are filled a bit more.
+We also updated Ubuntu/Python in this release
+which had a few cascading dependencies.
+
+:date: July 12, 2023
+
+ * @ericholscher: Don't overwrite CSS files (#770)
+ * @davidfischer: Calculate traffic fill rate daily and enforce traffic cap (#769)
+ * @davidfischer: Fix a broken link for requesting a new flight (#768)
+ * @davidfischer: Ubuntu 22.04 - Python 3.10 upgrade (#758)
+
+
 Version v2.3.1
 --------------
 
