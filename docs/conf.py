@@ -134,9 +134,12 @@ html_static_path = ["_static"]
 #
 # html_sidebars = {}
 
-html_context = {"css_files": ["_static/css/custom.css"]}
+html_css_files = [
+    "_static/css/custom.css",
+]
 
 html_js_files = []
+
 if not os.environ.get("READTHEDOCS", False):
     # The client is needed just for styling some of the sample ad blocks
     # Ads aren't loaded on these docs outside of RTD
