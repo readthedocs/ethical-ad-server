@@ -788,7 +788,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     # eg.
     # {
     #    "publishers": {"publisher1": 0.1, "publisher2": 0.05},
-    #    "countries": {"us": 0.1, "ca": 0.05, "de": 0.05},
+    #    "countries": {"US": 0.1, "CA": 0.05, "DE": 0.05},
     #    "regions": {"us-ca": 0.25, "eu": 0.5},
     #  }
     traffic_fill = JSONField(
@@ -1003,22 +1003,20 @@ class Flight(TimeStampedModel, IndestructibleModel):
                 return False
 
         # Check if the country traffic cap exceeds the current fill for that country
-        if self.traffic_cap and "countries" in self.traffic_cap:
+        if self.traffic_cap and self.traffic_fill and "countries" in self.traffic_cap:
             # pylint: disable=invalid-sequence-index
             limited_countries = self.traffic_cap["countries"]
-            traffic_fill = self.traffic_fill or {}
-            country_traffic_fill = traffic_fill.get("countries", {})
+            country_traffic_fill = self.traffic_fill.get("countries", {})
             if country_traffic_fill.get(geo_data.country, 0.0) > limited_countries.get(
                 geo_data.country, 100.0
             ):
                 return False
 
         # Check if the region traffic cap exceeds the current fill for that region
-        if self.traffic_cap and "regions" in self.traffic_cap:
+        if self.traffic_cap and self.traffic_fill and "regions" in self.traffic_cap:
             # pylint: disable=invalid-sequence-index
             limited_regions = self.traffic_cap["regions"]
-            traffic_fill = self.traffic_fill or {}
-            region_traffic_fill = traffic_fill.get("regions", {})
+            region_traffic_fill = self.traffic_fill.get("regions", {})
             for region_slug in regions:
                 if geo_data.country not in regions[region_slug]:
                     continue
@@ -1090,11 +1088,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return publisher.slug not in self.excluded_publishers
 
         # Check if the publisher traffic cap exceeds the current fill for that publisher
-        if self.traffic_cap and "publishers" in self.traffic_cap:
+        if self.traffic_cap and self.traffic_fill and "publishers" in self.traffic_cap:
             # pylint: disable=invalid-sequence-index
             limited_publishers = self.traffic_cap["publishers"]
-            traffic_fill = self.traffic_fill or {}
-            publisher_traffic_fill = traffic_fill.get("publishers", {})
+            publisher_traffic_fill = self.traffic_fill.get("publishers", {})
             if publisher_traffic_fill.get(publisher.slug, 0.0) > limited_publishers.get(
                 publisher.slug, 100.0
             ):

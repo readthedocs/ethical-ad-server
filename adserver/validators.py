@@ -127,7 +127,7 @@ class TrafficFillValidator(TargetingParametersValidator):
     eg.
       {
         "publishers": {"publisher1": 0.1, "publisher2": 0.05},
-        "countries": {"us": 0.1, "ca": 0.05, "de": 0.05},
+        "countries": {"US": 0.1, "CA": 0.05, "de": 0.05},
         "regions": {"us-ca": 0.25, "eu": 0.5},
       }
     """
