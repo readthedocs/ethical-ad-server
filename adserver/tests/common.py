@@ -7,6 +7,7 @@ from django.test.client import RequestFactory
 from django_dynamic_fixture import get
 from djstripe.models import Customer
 
+from ..constants import PAID_CAMPAIGN
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
@@ -30,7 +31,10 @@ class BaseAdModelsTestCase(TestCase):
         self.publisher = get(Publisher)
         self.advertiser = get(Advertiser)
         self.campaign = get(
-            Campaign, advertiser=self.advertiser, publishers=[self.publisher]
+            Campaign,
+            advertiser=self.advertiser,
+            publishers=[self.publisher],
+            campaign_type=PAID_CAMPAIGN,
         )
         self.flight = get(
             Flight,

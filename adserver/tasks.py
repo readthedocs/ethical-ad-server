@@ -635,6 +635,9 @@ def update_previous_day_reports(day=None):
     daily_update_uplift(start_date)
     daily_update_regiontopic(start_date)
 
+    # Updates an aggregation on each paid flight
+    update_flight_traffic_fill.apply_async()
+
     if not day:
         # Send notification to Slack about previous day's reports
         # Don't send this notification if run manually
@@ -940,6 +943,85 @@ def disable_inactive_publishers(days=60, draft_only=False, dry_run=False):
                         message.draft = True
 
                     message.send()
+
+
+@app.task()
+def update_flight_traffic_fill():
+    """Update a cached value on each paid flight with its fill rate by region/geo/publisher."""
+    max_objects = 20
+    threshold = 0.01  # Nothing below this percent will be aggregated
+
+    log.info("Updating flight traffic fill")
+
+    # Update the traffic fill rates for each publisher/region/country for each flight
+    for flight in Flight.objects.filter(
+        live=True, campaign__campaign_type=PAID_CAMPAIGN, total_views__gt=0
+    ):
+        publisher_traffic_fill = {}
+        country_traffic_fill = {}
+        region_traffic_fill = {}
+
+        # Publisher (fast)
+        for imp in (
+            AdImpression.objects.using(settings.REPLICA_SLUG)
+            .filter(advertisement__flight=flight)
+            .values(
+                "publisher__slug",
+            )
+            .annotate(
+                publisher_views=Sum("views"),
+            )
+            .order_by("-publisher_views")[:max_objects]
+        ):
+            publisher_slug = imp["publisher__slug"]
+            publisher_percentage = imp["publisher_views"] / flight.total_views
+            if publisher_percentage >= threshold:
+                publisher_traffic_fill[publisher_slug] = publisher_percentage
+
+        # Region (slower)
+        for imp in (
+            RegionImpression.objects.using(settings.REPLICA_SLUG)
+            .filter(advertisement__flight=flight)
+            .values(
+                "region",
+            )
+            .annotate(
+                region_views=Sum("views"),
+            )
+            .order_by("-region_views")[:max_objects]
+        ):
+            region = imp["region"]
+            region_percentage = imp["region_views"] / flight.total_views
+            if region_percentage >= threshold:
+                region_traffic_fill[region] = region_percentage
+
+        # Country (slowest)
+        for imp in (
+            GeoImpression.objects.using(settings.REPLICA_SLUG)
+            .filter(advertisement__flight=flight)
+            .values(
+                "country",
+            )
+            .annotate(
+                country_views=Sum("views"),
+            )
+            .order_by("-country_views")[:max_objects]
+        ):
+            country_code = imp["country"]
+            country_percentage = imp["country_views"] / flight.total_views
+            if country_percentage >= threshold:
+                country_traffic_fill[country_code] = country_percentage
+
+        # Grab the flight from the DB again in case the object has changed
+        flight.refresh_from_db()
+        if not flight.traffic_fill:
+            flight.traffic_fill = {}
+        flight.traffic_fill["publishers"] = publisher_traffic_fill
+        flight.traffic_fill["countries"] = country_traffic_fill
+        flight.traffic_fill["regions"] = region_traffic_fill
+        flight.save()
+
+    log.info("Completed updating flight traffic fill")
 
 
 @app.task()

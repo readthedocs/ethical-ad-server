@@ -63,6 +63,7 @@ from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_domain_from_url
 from .validators import TargetingParametersValidator
+from .validators import TrafficFillValidator
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -782,6 +783,33 @@ class Flight(TimeStampedModel, IndestructibleModel):
         default=0, help_text=_("Clicks across all ads in this flight")
     )
 
+    # We store nightly the top 20 publishers/countries/regions for each flight
+    # and the percentage they have filled this flight
+    # eg.
+    # {
+    #    "publishers": {"publisher1": 0.1, "publisher2": 0.05},
+    #    "countries": {"US": 0.1, "CA": 0.05, "DE": 0.05},
+    #    "regions": {"us-ca": 0.25, "eu": 0.5},
+    #  }
+    traffic_fill = JSONField(
+        _("Traffic fill"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[TrafficFillValidator()],
+    )
+
+    # If set, any publisher, country, or region whose `traffic_fill` exceeds the cap
+    # will not be eligible to show on this campaign until they're below the cap.
+    # Format is the same as `traffic_fill` but this is set manually
+    traffic_cap = JSONField(
+        _("Traffic cap"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[TrafficFillValidator()],
+    )
+
     # Connect to Stripe invoice data
     # There can be multiple invoices for a flight
     # (say a 3 month flight billed monthly)
@@ -956,10 +984,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
+        regions = Region.load_from_cache()
+
         # Check region groupings as well
         if self.included_regions or self.excluded_regions:
-            # Only load regions if we have to
-            regions = Region.load_from_cache()
             if self.included_regions and not any(
                 geo_data.country in regions[reg]
                 for reg in self.included_regions
@@ -973,6 +1001,29 @@ class Flight(TimeStampedModel, IndestructibleModel):
                 if reg in regions
             ):
                 return False
+
+        # Check if the country traffic cap exceeds the current fill for that country
+        if self.traffic_cap and self.traffic_fill and "countries" in self.traffic_cap:
+            # pylint: disable=invalid-sequence-index
+            limited_countries = self.traffic_cap["countries"]
+            country_traffic_fill = self.traffic_fill.get("countries", {})
+            if country_traffic_fill.get(geo_data.country, 0.0) > limited_countries.get(
+                geo_data.country, 100.0
+            ):
+                return False
+
+        # Check if the region traffic cap exceeds the current fill for that region
+        if self.traffic_cap and self.traffic_fill and "regions" in self.traffic_cap:
+            # pylint: disable=invalid-sequence-index
+            limited_regions = self.traffic_cap["regions"]
+            region_traffic_fill = self.traffic_fill.get("regions", {})
+            for region_slug in regions:
+                if geo_data.country not in regions[region_slug]:
+                    continue
+                if region_traffic_fill.get(region_slug, 0.0) > limited_regions.get(
+                    region_slug, 100.0
+                ):
+                    return False
 
         return True
 
@@ -1035,6 +1086,16 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         if self.excluded_publishers:
             return publisher.slug not in self.excluded_publishers
+
+        # Check if the publisher traffic cap exceeds the current fill for that publisher
+        if self.traffic_cap and self.traffic_fill and "publishers" in self.traffic_cap:
+            # pylint: disable=invalid-sequence-index
+            limited_publishers = self.traffic_cap["publishers"]
+            publisher_traffic_fill = self.traffic_fill.get("publishers", {})
+            if publisher_traffic_fill.get(publisher.slug, 0.0) > limited_publishers.get(
+                publisher.slug, 100.0
+            ):
+                return False
 
         return True
 

@@ -99,6 +99,8 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "cpm",
             "sold_impressions",
             "targeting_parameters",
+            "traffic_fill",
+            "traffic_cap",
         )
 
 

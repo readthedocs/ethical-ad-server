@@ -106,6 +106,53 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertFalse(self.flight.show_to_geo(GeolocationData("US", "CA", 825)))
         self.assertTrue(self.flight.show_to_geo(GeolocationData("US", "WA", 819)))
 
+    def test_geo_cap(self):
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+
+        self.flight.traffic_cap = {
+            "countries": {"US": 0.5},
+        }
+        self.flight.traffic_fill = {
+            "countries": {"US": 0.45},
+        }
+        self.flight.save()
+
+        # US hasn't hit the cap yet
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+
+        self.flight.traffic_fill = {
+            "countries": {"US": 0.55},
+        }
+        self.flight.save()
+
+        # US exceeds the cap and the flight won't show in the US
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("CA")))
+
+    def test_region_cap(self):
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+
+        self.flight.traffic_cap = {
+            "regions": {"us-ca": 0.5},
+        }
+        self.flight.traffic_fill = {
+            "regions": {"us-ca": 0.45},
+        }
+        self.flight.save()
+
+        # NA hasn't hit the cap yet
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("US")))
+
+        self.flight.traffic_fill = {
+            "regions": {"us-ca": 0.55},
+        }
+        self.flight.save()
+
+        # NA region exceeds the cap and the flight won't show in the US or Canada
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("CA")))
+        self.assertFalse(self.flight.show_to_geo(GeolocationData("US")))
+        self.assertTrue(self.flight.show_to_geo(GeolocationData("DE")))
+
     def test_keyword_targeting(self):
         self.assertTrue(self.flight.show_to_keywords(["django"]))
 
@@ -153,6 +200,33 @@ class TestAdModels(BaseAdModelsTestCase):
         ]
         self.flight.save()
         self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+    def test_publisher_traffic_cap(self):
+        self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.traffic_cap = {
+            "publishers": {self.publisher.slug: 0.5},
+        }
+        self.flight.save()
+
+        # This publisher isn't in the "fill"
+        self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.traffic_fill = {
+            "publishers": {self.publisher.slug: 0.45},
+        }
+        self.flight.save()
+
+        # Publisher doesn't exceed the cap
+        self.assertTrue(self.flight.show_on_publisher(self.publisher))
+
+        self.flight.traffic_fill = {
+            "publishers": {self.publisher.slug: 0.51},
+        }
+        self.flight.save()
+
+        # Fill exceeds the cap - this flight is not eligible to be shown on the publisher
+        self.assertFalse(self.flight.show_on_publisher(self.publisher))
 
     def test_domain_targeting(self):
         self.flight.targeting_parameters["include_domains"] = ["example.com"]
