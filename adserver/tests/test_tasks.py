@@ -21,6 +21,7 @@ from ..models import RegionTopicImpression
 from ..models import UpliftImpression
 from ..tasks import calculate_ad_ctrs
 from ..tasks import calculate_publisher_ctrs
+from ..tasks import daily_flight_hard_stop
 from ..tasks import daily_update_advertisers
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
@@ -289,6 +290,24 @@ class TasksTest(BaseAdModelsTestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_flight_hard_stop(self):
+        daily_flight_hard_stop()
+        self.flight.refresh_from_db()
+
+        self.assertTrue(self.flight.clicks_remaining() > 0)
+
+        # Set flight to hard stop today
+        self.flight.start_date = timezone.now() - datetime.timedelta(days=30)
+        self.flight.end_date = timezone.now()
+        self.flight.hard_stop_date = timezone.now()
+        self.flight.save()
+
+        # This should hard stop the flight
+        daily_flight_hard_stop()
+        self.flight.refresh_from_db()
+
+        self.assertEqual(self.flight.clicks_remaining(), 0)
 
 
 class AggregationTaskTests(BaseAdModelsTestCase):

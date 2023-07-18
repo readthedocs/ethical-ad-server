@@ -90,6 +90,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "campaign",
             "start_date",
             "end_date",
+            "hard_stop_date",
             "live",
             "priority_multiplier",
             "pacing_interval",

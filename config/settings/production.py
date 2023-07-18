@@ -176,6 +176,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.run_publisher_importers",
         "schedule": crontab(hour="1", minute="0"),
     },
+    "every-day-flight-hard-stop": {
+        "task": "adserver.tasks.daily_flight_hard_stop",
+        "schedule": crontab(hour="23", minute="55"),
+    },
 }
 
 # Tasks which should only be run if the analyzer is installed

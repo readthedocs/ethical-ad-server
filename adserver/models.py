@@ -720,12 +720,21 @@ class Flight(TimeStampedModel, IndestructibleModel):
         _("Start Date"),
         default=datetime.date.today,
         db_index=True,
-        help_text=_("This ad will not be shown before this date"),
+        help_text=_("This flight will not be shown before this date"),
     )
     end_date = models.DateField(
         _("End Date"),
         default=default_flight_end_date,
-        help_text=_("The target end date for the ad (it may go after this date)"),
+        help_text=_("The target end date for the flight (it may go after this date)"),
+    )
+    hard_stop_date = models.DateField(
+        _("Hard Stop Date"),
+        default=None,
+        blank=True,
+        null=True,
+        help_text=_(
+            "The flight will be stopped on this date even if not completely fulfilled"
+        ),
     )
     live = models.BooleanField(_("Live"), default=False)
     priority_multiplier = models.IntegerField(

@@ -14,6 +14,7 @@ from django.db.models import Sum
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
+from simple_history.utils import update_change_reason
 
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
@@ -1022,6 +1023,47 @@ def update_flight_traffic_fill():
         flight.save()
 
     log.info("Completed updating flight traffic fill")
+
+
+@app.task()
+def daily_flight_hard_stop():
+    """
+    Set flight with a hard stop date to completed.
+
+    This works by setting the sold amount equal to the current fulfilled amount
+    and sending a slack notification about the remaining credit.
+
+    This should be called before `notify_of_completed_flights()`
+    so that the regular wrapup emails can be sent to advertisers.
+    """
+    today = get_ad_day().date()
+
+    for flight in Flight.objects.filter(live=True, hard_stop_date__lte=today):
+        if flight.clicks_remaining() <= 0 and flight.views_remaining() <= 0:
+            continue
+
+        flight.sold_clicks = flight.total_clicks
+        flight.sold_impressions = flight.total_views
+        flight.save()
+
+        value_remaining = round(flight.value_remaining(), 2)
+
+        log.info("Hard stopped flight %s", flight)
+
+        # Store the change reason in the history
+        update_change_reason(
+            flight, f"Hard stopped with ${value_remaining} value remaining."
+        )
+
+        flight_url = generate_absolute_url(flight.get_absolute_url())
+
+        # Send an internal notification about this flight being hard stopped.
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": f"Flight {flight.name} was hard stopped. There was ${value_remaining} value remaining. {flight_url}"
+            },
+        )
 
 
 @app.task()
