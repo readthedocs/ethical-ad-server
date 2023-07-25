@@ -725,7 +725,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     end_date = models.DateField(
         _("End Date"),
         default=default_flight_end_date,
-        help_text=_("The target end date for the flight (it may go after this date)"),
+        help_text=_("The estimated end date for the flight"),
     )
     hard_stop_date = models.DateField(
         _("Hard Stop Date"),
