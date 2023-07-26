@@ -21,7 +21,6 @@ from ..models import RegionTopicImpression
 from ..models import UpliftImpression
 from ..tasks import calculate_ad_ctrs
 from ..tasks import calculate_publisher_ctrs
-from ..tasks import daily_flight_hard_stop
 from ..tasks import daily_update_advertisers
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
@@ -179,6 +178,49 @@ class TasksTest(BaseAdModelsTestCase):
         self.flight.refresh_from_db()
         self.assertFalse(self.flight.live)
 
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
+    def test_notify_completed_flights_hard_stop(self):
+        # Ensure there's a recipient for a wrapup email
+        self.staff_user.advertisers.add(self.advertiser)
+
+        backend = get_backend()
+        backend.reset_messages()
+
+        notify_of_completed_flights()
+        messages = backend.retrieve_messages()
+
+        # Shouldn't be any completed flight messages
+        self.assertEqual(len(messages), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+        # Set this flight to hard stop
+        self.flight.sold_clicks = 100
+        self.flight.total_views = 1_000
+        self.flight.total_clicks = 50
+        self.flight.hard_stop = True
+        self.flight.start_date = timezone.now() - datetime.timedelta(days=31)
+        self.flight.end_date = timezone.now() - datetime.timedelta(days=1)
+        self.flight.save()
+
+        # This should hard stop the flight
+        notify_of_completed_flights()
+        self.flight.refresh_from_db()
+
+        # Flight should no longer be live
+        self.assertFalse(self.flight.live)
+
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1)
+        self.assertTrue(
+            "was hard stopped. There was $100.00 value remaining" in messages[0]["text"]
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(mail.outbox[0].subject.startswith("Advertising flight wrapup"))
+
     def test_notify_of_publisher_changes(self):
         # Publisher changes only apply to paid campaigns
         self.publisher.allow_paid_campaigns = True
@@ -290,24 +332,6 @@ class TasksTest(BaseAdModelsTestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1)
         self.assertEqual(len(mail.outbox), 1)
-
-    def test_flight_hard_stop(self):
-        daily_flight_hard_stop()
-        self.flight.refresh_from_db()
-
-        self.assertTrue(self.flight.clicks_remaining() > 0)
-
-        # Set flight to hard stop today
-        self.flight.start_date = timezone.now() - datetime.timedelta(days=30)
-        self.flight.end_date = timezone.now()
-        self.flight.hard_stop_date = timezone.now()
-        self.flight.save()
-
-        # This should hard stop the flight
-        daily_flight_hard_stop()
-        self.flight.refresh_from_db()
-
-        self.assertEqual(self.flight.clicks_remaining(), 0)
 
 
 class AggregationTaskTests(BaseAdModelsTestCase):

@@ -44,11 +44,10 @@
   {% endif %}
   {% if flight.end_date %}
     <dt title="{% trans 'Note: your campaign may run beyond this date due to availability.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Estimated end date' %}</dt>
-    <dd>{{ flight.end_date }}</dd>
-  {% endif %}
-  {% if flight.hard_stop_date %}
-    <dt title="{% trans 'The flight will be stopped on this date even if not completely fulfilled. The balance will be credited.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Hard stop date' %}  <span class="fa fa-info-circle fa-fw mr-2 text-muted" aria-hidden="true"></span></dt>
-    <dd>{{ flight.hard_stop_date }}</dd>
+    <dd>
+      <span>{{ flight.end_date }}</span>
+      {% if flight.hard_stop %}<span title="{% trans 'The flight will be stopped on this date even if not completely fulfilled. The balance will be credited.' %}" data-toggle="tooltip" data-placement="left"> ({% trans 'Hard stop' %})</span>{% endif %}
+    </dd>
   {% endif %}
 
   <dt title="{% trans 'Determines which ad is chosen when a flight has multiple ads.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Ad selection' %} <span class="fa fa-info-circle fa-fw mr-2 text-muted" aria-hidden="true"></span></dt>

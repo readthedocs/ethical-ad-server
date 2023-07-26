@@ -727,13 +727,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
         default=default_flight_end_date,
         help_text=_("The estimated end date for the flight"),
     )
-    hard_stop_date = models.DateField(
-        _("Hard Stop Date"),
-        default=None,
-        blank=True,
-        null=True,
+    hard_stop = models.BooleanField(
+        _("Hard stop"),
+        default=False,
         help_text=_(
-            "The flight will be stopped on this date even if not completely fulfilled"
+            "The flight will be stopped on the end date even if not completely fulfilled"
         ),
     )
     live = models.BooleanField(_("Live"), default=False)
@@ -1195,10 +1193,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     def clicks_needed_this_interval(self):
         """Calculates clicks needed based on the impressions this flight's ads have."""
+        today = get_ad_day().date()
         if (
             not self.live
             or self.clicks_remaining() <= 0
-            or self.start_date > get_ad_day().date()
+            or self.start_date > today
+            or (self.hard_stop and self.end_date < today)
         ):
             return 0
 
