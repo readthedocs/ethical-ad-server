@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.5.0
+--------------
+
+This release added a hard stop flag where a flight will stop on the specified date
+even if it isn't complete. This flag is false by default.
+
+:date: July 27, 2023
+
+ * @davidfischer: Flight hard stop (#772)
+
+
 Version v2.4.0
 --------------
 
