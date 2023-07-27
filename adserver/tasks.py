@@ -14,6 +14,7 @@ from django.db.models import Sum
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
+from simple_history.utils import update_change_reason
 
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
@@ -737,7 +738,33 @@ def notify_of_completed_flights():
 
     completed_flights_by_advertiser = defaultdict(list)
     for flight in Flight.objects.filter(live=True).select_related():
-        if (
+        # Check for hard stopped flights
+        if flight.hard_stop and flight.end_date <= cutoff.date():
+            log.info("Flight %s is being hard stopped.", flight)
+            value_remaining = round(flight.value_remaining(), 2)
+            flight_url = generate_absolute_url(flight.get_absolute_url())
+
+            # Send an internal notification about this flight being hard stopped.
+            slack_message(
+                "adserver/slack/generic-message.slack",
+                {
+                    "text": f"Flight {flight.name} was hard stopped. There was ${value_remaining:.2f} value remaining. {flight_url}"
+                },
+            )
+
+            # Mark the flight as no longer live. It was hard stopped
+            flight.live = False
+            flight.save()
+
+            # Store the change reason in the history
+            update_change_reason(
+                flight, f"Hard stopped with ${value_remaining} value remaining."
+            )
+
+            completed_flights_by_advertiser[flight.campaign.advertiser.slug].append(
+                flight
+            )
+        elif (
             flight.clicks_remaining() == 0
             and flight.views_remaining() == 0
             and AdImpression.objects.filter(
