@@ -1174,10 +1174,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return aggregation or 0
 
     def views_needed_this_interval(self):
+        today = get_ad_day().date()
         if (
             not self.live
             or self.views_remaining() <= 0
-            or self.start_date > get_ad_day().date()
+            or self.start_date > today
+            or (self.hard_stop and self.end_date < today)
         ):
             return 0
 
