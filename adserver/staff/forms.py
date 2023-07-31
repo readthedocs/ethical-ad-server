@@ -74,8 +74,8 @@ class CreateAdvertiserForm(forms.Form):
                     + str(_("Enter an existing user's email or invite a new one."))
                     + "</p>"
                 ),
-                Field("user_email", placeholder="advertiser@company.com"),
                 Field("user_name"),
+                Field("user_email", placeholder="advertiser@company.com"),
                 css_class="my-3",
             ),
             Submit("submit", _("Create advertiser")),
