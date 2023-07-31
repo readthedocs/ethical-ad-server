@@ -522,7 +522,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         instance = super().save(commit)
 
         # Copy flight fields that aren't part of the form
-        for field in ("targeting_parameters", "priority_multiplier"):
+        for field in ("targeting_parameters", "priority_multiplier", "traffic_cap"):
             setattr(instance, field, getattr(self.old_flight, field))
         instance.save()
 
