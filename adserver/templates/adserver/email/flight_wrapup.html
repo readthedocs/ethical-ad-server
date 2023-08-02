@@ -9,7 +9,7 @@
 
 {% spaceless %}
 
-<p>{% blocktrans with total_flights=completed_flights|length pluralized_flights=completed_flights|pluralize %}
+<p>{% blocktrans with total_flights=completed_flights|length pluralized_flights=completed_flights|length|pluralize %}
   You have {{ total_flights }} flight{{ pluralized_flights }} that finished:
 {% endblocktrans %}</p>
 <ul>
@@ -32,13 +32,13 @@
 {% endblocktrans %}</p>
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
-{% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length pluralized_flights=current_flight_count|pluralize %}
+{% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length pluralized_current_flights=current_flights|length|pluralize pluralized_upcoming_flights=upcoming_flights|length|pluralize %}
 {% if current_flights and upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_flights }}</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_current_flights }}</a> currently running and {{ upcoming_flight_count }} starting soon.{% endblocktrans %}</p>
 {% elif current_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_flights }}</a> currently running.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ current_flight_count }} flight{{ pluralized_current_flights }}</a> currently running.{% endblocktrans %}</p>
 {% elif upcoming_flights %}
-<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ upcoming_flight_count }} flight{{ pluralized_flights }}</a> starting soon.{% endblocktrans %}</p>
+<p>{% blocktrans %}You have <a href="{{ site_domain }}{{ advertiser_url }}?ref=email-wrapup">{{ upcoming_flight_count }} flight{{ pluralized_upcoming_flights }}</a> starting soon.{% endblocktrans %}</p>
 {% endif %}
 {% endwith %}
 
