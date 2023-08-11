@@ -25,6 +25,10 @@ class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
     # Threshold on the model
     MODEL_THRESHOLD = 0.4
 
+    # The model can quickly consume all the memory if the input is too long
+    # 20k characters is a lot of input to classify a page
+    MAX_INPUT_LENGTH = 20_000
+
     def skip_classification(self, text):
         """Return True if classification should be skipped."""
         if len(text) < self.MIN_TEXT_LENGTH:
