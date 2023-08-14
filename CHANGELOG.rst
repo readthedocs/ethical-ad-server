@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.6.0
+--------------
+
+After the 22.04 upgrade, we've been seeing some celery instability
+especially with our analyzer that uses a lot of resources.
+This release should fix those issues.
+
+:date: August 14, 2023
+
+ * @davidfischer: Limit classifier to 20k (#778)
+ * @davidfischer: Upgrade celery (#777)
+ * @ericholscher: Try to fix pluralizing flights.. (#776)
+ * @ericholscher: Show advertiser name first :) (#775)
+ * @ericholscher: Copy traffic_cap when renewing a flight. (#774)
+
+
 Version v2.5.0
 --------------
 
