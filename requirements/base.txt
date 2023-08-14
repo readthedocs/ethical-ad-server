@@ -3,7 +3,7 @@ Django==3.2.20
 pytz==2021.3
 
 # Asynchronous tasks
-celery[redis]<5.0
+celery[redis]==5.3.1
 
 # Static files
 whitenoise==6.0.0
