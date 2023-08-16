@@ -732,6 +732,23 @@ def calculate_ad_ctrs(days=7, min_views=1_000):
 
 
 @app.task()
+def notify_on_ad_image_change(advertisement_id):
+    ad = Advertisement.objects.filter(id=advertisement_id).first()
+    if not ad or not ad.image:
+        log.warning("Invalid ad passed to 'notify_on_ad_image_change'")
+        return
+
+    ad_url = generate_absolute_url(ad.get_absolute_url())
+    message = f"Ad <{ad_url}|{ad.name}> had its image changed to {ad.image.url}"
+
+    log.info(message)
+    slack_message(
+        "adserver/slack/generic-message.slack",
+        {"text": message},
+    )
+
+
+@app.task()
 def notify_of_completed_flights():
     """Send a note and close flights which completed in the last day."""
     cutoff = get_ad_day() - datetime.timedelta(days=1)
