@@ -143,6 +143,7 @@ class RegionAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug")
 
 
+@admin.register(Publisher)
 class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for publishers."""
@@ -212,6 +213,7 @@ class CampaignInline(admin.TabularInline):
         return False
 
 
+@admin.register(Advertiser)
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisers."""
@@ -225,6 +227,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     readonly_fields = ("modified", "created")
     search_fields = ("name", "slug", "djstripe_customer__id")
 
+    @admin.action(description=_("Create a draft invoice for this customer"))
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
         if not settings.STRIPE_ENABLED:
@@ -285,10 +288,6 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     _("No Stripe customer ID for {}".format(advertiser)),
                 )
 
-    action_create_draft_invoice.short_description = _(
-        "Create a draft invoice for this customer"
-    )
-
     def report(self, instance):
         if not instance.pk:
             return ""  # pragma: no cover
@@ -309,6 +308,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return None
 
 
+@admin.register(AdType)
 class AdTypeAdmin(SimpleHistoryAdmin):
 
     """Django admin configuration for ad types."""
@@ -359,6 +359,7 @@ class AdvertisementMixin:
         return queryset
 
 
+@admin.register(Advertisement)
 class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisements."""
@@ -528,6 +529,7 @@ class FlightMixin:
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
 
+@admin.register(Flight)
 class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
     """Django admin admin configuration for ad Flights."""
@@ -584,6 +586,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
 
+    @admin.action(description=_("Create a draft invoice for selected flights"))
     def action_create_draft_invoice(self, request, queryset):
         """
         Create a draft invoice for selected flights with metadata attached.
@@ -702,10 +705,6 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             ),
         )
 
-    action_create_draft_invoice.short_description = _(
-        "Create a draft invoice for selected flights"
-    )
-
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
@@ -743,6 +742,7 @@ class FlightsInline(FlightMixin, admin.TabularInline):
         return False  # pragma: no cover
 
 
+@admin.register(Campaign)
 class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for ad campaigns."""
@@ -833,6 +833,7 @@ class AdImpressionAdmin(ImpressionsAdmin):
     readonly_fields = ("view_time",) + ImpressionsAdmin.readonly_fields
 
 
+@admin.register(AdvertiserImpression)
 class AdvertiserImpressionAdmin(ImpressionsAdmin):
     date_hierarchy = "date"
     readonly_fields = (
@@ -854,6 +855,7 @@ class AdvertiserImpressionAdmin(ImpressionsAdmin):
     search_fields = ("advertiser__name",)
 
 
+@admin.register(PublisherImpression, PublisherPaidImpression)
 class PublisherImpressionAdmin(ImpressionsAdmin):
     date_hierarchy = "date"
     readonly_fields = (
@@ -950,6 +952,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return False
 
 
+@admin.register(Offer)
 class OfferAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad offers."""
@@ -968,7 +971,7 @@ class OfferAdmin(AdBaseAdmin):
     # Without this, the django admin will order by date and PK
     # resulting in a very expensive query
     # This is due to how the admin determines that the order should be deterministic.
-    # https://docs.djangoproject.com/en/3.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
+    # https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
     # Ordering by a UUID isn't very useful.
     ordering = ("-pk",)
 
@@ -1009,6 +1012,7 @@ class OfferAdmin(AdBaseAdmin):
         return None
 
 
+@admin.register(Click)
 class ClickAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad clicks."""
@@ -1016,6 +1020,7 @@ class ClickAdmin(AdBaseAdmin):
     model = Click
 
 
+@admin.register(View)
 class ViewAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad views."""
@@ -1023,6 +1028,7 @@ class ViewAdmin(AdBaseAdmin):
     model = View
 
 
+@admin.register(PublisherPayout)
 class PublisherPayoutAdmin(SimpleHistoryAdmin):
     list_display = (
         "pk",
@@ -1041,6 +1047,7 @@ class PublisherPayoutAdmin(SimpleHistoryAdmin):
     search_fields = ("publisher__name", "pk")
 
 
+@admin.register(PublisherGroup)
 class PublisherGroupAdmin(SimpleHistoryAdmin):
     list_display = ("name", "slug", "modified", "created")
     list_filter = ("publishers",)
@@ -1076,21 +1083,6 @@ class RegionTopicAdmin(admin.ModelAdmin):
     )
     list_display = readonly_fields
 
-
-admin.site.register(Publisher, PublisherAdmin)
-admin.site.register(PublisherPayout, PublisherPayoutAdmin)
-admin.site.register(PublisherGroup, PublisherGroupAdmin)
-admin.site.register(Advertiser, AdvertiserAdmin)
-admin.site.register(View, ViewAdmin)
-admin.site.register(Click, ClickAdmin)
-admin.site.register(Offer, OfferAdmin)
-admin.site.register(AdType, AdTypeAdmin)
-admin.site.register(Advertisement, AdvertisementAdmin)
-admin.site.register(Flight, FlightAdmin)
-admin.site.register(Campaign, CampaignAdmin)
-admin.site.register(AdvertiserImpression, AdvertiserImpressionAdmin)
-admin.site.register(PublisherImpression, PublisherImpressionAdmin)
-admin.site.register(PublisherPaidImpression, PublisherImpressionAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:

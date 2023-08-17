@@ -1492,7 +1492,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def __copy__(self):
         """Duplicate an ad."""
-        # https://docs.djangoproject.com/en/3.2/topics/db/queries/#copying-model-instances
+        # https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         # Get a fresh reference so that "self" doesn't become the new copy
         ad = Advertisement.objects.get(pk=self.pk)
 
@@ -1600,7 +1600,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
         country = get_client_country(request)
-        url = url or request.META.get("HTTP_REFERER")
+        url = url or request.headers.get("referer")
 
         if (
             model != Click

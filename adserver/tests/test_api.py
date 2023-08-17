@@ -241,13 +241,13 @@ class BaseApiTest(TestCase):
         )
         self.staff_token = Token.objects.create(user=self.staff_user)
 
-        self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
+        self.client = Client(headers={"authorization": "Token {}".format(self.token)})
         self.staff_client = Client(
-            HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
+            headers={"authorization": "Token {}".format(self.staff_token)}
         )
         # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
         self.proxy_client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR=self.ip_address
         )
 
         self.unauth_client = Client()
@@ -299,7 +299,7 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 401)
 
-        client = Client(HTTP_AUTHORIZATION="invalid")
+        client = Client(headers={"authorization": "invalid"})
         resp = client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
@@ -1482,7 +1482,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=referrer_url,
+            headers={"referer": referrer_url},
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -1496,7 +1496,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=referrer_url,
+            headers={"referer": referrer_url},
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -1603,7 +1603,7 @@ class TestProxyViews(BaseApiTest):
         self.nonce = self.offer["nonce"]
 
         self.client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR=self.ip_address
         )
         self.url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": self.nonce}
@@ -1638,7 +1638,9 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Unknown offer")
 
     def test_view_tracking_internal_ip(self):
-        client = Client(HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR="127.0.0.1")
+        client = Client(
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR="127.0.0.1"
+        )
         resp = client.get(self.url)
 
         self.assertEqual(resp.status_code, 200)
@@ -1662,14 +1664,14 @@ class TestProxyViews(BaseApiTest):
             "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
         )
 
-        resp = self.client.get(self.url, HTTP_USER_AGENT=bot_ua)
+        resp = self.client.get(self.url, headers={"user-agent": bot_ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Bot impression")
 
     def test_view_tracking_unknown_ua(self):
         unknown_ua = "Unrecognized UA"
-        resp = self.client.get(self.url, HTTP_USER_AGENT=unknown_ua)
+        resp = self.client.get(self.url, headers={"user-agent": unknown_ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Unrecognized user agent")
@@ -1687,7 +1689,7 @@ class TestProxyViews(BaseApiTest):
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/69.0.3497.100 Safari/537.36"
         )
-        resp = self.client.get(self.url, HTTP_USER_AGENT=ua)
+        resp = self.client.get(self.url, headers={"user-agent": ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked UA impression")
@@ -1700,7 +1702,7 @@ class TestProxyViews(BaseApiTest):
             re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
         ]
 
-        resp = self.client.get(self.url, HTTP_REFERER="http://invalid.referrer")
+        resp = self.client.get(self.url, headers={"referer": "http://invalid.referrer"})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked referrer impression")
@@ -1821,7 +1823,7 @@ class TestProxyViews(BaseApiTest):
                 "append": "adserver.middleware.CloudflareGeoIpMiddleware",
             }
         ):
-            resp = self.client.get(self.click_url, HTTP_CF_IPCountry="CA")
+            resp = self.client.get(self.click_url, headers={"cf-ipcountry": "CA"})
 
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
@@ -1832,7 +1834,7 @@ class TestProxyViews(BaseApiTest):
 
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
 
-        resp = self.client.get(self.click_url, HTTP_CF_IPCountry="FR")
+        resp = self.client.get(self.click_url, headers={"cf-ipcountry": "FR"})
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")

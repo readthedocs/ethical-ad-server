@@ -959,7 +959,7 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
         # Check if the image has changed
         # We alert on this as a secondary check for malicious images
-        # https://docs.djangoproject.com/en/3.2/ref/forms/api/#django.forms.Form.changed_data
+        # https://docs.djangoproject.com/en/4.2/ref/forms/api/#django.forms.Form.changed_data
         if new_instance.image and "image" in self.changed_data:
             log.debug("Image field has changed: %s", new_instance.image.url)
             notify_on_ad_image_change.apply_async(args=[new_instance.pk])

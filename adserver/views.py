@@ -135,7 +135,7 @@ def do_not_track(request):
     if not settings.ADSERVER_DO_NOT_TRACK:
         raise Http404
 
-    dnt_header = request.META.get("HTTP_DNT")
+    dnt_header = request.headers.get("dnt")
 
     data = {"tracking": "N" if dnt_header == "1" else "T"}
     if settings.ADSERVER_PRIVACY_POLICY_URL:
@@ -780,7 +780,7 @@ class BaseProxyView(View):
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
         parsed_ua = parse_user_agent(user_agent)
-        referrer = request.META.get("HTTP_REFERER")
+        referrer = request.headers.get("referer")
 
         # One or more of country/region/etc. may be None which is OK
         # Ads targeting countries/regions/metros will never match None

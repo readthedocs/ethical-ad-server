@@ -30,7 +30,7 @@ class EmailBackend(BaseEmailBackend):
     """
     Custom email backend to send messages through Front (front.com).
 
-    See: https://docs.djangoproject.com/en/3.2/topics/email/#defining-a-custom-email-backend
+    See: https://docs.djangoproject.com/en/4.2/topics/email/#defining-a-custom-email-backend
     """
 
     def __init__(

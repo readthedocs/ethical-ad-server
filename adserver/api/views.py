@@ -206,7 +206,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 )
                 cache.set(cache_key, data, duration)
         else:
-            referrer = url or self.request.META.get("HTTP_REFERER")
+            referrer = url or self.request.headers.get("referer")
             log.info(
                 "Using sticky ad decision. publisher=%s ad_type=%s campaign_type=%s, referrer=%s",
                 publisher.slug,

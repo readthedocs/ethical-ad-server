@@ -31,5 +31,5 @@ FRONT_AUTHOR = getattr(settings, "FRONT_AUTHOR", None)
 FRONT_ARCHIVE = getattr(settings, "FRONT_ARCHIVE", False)
 
 # This is just a setting from Django used in the backend
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-charset
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-charset
 DEFAULT_CHARSET = settings.DEFAULT_CHARSET

@@ -1,6 +1,6 @@
 # Django itself and its requirements (pytz)
-Django==3.2.20
-pytz==2021.3
+Django==4.2.4
+pytz==2023.3
 
 # Asynchronous tasks
 celery[redis]==5.3.1
@@ -12,7 +12,7 @@ whitenoise==6.0.0
 Pillow==9.3.0
 
 # Our API
-djangorestframework==3.13.1
+djangorestframework==3.14.0
 djangorestframework-jsonp==1.0.2
 
 # Django helpers
@@ -53,8 +53,8 @@ django-enforce-host==1.0.1
 django-slack==5.16.2
 
 # Stripe for payments
-stripe>=2.48.0,<3.0
-dj-stripe==2.5.1
+stripe<=5.0.0
+dj-stripe==2.8.1
 
 # JWT used by Metabase embedding
 PyJWT==2.4.0

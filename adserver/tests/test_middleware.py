@@ -30,13 +30,13 @@ class TestMiddleware(TestCase):
             self.assertEqual(request.ip_address, "127.0.0.1")
 
             ip = "10.10.10.10"
-            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            response = self.client.get("/", headers={"cf-connecting-ip": ip})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
             self.assertFalse("X-Adserver-IpAddress-Provider" in response)
 
             ip = "invalid"
-            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            response = self.client.get("/", headers={"cf-connecting-ip": ip})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, "127.0.0.1")
 
@@ -46,7 +46,7 @@ class TestMiddleware(TestCase):
 
             # The provider header should be present for staff
             ip = "10.10.10.10"
-            response = self.client.get("/", HTTP_CF_CONNECTING_IP=ip)
+            response = self.client.get("/", headers={"cf-connecting-ip": ip})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
             self.assertTrue("X-Adserver-IpAddress-Provider" in response)
@@ -64,34 +64,40 @@ class TestMiddleware(TestCase):
             self.assertTrue(hasattr(request, "ip_address"))
             self.assertEqual(request.ip_address, "127.0.0.1")
 
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR="10.10.10.10")
+            response = self.client.get("/", headers={"x-forwarded-for": "10.10.10.10"})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, "10.10.10.10")
 
             # Multiple proxies in the chain
             ip = "10.10.10.10"
             x_forwarded_for = f"{ip}, 11.11.11.11, 12.12.12.12"
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR=x_forwarded_for)
+            response = self.client.get(
+                "/", headers={"x-forwarded-for": x_forwarded_for}
+            )
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
 
             # client ip (ipv4), other clients with port
             ip = "10.10.10.10"
             x_forwarded_for = f"{ip}:1234, 11.11.11.11, 12.12.12.12"
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR=x_forwarded_for)
+            response = self.client.get(
+                "/", headers={"x-forwarded-for": x_forwarded_for}
+            )
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
 
             # client ip (ipv6), other clients with port
             ip = "2001:abc:def:012:345:6789:abcd:ef12"
             x_forwarded_for = f"{ip}, 11.11.11.11:2345, 12.12.12.12:3456"
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR=x_forwarded_for)
+            response = self.client.get(
+                "/", headers={"x-forwarded-for": x_forwarded_for}
+            )
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
 
             # Invalid client IP
             ip = "invalid"
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR=ip)
+            response = self.client.get("/", headers={"x-forwarded-for": ip})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, "127.0.0.1")
 
@@ -101,7 +107,7 @@ class TestMiddleware(TestCase):
 
             # The provider header should be present for staff
             ip = "10.10.10.10"
-            response = self.client.get("/", HTTP_X_FORWARDED_FOR=ip)
+            response = self.client.get("/", headers={"x-forwarded-for": ip})
             request = response.wsgi_request
             self.assertEqual(request.ip_address, ip)
             self.assertTrue("X-Adserver-IpAddress-Provider" in response)
@@ -117,13 +123,13 @@ class TestMiddleware(TestCase):
             }
         ):
             country = "CA"
-            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            response = self.client.get("/", headers={"cf-ipcountry": country})
             request = response.wsgi_request
             self.assertEqual(request.geo.country, country)
             self.assertFalse("X-Adserver-GeoIP-Provider" in response)
 
             country = "XX"
-            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            response = self.client.get("/", headers={"cf-ipcountry": country})
             request = response.wsgi_request
             self.assertEqual(request.geo.country, None)
 
@@ -132,7 +138,7 @@ class TestMiddleware(TestCase):
             self.client.force_login(staff_user)
 
             country = "US"
-            response = self.client.get("/", HTTP_CF_IPCOUNTRY=country)
+            response = self.client.get("/", headers={"cf-ipcountry": country})
             request = response.wsgi_request
             self.assertEqual(request.geo.country, country)
             self.assertTrue("X-Adserver-GeoIP-Provider" in response)
