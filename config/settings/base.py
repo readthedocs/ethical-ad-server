@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "crispy_forms",
+    "crispy_bootstrap4",
     "rest_framework",
     "rest_framework.authtoken",
     "adserver",
@@ -346,7 +347,9 @@ GEOIP_PATH = os.path.join(BASE_DIR, "geoip")
 
 # Django Crispy Forms
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
+# https://github.com/django-crispy-forms/crispy-bootstrap4
 # --------------------------------------------------------------------------
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 

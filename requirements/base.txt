@@ -19,7 +19,8 @@ djangorestframework-jsonp==1.0.2
 django-extensions==3.1.5
 
 # Form helpers
-django-crispy-forms==1.9.0
+crispy-bootstrap4==2022.1
+django-crispy-forms==2.0
 
 # Authentication
 django-allauth==0.49.0
