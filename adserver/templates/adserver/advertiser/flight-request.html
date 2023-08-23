@@ -26,6 +26,7 @@
 
     <div class="col-md-8">
       {% if next %}
+        {{ pricing|json_script:"data-pricing" }}
         {% crispy form form.helper %}
       {% else %}
         <form>

@@ -499,6 +499,11 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        pricing = {}
+        for region in Region.objects.filter(selectable=True):
+            if region.prices:
+                pricing[region.slug] = region.prices
+
         context.update(
             {
                 "advertiser": self.advertiser,
@@ -507,6 +512,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
                 ).order_by("-start_date")[:50],
                 "old_flight": self.old_flight,
                 "next": self.request.GET.get("next"),
+                "pricing": pricing,
             }
         )
 
