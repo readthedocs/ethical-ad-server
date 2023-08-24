@@ -22,6 +22,7 @@ class TopicPricingValidator(BaseValidator):
             self.message = message
 
     def __call__(self, value):
+        # Avoid a circular import since the models use these validators
         from .models import Topic  # noqa
 
         topics = Topic.load_from_cache()
@@ -137,6 +138,7 @@ class TargetingParametersValidator(BaseValidator):
             raise ValidationError(self.messages["mobile"], params={"value": value})
 
     def _validate_regions(self, region_values):
+        # Avoid a circular import since the models use these validators
         from .models import Region  # noqa
 
         regions = Region.load_from_cache()
@@ -145,6 +147,7 @@ class TargetingParametersValidator(BaseValidator):
                 raise ValidationError(self.messages["region"], params={"value": slug})
 
     def _validate_topics(self, slugs):
+        # Avoid a circular import since the models use these validators
         from .models import Topic  # noqa
 
         topics = Topic.load_from_cache()
@@ -191,6 +194,7 @@ class TrafficFillValidator(TargetingParametersValidator):
                 raise ValidationError(self.messages["percent"], params={"value": value})
 
     def _validate_regions(self, region_values):
+        # Avoid a circular import since the models use these validators
         from .models import Region  # noqa
 
         regions = Region.load_from_cache()

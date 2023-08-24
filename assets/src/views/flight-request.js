@@ -7,8 +7,6 @@ function FlightRequestViewModel(method) {
   this.regions = ko.observable([...document.querySelectorAll("form [name='regions']:checked")].map(function (node) { return node.value }));
   this.topics = ko.observable([...document.querySelectorAll("form [name='topics']:checked")].map(function (node) { return node.value }));
 
-  this.pricing = JSON.parse($('#data-pricing').text());
-
   this.estimatedCpm = function () {
     let budget = Math.round(this.budget(), 10);
 
