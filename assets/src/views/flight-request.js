@@ -1,4 +1,5 @@
 const ko = require('knockout');
+import { getFlightPrice, getDiscount } from "../libs/flight-utils";
 
 
 function FlightRequestViewModel(method) {
@@ -10,49 +11,15 @@ function FlightRequestViewModel(method) {
 
   this.estimatedCpm = function () {
     let budget = Math.round(this.budget(), 10);
-    let cpm = 0;
-    let prices = [];
 
     let regions = this.regions();
     let topics = this.topics();
-    let pricing = this.pricing;
 
-    // Add all the price combinations to an array
-    // We will average this array
-    regions.forEach(function (region) {
-      let region_pricing = pricing[region];
-      if (region_pricing) {
-
-        if (topics.length > 0) {
-          topics.forEach(function (topic) {
-            if (region_pricing[topic]) {
-              prices.push(region_pricing[topic]);
-            } else {
-              // Unknown price for this topic
-            }
-          });
-        } else if (region_pricing["all-developers"]) {
-          prices.push(region_pricing["all-developers"]);
-        }
-      } else {
-        // Unknown price for this region
-      }
-    });
-
-    if (prices.length > 0) {
-      let total = prices.reduce(function (a, b) { return a + b});
-      cpm = total / prices.length;
-    }
-
-    // Apply discounts
-    if (budget >= 24990) {
-      cpm *= 0.85
-    } else if (budget >= 2990) {
-      cpm *= 0.9
-    }
+    let rateMultiplier = 1.0 - getDiscount(budget);
+    let cpm = rateMultiplier * getFlightPrice(regions, topics);
 
     return cpm > 0 ? '$' + cpm.toFixed(2) : "TBD";
-  }
+  };
 }
 
 

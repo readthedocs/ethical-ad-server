@@ -179,6 +179,9 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.fields["exclude_regions"].choices = self.fields["include_regions"].choices
         self.fields["include_topics"].choices = [(t.slug, t.name) for t in self.topics]
 
+        self.fields["include_regions"].widget.attrs["data-bind"] = "checked: regions"
+        self.fields["include_topics"].widget.attrs["data-bind"] = "checked: topics"
+
         self.helper = FormHelper()
         self.helper.attrs = {"id": "flight-update-form"}
 
@@ -197,6 +200,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                         "budget",
                         "$",
                         min=0,
+                        step=100,
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -238,6 +242,14 @@ class FlightForm(FlightMixin, forms.ModelForm):
             Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
+                HTML(
+                    "<p class='form-text'>"
+                    + str(_("Standard CPM: "))
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount)</span>"
+                    + "</p>"
+                ),
                 Div("include_regions"),
                 Div("exclude_regions"),
                 Div("include_topics"),
@@ -468,6 +480,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
+                        step=100,
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -678,7 +691,7 @@ class FlightRequestForm(FlightCreateForm):
             Fieldset(
                 _("Flight targeting"),
                 HTML(
-                    "<p class='form-text'>"
+                    "<p class='form-text mb-0'>"
                     + str(_("Estimated CPM: "))
                     + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
                     + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount applied)</span>"

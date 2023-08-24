@@ -258,6 +258,15 @@ class Region(TimeStampedModel, models.Model):
 
         return "global"
 
+    @staticmethod
+    def get_pricing():
+        pricing = {}
+        for region in Region.objects.filter(selectable=True):
+            if region.prices:
+                pricing[region.slug] = region.prices
+
+        return pricing
+
 
 class CountryRegion(TimeStampedModel, models.Model):
 
