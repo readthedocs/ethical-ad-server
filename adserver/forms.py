@@ -680,7 +680,9 @@ class FlightRequestForm(FlightCreateForm):
                 HTML(
                     "<p class='form-text'>"
                     + str(_("Estimated CPM: "))
-                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span>"
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount applied)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount applied)</span>"
                     + "</p>"
                     + "<p class='form-text small text-muted'>"
                     + str(

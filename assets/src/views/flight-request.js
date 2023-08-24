@@ -51,7 +51,7 @@ function FlightRequestViewModel(method) {
       cpm *= 0.9
     }
 
-    return cpm > 0 ? '$' + cpm.toFixed(2) : "?";
+    return cpm > 0 ? '$' + cpm.toFixed(2) : "TBD";
   }
 }
 
