@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v2.7.0
+--------------
+
+This release is relatively minor and just adds a notification when changing ads.
+This will (probably) be the last release on Django 3.x and the next release
+will upgrade to 4.x. Django 4.x requires Postgres 12+.
+
+:date: September 13, 2023
+
+ * @davidfischer: Slack alert when ad images change (#780)
+
+
 Version v2.6.0
 --------------
 
