@@ -886,6 +886,10 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             adtype_queryset = adtype_queryset.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
 
+        self.fields["image"].help_text = _(
+            "Sized according to the ad type. Need help with manipulating or resizing images? We can <a href='%s'>help</a>."
+        ) % (reverse("support") + "?subject=Image+help")
+
         # Ads are now composed of `headline`, `content`, and `cta`
         # but some older ads are just an HTML blob of `text`.
         # Support legacy ads while making sure new ads follow the new convention
@@ -1238,6 +1242,12 @@ class SupportForm(forms.Form):
 
     subject = forms.CharField(max_length=255)
     body = forms.CharField(label=_("Message"), widget=forms.Textarea)
+    upload = forms.FileField(
+        required=False,
+        help_text=_(
+            "If there's a file that helps explain this support request, please attach it."
+        ),
+    )
 
     # These are always populated from the request
     name = forms.CharField(widget=forms.HiddenInput)
@@ -1260,15 +1270,16 @@ class SupportForm(forms.Form):
 
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {
+            "accept_charset": "utf-8",
+            "enctype": "multipart/form-data",
+        }
+
         if settings.ADSERVER_SUPPORT_FORM_ACTION:
             # Set a custom form action - where the form submits to
             # This can be used to submit the form to an external help desk
             self.helper.form_action = settings.ADSERVER_SUPPORT_FORM_ACTION
             self.helper.disable_csrf = True
-            self.helper.attrs = {
-                "accept_charset": "utf-8",
-                "enctype": "multipart/form-data",
-            }
 
         self.helper.layout = Layout(
             Fieldset(
@@ -1277,6 +1288,7 @@ class SupportForm(forms.Form):
                 Field("email"),
                 Field("subject", placeholder=_("Your message subject")),
                 Field("body", placeholder=_("Your message")),
+                Field("upload"),
                 css_class="my-3",
             ),
             Submit("submit", _("Send support message")),
@@ -1299,6 +1311,7 @@ class SupportForm(forms.Form):
 
         subject = self.cleaned_data["subject"]
         body = self.cleaned_data["body"]
+        upload = self.cleaned_data["upload"]
 
         # Even though the user name and email are submitted with the form,
         # always use the server value
@@ -1315,4 +1328,11 @@ class SupportForm(forms.Form):
             [to_email],
             reply_to=[user.email],
         )
+
+        if upload:
+            # https://docs.djangoproject.com/en/4.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile
+            # https://docs.djangoproject.com/en/4.2/topics/email/#emailmessage-objects
+            # This is a potential issue if somebody uploads a very large file as it will read it into memory.
+            email.attach(upload.name, upload.read(), upload.content_type)
+
         email.send()
