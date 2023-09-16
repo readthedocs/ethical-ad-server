@@ -19,7 +19,6 @@ from .views import AdvertiserKeywordReportView
 from .views import AdvertiserMainView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
-from .views import AdvertiserStripePortalView
 from .views import AdvertiserTopicReportView
 from .views import AdViewProxyView
 from .views import AdViewTimeProxyView
@@ -35,7 +34,6 @@ from .views import FlightListView
 from .views import FlightRenewView
 from .views import FlightRequestView
 from .views import FlightUpdateView
-from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
 from .views import PublisherAuthorizedUsersInviteView
 from .views import PublisherAuthorizedUsersRemoveView
@@ -53,7 +51,6 @@ from .views import PublisherPayoutListView
 from .views import PublisherPlacementReportView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
-from .views import PublisherStripeOauthConnectView
 from .views import StaffAdvertiserReportView
 from .views import StaffGeoReportView
 from .views import StaffKeywordReportView
@@ -262,8 +259,6 @@ urlpatterns = [
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/billing/",
-        AdvertiserStripePortalView.as_view(),
-        name="advertiser_stripe_portal",
     ),
     # Publisher management and reporting
     path(
@@ -325,16 +320,6 @@ urlpatterns = [
         r"publisher/<slug:publisher_slug>/embed/",
         PublisherEmbedView.as_view(),
         name="publisher_embed",
-    ),
-    path(
-        r"publisher/<slug:publisher_slug>/oauth/stripe/connect/",
-        PublisherStripeOauthConnectView.as_view(),
-        name="publisher_stripe_oauth_connect",
-    ),
-    path(
-        r"publisher/oauth/stripe/return/",
-        publisher_stripe_oauth_return,
-        name="publisher_stripe_oauth_return",
     ),
     path(
         r"publisher/<slug:publisher_slug>/fallback-ads/",

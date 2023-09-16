@@ -7,8 +7,7 @@ import re
 import uuid
 from collections import Counter
 
-import bleach
-import djstripe.models as djstripe_models
+import bleach 
 import pytz
 from django.conf import settings
 from django.core.cache import cache
@@ -29,8 +28,7 @@ from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
-from django_extensions.db.models import TimeStampedModel
-from djstripe.enums import InvoiceStatus
+from django_extensions.db.models import TimeStampedModel 
 from jsonfield import JSONField
 from simple_history.models import HistoricalRecords
 from user_agents import parse
@@ -47,8 +45,7 @@ from .constants import PAID
 from .constants import PAID_CAMPAIGN
 from .constants import PAYOUT_OPENCOLLECTIVE
 from .constants import PAYOUT_PAYPAL
-from .constants import PAYOUT_STATUS
-from .constants import PAYOUT_STRIPE
+from .constants import PAYOUT_STATUS 
 from .constants import PENDING
 from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
@@ -360,23 +357,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         null=True,
         default=None,
     )
-    djstripe_account = models.ForeignKey(
-        djstripe_models.Account,
-        verbose_name=_("Stripe connected account"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        default=None,
-    )
 
-    # Deprecated - migrate to `stripe_account`
-    stripe_connected_account_id = models.CharField(
-        _("Stripe connected account ID"),
-        max_length=200,
-        blank=True,
-        null=True,
-        default=None,
-    )
     open_collective_name = models.CharField(
         _("Open Collective name"), max_length=200, blank=True, null=True, default=None
     )
@@ -486,8 +467,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         return 0
 
     def payout_url(self):
-        if self.payout_method == PAYOUT_STRIPE and self.djstripe_account.id:
-            return f"https://dashboard.stripe.com/connect/accounts/{self.djstripe_account.id}"
         if self.payout_method == PAYOUT_OPENCOLLECTIVE and self.open_collective_name:
             return f"https://opencollective.com/{self.open_collective_name}"
         if self.payout_method == PAYOUT_PAYPAL and self.paypal_email:
@@ -552,19 +531,10 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
         help_text=_("Used for advertiser accounts associated with a publisher"),
     )
 
-    djstripe_customer = models.ForeignKey(
-        djstripe_models.Customer,
-        verbose_name=_("Stripe Customer"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        default=None,
-    )
+    
 
     # Deprecated - will migration to `customer`
-    stripe_customer_id = models.CharField(
-        _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
-    )
+    
 
     history = HistoricalRecords()
 
@@ -821,11 +791,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     # There can be multiple invoices for a flight
     # (say a 3 month flight billed monthly)
     # and an invoice can cover multiple flights
-    invoices = models.ManyToManyField(
-        djstripe_models.Invoice,
-        verbose_name=_("Stripe invoices"),
-        blank=True,
-    )
+    
 
     history = HistoricalRecords()
 

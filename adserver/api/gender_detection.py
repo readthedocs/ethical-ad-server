@@ -1,68 +1,60 @@
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.shortcuts import render
+import cv2
+import cvlib as cv
+import numpy as np
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
-import numpy as np
-import cv2
-import os
-import cvlib as cv
-from flask import Flask, request, jsonify
 
-# load model
 model = load_model('model/gender_detection.model')
+classes = ['man', 'woman']
 
-classes = ['man','woman']
+@require_POST
+@csrf_exempt
+def gender_detection(request):
+    # Check if the request has the file part
+    if 'file' not in request.FILES:
+        return JsonResponse({'error': 'No file provided'}, status=400)
 
-app = Flask(__name__)
+    file = request.FILES['file']
 
-@app.route('/gender_detection', methods=['POST'])
-def gender_detection():
-    # check if the post request has the file part
-    if 'file' not in request.files:
-        return 'No file provided', 400
+    # Save the uploaded file to the default storage
+    filename = default_storage.save(file.name, ContentFile(file.read()))
 
-    file = request.files['file']
-    if file.filename == '':
-        return 'No file selected', 400
-
-    # read image file string data from memory
-    filestr = file.read()
-
-    # convert string data to numpy array
-    npimg = np.frombuffer(filestr, np.uint8)
-
-    # convert numpy array to image
-    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-
-    # apply face detection
+    # Read the uploaded image using OpenCV
+    img = cv2.imread(default_storage.url(filename))
+    
+    # Apply face detection
     face, confidence = cv.detect_face(img)
 
-    # list to store results
+    # List to store results
     results = []
 
-    # loop through detected faces
+    # Loop through detected faces
     for idx, f in enumerate(face):
-        # get corner points of face rectangle
-        (startX, startY) = f[0], f[1]
-        (endX, endY) = f[2], f[3]
+        startX, startY, endX, endY = f
+        
+        # Draw rectangle over the face
+        cv2.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-        # draw rectangle over face
-        cv2.rectangle(img, (startX,startY), (endX,endY), (0,255,0), 2)
+        # Crop the detected face region
+        face_crop = img[startY:endY, startX:endX]
 
-        # crop the detected face region
-        face_crop = np.copy(img[startY:endY,startX:endX])
-
-        if (face_crop.shape[0]) < 10 or (face_crop.shape[1]) < 10:
+        if face_crop.shape[0] < 10 or face_crop.shape[1] < 10:
             continue
 
-        # preprocessing for gender detection model
-        face_crop = cv2.resize(face_crop, (96,96))
+        # Preprocessing for gender detection model
+        face_crop = cv2.resize(face_crop, (96, 96))
         face_crop = face_crop.astype("float") / 255.0
         face_crop = img_to_array(face_crop)
         face_crop = np.expand_dims(face_crop, axis=0)
 
-        # apply gender detection on face
-        conf = model.predict(face_crop)[0] # model.predict return a 2D matrix, ex: [[9.9993384e-01 7.4850512e-05]]
-
-        # get label with max accuracy
+        # Apply gender detection on face
+        conf = model.predict(face_crop)[0]
         idx = np.argmax(conf)
         label = classes[idx]
 
@@ -70,11 +62,8 @@ def gender_detection():
 
         results.append({'gender': label, 'startX': startX, 'startY': startY, 'endX': endX, 'endY': endY})
 
-        #conv int64
-        results = [{k: int(v) if isinstance(v, np.int64) else v for k, v in d.items()} for d in results]
+    # Convert int64 to int
+    results = [{k: int(v) if isinstance(v, np.int64) else v for k, v in d.items()} for d in results]
 
-    # return results as JSON
-    return jsonify(results)
-
-if __name__ == '__main__':
-    app.run()
+    # Return results as JSON
+    return JsonResponse({'results': results})

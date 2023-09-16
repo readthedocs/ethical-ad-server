@@ -1,7 +1,6 @@
 """Views for the administrator actions."""
 import logging
 
-import stripe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
@@ -15,7 +14,6 @@ from django.core import mail
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from djstripe.models import Customer
 from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
@@ -151,21 +149,7 @@ class CreateAdvertiserForm(forms.Form):
 
         return advertiser
 
-    def create_stripe_customer(self, user, advertiser):
-        """Setup a Stripe customer for this user."""
-        if not settings.STRIPE_ENABLED:
-            return None
-
-        # Create the new stripe customer
-        customer = stripe.Customer.create(
-            name=advertiser.name,
-            email=user.email,
-            description=f"Advertising @ {advertiser.name}",
-        )
-
-        # Force sync this customer from stripe
-        # Then return the Django model instance
-        return Customer.sync_from_stripe_data(customer)
+    
 
     def save(self):
         """Create the advertiser and associated objects. Send the invitation to the user account."""
@@ -178,11 +162,7 @@ class CreateAdvertiserForm(forms.Form):
 
         user.advertisers.add(advertiser)
 
-        if settings.STRIPE_ENABLED:
-            # Attach Stripe customer record to the advertiser
-            stripe_customer = self.create_stripe_customer(user, advertiser)
-            advertiser.djstripe_customer = stripe_customer
-            advertiser.save()
+        
 
         return advertiser
 

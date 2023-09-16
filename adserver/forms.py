@@ -3,7 +3,6 @@ import logging
 from datetime import timedelta
 
 import bleach
-import stripe
 from crispy_forms.bootstrap import PrependedText
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div
@@ -1036,110 +1035,7 @@ class AdvertisementCopyForm(forms.Form):
         return len(self.cleaned_data["advertisements"])
 
 
-class PublisherSettingsForm(forms.ModelForm):
 
-    """Form for letting publishers control publisher specific settings."""
-
-    def __init__(self, *args, **kwargs):
-        """Add the form helper and customize the look of the form."""
-        super().__init__(*args, **kwargs)
-
-        if self.instance.stripe_connected_account_id:
-            link_obj = stripe.Account.create_login_link(
-                self.instance.stripe_connected_account_id
-            )
-            stripe_block = HTML(
-                format_html(
-                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
-                    "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
-                    "</a>",
-                    link_obj.url,
-                    gettext("Manage Stripe account"),
-                )
-            )
-        elif settings.STRIPE_CONNECT_CLIENT_ID:
-            connect_url = reverse(
-                "publisher_stripe_oauth_connect", args=[self.instance.slug]
-            )
-            stripe_block = HTML(
-                format_html(
-                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
-                    "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
-                    "</a>",
-                    connect_url,
-                    gettext("Connect via Stripe"),
-                )
-            )
-        else:
-            stripe_block = HTML("<!-- Stripe is not configured -->")
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Fieldset(
-                _("Payout settings"),
-                Field("payout_method", data_bind="value: payoutMethod"),
-                Div(stripe_block, data_bind="visible: (payoutMethod() == 'stripe')"),
-                Div(
-                    PrependedText(
-                        "open_collective_name", "https://opencollective.com/"
-                    ),
-                    data_bind="visible: (payoutMethod() == 'opencollective')",
-                ),
-                Div(
-                    Field("paypal_email", placeholder="you@yourdomain.com"),
-                    data_bind="visible: (payoutMethod() == 'paypal')",
-                ),
-                "skip_payouts",
-                css_class="my-3",
-            ),
-            Fieldset(
-                _("Control advertiser campaign types"),
-                "allow_community_campaigns",
-                "allow_house_campaigns",
-                HTML(
-                    "<p class='form-text small text-muted'>"
-                    + str(
-                        _(
-                            "Use these checkboxes to control the types of advertiser campaigns "
-                            "that are allowed on your site. "
-                            "House campaigns are used when initially setting up your account."
-                        )
-                    )
-                    + "</p>"
-                ),
-                css_class="my-3",
-            ),
-            Fieldset(
-                _("Reporting settings"),
-                "record_placements",
-                HTML(
-                    "<p class='form-text small text-muted'>"
-                    + str(
-                        _(
-                            "Placements allow you to track ads on different parts of your site. "
-                            "Any ad block with a `id` will be recorded, and you can view results based on the `id`."
-                        )
-                    )
-                    + "</p>"
-                ),
-                css_class="my-3",
-            ),
-            Submit("submit", "Save settings"),
-        )
-
-    class Meta:
-        model = Publisher
-        fields = [
-            "payout_method",
-            "open_collective_name",
-            "paypal_email",
-            "skip_payouts",
-            "allow_affiliate_campaigns",
-            "allow_community_campaigns",
-            "allow_house_campaigns",
-            "record_placements",
-            "record_placements",
-        ]
 
 
 class InviteUserForm(forms.ModelForm):
