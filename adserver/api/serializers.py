@@ -60,6 +60,10 @@ class AdDecisionSerializer(serializers.Serializer):
     # This purposefully doesn't use a URLField so we can disregard invalid values rather than rejecting them
     url = serializers.CharField(max_length=256, required=False)
 
+    # The placement index (0-indexed)
+    # 1 or more means there's multiple placements on this page
+    index = serializers.IntegerField(required=False, min_value=0, max_value=9)
+
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
     user_ua = serializers.CharField(required=False)

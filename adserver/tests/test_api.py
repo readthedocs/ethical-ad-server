@@ -801,6 +801,26 @@ class AdDecisionApiTests(BaseApiTest):
         # Clear the cache so this setting doesn't mess up the next test
         cache.clear()
 
+    def test_multiple_placements(self):
+        self.query_params["index"] = 0
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue("id" in resp.json())  # Gets an ad successfully
+
+        # No ad since `publisher.allow_multiple_placements` is False (the default)
+        self.query_params["index"] = 1
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictEqual(resp.json(), {})
+
+        self.publisher.allow_multiple_placements = True
+        self.publisher.save()
+
+        self.query_params["index"] = 1
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue("id" in resp.json())  # Gets an ad successfully
+
 
 class AdvertiserApiTests(BaseApiTest):
     def setUp(self):
