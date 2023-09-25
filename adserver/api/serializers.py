@@ -62,7 +62,7 @@ class AdDecisionSerializer(serializers.Serializer):
 
     # The placement index (0-indexed)
     # 1 or more means there's multiple placements on this page
-    index = serializers.IntegerField(required=False, min_value=0, max_value=9)
+    placement_index = serializers.IntegerField(required=False, min_value=0, max_value=9)
 
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
