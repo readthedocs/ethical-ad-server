@@ -548,6 +548,20 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertIsNotNone(new_flight)
         self.assertFalse(new_flight.live)
 
+        backend.reset_messages()
+
+        # Modeled on a past flight
+        resp = self.client.get(url + "?old_flight=" + self.flight.slug + "&next=step-2")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            "Your account manager will be notified to review your ads and targeting.",
+        )
+
+        resp = self.client.post(url, data=data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"Successfully setup a new")
+
     def test_ad_detail_view(self):
         url = reverse(
             "advertisement_detail",

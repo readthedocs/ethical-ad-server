@@ -48,6 +48,7 @@ class UserAdmin(SimpleHistoryAdmin):
     readonly_fields = ("password", "updated_date", "created_date")
     search_fields = ("email", "name")
 
+    @admin.action(description=_("Invite selected users"))
     def invite_user_action(self, request, queryset):
         for user in queryset:
             if user.invite_user():
@@ -62,5 +63,3 @@ class UserAdmin(SimpleHistoryAdmin):
                     )
                     % {"user": user},
                 )
-
-    invite_user_action.short_description = _("Invite selected users")

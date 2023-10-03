@@ -14,7 +14,14 @@ LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 # Whitenoise relies on the manifest being present.
 # Which may not be there in testing
 # unless you run `collectstatic` before running tests
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # Celery should be always eager - there's no distributed celery workers in test
 CELERY_TASK_ALWAYS_EAGER = True

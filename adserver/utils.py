@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone as dttimezone
 from urllib.parse import urlparse
 
 import IP2Proxy
@@ -23,7 +24,6 @@ from django.utils.encoding import force_bytes
 from django.utils.encoding import force_str
 from django.utils.http import urlencode
 from django.utils.timezone import is_naive
-from django.utils.timezone import utc
 from django_countries import countries
 from geoip2.errors import AddressNotFoundError
 from ratelimit.utils import is_ratelimited
@@ -75,7 +75,7 @@ def get_day(day=None):
             day = parse_iso8601(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
         if is_naive(start_date):
-            start_date = utc.localize(start_date)
+            start_date = start_date.replace(tzinfo=dttimezone.utc)
     end_date = start_date + timedelta(days=1)
 
     return start_date, end_date
@@ -143,7 +143,7 @@ def get_client_user_agent(request):
     if ua:
         return ua
 
-    return request.META.get("HTTP_USER_AGENT", "")
+    return request.headers.get("user-agent", "")
 
 
 def get_client_id(request):

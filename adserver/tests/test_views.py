@@ -36,13 +36,13 @@ class DoNotTrackTest(TestCase):
         self.assertEqual(data["tracking"], "T")
         self.assertFalse("policy" in data)
 
-        resp = self.client.get(self.dnt_status_url, HTTP_DNT="1")
+        resp = self.client.get(self.dnt_status_url, headers={"dnt": "1"})
         data = json.loads(resp.content)
         self.assertEqual(data["tracking"], "N")
 
         privacy_policy_url = "http://example.com/policy.txt"
         with override_settings(ADSERVER_PRIVACY_POLICY_URL=privacy_policy_url):
-            resp = self.client.get(self.dnt_status_url, HTTP_DNT="1")
+            resp = self.client.get(self.dnt_status_url, headers={"dnt": "1"})
             data = json.loads(resp.content)
             self.assertEqual(data["policy"], privacy_policy_url)
 
