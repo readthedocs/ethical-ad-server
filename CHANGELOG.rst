@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.0.0
+--------------
+
+This release allows attaching pricing to various regions/topics
+which are used when creating a new flight.
+
+This release involves a major upgrade of Django to 4.2.
+
+:date: October 3, 2023
+
+ * @davidfischer: Server can control multiple publisher placements (#786)
+ * @davidfischer: Pricing in server (#782)
+ * @davidfischer: Django 4.2 upgrade (#781)
+
+
 Version v2.7.0
 --------------
 
