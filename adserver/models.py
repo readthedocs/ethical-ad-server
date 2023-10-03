@@ -373,6 +373,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         ),
     )
 
+    allow_multiple_placements = models.BooleanField(
+        default=False,
+        help_text=_("Can this publisher have multiple placements on the same pageview"),
+    )
+
     # Payout information
     skip_payouts = models.BooleanField(
         _("Skip payouts"),

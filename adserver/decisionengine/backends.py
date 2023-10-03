@@ -104,6 +104,10 @@ class BaseAdDecisionBackend:
             log.debug("Publisher has hit their daily cap. publisher=%s", self.publisher)
             self.campaign_types.remove(PAID_CAMPAIGN)
 
+        # The placement index (0-based) for this ad request
+        # 1+ means multiple ads on the same page
+        self.placement_index = kwargs.get("placement_index") or 0
+
         # When set, only return a specific ad or ads from a campaign
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")
@@ -173,6 +177,14 @@ class BaseAdDecisionBackend:
 
     def should_display_ads(self):
         """Whether to not display ads based on the user, request, or other settings."""
+        # Check if the publisher is allowed to have multiple placements
+        if not self.publisher.allow_multiple_placements and self.placement_index > 0:
+            log.info(
+                "Multiple placement request on publisher rejected. publisher=%s",
+                self.publisher,
+            )
+            return False
+
         return True
 
 
