@@ -179,6 +179,9 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.fields["exclude_regions"].choices = self.fields["include_regions"].choices
         self.fields["include_topics"].choices = [(t.slug, t.name) for t in self.topics]
 
+        self.fields["include_regions"].widget.attrs["data-bind"] = "checked: regions"
+        self.fields["include_topics"].widget.attrs["data-bind"] = "checked: topics"
+
         self.helper = FormHelper()
         self.helper.attrs = {"id": "flight-update-form"}
 
@@ -197,6 +200,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                         "budget",
                         "$",
                         min=0,
+                        step=100,
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -238,6 +242,14 @@ class FlightForm(FlightMixin, forms.ModelForm):
             Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
+                HTML(
+                    "<p class='form-text'>"
+                    + str(_("Standard CPM: "))
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount)</span>"
+                    + "</p>"
+                ),
                 Div("include_regions"),
                 Div("exclude_regions"),
                 Div("include_topics"),
@@ -468,6 +480,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
+                        step=100,
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -574,6 +587,15 @@ class FlightRequestForm(FlightCreateForm):
         label=_("Budget"),
     )
 
+    regions = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+    topics = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+
     note = forms.CharField(label=_("Note"), required=False, widget=forms.Textarea)
 
     DEFAULT_FLIGHT_BUDGET = 3_000
@@ -603,12 +625,23 @@ class FlightRequestForm(FlightCreateForm):
                 "advertisements": self.old_flight.advertisements.filter(live=True)
                 if self.old_flight
                 else Advertisement.objects.none(),
+                "regions": self.old_flight.targeting_parameters.get(
+                    "include_regions", []
+                )
+                if self.old_flight and self.old_flight.targeting_parameters
+                else [],
+                "topics": self.old_flight.targeting_parameters.get("include_topics", [])
+                if self.old_flight and self.old_flight.targeting_parameters
+                else [],
             }
         )
 
         # Sets self.advertiser
         super().__init__(*args, **kwargs)
 
+        self.fields["budget"].widget.attrs["data-bind"] = "textInput: budget"
+        self.fields["regions"].widget.attrs["data-bind"] = "checked: regions"
+        self.fields["topics"].widget.attrs["data-bind"] = "checked: topics"
         self.fields["note"].widget.attrs["rows"] = 3
         self.fields["note"].help_text = _(
             "Do you have any changes you'd like to make from previous flights or any special instructions?"
@@ -622,6 +655,15 @@ class FlightRequestForm(FlightCreateForm):
             if self.old_flight
             else Advertisement.objects.none()
         )
+
+        self.fields["regions"].choices = [
+            (r.slug, r.name)
+            for r in Region.objects.filter(selectable=True).order_by("order", "slug")
+        ]
+        self.fields["topics"].choices = [
+            (t.slug, t.name)
+            for t in Topic.objects.filter(selectable=True).order_by("slug")
+        ]
 
     def create_form_helper(self):
         helper = FormHelper()
@@ -640,12 +682,53 @@ class FlightRequestForm(FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
+                        step=100,
                         data_bind="textInput: budget",
                     ),
                 ),
-                Field("note"),
                 css_class="my-3",
             ),
+            Fieldset(
+                _("Flight targeting"),
+                HTML(
+                    "<p class='form-text mb-0'>"
+                    + str(_("Estimated CPM: "))
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount applied)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount applied)</span>"
+                    + "</p>"
+                    + "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "Your account manager will confirm your campaign's rate before it starts."
+                        )
+                    )
+                    + "</p>"
+                ),
+                Div(
+                    Div(
+                        Field("regions"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field("topics"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    css_class="form-row",
+                ),
+                HTML(
+                    "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "If you need more fine targeting than these options and it's different from any previous flights you've run, "
+                            "please let your account manager know in the 'note' field below."
+                        )
+                    )
+                    + "</p>"
+                ),
+                css_class="my-3",
+            ),
+            Field("note"),
             Fieldset(
                 _("Advertisements"),
                 Field(

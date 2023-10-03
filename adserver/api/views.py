@@ -296,6 +296,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 keywords=keywords,
                 campaign_types=serializer.validated_data.get("campaign_types"),
                 url=url,
+                placement_index=serializer.validated_data.get("placement_index"),
                 # Debugging parameters
                 ad_slug=serializer.validated_data.get("force_ad"),
                 campaign_slug=serializer.validated_data.get("force_campaign"),

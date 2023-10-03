@@ -92,7 +92,9 @@ class TopicAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "slug",
+        "selectable",
     )
+    list_filter = ("selectable",)
     list_per_page = 1000
     ordering = ("slug",)
     search_fields = ("name", "slug")
@@ -137,7 +139,9 @@ class RegionAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "order",
+        "selectable",
     )
+    list_filter = ("selectable",)
     list_per_page = 1000
     ordering = ("order", "slug")
     search_fields = ("name", "slug")

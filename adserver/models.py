@@ -63,6 +63,7 @@ from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_domain_from_url
 from .validators import TargetingParametersValidator
+from .validators import TopicPricingValidator
 from .validators import TrafficFillValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -114,6 +115,11 @@ class Topic(TimeStampedModel, models.Model):
 
     name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    selectable = models.BooleanField(
+        default=False,
+        help_text=_("Whether advertisers can select this region for new flights"),
+    )
 
     def __str__(self):
         """String representation."""
@@ -185,6 +191,19 @@ class Region(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
+    selectable = models.BooleanField(
+        default=False,
+        help_text=_("Whether advertisers can select this region for new flights"),
+    )
+
+    prices = JSONField(
+        _("Topic prices"),
+        blank=True,
+        null=True,
+        validators=[TopicPricingValidator()],
+        help_text=_("Topic pricing matrix for this region"),
+    )
+
     # Lower order takes precedence
     # When mapping country to a single region, the lowest order region is returned
     order = models.PositiveSmallIntegerField(
@@ -238,6 +257,15 @@ class Region(TimeStampedModel, models.Model):
                 return slug
 
         return "global"
+
+    @staticmethod
+    def get_pricing():
+        pricing = {}
+        for region in Region.objects.filter(selectable=True):
+            if region.prices:
+                pricing[region.slug] = region.prices
+
+        return pricing
 
 
 class CountryRegion(TimeStampedModel, models.Model):
@@ -343,6 +371,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         help_text=_(
             "A daily maximum this publisher can earn after which only unpaid ads are shown."
         ),
+    )
+
+    allow_multiple_placements = models.BooleanField(
+        default=False,
+        help_text=_("Can this publisher have multiple placements on the same pageview"),
     )
 
     # Payout information

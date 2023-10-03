@@ -8,6 +8,47 @@ from .utils import COUNTRY_DICT
 
 
 @deconstructible
+class TopicPricingValidator(BaseValidator):
+
+    """Field validator for per topic pricing for regions."""
+
+    message = _("Enter a valid value")
+    code = "topic-pricing-validator"
+    limit_value = None  # required for classes extending BaseValidator
+
+    def __init__(self, message=None):
+        """Initialization for the topic pricing validator."""
+        if message:
+            self.message = message
+
+    def __call__(self, value):
+        # Avoid a circular import since the models use these validators
+        from .models import Topic  # noqa
+
+        topics = Topic.load_from_cache()
+
+        if not isinstance(value, dict):
+            raise ValidationError(
+                _("Value must be a dict, not %(type)s"), params={"type": type(value)}
+            )
+
+        if value:
+            for topic_slug in value:
+                if topic_slug not in topics and topic_slug != "all-developers":
+                    raise ValidationError(
+                        _("%(value)s is not a valid topic"),
+                        params={"value": topic_slug},
+                    )
+
+                price = value[topic_slug]
+                if not isinstance(price, (int, float)) or price <= 0:
+                    raise ValidationError(
+                        _("%(price)s must be a positive number"),
+                        params={"price": price},
+                    )
+
+
+@deconstructible
 class TargetingParametersValidator(BaseValidator):
 
     """A Django model and form validator for validating ad targeting."""
@@ -97,6 +138,7 @@ class TargetingParametersValidator(BaseValidator):
             raise ValidationError(self.messages["mobile"], params={"value": value})
 
     def _validate_regions(self, region_values):
+        # Avoid a circular import since the models use these validators
         from .models import Region  # noqa
 
         regions = Region.load_from_cache()
@@ -105,6 +147,7 @@ class TargetingParametersValidator(BaseValidator):
                 raise ValidationError(self.messages["region"], params={"value": slug})
 
     def _validate_topics(self, slugs):
+        # Avoid a circular import since the models use these validators
         from .models import Topic  # noqa
 
         topics = Topic.load_from_cache()
@@ -151,6 +194,7 @@ class TrafficFillValidator(TargetingParametersValidator):
                 raise ValidationError(self.messages["percent"], params={"value": value})
 
     def _validate_regions(self, region_values):
+        # Avoid a circular import since the models use these validators
         from .models import Region  # noqa
 
         regions = Region.load_from_cache()

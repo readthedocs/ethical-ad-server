@@ -6,6 +6,7 @@ from ..models import Advertisement
 from ..models import Campaign
 from ..models import Flight
 from ..validators import TargetingParametersValidator
+from ..validators import TopicPricingValidator
 from ..validators import TrafficFillValidator
 
 
@@ -90,3 +91,22 @@ class TestValidators(TestCase):
         self.assertRaises(
             ValidationError, validator, {"regions": {"invalid-region": 0.1}}
         )
+
+
+class TestTopicPricingValidator(TestCase):
+    def test_targeting_validator(self):
+        validator = TopicPricingValidator(message="Test Message")
+
+        # Ok
+        validator({})
+        validator({"devops": 2.5})
+        validator({"devops": 2.5, "security-privacy": 2.0})
+
+        # Invalid
+        self.assertRaises(ValidationError, validator, "str")
+        self.assertRaises(ValidationError, validator, [])
+        self.assertRaises(ValidationError, validator, {"unknown-topic": 5.0})
+        self.assertRaises(
+            ValidationError, validator, {"security-privacy": "invalid-type"}
+        )
+        self.assertRaises(ValidationError, validator, {"security-privacy": -1.0})
