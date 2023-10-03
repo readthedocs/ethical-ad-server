@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.0.1
+--------------
+
+Minor production packaging fix related to the new version and staticfiles.
+
+:date: October 3, 2023
+
+ * @davidfischer: Fix for Django 4.2 related to storage (#790)
+
+
 Version v3.0.0
 --------------
 
