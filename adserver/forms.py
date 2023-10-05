@@ -118,7 +118,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
 
     # This is just a helper field used in JavaScript to ease flight price computation
     # This field is *not* displayed in the Django admin because only fields in Meta.fields are displayed
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         required=False,
         label=_("Budget"),
     )
@@ -200,7 +200,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                         "budget",
                         "$",
                         min=0,
-                        step=100,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -429,7 +429,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         required=False,
         help_text=_("Renew the flight with the following advertisements"),
     )
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         required=False,
         label=_("Budget"),
     )
@@ -480,7 +480,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
-                        step=100,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -583,7 +583,7 @@ class FlightRequestForm(FlightCreateForm):
         help_text=_("Request a new flight with the following advertisements"),
     )
 
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         label=_("Budget"),
     )
 
@@ -682,7 +682,7 @@ class FlightRequestForm(FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
-                        step=100,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
