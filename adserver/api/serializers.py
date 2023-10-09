@@ -99,9 +99,13 @@ class AdDecisionSerializer(serializers.Serializer):
         return publisher
 
     def validate_keywords(self, keywords):
+        # API users may send more than this, but keywords beyond this are ignored
+        MAX_KEYWORDS = 20
+
         if keywords:
-            # Lowercase all the keywords and strip surrounding whitespace
-            keywords = [k.lower().strip() for k in keywords if k.strip()]
+            # Lowercase all the keywords and strip surrounding whitespace.
+            # Also, only take the first 20.
+            keywords = [k.lower().strip() for k in keywords if k.strip()][:MAX_KEYWORDS]
 
         return keywords
 
