@@ -613,7 +613,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("advertiser_report", kwargs={"advertiser_slug": self.slug})
+        return reverse("advertiser_main", kwargs={"advertiser_slug": self.slug})
 
 
 class Campaign(TimeStampedModel, IndestructibleModel):
