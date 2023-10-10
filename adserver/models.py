@@ -859,6 +859,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         verbose_name=_("Stripe invoices"),
         blank=True,
     )
+    discount = models.ForeignKey(
+        djstripe_models.Coupon,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+    )
 
     history = HistoricalRecords()
 

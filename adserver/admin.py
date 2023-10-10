@@ -630,7 +630,10 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
             return
 
+        # Any flight with the discount will result in the discount being in the memo
+        invoice_discount = None
         total_cost = 0  # In US cents
+
         for flight in flights:
             message_components = ["Advertising", flight.name]
             unit_amount = 0
@@ -641,16 +644,13 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                 unit_amount = flight.cpc * 100  # Convert to US cents
                 quantity = flight.sold_clicks
             elif flight.cpm:
-                priced_by_view = bool(flight.sold_impressions % 1000)
-                if priced_by_view:
-                    print(unit_amount, quantity)
-                    unit_amount = flight.cpm / 10  # Convert to US cents
-                    message_components.append("${:.2f} CPM".format(flight.cpm))
-                    quantity = flight.sold_impressions
-                else:
-                    unit_amount = flight.cpm * 100  # Convert to US cents
-                    message_components.append("per 1k impressions")
-                    quantity = flight.sold_impressions // 1000
+                # Convert CPM to US cents (eg. $4.25 CPM -> 0.425 cents)
+                unit_amount = flight.cpm / 10
+                message_components.append("${:.2f} CPM".format(flight.cpm))
+                quantity = flight.sold_impressions
+
+            if flight.discount:
+                invoice_discount = flight.discount
 
             total_cost += unit_amount * quantity
 
@@ -670,14 +670,14 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
 
         # https://stripe.com/docs/api/invoices/create
+        description = "Thanks for your business!"
+        if invoice_discount:
+            description = f"Includes {invoice_discount} discount. " + description
         inv = stripe.Invoice.create(
             customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
-            # Check just under 3k just in case there's a rounding issue
-            description="Includes 10% volume discount"
-            if total_cost >= 290_000
-            else "Thanks for your business!",
+            description=description,
             custom_fields=[
                 {"name": "Advertiser", "value": advertiser.slug[:30]},
                 {
