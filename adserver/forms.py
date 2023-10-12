@@ -103,6 +103,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "targeting_parameters",
             "traffic_fill",
             "traffic_cap",
+            "discount",
         )
 
 
@@ -238,7 +239,8 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 ),
                 css_class="my-3",
             ),
-            # NOTE: remove this when this form is made for non-staff users
+            # NOTE: remove these when this form is made for non-staff users
+            Field("discount"),
             Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
@@ -345,6 +347,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "sold_clicks",
             "cpm",
             "sold_impressions",
+            "discount",
             "priority_multiplier",
         )
         widgets = {
@@ -536,7 +539,12 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         instance = super().save(commit)
 
         # Copy flight fields that aren't part of the form
-        for field in ("targeting_parameters", "priority_multiplier", "traffic_cap"):
+        for field in (
+            "targeting_parameters",
+            "priority_multiplier",
+            "traffic_cap",
+            "discount",
+        ):
             setattr(instance, field, getattr(self.old_flight, field))
         instance.save()
 
