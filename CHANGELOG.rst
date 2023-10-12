@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.1.0
+--------------
+
+This release caps the number of ad keywords the API will accept at 20.
+It also allows specifically noting discounts on flights which will also appear
+on advertiser invoices.
+Also includes minor bugfixes and quality of life improvements.
+
+:date: October 12, 2023
+
+ * @davidfischer: Add discounts to the dashboard (#795)
+ * @davidfischer: Correct links to the advertiser overview screen (#794)
+ * @davidfischer: 20 keywords maximum in API (#793)
+ * @davidfischer: Fixup budget form validation (#792)
+
+
 Version v3.0.1
 --------------
 
