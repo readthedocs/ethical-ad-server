@@ -917,7 +917,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "browser_family",
         "os_family",
         "is_mobile",
-        "is_bot",
+        "is_proxy",
+        "paid_eligible",
         "user_agent",
         "ip",
         "div_id",
@@ -930,6 +931,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_select_related = ("advertisement", "publisher")
     list_filter = (
         "is_mobile",
+        "is_proxy",
+        "paid_eligible",
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )

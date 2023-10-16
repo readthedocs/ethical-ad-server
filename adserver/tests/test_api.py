@@ -434,7 +434,9 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp.json())
         self.assertEqual(resp.json()["id"], "ad-slug")
         self.proxy_client.get(resp.json()["view_url"])
-        self.assertFalse(self.ad.offers.first().viewed)
+        offer = self.ad.offers.first()
+        self.assertFalse(offer.viewed)
+        self.assertFalse(offer.paid_eligible)
 
         # House ads are counted even when forced
         self.ad.flight.campaign.campaign_type = "house"
@@ -615,6 +617,9 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
         self.assertEqual(resp_json["campaign_type"], PAID_CAMPAIGN)
 
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertTrue(offer.paid_eligible)
+
         # Try community only
         data["campaign_types"] = [COMMUNITY_CAMPAIGN]
         resp = self.client.post(
@@ -633,6 +638,8 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
         self.assertEqual(resp_json["campaign_type"], COMMUNITY_CAMPAIGN)
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertFalse(offer.paid_eligible)
 
         # Try multiple campaign types
         data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN]

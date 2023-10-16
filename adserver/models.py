@@ -62,6 +62,7 @@ from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_domain_from_url
+from .utils import is_proxy_ip
 from .validators import TargetingParametersValidator
 from .validators import TopicPricingValidator
 from .validators import TrafficFillValidator
@@ -1627,7 +1628,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
 
     def _record_base(
-        self, request, model, publisher, keywords, url, div_id, ad_type_slug
+        self,
+        request,
+        model,
+        publisher,
+        keywords,
+        url,
+        div_id,
+        ad_type_slug,
+        paid_eligible=False,
     ):
         """
         Save the actual AdBase model to the database.
@@ -1665,11 +1674,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             client_id=client_id,
             country=country,
             url=url,
+            paid_eligible=paid_eligible,
             # Derived user agent data
             browser_family=parsed_ua.browser.family,
             os_family=parsed_ua.os.family,
             is_bot=parsed_ua.is_bot,
             is_mobile=parsed_ua.is_mobile,
+            is_proxy=is_proxy_ip(ip_address),
             # Client Data
             keywords=keywords if keywords else None,  # Don't save empty lists
             div_id=div_id,
@@ -1699,6 +1710,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=offer.url,
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
+            paid_eligible=offer.paid_eligible,
         )
 
     def track_view(self, request, publisher, offer):
@@ -1725,6 +1737,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 url=offer.url,
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
+                paid_eligible=offer.paid_eligible,
             )
 
         log.debug("Not recording ad view.")
@@ -1750,7 +1763,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return False
 
     def offer_ad(
-        self, request, publisher, ad_type_slug, div_id, keywords, url=None, forced=False
+        self,
+        request,
+        publisher,
+        ad_type_slug,
+        div_id,
+        keywords,
+        url=None,
+        forced=False,
+        paid_eligible=False,
     ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
@@ -1768,6 +1789,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
+            paid_eligible=paid_eligible,
         )
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
@@ -1832,7 +1854,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         }
 
     @classmethod
-    def record_null_offer(cls, request, publisher, ad_type_slug, div_id, keywords, url):
+    def record_null_offer(
+        cls,
+        request,
+        publisher,
+        ad_type_slug,
+        div_id,
+        keywords,
+        url,
+        paid_eligible=False,
+    ):
         """
         Store null offers, so that we can keep track of our fill rate.
 
@@ -1849,6 +1880,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
+            paid_eligible=paid_eligible,
         )
 
     def is_valid_offer(self, impression_type, offer):
@@ -2386,6 +2418,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
     )
 
+    paid_eligible = models.BooleanField(
+        help_text=_("Whether the impression was eligible for a paid ad"),
+        default=None,
+        null=True,
+    )
+
     # User Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # anonymized
     user_agent = models.CharField(
@@ -2419,6 +2457,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
+    is_proxy = models.BooleanField(default=False)
     is_refunded = models.BooleanField(default=False)
 
     impression_type = None
