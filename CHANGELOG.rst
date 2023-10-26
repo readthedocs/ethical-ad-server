@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.2.0
+--------------
+
+The main change here is a migration on the (very large) Offers table.
+It only adds a few default null fields and so it should be fast.
+
+:date: October 26, 2023
+
+ * @davidfischer: Offers now store if they are paid ad eligible (#797)
+ * @dependabot[bot]: Bump pillow from 9.3.0 to 10.0.1 in /requirements (#789)
+ * @dependabot[bot]: Bump postcss from 8.4.21 to 8.4.31 (#787)
+
+
 Version v3.1.0
 --------------
 
