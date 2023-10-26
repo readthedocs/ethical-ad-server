@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jsonp.renderers import JSONPRenderer
 
+from ..constants import PAID_CAMPAIGN
 from ..decisionengine import get_ad_decision_backend
 from ..models import AdImpression
 from ..models import Advertisement
@@ -155,7 +156,9 @@ class AdDecisionView(GeoIpMixin, APIView):
     permission_classes = (AdDecisionPermission,)
     renderer_classes = (JSONRenderer, JSONPRenderer)
 
-    def _prepare_response(self, ad, placement, publisher, keywords, url, forced=False):
+    def _prepare_response(
+        self, ad, placement, publisher, keywords, url, forced=False, paid_eligible=False
+    ):
         """
         Wrap `offer_ad` with the placement for the publisher.
 
@@ -180,6 +183,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     div_id=div_id,
                     keywords=keywords,
                     url=url,
+                    paid_eligible=paid_eligible,
                 )
                 return {}
 
@@ -191,6 +195,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 keywords=keywords,
                 url=url,
                 forced=forced,
+                paid_eligible=paid_eligible,
             )
             log.debug(
                 "Offering ad. publisher=%s ad_type=%s div_id=%s keywords=%s",
@@ -275,17 +280,32 @@ class AdDecisionView(GeoIpMixin, APIView):
         :return: An add decision (JSON) or an empty JSON dict
         """
         serializer = AdDecisionSerializer(data=data)
-        forced = False
 
         if serializer.is_valid():
             publisher = serializer.validated_data["publisher"]
             self.check_object_permissions(request, publisher)
             url = serializer.validated_data.get("url")
             keywords = serializer.validated_data.get("keywords")
+            campaign_types = serializer.validated_data.get("campaign_types")
+
+            forced = False
+            paid_eligible = False
 
             # Ignore keywords from the API for certain publishers
             if not publisher.allow_api_keywords:
                 keywords = []
+
+            if serializer.validated_data.get(
+                "force_ad"
+            ) or serializer.validated_data.get("force_campaign"):
+                forced = True
+
+            if (
+                not forced
+                and publisher.allow_paid_campaigns
+                and (not campaign_types or PAID_CAMPAIGN in campaign_types)
+            ):
+                paid_eligible = True
 
             backend = get_ad_decision_backend()(
                 # Required parameters
@@ -294,7 +314,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 publisher=publisher,
                 # Optional parameters
                 keywords=keywords,
-                campaign_types=serializer.validated_data.get("campaign_types"),
+                campaign_types=campaign_types,
                 url=url,
                 placement_index=serializer.validated_data.get("placement_index"),
                 # Debugging parameters
@@ -302,11 +322,6 @@ class AdDecisionView(GeoIpMixin, APIView):
                 campaign_slug=serializer.validated_data.get("force_campaign"),
             )
             ad, placement = backend.get_ad_and_placement()
-
-            if serializer.validated_data.get(
-                "force_ad"
-            ) or serializer.validated_data.get("force_campaign"):
-                forced = True
 
             return Response(
                 self._prepare_response(
@@ -317,6 +332,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     keywords=backend.keywords,
                     url=url,
                     forced=forced,
+                    paid_eligible=paid_eligible,
                 )
             )
 
