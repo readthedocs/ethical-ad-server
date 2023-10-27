@@ -7,8 +7,18 @@ from django.utils.module_loading import import_string
 from .constants import IGNORED_QUERY_PARAMS
 
 
+def get_url_analyzer_backends():
+    for backend in settings.ADSERVER_ANALYZER_BACKEND:
+        if backend:
+            yield import_string(backend)
+
+
 def get_url_analyzer_backend():
-    return import_string(settings.ADSERVER_ANALYZER_BACKEND)
+    backends = list(get_url_analyzer_backends())
+    if backends:
+        return backends[0]
+
+    return None
 
 
 def normalize_url(url):

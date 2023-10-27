@@ -13,7 +13,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..utils import get_day
 from .models import AnalyzedUrl
-from .utils import get_url_analyzer_backend
+from .utils import get_url_analyzer_backends
 from .utils import normalize_url
 from config.celery_app import app
 
@@ -48,10 +48,19 @@ def analyze_url(url, publisher_slug):
         return
 
     log.debug("Analyzing url: %s", normalized_url)
+    keywords = set()
 
-    backend = get_url_analyzer_backend()(url)
-    keywords = backend.analyze()  # Can be None
+    for backend in get_url_analyzer_backends():
+        backend_instance = backend(url)
+        analyzed_keywords = backend_instance.analyze()  # Can be None
+        log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
+        if analyzed_keywords:
+            for kw in analyzed_keywords:
+                keywords.add(kw)
 
+    log.debug("Keywords found : %s", keywords)
+
+    keywords = list(keywords)
     url_obj, created = AnalyzedUrl.objects.get_or_create(
         url=normalized_url,
         publisher=publisher,
