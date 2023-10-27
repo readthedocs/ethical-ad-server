@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.2.1
+--------------
+
+A fix to the migration in v3.2.0.
+
+:date: October 27, 2023
+
+ * @davidfischer: Fix the isproxy migration to be nullable (#801)
+
+
 Version v3.2.0
 --------------
 
