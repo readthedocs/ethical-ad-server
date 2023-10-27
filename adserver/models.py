@@ -2457,7 +2457,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
-    is_proxy = models.BooleanField(default=False)
+    is_proxy = models.BooleanField(default=None, blank=True, null=True)
     is_refunded = models.BooleanField(default=False)
 
     impression_type = None
