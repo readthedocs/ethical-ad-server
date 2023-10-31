@@ -45,7 +45,6 @@ class Command(BaseCommand):
             )
 
             if analyzed_keywords:
-                for kw in analyzed_keywords:
-                    keywords.append(kw)
+                keywords.extend(analyzed_keywords)
 
         self.stdout.write(_("Keywords/topics: %s") % keywords)
