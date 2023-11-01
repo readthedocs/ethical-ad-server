@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.core.validators import URLValidator
 from django.utils.translation import gettext_lazy as _
 
-from ...utils import get_url_analyzer_backend
+from ...utils import get_url_analyzer_backends
 
 
 class Command(BaseCommand):
@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         """Entrypoint to the command."""
         self.stdout.write(
-            _("Using the model from %s") % settings.ADSERVER_ANALYZER_BACKEND
+            _("Using the model(s) from %s") % settings.ADSERVER_ANALYZER_BACKEND
         )
 
         for url in kwargs["urls"]:
@@ -36,10 +36,15 @@ class Command(BaseCommand):
         """Dump questions from metabase to a file."""
         self.stdout.write(_("Running against %s") % url)
 
-        backend = get_url_analyzer_backend()(url)
-        keywords = backend.analyze()
+        keywords = []
+        for backend in get_url_analyzer_backends():
+            backend_instance = backend(url)
+            analyzed_keywords = backend_instance.analyze()
+            self.stdout.write(
+                _("Keywords from '%s': %s") % (backend.__name__, analyzed_keywords)
+            )
 
-        if keywords is None:
-            self.stderr.write(_("Failed to connect/process %s") % url)
+            if analyzed_keywords:
+                keywords.extend(analyzed_keywords)
 
         self.stdout.write(_("Keywords/topics: %s") % keywords)

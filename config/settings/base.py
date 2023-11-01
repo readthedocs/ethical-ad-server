@@ -487,12 +487,12 @@ ADSERVER_DECISION_BACKEND = env(
     default="adserver.decisionengine.backends.ProbabilisticFlightBackend",
 )
 
-# The backend to be used by the ad server
+# The backend(s) to be used by the ad server
 # for topic and keyword analysis
-# Set to `None` to disable the analyzer entirely
-ADSERVER_ANALYZER_BACKEND = env(
+# Set to `None` or an empty string to disable the analyzer entirely
+ADSERVER_ANALYZER_BACKEND = env.list(
     "ADSERVER_ANALYZER_BACKEND",
-    default="adserver.analyzer.backends.TextacyAnalyzerBackend",
+    default=["adserver.analyzer.backends.TextacyAnalyzerBackend"],
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
