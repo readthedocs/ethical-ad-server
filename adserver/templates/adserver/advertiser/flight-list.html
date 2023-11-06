@@ -36,7 +36,7 @@
   {% regroup flights by state as flight_groups %}
   {% for state, flight_list in flight_groups %}
     {% if flight_list %}
-      <div class="table-responsive">
+      <div class="table-responsive" id="{{ state|slugify }}-flights">
         <table class="table table-hover">
           <thead>
             <tr>
