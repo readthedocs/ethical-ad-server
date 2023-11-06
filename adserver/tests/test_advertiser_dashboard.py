@@ -19,6 +19,8 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
+from ..models import Region
+from ..models import Topic
 from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
 
@@ -512,6 +514,20 @@ class TestAdvertiserDashboardViews(TestCase):
         backend = get_backend()
         backend.reset_messages()
 
+        # Set regions and topics that are available to be chosen
+        Region.objects.filter(slug__in=Region.NON_OVERLAPPING_REGIONS).update(
+            selectable=True
+        )
+        Topic.objects.filter(
+            slug__in=(
+                "devops",
+                "backend-web",
+                "frontend-web",
+                "data-science",
+                "security-privacy",
+            )
+        ).update(selectable=True)
+
         new_name = "My New Flight"
         today = get_ad_day().date()
         budget = "3599"
@@ -522,10 +538,14 @@ class TestAdvertiserDashboardViews(TestCase):
             "end_date": today + datetime.timedelta(days=20),
             "advertisements": [],
             "budget": budget,
+            "regions": ["us-ca"],
+            "topics": ["devops"],
             "note": note,
         }
 
-        resp = self.client.post(url, data=data, follow=True)
+        resp = self.client.post(
+            url + "?old_flight=&next=step-2", data=data, follow=True
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, f"Successfully setup a new")
         self.assertContains(resp, f"notified your account manager")
@@ -547,6 +567,8 @@ class TestAdvertiserDashboardViews(TestCase):
         new_flight = Flight.objects.filter(name=new_name).first()
         self.assertIsNotNone(new_flight)
         self.assertFalse(new_flight.live)
+        self.assertEqual(new_flight.targeting_parameters["include_regions"], ["us-ca"])
+        self.assertEqual(new_flight.targeting_parameters["include_topics"], ["devops"])
 
         backend.reset_messages()
 
