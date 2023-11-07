@@ -761,6 +761,10 @@ class FlightRequestForm(FlightCreateForm):
     def save(self, commit=True):
         assert commit, "Delayed saving is not supported on this form"
 
+        if not self.instance.targeting_parameters:
+            # This can happen if the flight was setup with no targeting at all
+            self.instance.targeting_parameters = {}
+
         # This is already the default but we are setting it explicitly to be defensive
         self.instance.live = False
 
@@ -784,6 +788,16 @@ class FlightRequestForm(FlightCreateForm):
             if self.old_flight
             else self.advertiser.campaigns.first()
         )
+
+        # Set the regions and/or topics they set in the form
+        if self.cleaned_data["regions"]:
+            self.instance.targeting_parameters["include_regions"] = self.cleaned_data[
+                "regions"
+            ]
+        if self.cleaned_data["topics"]:
+            self.instance.targeting_parameters["include_topics"] = self.cleaned_data[
+                "topics"
+            ]
 
         instance = super().save(commit)
 
