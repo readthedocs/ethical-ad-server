@@ -82,6 +82,10 @@ def daily_update_geos(day=None, geo=True, region=True):
         }
     )
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        # For region and topic reports, we are excluding ads that were ineligible to be paid
+        # from the aggregations unless the publisher isn't approved for paid ads.
+        # This will give us more accurate KPIs on fill rates for paid publishers.
+        Q(paid_eligible=True) | Q(publisher__allow_paid_campaigns=False),
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     )
@@ -374,6 +378,10 @@ def daily_update_regiontopic(day=None):
         }
     )
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        # For region and topic reports, we are excluding ads that were ineligible to be paid
+        # from the aggregations unless the publisher isn't approved for paid ads.
+        # This will give us more accurate KPIs on fill rates for paid publishers.
+        Q(paid_eligible=True) | Q(publisher__allow_paid_campaigns=False),
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
     )

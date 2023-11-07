@@ -2107,6 +2107,7 @@ class AdImpression(BaseImpression):
     advertisement = models.ForeignKey(
         Advertisement, related_name="impressions", on_delete=models.PROTECT, null=True
     )
+    # This field is the sum of all the view time for each ad for this publisher each day
     view_time = models.PositiveIntegerField(
         _("Seconds that the ad was in view"),
         null=True,
