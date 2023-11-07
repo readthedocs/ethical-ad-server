@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.3.0
+--------------
+
+There were a few minor features and bug fixes and dependency updates,
+but the largest change was to allow certain nightly aggregations
+to only count paid ads.
+Also, our page analyzers can now be configured to use multiple analyzers.
+
+:date: November 7, 2023
+
+ * @davidfischer: Flight request saves the requested targeting (#805)
+ * @davidfischer: Add an anchor link to the flight list view (#804)
+ * @dependabot[bot]: Bump django from 4.2.4 to 4.2.7 in /requirements (#803)
+ * @davidfischer: Allow running multiple analyzer models (#800)
+ * @davidfischer: Aggregation changes to only count paid eligible ads (#798)
+
+
 Version v3.2.1
 --------------
 
