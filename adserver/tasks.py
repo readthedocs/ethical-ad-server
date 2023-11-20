@@ -180,7 +180,6 @@ def daily_update_placements(day=None):
         .order_by("-total_decisions")
         .iterator()
     ):
-
         impression, _ = PlacementImpression.objects.using("default").get_or_create(
             publisher_id=values["publisher"],
             advertisement_id=values["advertisement"],
@@ -226,7 +225,6 @@ def daily_update_impressions(day=None):
         .order_by("-total_decisions")
         .iterator()
     ):
-
         impression, _ = AdImpression.objects.using("default").get_or_create(
             publisher_id=values["publisher"],
             advertisement_id=values["advertisement"],
@@ -934,8 +932,9 @@ def disable_inactive_publishers(days=60, draft_only=False, dry_run=False):
     threshold = get_ad_day() - datetime.timedelta(days=days)
     site = get_current_site(request=None)
 
+    # Don't disable publishers who we recently updated to paid
     for publisher in Publisher.objects.filter(
-        allow_paid_campaigns=True, created__lt=threshold
+        allow_paid_campaigns=True, created__lt=threshold, modified__lt=threshold
     ):
         if not PublisherPaidImpression.objects.filter(
             publisher=publisher, date__gte=threshold
