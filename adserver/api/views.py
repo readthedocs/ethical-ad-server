@@ -287,6 +287,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             url = serializer.validated_data.get("url")
             keywords = serializer.validated_data.get("keywords")
             campaign_types = serializer.validated_data.get("campaign_types")
+            rotations = serializer.validated_data.get("rotations", 1)
 
             forced = False
             paid_eligible = False
@@ -294,6 +295,15 @@ class AdDecisionView(GeoIpMixin, APIView):
             # Ignore keywords from the API for certain publishers
             if not publisher.allow_api_keywords:
                 keywords = []
+
+            if rotations > 1:
+                # This is a temporary log record to see how frequently ads are rotated
+                log.warning(
+                    "Ad rotation. rotations=%s, publisher=%s, url=%s,",
+                    rotations,
+                    publisher.slug,
+                    url,
+                )
 
             if serializer.validated_data.get(
                 "force_ad"

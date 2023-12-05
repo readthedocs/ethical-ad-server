@@ -66,6 +66,13 @@ class AdDecisionSerializer(serializers.Serializer):
         required=False, min_value=0, max_value=999
     )
 
+    # Field sent when an ad is rotated but not sent when an ad is first loaded
+    rotations = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=9,
+    )
+
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
     user_ua = serializers.CharField(required=False)
