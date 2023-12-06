@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.4.0
+--------------
+
+This change involved logging how frequently the new feature ad rotation is happening.
+
+:date: December 6, 2023
+
+ * @davidfischer: Log ad rotations (#808)
+
+
 Version v3.3.0
 --------------
 
