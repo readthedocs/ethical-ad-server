@@ -138,9 +138,16 @@ class TestMiddleware(TestCase):
             self.client.force_login(staff_user)
 
             country = "US"
-            response = self.client.get("/", headers={"cf-ipcountry": country})
+            response = self.client.get(
+                "/",
+                headers={
+                    "cf-ipcountry": country,
+                    "X-Cloudflare-Geo-Region": "NY",
+                },
+            )
             request = response.wsgi_request
             self.assertEqual(request.geo.country, country)
+            self.assertEqual(request.geo.region, "NY")
             self.assertTrue("X-Adserver-GeoIP-Provider" in response)
             self.assertEqual(response["X-Adserver-GeoIP-Provider"], "Cloudflare")
 
