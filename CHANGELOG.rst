@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.5.0
+--------------
+
+We added the region/state/province from Cloudflare to the middleware.
+This will allow targeting ad campaigns to US states for example.
+The other change here was a small change to the publisher reporting
+to show an overview screen.
+
+:date: December 20, 2023
+
+ * @davidfischer: Publisher overview dashboard on report screen (#811)
+ * @davidfischer: Region and metro targeting from CF (#810)
+
+
 Version v3.4.0
 --------------
 
