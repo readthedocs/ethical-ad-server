@@ -1,5 +1,6 @@
 {% extends "adserver/reports/base.html" %}
 {% load i18n %}
+{% load metabase %}
 
 
 {% block title %}{% trans 'Revenue Report' %} - {{ publisher }}{% endblock %}
@@ -22,6 +23,21 @@
 
 {% block additional_filters %}
 {% endblock additional_filters %}
+
+
+{% block toc %}
+  {# Note: the publisher dashboard only shows if there is no set campaign type (meaning all types) #}
+  {#       Otherwise the data will not match the tabular report below. #}
+  {% if metabase_publisher_dashboard and not campaign_type %}
+    <section class="mb-5">
+      <div class="row mb-5">
+        <div class="col min-vh-75">
+          {% metabase_dashboard_embed metabase_publisher_dashboard publisher_slug=publisher.slug start_date=start_date end_date=end_date %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endblock toc %}
 
 
 {% block explainer %}
