@@ -1618,6 +1618,9 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
                 "report": report,
                 "campaign_types": CAMPAIGN_TYPES,
                 "export_url": self.get_export_url(publisher_slug=publisher.slug),
+                "metabase_publisher_dashboard": settings.METABASE_DASHBOARDS.get(
+                    "PUBLISHER_FIGURES"
+                ),
             }
         )
 
