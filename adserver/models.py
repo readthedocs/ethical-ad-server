@@ -1637,6 +1637,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         div_id,
         ad_type_slug,
         paid_eligible=False,
+        rotated=False,
     ):
         """
         Save the actual AdBase model to the database.
@@ -1675,6 +1676,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             country=country,
             url=url,
             paid_eligible=paid_eligible,
+            rotated=rotated,
             # Derived user agent data
             browser_family=parsed_ua.browser.family,
             os_family=parsed_ua.os.family,
@@ -1711,6 +1713,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
             paid_eligible=offer.paid_eligible,
+            rotated=offer.rotated,
         )
 
     def track_view(self, request, publisher, offer):
@@ -1738,6 +1741,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
                 paid_eligible=offer.paid_eligible,
+                rotated=offer.rotated,
             )
 
         log.debug("Not recording ad view.")
@@ -1772,6 +1776,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         url=None,
         forced=False,
         paid_eligible=False,
+        rotated=False,
     ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
@@ -1790,6 +1795,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             div_id=div_id,
             ad_type_slug=ad_type_slug,
             paid_eligible=paid_eligible,
+            rotated=rotated,
         )
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
@@ -2424,6 +2430,10 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         default=None,
         null=True,
     )
+
+    # Whether this ad was rotated by the client.
+    # This is needed to measure CTR of rotated ads independently
+    rotated = models.BooleanField(_("Ad was rotated"), default=None, null=True)
 
     # User Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # anonymized
