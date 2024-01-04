@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.6.0
+--------------
+
+This change adds a migration to the Offer model to differentiate
+between ads that were rotated and those that were not.
+This release also includes a newer version of our classifier model
+trained in December.
+
+:date: January 4, 2023
+
+ * @davidfischer: Store ad rotation status on offer (#813)
+
+
 Version v3.5.0
 --------------
 
