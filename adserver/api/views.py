@@ -165,7 +165,7 @@ class AdDecisionView(GeoIpMixin, APIView):
         url,
         forced=False,
         paid_eligible=False,
-        rotated=False,
+        rotations=1,
     ):
         """
         Wrap `offer_ad` with the placement for the publisher.
@@ -204,7 +204,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 url=url,
                 forced=forced,
                 paid_eligible=paid_eligible,
-                rotated=rotated,
+                rotations=rotations,
             )
             log.debug(
                 "Offering ad. publisher=%s ad_type=%s div_id=%s keywords=%s",
@@ -352,7 +352,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                     url=url,
                     forced=forced,
                     paid_eligible=paid_eligible,
-                    rotated=(rotations > 1),
+                    rotations=rotations,
                 )
             )
 
