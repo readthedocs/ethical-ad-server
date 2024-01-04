@@ -1466,6 +1466,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         ).first()
         self.assertIsNotNone(offer)
         self.assertIsNone(offer.view_time)
+        self.assertEqual(offer.rotations, 1)
 
         # Test invalid view time
         resp = self.proxy_client.get(view_time_url, {"view_time": "invalid"})
@@ -1484,6 +1485,25 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         offer.refresh_from_db()
         self.assertEqual(offer.view_time, time_viewed)
+
+    def test_ad_rotate(self):
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+            "rotations": "2",
+        }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        self.assertTrue(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1, rotations=2
+            ).exists()
+        )
 
     def test_nullable_offers(self):
         self.ad.live = False

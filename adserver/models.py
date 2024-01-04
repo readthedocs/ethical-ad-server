@@ -1637,6 +1637,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         div_id,
         ad_type_slug,
         paid_eligible=False,
+        rotations=1,
     ):
         """
         Save the actual AdBase model to the database.
@@ -1675,6 +1676,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             country=country,
             url=url,
             paid_eligible=paid_eligible,
+            rotations=rotations,
             # Derived user agent data
             browser_family=parsed_ua.browser.family,
             os_family=parsed_ua.os.family,
@@ -1711,6 +1713,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
             paid_eligible=offer.paid_eligible,
+            rotations=offer.rotations,
         )
 
     def track_view(self, request, publisher, offer):
@@ -1738,6 +1741,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
                 paid_eligible=offer.paid_eligible,
+                rotations=offer.rotations,
             )
 
         log.debug("Not recording ad view.")
@@ -1772,6 +1776,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         url=None,
         forced=False,
         paid_eligible=False,
+        rotations=1,
     ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
@@ -1790,6 +1795,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             div_id=div_id,
             ad_type_slug=ad_type_slug,
             paid_eligible=paid_eligible,
+            rotations=rotations,
         )
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
@@ -2423,6 +2429,12 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         help_text=_("Whether the impression was eligible for a paid ad"),
         default=None,
         null=True,
+    )
+
+    # Whether this ad was rotated by the client (rotations > 1).
+    # This is needed to measure CTR of rotated ads independently
+    rotations = models.PositiveSmallIntegerField(
+        _("Number of ad rotations"), default=None, null=True
     )
 
     # User Data
