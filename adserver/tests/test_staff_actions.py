@@ -46,10 +46,12 @@ class CreateAdvertiserTest(TestCase):
         self.pub_group_rtd = get(
             PublisherGroup,
             slug="readthedocs",
+            default_enabled=True,
         )
         self.pub_group_ea = get(
             PublisherGroup,
             slug="ethicalads-network",
+            default_enabled=True,
         )
         self.pub_group_other = get(
             PublisherGroup,
@@ -134,7 +136,7 @@ class CreateAdvertiserTest(TestCase):
         self.assertIsNotNone(campaign)
 
         # Check that the campaign targets the two pub groups (readthedocs and ethicalads-network)
-        for slug in CreateAdvertiserForm.DEFAULT_TARGETED_GROUPS:
+        for slug in ("readthedocs", "ethicalads-network"):
             self.assertTrue(campaign.publisher_groups.filter(slug=slug).exists())
         self.assertFalse(
             campaign.publisher_groups.filter(pk=self.pub_group_other.pk).exists()

@@ -44,7 +44,6 @@ class CreateAdvertiserForm(forms.Form):
     DEFAULT_CPM = 5
     DEFAULT_NUM_IMPRESSIONS = 200000
     DEFAULT_REGION_TARGETING = ["us-ca", "eu-au-nz"]
-    DEFAULT_TARGETED_GROUPS = ("ethicalads-network", "readthedocs")
 
     # Advertiser information
     advertiser_name = forms.CharField(label=_("Advertiser name"), max_length=200)
@@ -127,11 +126,11 @@ class CreateAdvertiserForm(forms.Form):
             name=advertiser_name,
             slug=slugify(advertiser_name),
         )
+
+        # Add the default publisher groups to this campaign
         # TODO: Allow configuring of targeted publisher groups in form
-        for group_slug in self.DEFAULT_TARGETED_GROUPS:
-            pub_group = PublisherGroup.objects.filter(slug=group_slug).first()
-            if pub_group:
-                campaign.publisher_groups.add(pub_group)
+        for pub_group in PublisherGroup.objects.filter(default_enabled=True):
+            campaign.publisher_groups.add(pub_group)
 
         flight_name = f"{advertiser_name} Initial Flight"
         flight = Flight.objects.create(

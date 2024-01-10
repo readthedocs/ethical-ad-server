@@ -559,6 +559,13 @@ class PublisherGroup(TimeStampedModel):
         help_text=_("A group of publishers that can be targeted by advertisers"),
     )
 
+    default_enabled = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Whether this publisher group is enabled on new campaigns by default"
+        ),
+    )
+
     history = HistoricalRecords()
 
     class Meta:
@@ -714,6 +721,21 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         )["total_value"]
 
         return aggregation or 0.0
+
+    def publisher_group_display(self):
+        """Helper function to display publisher groups if the selected set isn't the default."""
+        default_pub_groups = [
+            pg.name
+            for pg in PublisherGroup.objects.filter(default_enabled=True).order_by(
+                "name"
+            )
+        ]
+        campaign_pub_groups = [pg.name for pg in self.publisher_groups.order_by("name")]
+
+        if default_pub_groups != campaign_pub_groups:
+            return campaign_pub_groups
+
+        return None
 
 
 class Flight(TimeStampedModel, IndestructibleModel):
