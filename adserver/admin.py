@@ -1056,8 +1056,11 @@ class PublisherPayoutAdmin(SimpleHistoryAdmin):
 
 @admin.register(PublisherGroup)
 class PublisherGroupAdmin(SimpleHistoryAdmin):
-    list_display = ("name", "slug", "modified", "created")
-    list_filter = ("publishers",)
+    list_display = ("name", "slug", "default_enabled", "modified", "created")
+    list_filter = (
+        "default_enabled",
+        "publishers",
+    )
     model = PublisherGroup
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
