@@ -25,6 +25,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -2001,21 +2002,23 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         url = link or self.link
         if not self.text:
             template = get_template("adserver/advertisement-body.html")
-            ad_html = template.render(
-                {
-                    "ad": self,
-                    "preview": preview,
-                }
-            ).strip()
-        else:
-            ad_html = self.text
-
-        return mark_safe(
-            ad_html.replace(
-                "<a>",
-                '<a href="%s" rel="nofollow noopener sponsored" target="_blank">' % url,
+            return mark_safe(
+                template.render(
+                    {
+                        "url": url,
+                        "ad": self,
+                        "preview": preview,
+                    }
+                ).strip()
             )
+
+        # Old style ads where the text was fully customizable
+        ad_html = self.text
+        a_tag = format_html(
+            '<a href="{}" rel="nofollow noopener sponsored" target="_blank">', url
         )
+
+        return mark_safe(ad_html.replace("<a>", a_tag))
 
     def render_ad(
         self,

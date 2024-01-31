@@ -8,9 +8,7 @@ from django.contrib import messages
 from django.db import models
 from django.template.response import TemplateResponse
 from django.utils import timezone
-from django.utils.html import escape
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
@@ -190,9 +188,11 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        name = escape(instance.name)
-        url = instance.get_absolute_url()
-        return mark_safe(f'<a href="{url}">{name}</a> Report')
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.get_absolute_url(),
+            f"{instance.name} Report",
+        )
 
 
 class CampaignInline(admin.TabularInline):
@@ -296,10 +296,10 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.get_absolute_url(),
+            f"{instance.name} Report",
         )
 
     def stripe_customer(self, obj):
@@ -344,8 +344,10 @@ class AdvertisementMixin:
         if not obj.image:
             return ""
 
-        return mark_safe(
-            f'<img src="{obj.image.url}" style="max-width: {self.MAX_IMAGE_WIDTH}px" />'
+        return format_html(
+            '<img src="{}" style="max-width: {}px" />',
+            obj.image.url,
+            self.MAX_IMAGE_WIDTH,
         )
 
     def ctr(self, obj):
@@ -774,11 +776,10 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk or not instance.advertiser:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report",
-                url=instance.advertiser.get_absolute_url(),
-            )
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.advertiser.get_absolute_url(),
+            f"{instance.name} Report",
         )
 
     def num_ads(self, obj):
@@ -949,8 +950,10 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     def page_url(self, instance):
         if instance.url:
-            return mark_safe(
-                '<a href="{url}">{url}</a>'.format(url=escape(instance.url))
+            return format_html(
+                '<a href="{}">{}</a>',
+                instance.url,
+                instance.url,
             )
         return None
 

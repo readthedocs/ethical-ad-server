@@ -1,5 +1,5 @@
 {% spaceless %}
-<a>
+<a href="{{ url }}" rel="nofollow noopener sponsored" target="_blank">
 {% if ad.headline or preview %}<strong class="ea-headline">{{ ad.headline|default:"" }} </strong>{% endif %}
 <span class="ea-body">{{ ad.content|default:"" }}</span>
 {% if ad.cta or preview %}<strong class="ea-cta"> {{ ad.cta|default:"" }}</strong>{% endif %}
