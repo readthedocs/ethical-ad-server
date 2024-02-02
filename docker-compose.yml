@@ -37,10 +37,10 @@ services:
     tty: true
 
   postgres:
-    build:
-      context: .
-      dockerfile: ./docker-compose/postgres/Dockerfile
-    image: ethicaladserver_production_postgres
+    # build:
+    #   context: .
+    #   dockerfile: ./docker-compose/postgres/Dockerfile
+    image: ankane/pgvector:latest
     volumes:
       - local_postgres_data:/var/lib/postgresql/data
       - local_postgres_data_backups:/backups

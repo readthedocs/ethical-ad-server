@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)  # noqa
 
 
 @app.task
-def analyze_url(url, publisher_slug):
+def analyze_url(url, publisher_slug, force=False):
     """
     Analyze a given URL on a publisher's site.
 
@@ -41,8 +41,12 @@ def analyze_url(url, publisher_slug):
     existing_record = AnalyzedUrl.objects.filter(
         url=normalized_url, publisher=publisher
     ).first()
-    if existing_record and existing_record.last_analyzed_date > (
-        timezone.now() - datetime.timedelta(days=7)
+
+    if (
+        existing_record
+        and not force
+        and existing_record.last_analyzed_date
+        > (timezone.now() - datetime.timedelta(days=7))
     ):
         log.warning("URL recently analyzed. Skipping.")
         return
@@ -51,15 +55,21 @@ def analyze_url(url, publisher_slug):
 
     backend = get_url_analyzer_backend()(url)
     keywords = backend.analyze()  # Can be None
+    embedding = backend.embedding()  # Can be None
 
     url_obj, created = AnalyzedUrl.objects.get_or_create(
         url=normalized_url,
         publisher=publisher,
-        defaults={"keywords": keywords, "last_analyzed_date": timezone.now()},
+        defaults={
+            "keywords": keywords,
+            "embedding": embedding,
+            "last_analyzed_date": timezone.now(),
+        },
     )
 
     if not created:
         url_obj.keywords = keywords
+        url_obj.embedding = embedding
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
         url_obj.save()

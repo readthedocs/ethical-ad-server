@@ -38,8 +38,10 @@ class Command(BaseCommand):
 
         backend = get_url_analyzer_backend()(url)
         keywords = backend.analyze()
+        embedding = backend.embedding()
 
         if keywords is None:
             self.stderr.write(_("Failed to connect/process %s") % url)
 
         self.stdout.write(_("Keywords/topics: %s") % keywords)
+        self.stdout.write(_("Embeddings: %s") % embedding)

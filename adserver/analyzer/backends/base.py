@@ -44,19 +44,31 @@ class BaseAnalyzerBackend:
 
         :returns list: a list of keywords or `None` if the URL doesn't respond.
         """
-        resp = self.fetch()
+        self.resp = self.fetch()
 
-        if resp and resp.ok:
-            return self.analyze_response(resp)
+        if self.resp and self.resp.ok:
+            return self.analyze_response(self.resp)
 
-        if not resp:
+        if not self.resp:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
-                "Failed to connect. Url=%s, Status=%s", self.url, resp.status_code
+                "Failed to connect. Url=%s, Status=%s", self.url, self.resp.status_code
             )
 
         # A failed request results in `None`.
+        return None
+
+    def embedding(self):
+        """
+        Parse the response for embeddings.
+
+        :returns vector: A 384-dimensional vector or `None` if the URL doesn't respond.
+        """
+
+        if self.resp and self.resp.ok:
+            return self.embed_response(self.resp)
+
         return None
 
     def analyze_response(self, resp):
@@ -68,4 +80,8 @@ class BaseAnalyzerBackend:
 
         This needs to be defined by subclasses
         """
+        raise NotImplementedError("Subclasses should define this.")
+
+    def embed_response(self, resp):
+        """ """
         raise NotImplementedError("Subclasses should define this.")

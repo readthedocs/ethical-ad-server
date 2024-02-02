@@ -16,3 +16,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0
 #######################################################################
 # This installs PyTorch which is ~250MB
 spacy-transformers==1.1.8
+
+
+sentence-transformers
+pgvector
