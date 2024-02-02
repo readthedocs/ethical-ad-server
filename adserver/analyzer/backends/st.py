@@ -1,14 +1,16 @@
 import logging
+import os
 
+from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
 
 from ...models import Topic
-from .base import BaseAnalyzerBackend
+from .textacynlp import TextacyAnalyzerBackend
 
 log = logging.getLogger(__name__)  # noqa
 
 
-class SentenceTransformerAnalyzerBackend(BaseAnalyzerBackend):
+class SentenceTransformerAnalyzerBackend(TextacyAnalyzerBackend):
     """
     Quick and dirty analyzer that uses the SentenceTransformer library
 
@@ -38,9 +40,27 @@ class SentenceTransformerAnalyzerBackend(BaseAnalyzerBackend):
 
     def embed_response(self, resp) -> list:
         """Analyze an HTTP response and return a list of keywords/topics for the URL."""
-        keywords = []
+        model = SentenceTransformer(
+            "multi-qa-MiniLM-L6-cos-v1",
+            cache_folder=os.getenv("SENTENCE_TRANSFORMERS_HOME", "/tmp"),
+        )
 
-        model = SentenceTransformer("multi-qa-MiniLM-L6-cos-v1")
-        embedding = model.encode(str(resp.content))
+        soup = BeautifulSoup(resp.content, features="html.parser")
 
-        return embedding.tolist()
+        for selector in self.REMOVE_CONTENT_SELECTORS:
+            for nodes in soup.select(selector):
+                nodes.decompose()
+
+        for selector in self.MAIN_CONTENT_SELECTORS:
+            results = soup.select(selector, limit=1)
+
+            # If no results, go to the next selector
+            # If results are found, use these and stop looking at the selectors
+            if results:
+                text = self.preprocess_text(results[0].get_text())
+                log.info("Embedding text: %s", text[:100])
+                embedding = model.encode(text)
+
+                return embedding.tolist()
+
+        return None
