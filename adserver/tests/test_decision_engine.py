@@ -367,10 +367,13 @@ class DecisionEngineTests(TestCase):
 
         self.advertisement1.flight = flight
         self.advertisement1.save()
+
+        # Fun times with dates
         with mock.patch("adserver.decisionengine.backends.timezone") as tz:
-            # 1 day (24 intervals) through the flight
+
             tz.now.return_value = datetime.datetime(2020, 6, 1, 0, 0, 0)  # Monday
 
+            # Monday targeting works
             ad, _ = self.backend.get_ad_and_placement()
             self.assertEqual(ad, self.advertisement1)
 
