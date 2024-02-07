@@ -1151,6 +1151,17 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
+    def show_to_days(self, day):
+        """Check if a flight is valid for this traffic based on current day."""
+        if not self.targeting_parameters:
+            return True
+
+        days_targeting = self.targeting_parameters.get("days")
+        if days_targeting and day not in days_targeting:
+            return False
+
+        return True
+
     def show_on_publisher(self, publisher):
         if self.included_publishers:
             return publisher.slug in self.included_publishers

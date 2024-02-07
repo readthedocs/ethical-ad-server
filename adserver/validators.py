@@ -58,6 +58,15 @@ class TargetingParametersValidator(BaseValidator):
     limit_value = None  # required for classes extending BaseValidator
 
     mobile_traffic_values = ("exclude", "only")
+    days_values = (
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    )
 
     messages = {
         "invalid_type": _("Value must be a dict, not %(type)s"),
@@ -70,6 +79,7 @@ class TargetingParametersValidator(BaseValidator):
         "mobile": _(f"%(value)s must be one of {mobile_traffic_values}"),
         "str": _("%(word)s must be a string"),
         "percent": _("%(value)s must be a float between [0.0, 1.0]"),
+        "days": _(f"%(value)s must be one of {days_values}"),
     }
 
     validators = {
@@ -87,6 +97,7 @@ class TargetingParametersValidator(BaseValidator):
         "include_domains": "_validate_strs",
         "exclude_domains": "_validate_strs",
         "mobile_traffic": "_validate_mobile",
+        "days": "_validate_days",
     }
 
     def __init__(self, message=None):
@@ -136,6 +147,11 @@ class TargetingParametersValidator(BaseValidator):
     def _validate_mobile(self, value):
         if value not in self.mobile_traffic_values:
             raise ValidationError(self.messages["mobile"], params={"value": value})
+
+    def _validate_days(self, values):
+        for value in values:
+            if value not in self.days_values:
+                raise ValidationError(self.messages["days"], params={"value": value})
 
     def _validate_regions(self, region_values):
         # Avoid a circular import since the models use these validators
