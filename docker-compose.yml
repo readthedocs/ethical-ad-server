@@ -25,6 +25,8 @@ services:
       - postgres
     volumes:
       - .:/app
+      # Make it so we can edit the start script dynamically,
+      # for example to install dependencies
       - ./docker-compose/django/start:/start
     env_file:
       - ./.envs/local/django

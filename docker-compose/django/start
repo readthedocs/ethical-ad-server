@@ -4,6 +4,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# Reinstall dependencies without rebuilding docker image
+# pip install -r /app/requirements/production.txt
+
 # Don't auto-migrate locally because this can cause weird issues when testing migrations
 # python manage.py migrate
 python manage.py runserver 0.0.0.0:5000
