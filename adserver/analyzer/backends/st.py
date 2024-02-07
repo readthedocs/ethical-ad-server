@@ -42,7 +42,7 @@ class SentenceTransformerAnalyzerBackend(TextacyAnalyzerBackend):
         """Analyze an HTTP response and return a list of keywords/topics for the URL."""
         model = SentenceTransformer(
             "multi-qa-MiniLM-L6-cos-v1",
-            cache_folder=os.getenv("SENTENCE_TRANSFORMERS_HOME", "/tmp"),
+            cache_folder=os.getenv("SENTENCE_TRANSFORMERS_HOME", "/model/"),
         )
 
         soup = BeautifulSoup(resp.content, features="html.parser")

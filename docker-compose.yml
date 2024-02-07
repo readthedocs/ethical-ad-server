@@ -26,7 +26,6 @@ services:
     volumes:
       - .:/app
       - ../ethicalads-model:/model
-      - /tmp:/tmp
     env_file:
       - ./.envs/local/django
       - ./.envs/local/postgres
