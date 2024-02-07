@@ -1151,8 +1151,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def show_to_days(self, day):
-        """Check if a flight is valid for this traffic based on current day."""
+    def show_to_day(self, day):
+        """Check if a flight is valid for this traffic based on the day."""
         if not self.targeting_parameters:
             return True
 
