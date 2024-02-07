@@ -979,6 +979,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("exclude_domains", [])
 
     @property
+    def days(self):
+        if not self.targeting_parameters:
+            return []
+        return self.targeting_parameters.get("days", [])
+
+    @property
     def state(self):
         today = get_ad_day().date()
         if self.live and self.start_date <= today:
@@ -1031,6 +1037,9 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def get_exclude_countries_display(self):
         excluded_country_codes = self.excluded_countries
         return [COUNTRY_DICT.get(cc, "Unknown") for cc in excluded_country_codes]
+
+    def get_days_display(self):
+        return [day.capitalize() for day in self.days]
 
     def show_to_geo(self, geo_data):
         """

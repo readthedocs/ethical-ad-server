@@ -25,6 +25,7 @@ services:
       - postgres
     volumes:
       - .:/app
+      - ./docker-compose/django/start:/start
     env_file:
       - ./.envs/local/django
       - ./.envs/local/postgres

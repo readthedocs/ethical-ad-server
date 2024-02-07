@@ -1,10 +1,10 @@
 """Ad decision backends."""
-import datetime
 import logging
 import random
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from user_agents import parse
 
 from ..analyzer.models import AnalyzedUrl
@@ -294,7 +294,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return False
 
         # Skip if the flight is not meant to show on these days
-        if not flight.show_to_day(datetime.datetime.now().strftime("%A").lower()):
+        if not flight.show_to_day(timezone.now().strftime("%A").lower()):
             return False
 
         return True

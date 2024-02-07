@@ -129,7 +129,7 @@
           <li>{% blocktrans with value=flight.campaign.publisher_group_display|join:", " %}Networks: {{ value }}{% endblocktrans %}</li>
         {% endif %}
         {% if flight.targeting_parameters.days %}
-         <li>{% blocktrans with value=flight.targeting_parameters.days %}Days: {{ value|join:", " }}{% endblocktrans %}</li>
+          <li>{% blocktrans with value=flight.get_days_display|join:', ' %}Days: {{ value }}{% endblocktrans %}</li>
         {% endif %}
       </ul>
     </dd>
