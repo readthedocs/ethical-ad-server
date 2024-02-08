@@ -26,6 +26,9 @@ services:
     volumes:
       - .:/app
       - ../ethicalads-model:/model
+      # Make it so we can edit the start script dynamically,
+      # for example to install dependencies
+      - ./docker-compose/django/start:/start
     env_file:
       - ./.envs/local/django
       - ./.envs/local/postgres

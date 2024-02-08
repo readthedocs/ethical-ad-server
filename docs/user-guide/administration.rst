@@ -67,7 +67,8 @@ The valid options here are:
 ``include_metro_codes``
     An allowlist of 3 digit DMA codes that can be combined with ``include_countries``.
     Not all of our geo targeting middlewares support targeting by metro.
-
+``days``
+    A lowercase list of days of the week where the flight should be shown. Generally used for weekdays or weekends.
 
 For a campaign that targets data science pages visited by users in the US & Canada not on mobile,
 an example targeting JSON would be::
