@@ -241,13 +241,13 @@ class BaseApiTest(TestCase):
         )
         self.staff_token = Token.objects.create(user=self.staff_user)
 
-        self.client = Client(HTTP_AUTHORIZATION="Token {}".format(self.token))
+        self.client = Client(headers={"authorization": "Token {}".format(self.token)})
         self.staff_client = Client(
-            HTTP_AUTHORIZATION="Token {}".format(self.staff_token)
+            headers={"authorization": "Token {}".format(self.staff_token)}
         )
         # To be counted, the UA and IP must be valid, non-blocklisted/non-bots
         self.proxy_client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR=self.ip_address
         )
 
         self.unauth_client = Client()
@@ -299,7 +299,7 @@ class AdDecisionApiTests(BaseApiTest):
         )
         self.assertEqual(resp.status_code, 401)
 
-        client = Client(HTTP_AUTHORIZATION="invalid")
+        client = Client(headers={"authorization": "invalid"})
         resp = client.post(
             self.url, json.dumps(self.data), content_type="application/json"
         )
@@ -434,7 +434,9 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertTrue("id" in resp.json())
         self.assertEqual(resp.json()["id"], "ad-slug")
         self.proxy_client.get(resp.json()["view_url"])
-        self.assertFalse(self.ad.offers.first().viewed)
+        offer = self.ad.offers.first()
+        self.assertFalse(offer.viewed)
+        self.assertFalse(offer.paid_eligible)
 
         # House ads are counted even when forced
         self.ad.flight.campaign.campaign_type = "house"
@@ -615,6 +617,9 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
         self.assertEqual(resp_json["campaign_type"], PAID_CAMPAIGN)
 
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertTrue(offer.paid_eligible)
+
         # Try community only
         data["campaign_types"] = [COMMUNITY_CAMPAIGN]
         resp = self.client.post(
@@ -633,6 +638,8 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
         self.assertEqual(resp_json["campaign_type"], COMMUNITY_CAMPAIGN)
+        offer = Offer.objects.get(pk=resp_json["nonce"])
+        self.assertFalse(offer.paid_eligible)
 
         # Try multiple campaign types
         data["campaign_types"] = [PAID_CAMPAIGN, HOUSE_CAMPAIGN]
@@ -800,6 +807,26 @@ class AdDecisionApiTests(BaseApiTest):
 
         # Clear the cache so this setting doesn't mess up the next test
         cache.clear()
+
+    def test_multiple_placements(self):
+        self.query_params["placement_index"] = 0
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue("id" in resp.json())  # Gets an ad successfully
+
+        # No ad since `publisher.allow_multiple_placements` is False (the default)
+        self.query_params["placement_index"] = 1
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictEqual(resp.json(), {})
+
+        self.publisher.allow_multiple_placements = True
+        self.publisher.save()
+
+        self.query_params["placement_index"] = 1
+        resp = self.client.get(self.url, self.query_params)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue("id" in resp.json())  # Gets an ad successfully
 
 
 class AdvertiserApiTests(BaseApiTest):
@@ -1265,7 +1292,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             "user_ua": self.user_agent,
         }
         with mock.patch("adserver.utils.get_geoipdb_geolocation") as get_geo:
-            get_geo.return_value = GeolocationData("CA")
+            get_geo.return_value = GeolocationData("US", "NY")
 
             resp = self.client.post(
                 self.url, json.dumps(data), content_type="application/json"
@@ -1274,7 +1301,8 @@ class AdvertisingIntegrationTests(BaseApiTest):
 
         # Check that the new IP was used for ad targeting
         self.assertEqual(resp["X-Adserver-RealIP"], new_ip)
-        self.assertEqual(resp["X-Adserver-Country"], "CA")
+        self.assertEqual(resp["X-Adserver-Country"], "US")
+        self.assertEqual(resp["X-Adserver-Region"], "NY")
 
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
@@ -1438,6 +1466,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
         ).first()
         self.assertIsNotNone(offer)
         self.assertIsNone(offer.view_time)
+        self.assertEqual(offer.rotations, 1)
 
         # Test invalid view time
         resp = self.proxy_client.get(view_time_url, {"view_time": "invalid"})
@@ -1456,6 +1485,25 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         offer.refresh_from_db()
         self.assertEqual(offer.view_time, time_viewed)
+
+    def test_ad_rotate(self):
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "user_ip": self.ip_address,
+            "user_ua": self.user_agent,
+            "rotations": "2",
+        }
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        self.assertTrue(
+            Offer.objects.filter(
+                advertisement=self.ad, publisher=self.publisher1, rotations=2
+            ).exists()
+        )
 
     def test_nullable_offers(self):
         self.ad.live = False
@@ -1482,7 +1530,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=referrer_url,
+            headers={"referer": referrer_url},
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -1496,7 +1544,7 @@ class AdvertisingIntegrationTests(BaseApiTest):
             self.url,
             json.dumps(self.data),
             content_type="application/json",
-            HTTP_REFERER=referrer_url,
+            headers={"referer": referrer_url},
         )
         self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -1603,7 +1651,7 @@ class TestProxyViews(BaseApiTest):
         self.nonce = self.offer["nonce"]
 
         self.client = Client(
-            HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR=self.ip_address
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR=self.ip_address
         )
         self.url = reverse(
             "view-proxy", kwargs={"advertisement_id": self.ad.pk, "nonce": self.nonce}
@@ -1638,7 +1686,9 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Unknown offer")
 
     def test_view_tracking_internal_ip(self):
-        client = Client(HTTP_USER_AGENT=self.user_agent, REMOTE_ADDR="127.0.0.1")
+        client = Client(
+            headers={"user-agent": self.user_agent}, REMOTE_ADDR="127.0.0.1"
+        )
         resp = client.get(self.url)
 
         self.assertEqual(resp.status_code, 200)
@@ -1662,14 +1712,14 @@ class TestProxyViews(BaseApiTest):
             "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
         )
 
-        resp = self.client.get(self.url, HTTP_USER_AGENT=bot_ua)
+        resp = self.client.get(self.url, headers={"user-agent": bot_ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Bot impression")
 
     def test_view_tracking_unknown_ua(self):
         unknown_ua = "Unrecognized UA"
-        resp = self.client.get(self.url, HTTP_USER_AGENT=unknown_ua)
+        resp = self.client.get(self.url, headers={"user-agent": unknown_ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Unrecognized user agent")
@@ -1687,7 +1737,7 @@ class TestProxyViews(BaseApiTest):
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/69.0.3497.100 Safari/537.36"
         )
-        resp = self.client.get(self.url, HTTP_USER_AGENT=ua)
+        resp = self.client.get(self.url, headers={"user-agent": ua})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked UA impression")
@@ -1700,7 +1750,7 @@ class TestProxyViews(BaseApiTest):
             re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_REFERRERS
         ]
 
-        resp = self.client.get(self.url, HTTP_REFERER="http://invalid.referrer")
+        resp = self.client.get(self.url, headers={"referer": "http://invalid.referrer"})
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Blocked referrer impression")
@@ -1821,7 +1871,7 @@ class TestProxyViews(BaseApiTest):
                 "append": "adserver.middleware.CloudflareGeoIpMiddleware",
             }
         ):
-            resp = self.client.get(self.click_url, HTTP_CF_IPCountry="CA")
+            resp = self.client.get(self.click_url, headers={"cf-ipcountry": "CA"})
 
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
@@ -1832,7 +1882,7 @@ class TestProxyViews(BaseApiTest):
 
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
 
-        resp = self.client.get(self.click_url, HTTP_CF_IPCountry="FR")
+        resp = self.client.get(self.click_url, headers={"cf-ipcountry": "FR"})
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Invalid targeting impression")

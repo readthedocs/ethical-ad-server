@@ -8,9 +8,7 @@ from django.contrib import messages
 from django.db import models
 from django.template.response import TemplateResponse
 from django.utils import timezone
-from django.utils.html import escape
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
@@ -92,7 +90,9 @@ class TopicAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "slug",
+        "selectable",
     )
+    list_filter = ("selectable",)
     list_per_page = 1000
     ordering = ("slug",)
     search_fields = ("name", "slug")
@@ -137,12 +137,15 @@ class RegionAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "order",
+        "selectable",
     )
+    list_filter = ("selectable",)
     list_per_page = 1000
     ordering = ("order", "slug")
     search_fields = ("name", "slug")
 
 
+@admin.register(Publisher)
 class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for publishers."""
@@ -185,9 +188,11 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        name = escape(instance.name)
-        url = instance.get_absolute_url()
-        return mark_safe(f'<a href="{url}">{name}</a> Report')
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.get_absolute_url(),
+            f"{instance.name} Report",
+        )
 
 
 class CampaignInline(admin.TabularInline):
@@ -212,6 +217,7 @@ class CampaignInline(admin.TabularInline):
         return False
 
 
+@admin.register(Advertiser)
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisers."""
@@ -225,6 +231,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     readonly_fields = ("modified", "created")
     search_fields = ("name", "slug", "djstripe_customer__id")
 
+    @admin.action(description=_("Create a draft invoice for this customer"))
     def action_create_draft_invoice(self, request, queryset):
         """Create a draft invoice for this customer with metadata attached."""
         if not settings.STRIPE_ENABLED:
@@ -285,18 +292,14 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     _("No Stripe customer ID for {}".format(advertiser)),
                 )
 
-    action_create_draft_invoice.short_description = _(
-        "Create a draft invoice for this customer"
-    )
-
     def report(self, instance):
         if not instance.pk:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report", url=instance.get_absolute_url()
-            )
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.get_absolute_url(),
+            f"{instance.name} Report",
         )
 
     def stripe_customer(self, obj):
@@ -309,6 +312,7 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         return None
 
 
+@admin.register(AdType)
 class AdTypeAdmin(SimpleHistoryAdmin):
 
     """Django admin configuration for ad types."""
@@ -340,8 +344,10 @@ class AdvertisementMixin:
         if not obj.image:
             return ""
 
-        return mark_safe(
-            f'<img src="{obj.image.url}" style="max-width: {self.MAX_IMAGE_WIDTH}px" />'
+        return format_html(
+            '<img src="{}" style="max-width: {}px" />',
+            obj.image.url,
+            self.MAX_IMAGE_WIDTH,
         )
 
     def ctr(self, obj):
@@ -359,6 +365,7 @@ class AdvertisementMixin:
         return queryset
 
 
+@admin.register(Advertisement)
 class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for advertisements."""
@@ -528,6 +535,7 @@ class FlightMixin:
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
 
+@admin.register(Flight)
 class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
     """Django admin admin configuration for ad Flights."""
@@ -584,6 +592,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "campaign__name", "campaign__slug")
 
+    @admin.action(description=_("Create a draft invoice for selected flights"))
     def action_create_draft_invoice(self, request, queryset):
         """
         Create a draft invoice for selected flights with metadata attached.
@@ -623,7 +632,10 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
             return
 
+        # Any flight with the discount will result in the discount being in the memo
+        invoice_discount = None
         total_cost = 0  # In US cents
+
         for flight in flights:
             message_components = ["Advertising", flight.name]
             unit_amount = 0
@@ -634,16 +646,13 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                 unit_amount = flight.cpc * 100  # Convert to US cents
                 quantity = flight.sold_clicks
             elif flight.cpm:
-                priced_by_view = bool(flight.sold_impressions % 1000)
-                if priced_by_view:
-                    print(unit_amount, quantity)
-                    unit_amount = flight.cpm / 10  # Convert to US cents
-                    message_components.append("${:.2f} CPM".format(flight.cpm))
-                    quantity = flight.sold_impressions
-                else:
-                    unit_amount = flight.cpm * 100  # Convert to US cents
-                    message_components.append("per 1k impressions")
-                    quantity = flight.sold_impressions // 1000
+                # Convert CPM to US cents (eg. $4.25 CPM -> 0.425 cents)
+                unit_amount = flight.cpm / 10
+                message_components.append("${:.2f} CPM".format(flight.cpm))
+                quantity = flight.sold_impressions
+
+            if flight.discount:
+                invoice_discount = flight.discount
 
             total_cost += unit_amount * quantity
 
@@ -663,14 +672,14 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
             )
 
         # https://stripe.com/docs/api/invoices/create
+        description = "Thanks for your business!"
+        if invoice_discount:
+            description = f"Includes {invoice_discount} discount. " + description
         inv = stripe.Invoice.create(
             customer=advertiser.djstripe_customer.id,
             auto_advance=False,  # Draft invoice
             collection_method="send_invoice",
-            # Check just under 3k just in case there's a rounding issue
-            description="Includes 10% volume discount"
-            if total_cost >= 290_000
-            else "Thanks for your business!",
+            description=description,
             custom_fields=[
                 {"name": "Advertiser", "value": advertiser.slug[:30]},
                 {
@@ -701,10 +710,6 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
                 )
             ),
         )
-
-    action_create_draft_invoice.short_description = _(
-        "Create a draft invoice for selected flights"
-    )
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -743,6 +748,7 @@ class FlightsInline(FlightMixin, admin.TabularInline):
         return False  # pragma: no cover
 
 
+@admin.register(Campaign)
 class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     """Django admin configuration for ad campaigns."""
@@ -770,11 +776,10 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         if not instance.pk or not instance.advertiser:
             return ""  # pragma: no cover
 
-        return mark_safe(
-            '<a href="{url}">{name}</a>'.format(
-                name=escape(instance.name) + " Report",
-                url=instance.advertiser.get_absolute_url(),
-            )
+        return format_html(
+            '<a href="{}">{}</a>',
+            instance.advertiser.get_absolute_url(),
+            f"{instance.name} Report",
         )
 
     def num_ads(self, obj):
@@ -833,6 +838,7 @@ class AdImpressionAdmin(ImpressionsAdmin):
     readonly_fields = ("view_time",) + ImpressionsAdmin.readonly_fields
 
 
+@admin.register(AdvertiserImpression)
 class AdvertiserImpressionAdmin(ImpressionsAdmin):
     date_hierarchy = "date"
     readonly_fields = (
@@ -854,6 +860,7 @@ class AdvertiserImpressionAdmin(ImpressionsAdmin):
     search_fields = ("advertiser__name",)
 
 
+@admin.register(PublisherImpression, PublisherPaidImpression)
 class PublisherImpressionAdmin(ImpressionsAdmin):
     date_hierarchy = "date"
     readonly_fields = (
@@ -911,7 +918,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "browser_family",
         "os_family",
         "is_mobile",
-        "is_bot",
+        "is_proxy",
+        "paid_eligible",
         "user_agent",
         "ip",
         "div_id",
@@ -924,6 +932,8 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     list_select_related = ("advertisement", "publisher")
     list_filter = (
         "is_mobile",
+        "is_proxy",
+        "paid_eligible",
         "publisher",
         "advertisement__flight__campaign__advertiser",
     )
@@ -940,8 +950,10 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
     def page_url(self, instance):
         if instance.url:
-            return mark_safe(
-                '<a href="{url}">{url}</a>'.format(url=escape(instance.url))
+            return format_html(
+                '<a href="{}">{}</a>',
+                instance.url,
+                instance.url,
             )
         return None
 
@@ -950,6 +962,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         return False
 
 
+@admin.register(Offer)
 class OfferAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad offers."""
@@ -968,7 +981,7 @@ class OfferAdmin(AdBaseAdmin):
     # Without this, the django admin will order by date and PK
     # resulting in a very expensive query
     # This is due to how the admin determines that the order should be deterministic.
-    # https://docs.djangoproject.com/en/3.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
+    # https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#django.contrib.admin.ModelAdmin.ordering
     # Ordering by a UUID isn't very useful.
     ordering = ("-pk",)
 
@@ -1009,6 +1022,7 @@ class OfferAdmin(AdBaseAdmin):
         return None
 
 
+@admin.register(Click)
 class ClickAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad clicks."""
@@ -1016,6 +1030,7 @@ class ClickAdmin(AdBaseAdmin):
     model = Click
 
 
+@admin.register(View)
 class ViewAdmin(AdBaseAdmin):
 
     """Django admin configuration for ad views."""
@@ -1023,6 +1038,7 @@ class ViewAdmin(AdBaseAdmin):
     model = View
 
 
+@admin.register(PublisherPayout)
 class PublisherPayoutAdmin(SimpleHistoryAdmin):
     list_display = (
         "pk",
@@ -1041,9 +1057,13 @@ class PublisherPayoutAdmin(SimpleHistoryAdmin):
     search_fields = ("publisher__name", "pk")
 
 
+@admin.register(PublisherGroup)
 class PublisherGroupAdmin(SimpleHistoryAdmin):
-    list_display = ("name", "slug", "modified", "created")
-    list_filter = ("publishers",)
+    list_display = ("name", "slug", "default_enabled", "modified", "created")
+    list_filter = (
+        "default_enabled",
+        "publishers",
+    )
     model = PublisherGroup
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("modified", "created")
@@ -1076,21 +1096,6 @@ class RegionTopicAdmin(admin.ModelAdmin):
     )
     list_display = readonly_fields
 
-
-admin.site.register(Publisher, PublisherAdmin)
-admin.site.register(PublisherPayout, PublisherPayoutAdmin)
-admin.site.register(PublisherGroup, PublisherGroupAdmin)
-admin.site.register(Advertiser, AdvertiserAdmin)
-admin.site.register(View, ViewAdmin)
-admin.site.register(Click, ClickAdmin)
-admin.site.register(Offer, OfferAdmin)
-admin.site.register(AdType, AdTypeAdmin)
-admin.site.register(Advertisement, AdvertisementAdmin)
-admin.site.register(Flight, FlightAdmin)
-admin.site.register(Campaign, CampaignAdmin)
-admin.site.register(AdvertiserImpression, AdvertiserImpressionAdmin)
-admin.site.register(PublisherImpression, PublisherImpressionAdmin)
-admin.site.register(PublisherPaidImpression, PublisherImpressionAdmin)
 
 # Don't register Impression Admin's outside dev, since they will just 502 from too much data.
 if settings.DEBUG:

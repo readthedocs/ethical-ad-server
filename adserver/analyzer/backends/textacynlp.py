@@ -19,7 +19,7 @@ class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
     https://textacy.readthedocs.io/en/latest/quickstart.html
     """
 
-    TOP_PHRASE_COUNT = 20
+    TOP_PHRASE_COUNT = 50
 
     # Minimum phrase length where each word isn't required to be in the output phrase
     MIN_PHRASE_LENGTH = 6

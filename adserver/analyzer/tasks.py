@@ -13,7 +13,7 @@ from ..models import Offer
 from ..models import Publisher
 from ..utils import get_day
 from .models import AnalyzedUrl
-from .utils import get_url_analyzer_backend
+from .utils import get_url_analyzer_backends
 from .utils import normalize_url
 from config.celery_app import app
 
@@ -52,11 +52,33 @@ def analyze_url(url, publisher_slug, force=False):
         return
 
     log.debug("Analyzing url: %s", normalized_url)
+    keywords = set()
+    embeddings = set()
 
-    backend = get_url_analyzer_backend()(url)
-    keywords = backend.analyze()  # Can be None
-    embedding = backend.embedding()  # Can be None
+    for backend in get_url_analyzer_backends():
+        backend_instance = backend(url)
+        analyzed_keywords = backend_instance.analyze()  # Can be None
+        log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
 
+        analyzed_embedding = backend.embedding()  # Can be None
+        log.debug("Embedding from '%s': %s", backend.__name__, analyzed_embedding)
+
+        if analyzed_keywords:
+            for kw in analyzed_keywords:
+                keywords.add(kw)
+
+        if analyzed_embedding:
+            embeddings.add(analyzed_embedding)
+
+    log.debug("Keywords found : %s", keywords)
+    log.debug("Embeddings found : %s", embeddings)
+
+    if len(embeddings) > 1:
+        log.warning("Multiple embeddings found for URL: %s", normalized_url)
+
+    embedding = embeddings[0] if embeddings else None
+
+    keywords = list(keywords)
     url_obj, created = AnalyzedUrl.objects.get_or_create(
         url=normalized_url,
         publisher=publisher,

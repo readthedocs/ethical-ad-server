@@ -1,4 +1,5 @@
 const ko = require('knockout');
+import { getFlightPrice, getDiscount } from "../libs/flight-utils";
 
 
 function FlightUpdateViewModel(method) {
@@ -7,6 +8,10 @@ function FlightUpdateViewModel(method) {
   this.cpc = ko.observable($("#id_cpc").val());
   this.sold_impressions = ko.observable($("#id_sold_impressions").val());
   this.sold_clicks = ko.observable($("#id_sold_clicks").val());
+
+  this.regions = ko.observable([...document.querySelectorAll("form [name='include_regions']:checked")].map(function (node) { return node.value }));
+  this.topics = ko.observable([...document.querySelectorAll("form [name='include_topics']:checked")].map(function (node) { return node.value }));
+
 
   this.updateBudget = function () {
     let budget = Math.round(this.budget(), 10);
@@ -22,6 +27,18 @@ function FlightUpdateViewModel(method) {
       this.sold_clicks(parseInt(budget / Number(this.cpc())));
     }
   }
+
+  this.estimatedCpm = function () {
+    let budget = Math.round(this.budget(), 10);
+
+    let regions = this.regions();
+    let topics = this.topics();
+
+    let rateMultiplier = 1.0 - getDiscount(budget);
+    let cpm = rateMultiplier * getFlightPrice(regions, topics);
+
+    return cpm > 0 ? '$' + cpm.toFixed(2) : "TBD";
+  };
 
   this.budget.subscribe(function () {
     this.updateBudget();

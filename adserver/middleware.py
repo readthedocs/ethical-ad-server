@@ -181,8 +181,13 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
         Also, Cloudflare IP Geolocation must be enabled.
     """
 
-    COUNTRY_HEADER = "CF-IPCountry"
     PROVIDER_NAME = "Cloudflare"
+    COUNTRY_HEADER = "CF-IPCountry"
+
+    # These fields will require a custom transform rule
+    # https://developers.cloudflare.com/rules/transform/
+    REGION_HEADER = "X-Cloudflare-Geo-Region"  # ip.src.region_code
+    METRO_HEADER = "X-Cloudflare-Geo-Metro"  # ip.src.metro_code
 
     def get_geoip(self, request):
         geo = super().get_geoip(request)
@@ -194,6 +199,8 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
             country_code = None
 
         geo.country = country_code
+        geo.region = request.headers.get(self.REGION_HEADER, None)
+        geo.metro = request.headers.get(self.METRO_HEADER, None)
 
         return geo
 

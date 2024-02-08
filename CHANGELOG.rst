@@ -6,6 +6,136 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.6.0
+--------------
+
+This change adds a migration to the Offer model to differentiate
+between ads that were rotated and those that were not.
+This release also includes a newer version of our classifier model
+trained in December.
+
+:date: January 4, 2023
+
+ * @davidfischer: Store ad rotation status on offer (#813)
+
+
+Version v3.5.0
+--------------
+
+We added the region/state/province from Cloudflare to the middleware.
+This will allow targeting ad campaigns to US states for example.
+The other change here was a small change to the publisher reporting
+to show an overview screen.
+
+:date: December 20, 2023
+
+ * @davidfischer: Publisher overview dashboard on report screen (#811)
+ * @davidfischer: Region and metro targeting from CF (#810)
+
+
+Version v3.4.0
+--------------
+
+This change involved logging how frequently the new feature ad rotation is happening.
+
+:date: December 6, 2023
+
+ * @davidfischer: Log ad rotations (#808)
+
+
+Version v3.3.0
+--------------
+
+There were a few minor features and bug fixes and dependency updates,
+but the largest change was to allow certain nightly aggregations
+to only count paid ads.
+Also, our page analyzers can now be configured to use multiple analyzers.
+
+:date: November 7, 2023
+
+ * @davidfischer: Flight request saves the requested targeting (#805)
+ * @davidfischer: Add an anchor link to the flight list view (#804)
+ * @dependabot[bot]: Bump django from 4.2.4 to 4.2.7 in /requirements (#803)
+ * @davidfischer: Allow running multiple analyzer models (#800)
+ * @davidfischer: Aggregation changes to only count paid eligible ads (#798)
+
+
+Version v3.2.1
+--------------
+
+A fix to the migration in v3.2.0.
+
+:date: October 27, 2023
+
+ * @davidfischer: Fix the isproxy migration to be nullable (#801)
+
+
+Version v3.2.0
+--------------
+
+The main change here is a migration on the (very large) Offers table.
+It only adds a few default null fields and so it should be fast.
+
+:date: October 26, 2023
+
+ * @davidfischer: Offers now store if they are paid ad eligible (#797)
+ * @dependabot[bot]: Bump pillow from 9.3.0 to 10.0.1 in /requirements (#789)
+ * @dependabot[bot]: Bump postcss from 8.4.21 to 8.4.31 (#787)
+
+
+Version v3.1.0
+--------------
+
+This release caps the number of ad keywords the API will accept at 20.
+It also allows specifically noting discounts on flights which will also appear
+on advertiser invoices.
+Also includes minor bugfixes and quality of life improvements.
+
+:date: October 12, 2023
+
+ * @davidfischer: Add discounts to the dashboard (#795)
+ * @davidfischer: Correct links to the advertiser overview screen (#794)
+ * @davidfischer: 20 keywords maximum in API (#793)
+ * @davidfischer: Fixup budget form validation (#792)
+
+
+Version v3.0.1
+--------------
+
+Minor production packaging fix related to the new version and staticfiles.
+
+:date: October 3, 2023
+
+ * @davidfischer: Fix for Django 4.2 related to storage (#790)
+
+
+Version v3.0.0
+--------------
+
+This release allows attaching pricing to various regions/topics
+which are used when creating a new flight.
+
+This release involves a major upgrade of Django to 4.2.
+
+:date: October 3, 2023
+
+ * @davidfischer: Server can control multiple publisher placements (#786)
+ * @davidfischer: Pricing in server (#782)
+ * @davidfischer: Django 4.2 upgrade (#781)
+
+
+Version v2.7.0
+--------------
+
+This release is relatively minor and just adds a notification when changing ads.
+This will (probably) be the last release on Django 3.x and the next release
+will upgrade to 4.x. Django 4.x requires Postgres 12+.
+
+:date: September 13, 2023
+
+ * @davidfischer: Slack alert when ad images change (#780)
+
+
 Version v2.6.0
 --------------
 

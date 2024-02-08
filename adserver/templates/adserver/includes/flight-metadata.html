@@ -38,6 +38,10 @@
     <dt>{% trans 'Cost per 1,000 impressions (CPM)' %}</dt>
     <dd>${{ flight.cpm|floatformat:2 }}</dd>
   {% endif %}
+  {% if flight.discount %}
+    <dt title="{% trans 'The price above includes this discount.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Discount' %}</dt>
+    <dd>{{ flight.discount }}</dd>
+  {% endif %}
   {% if flight.start_date %}
     <dt>{% trans 'Estimated start date' %}</dt>
     <dd>{{ flight.start_date }}</dd>
@@ -120,6 +124,9 @@
         {% endif %}
         {% if flight.targeting_parameters.mobile_traffic %}
          <li>{% blocktrans with value=flight.targeting_parameters.mobile_traffic %}Mobile traffic: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
+        {% if flight.campaign.publisher_group_display %}
+          <li>{% blocktrans with value=flight.campaign.publisher_group_display|join:", " %}Networks: {{ value }}{% endblocktrans %}</li>
         {% endif %}
       </ul>
     </dd>

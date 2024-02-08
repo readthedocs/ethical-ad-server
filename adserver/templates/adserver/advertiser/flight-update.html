@@ -25,6 +25,7 @@
   <div class="row">
 
     <div class="col-md">
+      {{ pricing|json_script:"data-pricing" }}
       {% crispy form form.helper %}
     </div>
 

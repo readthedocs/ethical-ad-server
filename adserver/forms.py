@@ -103,6 +103,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "targeting_parameters",
             "traffic_fill",
             "traffic_cap",
+            "discount",
         )
 
 
@@ -118,7 +119,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
 
     # This is just a helper field used in JavaScript to ease flight price computation
     # This field is *not* displayed in the Django admin because only fields in Meta.fields are displayed
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         required=False,
         label=_("Budget"),
     )
@@ -179,6 +180,9 @@ class FlightForm(FlightMixin, forms.ModelForm):
         self.fields["exclude_regions"].choices = self.fields["include_regions"].choices
         self.fields["include_topics"].choices = [(t.slug, t.name) for t in self.topics]
 
+        self.fields["include_regions"].widget.attrs["data-bind"] = "checked: regions"
+        self.fields["include_topics"].widget.attrs["data-bind"] = "checked: topics"
+
         self.helper = FormHelper()
         self.helper.attrs = {"id": "flight-update-form"}
 
@@ -197,6 +201,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                         "budget",
                         "$",
                         min=0,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -234,10 +239,19 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 ),
                 css_class="my-3",
             ),
-            # NOTE: remove this when this form is made for non-staff users
+            # NOTE: remove these when this form is made for non-staff users
+            Field("discount"),
             Field("priority_multiplier"),
             Fieldset(
                 _("Flight targeting"),
+                HTML(
+                    "<p class='form-text'>"
+                    + str(_("Standard CPM: "))
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount)</span>"
+                    + "</p>"
+                ),
                 Div("include_regions"),
                 Div("exclude_regions"),
                 Div("include_topics"),
@@ -333,6 +347,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "sold_clicks",
             "cpm",
             "sold_impressions",
+            "discount",
             "priority_multiplier",
         )
         widgets = {
@@ -417,7 +432,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         required=False,
         help_text=_("Renew the flight with the following advertisements"),
     )
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         required=False,
         label=_("Budget"),
     )
@@ -468,6 +483,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
@@ -523,7 +539,12 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         instance = super().save(commit)
 
         # Copy flight fields that aren't part of the form
-        for field in ("targeting_parameters", "priority_multiplier", "traffic_cap"):
+        for field in (
+            "targeting_parameters",
+            "priority_multiplier",
+            "traffic_cap",
+            "discount",
+        ):
             setattr(instance, field, getattr(self.old_flight, field))
         instance.save()
 
@@ -570,8 +591,17 @@ class FlightRequestForm(FlightCreateForm):
         help_text=_("Request a new flight with the following advertisements"),
     )
 
-    budget = forms.IntegerField(
+    budget = forms.FloatField(
         label=_("Budget"),
+    )
+
+    regions = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+    topics = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
     )
 
     note = forms.CharField(label=_("Note"), required=False, widget=forms.Textarea)
@@ -603,12 +633,23 @@ class FlightRequestForm(FlightCreateForm):
                 "advertisements": self.old_flight.advertisements.filter(live=True)
                 if self.old_flight
                 else Advertisement.objects.none(),
+                "regions": self.old_flight.targeting_parameters.get(
+                    "include_regions", []
+                )
+                if self.old_flight and self.old_flight.targeting_parameters
+                else [],
+                "topics": self.old_flight.targeting_parameters.get("include_topics", [])
+                if self.old_flight and self.old_flight.targeting_parameters
+                else [],
             }
         )
 
         # Sets self.advertiser
         super().__init__(*args, **kwargs)
 
+        self.fields["budget"].widget.attrs["data-bind"] = "textInput: budget"
+        self.fields["regions"].widget.attrs["data-bind"] = "checked: regions"
+        self.fields["topics"].widget.attrs["data-bind"] = "checked: topics"
         self.fields["note"].widget.attrs["rows"] = 3
         self.fields["note"].help_text = _(
             "Do you have any changes you'd like to make from previous flights or any special instructions?"
@@ -622,6 +663,15 @@ class FlightRequestForm(FlightCreateForm):
             if self.old_flight
             else Advertisement.objects.none()
         )
+
+        self.fields["regions"].choices = [
+            (r.slug, r.name)
+            for r in Region.objects.filter(selectable=True).order_by("order", "slug")
+        ]
+        self.fields["topics"].choices = [
+            (t.slug, t.name)
+            for t in Topic.objects.filter(selectable=True).order_by("slug")
+        ]
 
     def create_form_helper(self):
         helper = FormHelper()
@@ -640,12 +690,53 @@ class FlightRequestForm(FlightCreateForm):
                         "budget",
                         "$",
                         min=0,
+                        step="0.01",
                         data_bind="textInput: budget",
                     ),
                 ),
-                Field("note"),
                 css_class="my-3",
             ),
+            Fieldset(
+                _("Flight targeting"),
+                HTML(
+                    "<p class='form-text mb-0'>"
+                    + str(_("Estimated CPM: "))
+                    + "<span id='estimated-cpm' data-bind='text: estimatedCpm()'></span> "
+                    + "<span data-bind='if: budget() >= 2990 && budget() < 24990'>(10% discount applied)</span>"
+                    + "<span data-bind='if: budget() > 24990'>(15% discount applied)</span>"
+                    + "</p>"
+                    + "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "Your account manager will confirm your campaign's rate before it starts."
+                        )
+                    )
+                    + "</p>"
+                ),
+                Div(
+                    Div(
+                        Field("regions"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    Div(
+                        Field("topics"),
+                        css_class="form-group col-lg-6",
+                    ),
+                    css_class="form-row",
+                ),
+                HTML(
+                    "<p class='form-text small text-muted'>"
+                    + str(
+                        _(
+                            "If you need more fine targeting than these options and it's different from any previous flights you've run, "
+                            "please let your account manager know in the 'note' field below."
+                        )
+                    )
+                    + "</p>"
+                ),
+                css_class="my-3",
+            ),
+            Field("note"),
             Fieldset(
                 _("Advertisements"),
                 Field(
@@ -670,6 +761,10 @@ class FlightRequestForm(FlightCreateForm):
     def save(self, commit=True):
         assert commit, "Delayed saving is not supported on this form"
 
+        if not self.instance.targeting_parameters:
+            # This can happen if the flight was setup with no targeting at all
+            self.instance.targeting_parameters = {}
+
         # This is already the default but we are setting it explicitly to be defensive
         self.instance.live = False
 
@@ -693,6 +788,16 @@ class FlightRequestForm(FlightCreateForm):
             if self.old_flight
             else self.advertiser.campaigns.first()
         )
+
+        # Set the regions and/or topics they set in the form
+        if self.cleaned_data["regions"]:
+            self.instance.targeting_parameters["include_regions"] = self.cleaned_data[
+                "regions"
+            ]
+        if self.cleaned_data["topics"]:
+            self.instance.targeting_parameters["include_topics"] = self.cleaned_data[
+                "topics"
+            ]
 
         instance = super().save(commit)
 
@@ -886,6 +991,10 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             adtype_queryset = adtype_queryset.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
 
+        self.fields["image"].help_text = _(
+            "Sized according to the ad type. Need help with manipulating or resizing images? We can <a href='%s'>help</a>."
+        ) % (reverse("support") + "?subject=Image+help")
+
         # Ads are now composed of `headline`, `content`, and `cta`
         # but some older ads are just an HTML blob of `text`.
         # Support legacy ads while making sure new ads follow the new convention
@@ -959,7 +1068,7 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
         # Check if the image has changed
         # We alert on this as a secondary check for malicious images
-        # https://docs.djangoproject.com/en/3.2/ref/forms/api/#django.forms.Form.changed_data
+        # https://docs.djangoproject.com/en/4.2/ref/forms/api/#django.forms.Form.changed_data
         if new_instance.image and "image" in self.changed_data:
             log.debug("Image field has changed: %s", new_instance.image.url)
             notify_on_ad_image_change.apply_async(args=[new_instance.pk])
@@ -1238,6 +1347,12 @@ class SupportForm(forms.Form):
 
     subject = forms.CharField(max_length=255)
     body = forms.CharField(label=_("Message"), widget=forms.Textarea)
+    upload = forms.FileField(
+        required=False,
+        help_text=_(
+            "If there's a file that helps explain this support request, please attach it."
+        ),
+    )
 
     # These are always populated from the request
     name = forms.CharField(widget=forms.HiddenInput)
@@ -1260,15 +1375,16 @@ class SupportForm(forms.Form):
 
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {
+            "accept_charset": "utf-8",
+            "enctype": "multipart/form-data",
+        }
+
         if settings.ADSERVER_SUPPORT_FORM_ACTION:
             # Set a custom form action - where the form submits to
             # This can be used to submit the form to an external help desk
             self.helper.form_action = settings.ADSERVER_SUPPORT_FORM_ACTION
             self.helper.disable_csrf = True
-            self.helper.attrs = {
-                "accept_charset": "utf-8",
-                "enctype": "multipart/form-data",
-            }
 
         self.helper.layout = Layout(
             Fieldset(
@@ -1277,6 +1393,7 @@ class SupportForm(forms.Form):
                 Field("email"),
                 Field("subject", placeholder=_("Your message subject")),
                 Field("body", placeholder=_("Your message")),
+                Field("upload"),
                 css_class="my-3",
             ),
             Submit("submit", _("Send support message")),
@@ -1299,6 +1416,7 @@ class SupportForm(forms.Form):
 
         subject = self.cleaned_data["subject"]
         body = self.cleaned_data["body"]
+        upload = self.cleaned_data["upload"]
 
         # Even though the user name and email are submitted with the form,
         # always use the server value
@@ -1315,4 +1433,11 @@ class SupportForm(forms.Form):
             [to_email],
             reply_to=[user.email],
         )
+
+        if upload:
+            # https://docs.djangoproject.com/en/4.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile
+            # https://docs.djangoproject.com/en/4.2/topics/email/#emailmessage-objects
+            # This is a potential issue if somebody uploads a very large file as it will read it into memory.
+            email.attach(upload.name, upload.read(), upload.content_type)
+
         email.send()

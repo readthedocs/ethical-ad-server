@@ -25,6 +25,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.html import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -62,7 +63,9 @@ from .utils import get_client_id
 from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_domain_from_url
+from .utils import is_proxy_ip
 from .validators import TargetingParametersValidator
+from .validators import TopicPricingValidator
 from .validators import TrafficFillValidator
 
 log = logging.getLogger(__name__)  # noqa
@@ -114,6 +117,11 @@ class Topic(TimeStampedModel, models.Model):
 
     name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
+
+    selectable = models.BooleanField(
+        default=False,
+        help_text=_("Whether advertisers can select this region for new flights"),
+    )
 
     def __str__(self):
         """String representation."""
@@ -185,6 +193,19 @@ class Region(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
 
+    selectable = models.BooleanField(
+        default=False,
+        help_text=_("Whether advertisers can select this region for new flights"),
+    )
+
+    prices = JSONField(
+        _("Topic prices"),
+        blank=True,
+        null=True,
+        validators=[TopicPricingValidator()],
+        help_text=_("Topic pricing matrix for this region"),
+    )
+
     # Lower order takes precedence
     # When mapping country to a single region, the lowest order region is returned
     order = models.PositiveSmallIntegerField(
@@ -238,6 +259,15 @@ class Region(TimeStampedModel, models.Model):
                 return slug
 
         return "global"
+
+    @staticmethod
+    def get_pricing():
+        pricing = {}
+        for region in Region.objects.filter(selectable=True):
+            if region.prices:
+                pricing[region.slug] = region.prices
+
+        return pricing
 
 
 class CountryRegion(TimeStampedModel, models.Model):
@@ -343,6 +373,11 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         help_text=_(
             "A daily maximum this publisher can earn after which only unpaid ads are shown."
         ),
+    )
+
+    allow_multiple_placements = models.BooleanField(
+        default=False,
+        help_text=_("Can this publisher have multiple placements on the same pageview"),
     )
 
     # Payout information
@@ -525,6 +560,13 @@ class PublisherGroup(TimeStampedModel):
         help_text=_("A group of publishers that can be targeted by advertisers"),
     )
 
+    default_enabled = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Whether this publisher group is enabled on new campaigns by default"
+        ),
+    )
+
     history = HistoricalRecords()
 
     class Meta:
@@ -580,7 +622,7 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("advertiser_report", kwargs={"advertiser_slug": self.slug})
+        return reverse("advertiser_main", kwargs={"advertiser_slug": self.slug})
 
 
 class Campaign(TimeStampedModel, IndestructibleModel):
@@ -680,6 +722,21 @@ class Campaign(TimeStampedModel, IndestructibleModel):
         )["total_value"]
 
         return aggregation or 0.0
+
+    def publisher_group_display(self):
+        """Helper function to display publisher groups if the selected set isn't the default."""
+        default_pub_groups = [
+            pg.name
+            for pg in PublisherGroup.objects.filter(default_enabled=True).order_by(
+                "name"
+            )
+        ]
+        campaign_pub_groups = [pg.name for pg in self.publisher_groups.order_by("name")]
+
+        if default_pub_groups != campaign_pub_groups:
+            return campaign_pub_groups
+
+        return None
 
 
 class Flight(TimeStampedModel, IndestructibleModel):
@@ -825,6 +882,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         djstripe_models.Invoice,
         verbose_name=_("Stripe invoices"),
         blank=True,
+    )
+    discount = models.ForeignKey(
+        djstripe_models.Coupon,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
     )
 
     history = HistoricalRecords()
@@ -1492,7 +1556,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def __copy__(self):
         """Duplicate an ad."""
-        # https://docs.djangoproject.com/en/3.2/topics/db/queries/#copying-model-instances
+        # https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         # Get a fresh reference so that "self" doesn't become the new copy
         ad = Advertisement.objects.get(pk=self.pk)
 
@@ -1587,7 +1651,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             )
 
     def _record_base(
-        self, request, model, publisher, keywords, url, div_id, ad_type_slug
+        self,
+        request,
+        model,
+        publisher,
+        keywords,
+        url,
+        div_id,
+        ad_type_slug,
+        paid_eligible=False,
+        rotations=1,
     ):
         """
         Save the actual AdBase model to the database.
@@ -1600,7 +1673,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         client_id = get_client_id(request)
         parsed_ua = parse(user_agent)
         country = get_client_country(request)
-        url = url or request.META.get("HTTP_REFERER")
+        url = url or request.headers.get("referer")
 
         if (
             model != Click
@@ -1625,11 +1698,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             client_id=client_id,
             country=country,
             url=url,
+            paid_eligible=paid_eligible,
+            rotations=rotations,
             # Derived user agent data
             browser_family=parsed_ua.browser.family,
             os_family=parsed_ua.os.family,
             is_bot=parsed_ua.is_bot,
             is_mobile=parsed_ua.is_mobile,
+            is_proxy=is_proxy_ip(ip_address),
             # Client Data
             keywords=keywords if keywords else None,  # Don't save empty lists
             div_id=div_id,
@@ -1659,6 +1735,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=offer.url,
             div_id=offer.div_id,
             ad_type_slug=offer.ad_type_slug,
+            paid_eligible=offer.paid_eligible,
+            rotations=offer.rotations,
         )
 
     def track_view(self, request, publisher, offer):
@@ -1685,6 +1763,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 url=offer.url,
                 div_id=offer.div_id,
                 ad_type_slug=offer.ad_type_slug,
+                paid_eligible=offer.paid_eligible,
+                rotations=offer.rotations,
             )
 
         log.debug("Not recording ad view.")
@@ -1710,7 +1790,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         return False
 
     def offer_ad(
-        self, request, publisher, ad_type_slug, div_id, keywords, url=None, forced=False
+        self,
+        request,
+        publisher,
+        ad_type_slug,
+        div_id,
+        keywords,
+        url=None,
+        forced=False,
+        paid_eligible=False,
+        rotations=1,
     ):
         """
         Offer to display this ad on a specific publisher and a specific display (ad type).
@@ -1728,6 +1817,8 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
+            paid_eligible=paid_eligible,
+            rotations=rotations,
         )
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
@@ -1792,7 +1883,16 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         }
 
     @classmethod
-    def record_null_offer(cls, request, publisher, ad_type_slug, div_id, keywords, url):
+    def record_null_offer(
+        cls,
+        request,
+        publisher,
+        ad_type_slug,
+        div_id,
+        keywords,
+        url,
+        paid_eligible=False,
+    ):
         """
         Store null offers, so that we can keep track of our fill rate.
 
@@ -1809,6 +1909,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             url=url,
             div_id=div_id,
             ad_type_slug=ad_type_slug,
+            paid_eligible=paid_eligible,
         )
 
     def is_valid_offer(self, impression_type, offer):
@@ -1901,21 +2002,23 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         url = link or self.link
         if not self.text:
             template = get_template("adserver/advertisement-body.html")
-            ad_html = template.render(
-                {
-                    "ad": self,
-                    "preview": preview,
-                }
-            ).strip()
-        else:
-            ad_html = self.text
-
-        return mark_safe(
-            ad_html.replace(
-                "<a>",
-                '<a href="%s" rel="nofollow noopener sponsored" target="_blank">' % url,
+            return mark_safe(
+                template.render(
+                    {
+                        "url": url,
+                        "ad": self,
+                        "preview": preview,
+                    }
+                ).strip()
             )
+
+        # Old style ads where the text was fully customizable
+        ad_html = self.text
+        a_tag = format_html(
+            '<a href="{}" rel="nofollow noopener sponsored" target="_blank">', url
         )
+
+        return mark_safe(ad_html.replace("<a>", a_tag))
 
     def render_ad(
         self,
@@ -2035,6 +2138,7 @@ class AdImpression(BaseImpression):
     advertisement = models.ForeignKey(
         Advertisement, related_name="impressions", on_delete=models.PROTECT, null=True
     )
+    # This field is the sum of all the view time for each ad for this publisher each day
     view_time = models.PositiveIntegerField(
         _("Seconds that the ad was in view"),
         null=True,
@@ -2346,6 +2450,18 @@ class AdBase(TimeStampedModel, IndestructibleModel):
         on_delete=models.PROTECT,
     )
 
+    paid_eligible = models.BooleanField(
+        help_text=_("Whether the impression was eligible for a paid ad"),
+        default=None,
+        null=True,
+    )
+
+    # Whether this ad was rotated by the client (rotations > 1).
+    # This is needed to measure CTR of rotated ads independently
+    rotations = models.PositiveSmallIntegerField(
+        _("Number of ad rotations"), default=None, null=True
+    )
+
     # User Data
     ip = models.GenericIPAddressField(_("Ip Address"))  # anonymized
     user_agent = models.CharField(
@@ -2379,6 +2495,7 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
     is_bot = models.BooleanField(default=False)
     is_mobile = models.BooleanField(default=False)
+    is_proxy = models.BooleanField(default=None, blank=True, null=True)
     is_refunded = models.BooleanField(default=False)
 
     impression_type = None

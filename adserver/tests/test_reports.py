@@ -798,10 +798,35 @@ class TestReportViews(TestReportsBase):
         self.assertNotContains(response, "CSV Export")
 
     def test_global_geo_report_contents(self):
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="FR", viewed=True, clicked=True)
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="FR",
+            paid_eligible=True,
+            viewed=True,
+            clicked=True,
+        )
 
         # Update reporting
         daily_update_geos()
@@ -832,10 +857,35 @@ class TestReportViews(TestReportsBase):
         self.assertNotContains(response, "CSV Export")
 
     def test_global_region_report_contents(self):
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="US", viewed=True)
-        get(Offer, publisher=self.publisher1, country="MX", viewed=True, clicked=True)
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="US",
+            paid_eligible=True,
+            viewed=True,
+        )
+        get(
+            Offer,
+            publisher=self.publisher1,
+            country="MX",
+            paid_eligible=True,
+            viewed=True,
+            clicked=True,
+        )
 
         # Update reporting
         daily_update_geos()
@@ -872,6 +922,7 @@ class TestReportViews(TestReportsBase):
             publisher=self.publisher1,
             keywords=["javascript"],
             country="US",
+            paid_eligible=True,
             viewed=True,
         )
         get(
@@ -880,6 +931,7 @@ class TestReportViews(TestReportsBase):
             publisher=self.publisher1,
             keywords=["javascript"],
             country="US",
+            paid_eligible=True,
             viewed=True,
         )
         get(
@@ -888,6 +940,7 @@ class TestReportViews(TestReportsBase):
             publisher=self.publisher1,
             keywords=["javascript"],
             country="US",
+            paid_eligible=True,
             viewed=True,
         )
         get(
@@ -896,6 +949,7 @@ class TestReportViews(TestReportsBase):
             publisher=self.publisher1,
             keywords=["python"],
             country="MX",
+            paid_eligible=True,
             viewed=True,
             clicked=True,
         )

@@ -60,6 +60,19 @@ class AdDecisionSerializer(serializers.Serializer):
     # This purposefully doesn't use a URLField so we can disregard invalid values rather than rejecting them
     url = serializers.CharField(max_length=256, required=False)
 
+    # The placement index (0-indexed)
+    # 1 or more means there's multiple placements on this page
+    placement_index = serializers.IntegerField(
+        required=False, min_value=0, max_value=999
+    )
+
+    # Field sent when an ad is rotated but not sent when an ad is first loaded
+    rotations = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=9,
+    )
+
     # Used to pass the actual ad viewer's data for targeting purposes
     user_ip = serializers.IPAddressField(required=False)
     user_ua = serializers.CharField(required=False)
@@ -93,9 +106,13 @@ class AdDecisionSerializer(serializers.Serializer):
         return publisher
 
     def validate_keywords(self, keywords):
+        # API users may send more than this, but keywords beyond this are ignored
+        MAX_KEYWORDS = 20
+
         if keywords:
-            # Lowercase all the keywords and strip surrounding whitespace
-            keywords = [k.lower().strip() for k in keywords if k.strip()]
+            # Lowercase all the keywords and strip surrounding whitespace.
+            # Also, only take the first 20.
+            keywords = [k.lower().strip() for k in keywords if k.strip()][:MAX_KEYWORDS]
 
         return keywords
 
