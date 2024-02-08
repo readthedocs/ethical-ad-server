@@ -19,6 +19,7 @@ RUN apt-get -y install \
         build-essential \
         python3-pip \
         python3-dev \
+        postgresql-client \
         libmysqlclient-dev \
         libfreetype6 \
         libjpeg-dev \

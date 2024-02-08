@@ -1,4 +1,4 @@
-FROM postgres:15.2
+FROM pgvector/pgvector:pg15
 
 COPY ./docker-compose/postgres/maintenance /usr/local/bin/maintenance
 RUN chmod +x /usr/local/bin/maintenance/*
