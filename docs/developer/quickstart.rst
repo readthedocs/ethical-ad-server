@@ -92,3 +92,9 @@ To run the unit tests:
 
     $ pip install -r requirements/testing.txt
     $ make test
+
+Run a specific test:
+
+.. code-block:: bash
+
+   $ tox -e py3 -- -k <test_name>
