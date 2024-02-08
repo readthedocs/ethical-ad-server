@@ -273,6 +273,7 @@ class TestAdvertiserDashboardViews(TestCase):
             "exclude_publishers": ["readthedocs"],
             "exclude_domains": ["example.com"],
             "mobile_traffic": "exclude",
+            "days": ["saturday", "sunday"],
         }
         self.flight.save()
 
@@ -281,6 +282,7 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(resp, "Exclude publishers")
         self.assertContains(resp, "Exclude domains")
         self.assertContains(resp, "Mobile traffic: exclude")
+        self.assertContains(resp, "Days: Saturday, Sunday")
 
     def test_flight_create_view(self):
         url = reverse(

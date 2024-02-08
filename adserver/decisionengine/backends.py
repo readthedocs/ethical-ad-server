@@ -4,6 +4,7 @@ import random
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from user_agents import parse
 
 from ..analyzer.models import AnalyzedUrl
@@ -290,6 +291,10 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
         # Skip if there are no clicks or views needed today/this interval (ad pacing)
         if flight.weighted_clicks_needed_this_interval() <= 0:
+            return False
+
+        # Skip if the flight is not meant to show on these days
+        if not flight.show_to_day(timezone.now().strftime("%A").lower()):
             return False
 
         return True

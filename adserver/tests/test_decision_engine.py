@@ -350,6 +350,47 @@ class DecisionEngineTests(TestCase):
         ad, _ = self.backend.get_ad_and_placement()
         self.assertIsNone(ad)
 
+    def test_flight_days_targeting(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        # Setup a new flight and ad
+        flight = get(
+            Flight,
+            campaign=self.campaign,
+            live=True,
+            sold_clicks=100,
+            targeting_parameters={"days": "monday"},
+        )
+
+        self.advertisement1.flight = flight
+        self.advertisement1.save()
+
+        # Fun times with dates
+        with mock.patch("adserver.decisionengine.backends.timezone") as tz:
+
+            tz.now.return_value = datetime.datetime(2020, 6, 1, 0, 0, 0)  # Monday
+
+            # Monday targeting works
+            ad, _ = self.backend.get_ad_and_placement()
+            self.assertEqual(ad, self.advertisement1)
+
+            tz.now.return_value = datetime.datetime(2020, 6, 2, 0, 0, 0)  # Tuesday
+
+            # Ad is excluded
+            ad, _ = self.backend.get_ad_and_placement()
+            self.assertIsNone(ad)
+
+            # Set to target Tuesday
+            flight.targeting_parameters = {"days": ["tuesday"]}
+            flight.save()
+
+            # Ad is back
+            ad, _ = self.backend.get_ad_and_placement()
+            self.assertEqual(ad, self.advertisement1)
+
     def test_clicks_needed(self):
         self.assertEqual(self.include_flight.clicks_needed_this_interval(), 33)
 
