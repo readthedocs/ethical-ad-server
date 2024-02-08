@@ -44,7 +44,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: ./docker-compose/postgres/Dockerfile
-    image: ankane/pgvector:latest
+    image: pgvector/pgvector:pg15
     volumes:
       - local_postgres_data:/var/lib/postgresql/data
       - local_postgres_data_backups:/backups
