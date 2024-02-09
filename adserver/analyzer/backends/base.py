@@ -3,6 +3,7 @@ import logging
 
 import requests
 import urllib3
+from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 
@@ -66,6 +67,25 @@ class BaseAnalyzerBackend:
             log.info("Error analyzing URL: %s", self.url, exc_info=True)
 
         return None
+
+    def preprocess_text(self, text):
+        return text.replace("\n", " ")[: self.MAX_INPUT_LENGTH]
+
+    def get_content(self, resp):
+        soup = BeautifulSoup(resp.content, features="html.parser")
+
+        for selector in self.REMOVE_CONTENT_SELECTORS:
+            for nodes in soup.select(selector):
+                nodes.decompose()
+
+        for selector in self.MAIN_CONTENT_SELECTORS:
+            results = soup.select(selector, limit=1)
+            # If no results, go to the next selector
+            # If results are found, use these and stop looking at the selectors
+            if results:
+                return self.preprocess_text(results[0].get_text())
+
+        return ""
 
     def analyze(self, resp):
         """

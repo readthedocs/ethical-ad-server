@@ -52,9 +52,6 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
 
         return keywords
 
-    def preprocess_text(self, text):
-        return text.replace("\n", " ")[: self.MAX_INPUT_LENGTH]
-
     def analyze_text(self, text):
         """Analyze a large string of text for keyword extraction."""
         # Differs from string.punctuation in that the hyphen is missing

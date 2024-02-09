@@ -33,23 +33,10 @@ class SentenceTransformerAnalyzerBackend(BaseAnalyzerBackend):
     def embed_response(self, resp) -> list:
         """Analyze an HTTP response and return a list of keywords/topics for the URL."""
         model = SentenceTransformer(self.MODEL_NAME, cache_folder=self.MODEL_HOME)
-
-        soup = BeautifulSoup(resp.content, features="html.parser")
-
-        for selector in self.REMOVE_CONTENT_SELECTORS:
-            for nodes in soup.select(selector):
-                nodes.decompose()
-
-        for selector in self.MAIN_CONTENT_SELECTORS:
-            results = soup.select(selector, limit=1)
-
-            # If no results, go to the next selector
-            # If results are found, use these and stop looking at the selectors
-            if results:
-                text = self.preprocess_text(results[0].get_text())
-                log.info("Embedding text: %s", text[:100])
-                embedding = model.encode(text)
-
-                return embedding.tolist()
+        text = self.get_content(resp)
+        if text:
+            log.info("Embedding text: %s", text[:100])
+            embedding = model.encode(text)
+            return embedding.tolist()
 
         return None
