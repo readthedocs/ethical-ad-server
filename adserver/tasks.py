@@ -747,7 +747,7 @@ def notify_on_ad_image_change(advertisement_id):
         return
 
     ad_url = generate_absolute_url(ad.get_absolute_url())
-    message = f"Ad <{ad_url}|{ad.name}> had its image changed to {ad.image.url}"
+    message = f"{ad.name} ({ad_url}) image uploaded: {ad.image.url}"
 
     log.info(message)
     slack_message(
