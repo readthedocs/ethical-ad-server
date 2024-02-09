@@ -54,13 +54,18 @@ def analyze_url(url, publisher_slug, force=False):
     log.debug("Analyzing url: %s", normalized_url)
     keywords = set()
     embeddings = []
+    response = None
 
     for backend in get_url_analyzer_backends():
         backend_instance = backend(url)
-        analyzed_keywords = backend_instance.analyze()  # Can be None
+        # Cache responses across backends
+        if not response:
+            response = backend_instance.fetch()
+
+        analyzed_keywords = backend_instance.analyze(response)  # Can be None
         log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
 
-        analyzed_embedding = backend_instance.embedding()  # Can be None
+        analyzed_embedding = backend_instance.embedding(response)  # Can be None
         log.debug("Embedding from '%s': %s", backend.__name__, analyzed_embedding)
 
         if analyzed_keywords:

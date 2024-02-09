@@ -62,54 +62,52 @@ class BaseAnalyzerBackend:
         kwargs.setdefault("headers", {"user-agent": self.user_agent})
 
         try:
-            self.resp = requests.get(self.url, **kwargs)
-            return self.resp
+            return requests.get(self.url, **kwargs)
         except (requests.exceptions.RequestException, urllib3.exceptions.HTTPError):
             log.info("Error analyzing URL: %s", self.url, exc_info=True)
 
         return None
 
-    def analyze(self):
+    def analyze(self, response):
         """
-        Fetch the response and parse it for keywords.
+        Parse response for keywords.
 
         :returns list: a list of keywords or `None` if the URL doesn't respond.
         """
-        self.fetch()
 
-        if self.resp and self.resp.ok:
-            return self.analyze_response(self.resp)
+        if response and response.ok:
+            return self.analyze_response(response)
 
-        if not self.resp:
+        if not response:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
-                "Failed to connect. Url=%s, Status=%s", self.url, self.resp.status_code
+                "Failed to connect. Url=%s, Status=%s", self.url, response.status_code
             )
 
         # A failed request results in `None`.
         return None
 
-    def embedding(self):
+    def embedding(self, response):
         """
         Parse the response for embeddings.
 
         :returns vector: A 384-dimensional vector or `None` if the URL doesn't respond.
         """
 
-        if self.resp and self.resp.ok:
-            return self.embed_response(self.resp)
+        if response and response.ok:
+            return self.embed_response(response)
 
-        if not self.resp:
+        if not response:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
-                "Failed to connect. Url=%s, Status=%s", self.url, self.resp.status_code
+                "Failed to connect. Url=%s, Status=%s", self.url, response.status_code
             )
 
         return None
 
-    def analyze_response(self, resp):
+    def analyze_response(self, response):
         """
         Analyze an HTTP response and return keywords/topics for the URL.
 
@@ -120,13 +118,12 @@ class BaseAnalyzerBackend:
         """
         raise NotImplementedError("Subclasses should define this.")
 
-    def embed_response(self, resp):
+    def embed_response(self, response):
         """
         Analyze an HTTP response and return an embedding for the URL.
 
         This will only be passed a successful response (20x).
         All responses should return a vector even if that list is empty.
-
-        This needs to be defined by subclasses.
         """
-        raise NotImplementedError("Subclasses should define this.")
+        log.warning("No embedding configured for %s", self.__class__.__name__)
+        return []
