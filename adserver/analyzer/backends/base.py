@@ -68,62 +68,62 @@ class BaseAnalyzerBackend:
 
         return None
 
-    def analyze(self, response):
+    def analyze(self, resp):
         """
         Parse response for keywords.
 
         :returns list: a list of keywords or `None` if the URL doesn't respond.
         """
 
-        if response and response.ok:
-            return self.analyze_response(response)
+        if resp and resp.ok:
+            return self.analyze_response(resp)
 
-        if not response:
+        if not resp:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
-                "Failed to connect. Url=%s, Status=%s", self.url, response.status_code
+                "Failed to connect. Url=%s, Status=%s", self.url, resp.status_code
             )
 
         # A failed request results in `None`.
         return None
 
-    def embedding(self, response):
+    def embedding(self, resp):
         """
         Parse the response for embeddings.
 
         :returns vector: A 384-dimensional vector or `None` if the URL doesn't respond.
         """
 
-        if response and response.ok:
-            return self.embed_response(response)
+        if resp and resp.ok:
+            return self.embed_resp(resp)
 
-        if not response:
+        if not resp:
             log.debug("Failed to connect. Url=%s", self.url)
         else:
             log.debug(
-                "Failed to connect. Url=%s, Status=%s", self.url, response.status_code
+                "Failed to connect. Url=%s, Status=%s", self.url, resp.status_code
             )
 
         return None
 
-    def analyze_response(self, response):
+    def analyze_response(self, resp):
         """
-        Analyze an HTTP response and return keywords/topics for the URL.
+        Analyze an HTTP resp and return keywords/topics for the URL.
 
-        This will only be passed a successful response (20x).
-        All responses should return a list of keywords even if that list is empty.
+        This will only be passed a successful resp (20x).
+        All resps should return a list of keywords even if that list is empty.
 
         This needs to be defined by subclasses.
         """
         raise NotImplementedError("Subclasses should define this.")
 
-    def embed_response(self, response):
+    def embed_resp(self, resp):
         """
-        Analyze an HTTP response and return an embedding for the URL.
+        Analyze an HTTP resp and return an embedding for the URL.
 
-        This will only be passed a successful response (20x).
-        All responses should return a vector even if that list is empty.
+        This will only be passed a successful resp (20x).
+        All resps should return a vector even if that list is empty.
         """
         log.warning("No embedding configured for %s", self.__class__.__name__)
         return []
