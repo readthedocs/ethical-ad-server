@@ -59,3 +59,6 @@ dj-stripe==2.8.1
 
 # JWT used by Metabase embedding
 PyJWT==2.4.0
+
+# Postgres vector support
+pgvector==0.2.5
