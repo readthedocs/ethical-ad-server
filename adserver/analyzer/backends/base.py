@@ -96,7 +96,7 @@ class BaseAnalyzerBackend:
         """
 
         if resp and resp.ok:
-            return self.embed_resp(resp)
+            return self.embed_response(resp)
 
         if not resp:
             log.debug("Failed to connect. Url=%s", self.url)
@@ -118,7 +118,7 @@ class BaseAnalyzerBackend:
         """
         raise NotImplementedError("Subclasses should define this.")
 
-    def embed_resp(self, resp):
+    def embed_response(self, resp):
         """
         Analyze an HTTP resp and return an embedding for the URL.
 
