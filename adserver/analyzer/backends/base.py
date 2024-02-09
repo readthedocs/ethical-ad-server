@@ -11,7 +11,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class BaseAnalyzerBackend:
-
     """Base class that all analyzers should extend."""
 
     # CSS selectors to select the "main" content of the page
@@ -112,7 +111,7 @@ class BaseAnalyzerBackend:
         Analyze an HTTP resp and return keywords/topics for the URL.
 
         This will only be passed a successful resp (20x).
-        All resps should return a list of keywords even if that list is empty.
+        All responses should return a list of keywords even if that list is empty.
 
         This needs to be defined by subclasses.
         """
@@ -120,10 +119,10 @@ class BaseAnalyzerBackend:
 
     def embed_response(self, resp):
         """
-        Analyze an HTTP resp and return an embedding for the URL.
+        Analyze an HTTP response and return an embedding for the URL.
 
-        This will only be passed a successful resp (20x).
-        All resps should return a vector even if that list is empty.
+        This will only be passed a successful response (20x).
+        All responses should return a vector even if that list is empty.
         """
         log.warning("No embedding configured for %s", self.__class__.__name__)
         return []
