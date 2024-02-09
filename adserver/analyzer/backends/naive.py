@@ -15,38 +15,9 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
     This mimics the results of our ad client.
     """
 
-    # CSS selectors to select the "main" content of the page
-    # The first of these to match anything is used
-    MAIN_CONTENT_SELECTORS = (
-        "[role='main']",
-        "main",
-        "body",
-    )
-
-    # CSS selectors of content that should be ignored for the purpose of analysis
-    REMOVE_CONTENT_SELECTORS = (
-        "[role=navigation]",
-        "[role=search]",
-        ".headerlink",
-        "nav",
-        "footer",
-        "div.header",
-        # Remove toctrees from Sphinx
-        "div.toctree-wrapper",
-        # Remove class and function definitions from Sphinx
-        # but leave the actual docstrings/explanations
-        "dl.class dt",
-        # Django Packages specific
-        "#myrotatingnav",
-    )
-
     MAX_WORDS_ANALYZED = 1000
     MAX_KEYWORDS = 3
     MIN_KEYWORD_OCCURRENCES = 2
-
-    # Some models have limits but beyond ~100k characters
-    # we probably aren't learning more
-    MAX_INPUT_LENGTH = 100_000
 
     def __init__(self, url, **kwargs):
         """Overrides to get the keyword corpus."""
