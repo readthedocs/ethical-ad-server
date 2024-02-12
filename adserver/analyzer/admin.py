@@ -10,7 +10,13 @@ class AnalyzedUrlAdmin(SimpleHistoryAdmin):
 
     """Django admin configuration for analyzed URLs."""
 
-    list_display = ("url", "publisher", "keywords", "last_analyzed_date")
+    list_display = (
+        "url",
+        "publisher",
+        "keywords",
+        "last_analyzed_date",
+        "visits_since_last_analyzed",
+    )
     list_per_page = 500
     list_filter = ("last_analyzed_date", "last_ad_served_date", "publisher")
     list_select_related = ("publisher",)
