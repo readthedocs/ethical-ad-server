@@ -704,7 +704,7 @@ def calculate_publisher_ctrs(days=7):
     """Calculate average CTRs for paid ads on a publisher for the last X days."""
     sample_cutoff = get_ad_day() - datetime.timedelta(days=days)
 
-    for publisher in Publisher.objects.all():
+    for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
         queryset = AdImpression.objects.filter(
             date__gte=sample_cutoff,
             publisher=publisher,
@@ -713,8 +713,9 @@ def calculate_publisher_ctrs(days=7):
         report = PublisherReport(queryset)
         report.generate()
 
-        publisher.sampled_ctr = report.total["ctr"]
-        publisher.save()
+        if report.total["views"] > 0:
+            publisher.sampled_ctr = report.total["ctr"]
+            publisher.save()
 
 
 @app.task()

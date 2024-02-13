@@ -70,6 +70,9 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertIsNone(offer.client_id)
 
     def test_calculate_publisher_ctrs(self):
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.save()
+
         calculate_publisher_ctrs()
 
         self.publisher.refresh_from_db()
