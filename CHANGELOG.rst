@@ -7,7 +7,7 @@ CHANGELOG
 
 
 Version v3.7.0
--------------
+--------------
 
 Added the ability to target campaigns by day of the week (eg. weekends/weekdays only).
 If a campaign doesn't target the default publisher groups (eg. Read the Docs only)
