@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v3.7.0
+--------------
+
+Added the ability to target campaigns by day of the week (eg. weekends/weekdays only).
+If a campaign doesn't target the default publisher groups (eg. Read the Docs only)
+then display the targeting in the flight view.
+Fixed an XSS issue that affected advertisers only not public websites.
+
+:date: February 13, 2023
+
+ * @ericholscher: Show visits_since_last_analyzed in AnalyzedUrlAdmin (#823)
+ * @ericholscher: Fix Slack msg (#822)
+ * @ericholscher: Initial work for day of the week targeting (#820)
+ * @davidfischer: Remove most instances of mark_safe (#817)
+ * @davidfischer: Display publisher groups if not default (#815)
+
+
 Version v3.6.0
 --------------
 
