@@ -897,7 +897,7 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
         previous_week_report = PublisherReport(queryset)
         previous_week_report.generate()
 
-        for metric in ("views",):
+        for metric in ("revenue",):
             total_views = (
                 last_week_report.total["views"] + previous_week_report.total["views"]
             )
