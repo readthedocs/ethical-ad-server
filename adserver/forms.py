@@ -991,6 +991,10 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             adtype_queryset = adtype_queryset.exclude(deprecated=True)
         self.fields["ad_types"].queryset = adtype_queryset
 
+        # Get the lowest maximum text length across all eligible ad types
+        ad_type_max_lengths = [at.max_text_length for at in adtype_queryset] or [0]
+        maximum_text_length = min(ad_type_max_lengths)
+
         self.fields["image"].help_text = _(
             "Sized according to the ad type. Need help with manipulating or resizing images? We can <a href='%s'>help</a>."
         ) % (reverse("support") + "?subject=Image+help")
@@ -1033,12 +1037,12 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
                 _("Advertisement text"),
                 Div(
                     HTML(
-                        "<span data-bind='text: totalLength()'></span> total characters"
+                        f"<span data-bind='text: totalLength()'></span> / <span data-bind='text: maxLength()' id='id_maximum_text_length' data-maximum-length='{maximum_text_length}'></span> characters"
                     ),
                     # Only display on "new style" ads with the headline, content, and CTA
                     # Simply hide it on the old style ads.
-                    data_bind="visible: totalLength() > 0",
-                    css_class="small text-muted mb-2",
+                    data_bind="visible: totalLength() > 0, css: totalLength() > maxLength() ? 'text-danger' : 'text-muted'",
+                    css_class="small mb-2",
                 ),
                 *ad_display_fields,
             ),
