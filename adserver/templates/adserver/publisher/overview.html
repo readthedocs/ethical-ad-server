@@ -41,9 +41,32 @@
             <li>
               {% url "support" as support_url %}
               {% url "publisher_settings" publisher.slug as publisher_settings_url %}
-              <p>{% blocktrans %}<a href="{{ support_url }}?subject=Paid+ads+approval&body=I+would+like+to+be+approved+for+paid+ads+on+my+site.">Request approval</a> for paid ads. You will also need to configure your payout preferences in your <a href="{{ publisher_settings_url }}">settings</a>.{% endblocktrans %}</p>
+              <p>{% blocktrans %}<a href="{{ support_url }}?subject=Paid+ads+approval&body=I+would+like+to+be+approved+for+paid+ads+on+my+site.+You+can+see+the+ads+at">Request approval</a> for paid ads. You will also need to configure your payout preferences in your <a href="{{ publisher_settings_url }}">settings</a>.{% endblocktrans %}</p>
             </li>
           </ol>
+        </div>
+      </div>
+    {% elif not has_views_this_month %}
+      {# Returning publisher, but nothing to show this month #}
+      <div class="row mb-5">
+        <div class="col">
+          <h3>{% trans 'Welcome back.' %}</h3>
+          <ul class="mt-5 lead">
+            <li>
+              {% url "publisher_report" publisher.slug as report_url %}
+              <p>{% blocktrans %}There's nothing to show you in terms of your earnings this month yet. You can always check your past <a href="{{ publisher_report }}">ad performance and earnings</a> for any timeframe.{% endblocktrans %}</p>
+            </li>
+            <li>
+              {% url "publisher_embed" publisher.slug as embed_url %}
+              <p>{% blocktrans %}If you haven't already, set up ads with your <a href="{{ embed_url }}">ad client embed</a>.{% endblocktrans %}</p>
+            </li>
+            {% if not publisher.allow_paid_campaigns %}
+            <li>
+              {% url "support" as support_url %}
+              <p>{% blocktrans %}You are not approved for paid ads and you'll need to <a href="{{ support_url }}?subject=Paid+ads+approval&body=I+would+like+to+be+approved+for+paid+ads+on+my+site.+You+can+see+the+ads+at">request approval</a>.</a>{% endblocktrans %}</p>
+            </li>
+            {% endif %}
+          </ul>
         </div>
       </div>
     {% else %}
