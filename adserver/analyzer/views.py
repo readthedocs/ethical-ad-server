@@ -14,6 +14,8 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
         """
         Returns a list of similar URLs and scores based on querying the AnalyzedURL embedding for an incoming URL.
 
+        Example: http://localhost:5000/api/v1/similar/?url=https://www.gitbook.com/
+
         .. http:get:: /api/v1/embedding/
 
             Return a list of similar URLs and scores based on querying the AnalyzedURL embedding for an incoming URL
@@ -35,6 +37,11 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
 
             backend_instance = SentenceTransformerAnalyzerBackend(url)
             response = backend_instance.fetch()
+            if not response:
+                return Response(
+                    {"error": "Not able to fetch content from URL"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             processed_text = backend_instance.get_content(response)
             analyzed_embedding = backend_instance.embedding(response)
 

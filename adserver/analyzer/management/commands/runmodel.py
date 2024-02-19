@@ -8,7 +8,6 @@ from ...utils import get_url_analyzer_backends
 
 
 class Command(BaseCommand):
-
     """Run the ML model on the specified URLs."""
 
     help = "Run the ML model on the specified URLs. Results are not stored to the database."
@@ -39,8 +38,12 @@ class Command(BaseCommand):
         keywords = []
         embeddings = []
         for backend in get_url_analyzer_backends():
+
             backend_instance = backend(url)
             response = backend_instance.fetch()
+            if not response:
+                continue
+
             analyzed_keywords = backend_instance.analyze(response)
             self.stdout.write(
                 _("Keywords from '%s': %s") % (backend.__name__, analyzed_keywords)
