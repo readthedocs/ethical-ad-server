@@ -4,6 +4,7 @@ const ko = require('knockout');
 
 function AdvertisementFormViewModel(method) {
   const MAX_PREVIEW_LENGTH = 100;
+  const SENSIBLE_MAXIMUM_LENGTH = 1000;
 
   this.headline = ko.observable($("#id_headline").val());
   this.content = ko.observable($("#id_content").val());
@@ -27,6 +28,19 @@ function AdvertisementFormViewModel(method) {
     let length = headline.length + content.length + cta.length;
 
     return length;
+  };
+
+
+  this.maxLength = function () {
+    // The actual max length passed from the backend form
+    let max_length = parseInt($("#id_maximum_text_length").attr("data-maximum-length"));
+
+    // Use a sensible default if nothing present
+    if(isNaN(max_length) || max_length <= 0 || max_length > SENSIBLE_MAXIMUM_LENGTH) {
+      max_length = MAX_PREVIEW_LENGTH;
+    }
+
+    return max_length;
   };
 }
 
