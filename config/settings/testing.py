@@ -11,6 +11,12 @@ TESTING = True
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 
+
+ADSERVER_ANALYZER_BACKEND = None
+if "adserver.analyzer" in INSTALLED_APPS:
+    INSTALLED_APPS.remove("adserver.analyzer")
+
+
 # Whitenoise relies on the manifest being present.
 # Which may not be there in testing
 # unless you run `collectstatic` before running tests

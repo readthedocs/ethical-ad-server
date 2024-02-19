@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)  # noqa
 
 
 @app.task
-def analyze_url(url, publisher_slug):
+def analyze_url(url, publisher_slug, force=False):
     """
     Analyze a given URL on a publisher's site.
 
@@ -41,34 +41,61 @@ def analyze_url(url, publisher_slug):
     existing_record = AnalyzedUrl.objects.filter(
         url=normalized_url, publisher=publisher
     ).first()
-    if existing_record and existing_record.last_analyzed_date > (
-        timezone.now() - datetime.timedelta(days=7)
+
+    if (
+        existing_record
+        and not force
+        and existing_record.last_analyzed_date
+        > (timezone.now() - datetime.timedelta(days=7))
     ):
         log.warning("URL recently analyzed. Skipping.")
         return
 
     log.debug("Analyzing url: %s", normalized_url)
     keywords = set()
+    embeddings = []
+    response = None
 
     for backend in get_url_analyzer_backends():
         backend_instance = backend(url)
-        analyzed_keywords = backend_instance.analyze()  # Can be None
+        # Cache responses across backends
+        if not response:
+            response = backend_instance.fetch()
+
+        analyzed_keywords = backend_instance.analyze(response)  # Can be None
         log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
+
+        analyzed_embedding = backend_instance.embedding(response)  # Can be None
+        log.debug("Embedding from '%s': %s", backend.__name__, len(analyzed_embedding))
+
         if analyzed_keywords:
             for kw in analyzed_keywords:
                 keywords.add(kw)
 
+        if analyzed_embedding:
+            embeddings.append(analyzed_embedding)
+
     log.debug("Keywords found : %s", keywords)
+
+    if len(embeddings) > 1:
+        log.warning("Multiple embeddings found for URL: %s", normalized_url)
+
+    embedding = embeddings[0] if embeddings else None
 
     keywords = list(keywords)
     url_obj, created = AnalyzedUrl.objects.get_or_create(
         url=normalized_url,
         publisher=publisher,
-        defaults={"keywords": keywords, "last_analyzed_date": timezone.now()},
+        defaults={
+            "keywords": keywords,
+            "embedding": embedding,
+            "last_analyzed_date": timezone.now(),
+        },
     )
 
     if not created:
         url_obj.keywords = keywords
+        url_obj.embedding = embedding
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
         url_obj.save()

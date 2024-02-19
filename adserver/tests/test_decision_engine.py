@@ -1,13 +1,13 @@
 import datetime
-from unittest import mock
+import unittest
 
+from django.conf import settings
 from django.test import override_settings
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
 from user_agents import parse
 
-from ..analyzer.models import AnalyzedUrl
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import CLICKS
 from ..constants import COMMUNITY_CAMPAIGN
@@ -26,6 +26,12 @@ from ..models import Publisher
 from ..models import PublisherGroup
 from ..utils import GeolocationData
 from ..utils import get_ad_day
+
+
+if "adserver.analyzer" in settings.INSTALLED_APPS:
+    from ..analyzer.models import AnalyzedUrl
+else:
+    AnalyzedUrl = None
 
 
 class DecisionEngineTests(TestCase):
@@ -206,7 +212,7 @@ class DecisionEngineTests(TestCase):
         self.cpm_flight.pacing_interval = 60 * 60
         self.cpm_flight.save()
 
-        with mock.patch("adserver.models.timezone") as tz:
+        with unittest.mock.patch("adserver.models.timezone") as tz:
             # 1 day (24 intervals) through the flight
             tz.now.return_value = now + datetime.timedelta(days=1)
 
@@ -369,7 +375,7 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.save()
 
         # Fun times with dates
-        with mock.patch("adserver.decisionengine.backends.timezone") as tz:
+        with unittest.mock.patch("adserver.decisionengine.backends.timezone") as tz:
 
             tz.now.return_value = datetime.datetime(2020, 6, 1, 0, 0, 0)  # Monday
 
@@ -509,7 +515,7 @@ class DecisionEngineTests(TestCase):
                 )
                 total = flight1_prob + flight2_prob
 
-                with mock.patch("random.randint") as randint:
+                with unittest.mock.patch("random.randint") as randint:
 
                     randint.return_value = -1
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
@@ -742,6 +748,7 @@ class DecisionEngineTests(TestCase):
             sorted(self.backend.keywords), ["bar", "baz", "foo", "machine-learning"]
         )
 
+    @unittest.skipIf(AnalyzedUrl is None, "Analyzer not setup")
     def test_analyzer_keywords(self):
         url = "http://example.com"
 

@@ -488,11 +488,11 @@ ADSERVER_DECISION_BACKEND = env(
 )
 
 # The backend(s) to be used by the ad server
-# for topic and keyword analysis
-# Set to `None` or an empty string to disable the analyzer entirely
+# for topic and keyword analysis.
+# By default this is empty, you can find options in ``adserver.analyzer.backends``
 ADSERVER_ANALYZER_BACKEND = env.list(
     "ADSERVER_ANALYZER_BACKEND",
-    default=["adserver.analyzer.backends.TextacyAnalyzerBackend"],
+    default=[],
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")

@@ -7,8 +7,6 @@ from django.db import models
 from django.utils import timezone
 from user_agents import parse
 
-from ..analyzer.models import AnalyzedUrl
-from ..analyzer.utils import normalize_url
 from ..constants import AFFILIATE_CAMPAIGN
 from ..constants import ALL_CAMPAIGN_TYPES
 from ..constants import COMMUNITY_CAMPAIGN
@@ -18,6 +16,14 @@ from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import Flight
 from ..utils import get_ad_day
 from ..utils import get_client_user_agent
+
+# from ..analyzer.utils import normalize_url
+
+
+if "adserver.analyzer" in settings.INSTALLED_APPS:
+    from ..analyzer.models import AnalyzedUrl
+else:
+    AnalyzedUrl = None
 
 log = logging.getLogger(__name__)
 
@@ -122,7 +128,8 @@ class BaseAdDecisionBackend:
             log.debug("Not using Analyzer keywords. Analyzer is not in INSTALLED_APPS.")
             return None
 
-        normalized_url = normalize_url(self.url)
+        normalized_url = self.url
+        # normalized_url = normalize_url(self.url)
         analyzed_url = AnalyzedUrl.objects.filter(
             url=normalized_url, publisher=self.publisher
         ).first()

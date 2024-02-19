@@ -37,14 +37,24 @@ class Command(BaseCommand):
         self.stdout.write(_("Running against %s") % url)
 
         keywords = []
+        embeddings = []
         for backend in get_url_analyzer_backends():
             backend_instance = backend(url)
-            analyzed_keywords = backend_instance.analyze()
+            response = backend_instance.fetch()
+            analyzed_keywords = backend_instance.analyze(response)
             self.stdout.write(
                 _("Keywords from '%s': %s") % (backend.__name__, analyzed_keywords)
+            )
+            analyzed_embedding = backend.embedding(response)
+            self.stdout.write(
+                _("Embeddings from '%s': %s") % (backend.__name__, analyzed_embedding)
             )
 
             if analyzed_keywords:
                 keywords.extend(analyzed_keywords)
 
+            if analyzed_embedding:
+                embeddings.extend(analyzed_embedding)
+
         self.stdout.write(_("Keywords/topics: %s") % keywords)
+        self.stdout.write(_("Embeddings: %s") % embeddings)
