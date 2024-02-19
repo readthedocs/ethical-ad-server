@@ -37,7 +37,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class AdDecisionView(GeoIpMixin, APIView):
-
     """
     Make a decision on an `Advertisement` to show.
 
@@ -360,7 +359,6 @@ class AdDecisionView(GeoIpMixin, APIView):
 
 
 class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
-
     """
     Advertiser API calls.
 
@@ -470,7 +468,6 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
-
     """
     Publisher API calls.
 

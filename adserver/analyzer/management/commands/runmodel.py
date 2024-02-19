@@ -45,7 +45,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 _("Keywords from '%s': %s") % (backend.__name__, analyzed_keywords)
             )
-            analyzed_embedding = backend.embedding(response)
+            analyzed_embedding = backend_instance.embedding(response)
             self.stdout.write(
                 _("Embeddings from '%s': %s") % (backend.__name__, analyzed_embedding)
             )
