@@ -35,11 +35,13 @@ FLIGHT_STATE_PAST = _("Past")
 PAYOUT_STRIPE = "stripe"
 PAYOUT_PAYPAL = "paypal"
 PAYOUT_OPENCOLLECTIVE = "opencollective"
+PAYOUT_GITHUB = "github"
 PAYOUT_OTHER = "other"
 PUBLISHER_PAYOUT_METHODS = (
     (PAYOUT_STRIPE, _("Stripe (Bank transfer, debit card)")),
     (PAYOUT_PAYPAL, _("PayPal")),
     (PAYOUT_OPENCOLLECTIVE, _("Open Collective")),
+    (PAYOUT_GITHUB, _("GitHub sponsors")),
     (PAYOUT_OTHER, _("Other")),
 )
 

@@ -46,6 +46,7 @@ from .constants import IMPRESSION_TYPES
 from .constants import OFFERS
 from .constants import PAID
 from .constants import PAID_CAMPAIGN
+from .constants import PAYOUT_GITHUB
 from .constants import PAYOUT_OPENCOLLECTIVE
 from .constants import PAYOUT_PAYPAL
 from .constants import PAYOUT_STATUS
@@ -418,6 +419,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
     paypal_email = models.EmailField(
         _("PayPal email address"), blank=True, null=True, default=None
     )
+    github_sponsors_name = models.CharField(
+        _("GitHub sponsors name"),
+        max_length=200,
+        blank=True,
+        null=True,
+        default=None,
+    )
 
     # Record additional details to the offer for this publisher
     # This can be used for publishers where their traffic needs more scrutiny
@@ -527,6 +535,8 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             return f"https://opencollective.com/{self.open_collective_name}"
         if self.payout_method == PAYOUT_PAYPAL and self.paypal_email:
             return "https://www.paypal.com/myaccount/transfer/homepage/pay"
+        if self.payout_method == PAYOUT_GITHUB and self.github_sponsors_name:
+            return f"https://github.com/sponsors/{self.github_sponsors_name}"
         return ""
 
     def get_daily_earn(self):

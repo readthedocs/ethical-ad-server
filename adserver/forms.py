@@ -1198,6 +1198,14 @@ class PublisherSettingsForm(forms.ModelForm):
                     Field("paypal_email", placeholder="you@yourdomain.com"),
                     data_bind="visible: (payoutMethod() == 'paypal')",
                 ),
+                Div(
+                    PrependedText(
+                        "github_sponsors_name",
+                        "https://github.com/sponsors/",
+                        placeholder="your-github-name",
+                    ),
+                    data_bind="visible: (payoutMethod() == 'github')",
+                ),
                 "skip_payouts",
                 css_class="my-3",
             ),
@@ -1242,6 +1250,7 @@ class PublisherSettingsForm(forms.ModelForm):
             "payout_method",
             "open_collective_name",
             "paypal_email",
+            "github_sponsors_name",
             "skip_payouts",
             "allow_affiliate_campaigns",
             "allow_community_campaigns",
