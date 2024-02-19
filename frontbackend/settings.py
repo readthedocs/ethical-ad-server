@@ -14,7 +14,7 @@ FRONT_TOKEN = getattr(settings, "FRONT_TOKEN", None)
 # FRONT_CHANNEL should be the channel ID in front.
 # This usually should be of the form `cha_XXX`.
 # Retrieve a list of channels with
-# https://dev.frontapp.com/reference/get_channels
+# https://dev.frontapp.com/reference/list-channels
 FRONT_CHANNEL = getattr(settings, "FRONT_CHANNEL", None)
 
 # FRONT_SENDER_NAME customizes the display of the sender
@@ -24,7 +24,7 @@ FRONT_SENDER_NAME = getattr(settings, "FRONT_SENDER_NAME", None)
 # The author for a draft message
 # This is *ONLY* used when saving drafts
 # This should be set to a "Teammate ID"
-# https://dev.frontapp.com/reference/get_teammates
+# https://dev.frontapp.com/reference/teammates
 FRONT_AUTHOR = getattr(settings, "FRONT_AUTHOR", None)
 
 # Whether to archive messages after they are sent
