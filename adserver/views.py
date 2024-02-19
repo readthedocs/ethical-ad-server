@@ -2541,6 +2541,7 @@ class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
             {
                 "publisher": self.publisher,
                 "publisher_new": self.is_publisher_new(),
+                "has_views_this_month": self.has_views_this_month(start_date),
                 "start_date": start_date,
                 "end_date": end_date,
                 "metabase_publisher_dashboard": settings.METABASE_DASHBOARDS.get(
@@ -2549,6 +2550,14 @@ class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
             }
         )
         return context
+
+    def has_views_this_month(self, start_date):
+        """Detect if this publisher has impressions since the start date (first of the month)."""
+        return (
+            PublisherImpression.objects.filter(publisher_id=self.publisher.id)
+            .filter(date__gte=start_date, views__gt=0)
+            .exists()
+        )
 
     def is_publisher_new(self):
         """Publishers are new if they aren't approved for paid campaigns and they've never had an ad offer."""
