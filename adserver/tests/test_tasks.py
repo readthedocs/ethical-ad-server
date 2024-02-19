@@ -70,6 +70,9 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertIsNone(offer.client_id)
 
     def test_calculate_publisher_ctrs(self):
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.save()
+
         calculate_publisher_ctrs()
 
         self.publisher.refresh_from_db()
@@ -276,12 +279,14 @@ class TasksTest(BaseAdModelsTestCase):
         backend.reset_messages()
         notify_of_publisher_changes(min_views=100)
 
-        # Should be 1 message: one for views with CTR being within the threshold
+        # Should be 1 message: one for revenue with CTR being within the threshold
+        # Ads are $2 CPC
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 1, messages)
         self.assertTrue(
-            '"views" was 55 last week and 111 the previous week (-50.45%)'
-            in messages[0]["text"]
+            '"revenue" was 10 last week and 22 the previous week (-54.55%)'
+            in messages[0]["text"],
+            messages[0]["text"],
         )
 
         backend.reset_messages()

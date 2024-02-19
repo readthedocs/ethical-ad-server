@@ -704,7 +704,7 @@ def calculate_publisher_ctrs(days=7):
     """Calculate average CTRs for paid ads on a publisher for the last X days."""
     sample_cutoff = get_ad_day() - datetime.timedelta(days=days)
 
-    for publisher in Publisher.objects.all():
+    for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
         queryset = AdImpression.objects.filter(
             date__gte=sample_cutoff,
             publisher=publisher,
@@ -713,8 +713,9 @@ def calculate_publisher_ctrs(days=7):
         report = PublisherReport(queryset)
         report.generate()
 
-        publisher.sampled_ctr = report.total["ctr"]
-        publisher.save()
+        if report.total["views"] > 0:
+            publisher.sampled_ctr = report.total["ctr"]
+            publisher.save()
 
 
 @app.task()
@@ -747,7 +748,7 @@ def notify_on_ad_image_change(advertisement_id):
         return
 
     ad_url = generate_absolute_url(ad.get_absolute_url())
-    message = f"Ad <{ad_url}|{ad.name}> had its image changed to {ad.image.url}"
+    message = f"{ad.name} ({ad_url}) image uploaded: {ad.image.url}"
 
     log.info(message)
     slack_message(
@@ -897,7 +898,7 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
         previous_week_report = PublisherReport(queryset)
         previous_week_report.generate()
 
-        for metric in ("views",):
+        for metric in ("revenue",):
             total_views = (
                 last_week_report.total["views"] + previous_week_report.total["views"]
             )
