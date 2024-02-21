@@ -557,7 +557,7 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "CSV Export")
 
         # Check staff fields not present since the permission wasn't configured
-        self.assertNotContains(response, "eCPM")
+        self.assertNotContains(response, "Fill Rate")
 
         # Add the permission
         self.staff_user.user_permissions.add(
@@ -567,7 +567,7 @@ class TestReportViews(TestReportsBase):
             )
         )
         response = self.client.get(url)
-        self.assertContains(response, "eCPM")
+        self.assertContains(response, "Fill Rate")
 
     def test_publisher_placement_report_contents(self):
         self.client.force_login(self.staff_user)

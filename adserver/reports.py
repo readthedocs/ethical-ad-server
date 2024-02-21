@@ -264,6 +264,9 @@ class PublisherReport(BaseReport):
             results[index]["revenue_share"] = results[index]["revenue"] * (
                 applied_rev_share / 100.0
             )
+            results[index]["revenue_share_ecpm"] = calculate_ecpm(
+                results[index]["revenue_share"], results[index]["views"]
+            )
             results[index]["our_revenue"] = (
                 results[index]["revenue"] - results[index]["revenue_share"]
             )
@@ -300,6 +303,9 @@ class PublisherReport(BaseReport):
         self.total["revenue"] = sum(result["revenue"] for result in self.results)
         self.total["revenue_share"] = sum(
             result["revenue_share"] for result in self.results
+        )
+        self.total["revenue_share_ecpm"] = calculate_ecpm(
+            self.total["revenue_share"], self.total["views"]
         )
         self.total["our_revenue"] = self.total["revenue"] - self.total["revenue_share"]
         self.total["ctr"] = calculate_ctr(self.total["clicks"], self.total["views"])

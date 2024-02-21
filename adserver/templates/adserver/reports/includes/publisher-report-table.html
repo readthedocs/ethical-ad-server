@@ -10,9 +10,10 @@
       <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
       <th class="text-right"><strong>{% blocktrans %}<abbr title="% of traffic that viewed the ad">View Rate</abbr>{% endblocktrans %}</strong></th>
       {% if publisher.saas %}
-      <th class="text-right"><strong>{% blocktrans %}<abbr title="Billable API requests">API Requests</abbr>{% endblocktrans %}</strong></th>
+        <th class="text-right"><strong>{% blocktrans %}<abbr title="Billable API requests">API Requests</abbr>{% endblocktrans %}</strong></th>
       {% else %}
-      <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
+        <th class="text-right"><strong>{% blocktrans %}<abbr title="Effective publisher revenue per thousand impressions">eCPM</abbr>{% endblocktrans %}</strong></th>
+        <th class="text-right"><strong>{% trans 'Revenue' %}</strong></th>
       {% endif %}
       {% if "adserver.staff_publisher_fields" in perms %}
         <th class="text-right staff-only"><strong>{% trans 'Our&nbsp;Rev' %}</strong></th>
@@ -34,6 +35,7 @@
         {% if publisher.saas %}
           <td class="text-right">{{ result.decisions|intcomma }}</td>
         {% else %}
+          <td class="text-right">${{ result.revenue_share_ecpm|floatformat:2|intcomma }}</td>
           <td class="text-right">${{ result.revenue_share|floatformat:2|intcomma }}</td>
         {% endif %}
         {% if "adserver.staff_publisher_fields" in perms %}
@@ -54,6 +56,7 @@
       {% if publisher.saas %}
         <td class="text-right"><strong>{{ report.total.decisions|intcomma }}</strong></td>
       {% else %}
+        <td class="text-right"><strong>${{ report.total.revenue_share_ecpm|floatformat:2|intcomma }}</strong></td>
         <td class="text-right"><strong>${{ report.total.revenue_share|floatformat:2|intcomma }}</strong></td>
       {% endif %}
       {% if "adserver.staff_publisher_fields" in perms %}
