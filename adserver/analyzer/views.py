@@ -1,6 +1,8 @@
 from django.conf import settings
 from pgvector.django import CosineDistance
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.renderers import StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,6 +28,9 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
             :>json array results: An array of similar URLs and scores
         """
 
+        permission_classes = [AllowAny]
+        renderer_classes = [StaticHTMLRenderer]
+
         def get(self, request):
             """Return a list of similar URLs and scores based on querying the AnalyzedURL embedding for an incoming URL."""
             url = request.query_params.get("url")
@@ -40,7 +45,7 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
             if not response:
                 return Response(
                     {"error": "Not able to fetch content from URL"},
-                    status=status.HTTP_404_NOT_FOUND,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             processed_text = backend_instance.get_content(response)
             analyzed_embedding = backend_instance.embedding(response)
@@ -52,9 +57,19 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
             )
 
             return Response(
-                {
-                    "count": len(urls),
-                    "text": processed_text[:500],
-                    "results": [[url.url, url.distance] for url in urls],
-                }
+                f"""
+                <h2>Results:</h2>
+                <ul>
+                    <li><a href="{urls[0].url}">{urls[0].url}</a></li>
+                    <li><a href="{urls[1].url}">{urls[1].url}</a></li>
+                    <li><a href="{urls[2].url}">{urls[2].url}</a></li>
+                    <li><a href="{urls[3].url}">{urls[3].url}</a></li>
+                </ul>
+                <h2>
+                Text:
+                </h2>
+                <textarea style="height:100%; width:80%" disabled>
+                {processed_text}
+                </textarea>
+                """
             )

@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "simple_history",
     "django_slack",
     "djstripe",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ MIDDLEWARE = [
     "enforce_host.EnforceHostMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -538,3 +540,10 @@ if ADSERVER_IPADDRESS_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
 if ADSERVER_GEOIP_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+CORS_ALLOW_HEADERS = ["*"]

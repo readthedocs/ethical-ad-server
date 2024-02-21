@@ -37,3 +37,8 @@ METABASE_SECRET_KEY=000000000000000000000000000000000000000000000000000000000000
 # This is a workaround for some celery issues that are likely fixed in future versions.
 # https://github.com/celery/celery/issues/5761
 COLUMNS=80
+
+# Analyzer
+# ------------------------------------------------------------------------------
+# See ``adserver.analyzer.backends`` for available backends
+# ADSERVER_ANALYZER_BACKEND=
