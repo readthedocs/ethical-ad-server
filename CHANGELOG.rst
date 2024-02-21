@@ -5,6 +5,20 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v4.0.0
+--------------
+
+Added the concept of embeddings as a first start towards a new approach of ad targeting
+
+:date: February 21, 2023
+
+ * @davidfischer: Add publisher eCPM to report table (#833)
+ * @davidfischer: Guide advertisers on maximum ad length (#831)
+ * @davidfischer: Support GitHub sponsors as a payout option (#830)
+ * @davidfischer: Improve UX for returning publishers (#829)
+ * @davidfischer: Front updated a few API call docs URLs (#828)
+ * @ericholscher: Initial Proof of Concept for Targeting with embeddings (#818)
+ * @dependabot[bot]: Bump pillow from 10.0.1 to 10.2.0 in /requirements (#816)
 
 Version v3.7.0
 --------------
