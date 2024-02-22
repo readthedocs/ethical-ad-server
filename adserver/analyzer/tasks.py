@@ -66,7 +66,10 @@ def analyze_url(url, publisher_slug, force=False):
         log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
 
         analyzed_embedding = backend_instance.embedding(response)  # Can be None
-        log.debug("Embedding from '%s': %s", backend.__name__, len(analyzed_embedding))
+        if analyzed_embedding:
+            log.debug(
+                "Embedding from '%s': %s", backend.__name__, len(analyzed_embedding)
+            )
 
         if analyzed_keywords:
             for kw in analyzed_keywords:
