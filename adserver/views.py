@@ -48,6 +48,7 @@ from djstripe.models import Invoice
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
+from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
 from .constants import FLIGHT_STATE_CURRENT
@@ -78,6 +79,7 @@ from .models import AdType
 from .models import Advertisement
 from .models import Advertiser
 from .models import AdvertiserImpression
+from .models import Campaign
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -1414,6 +1416,13 @@ class StaffAdvertiserReportView(BaseReportView):
                 start_date=context["start_date"],
                 end_date=context["end_date"],
             ).filter(advertiser=advertiser)
+            if context["campaign_type"] in ALL_CAMPAIGN_TYPES:
+                queryset = queryset.filter(
+                    advertiser__in=Campaign.objects.filter(
+                        campaign_type=context["campaign_type"],
+                        advertiser=advertiser,
+                    ).values("advertiser_id")
+                )
             report = self.report(queryset)
             report.generate()
 
@@ -1432,6 +1441,7 @@ class StaffAdvertiserReportView(BaseReportView):
             {
                 "advertisers": [a for a, _ in advertisers_and_reports],
                 "advertisers_and_reports": advertisers_and_reports,
+                "campaign_types": CAMPAIGN_TYPES,
                 "total_clicks": total_clicks,
                 "total_cost": total_cost,
                 "total_views": total_views,
