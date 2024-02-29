@@ -739,6 +739,78 @@ class TestReportViews(TestReportsBase):
             response, '<td class="text-right"><strong>3</strong></td>'
         )
 
+    def test_staff_advertiser_report_contents(self):
+        url = reverse("staff_advertisers_report")
+
+        # Create a house ad
+        ad2 = get(
+            Advertisement,
+            name="Test Ad 2",
+            slug="test-ad-2",
+            flight=self.flight3,
+            ad_type=self.ad_type1,
+            image=None,
+        )
+
+        # House ad traffic
+        get(
+            Offer,
+            advertisement=ad2,
+            publisher=self.publisher1,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=ad2,
+            publisher=self.publisher1,
+            viewed=True,
+            clicked=True,
+        )
+
+        # Paid traffic
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+        )
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+            clicked=True,
+        )
+
+        daily_update_impressions()
+        daily_update_advertisers()
+
+        # Staff only has has access
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<td class="text-right"><strong>6</strong></td>')
+
+        response = self.client.get(url + "?campaign_type=paid")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<td class="text-right"><strong>4</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>6</strong></td>'
+        )
+
     def test_global_keyword_report_contents(self):
         get(
             Offer,
