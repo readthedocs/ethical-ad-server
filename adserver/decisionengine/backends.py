@@ -193,6 +193,13 @@ class BaseAdDecisionBackend:
             )
             return False
 
+        # If this publisher's mobile traffic is ignored, don't serve anything
+        if self.publisher.ignore_mobile_traffic and self.user_agent.is_mobile:
+            log.info(
+                "Publisher mobile traffic is ignored. publisher=%s", self.publisher
+            )
+            return False
+
         return True
 
 

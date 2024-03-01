@@ -2023,6 +2023,20 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
         )
         return result
 
+    def get(self, request, *args, **kwargs):
+        result = super().get(request, *args, **kwargs)
+
+        if self.object.ignore_mobile_traffic:
+            messages.info(
+                self.request,
+                _(
+                    "Ads are not displayed on your site to mobile users. "
+                    "Please contact support with any questions."
+                ),
+            )
+
+        return result
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"publisher": self.object})
