@@ -106,6 +106,9 @@
         {% if flight.targeting_parameters.include_keywords %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_keywords|join:", " %}Include keywords: {{ value }}{% endblocktrans %}</li>
         {% endif %}
+        {% if flight.targeting_parameters.exclude_keywords %}
+         <li>{% blocktrans with value=flight.targeting_parameters.exclude_keywords|join:", " %}Exclude keywords: {{ value }}{% endblocktrans %}</li>
+        {% endif %}
         {% if flight.targeting_parameters.include_publishers %}
          <li>{% blocktrans with value=flight.targeting_parameters.include_publishers|join:", " %}Include publishers: {{ value }}{% endblocktrans %}</li>
         {% endif %}
