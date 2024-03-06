@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from pgvector.django import CosineDistance
 from rest_framework import status
@@ -50,11 +52,26 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
             processed_text = backend_instance.get_content(response)
             analyzed_embedding = backend_instance.embedding(response)
 
-            urls = (
-                AnalyzedUrl.objects.exclude(embedding=None)
+            unfiltered_urls = (
+                AnalyzedUrl.objects.filter(publisher__allow_paid_campaigns=True)
+                .exclude(embedding=None)
                 .annotate(distance=CosineDistance("embedding", analyzed_embedding))
-                .order_by("distance")[:10]
+                .order_by("distance")[:25]
             )
+
+            # Filter urls to ensure each domain is unique
+            unique_domains = set()
+            urls = []
+            for url in unfiltered_urls:
+                domain = urlparse(url.url).netloc
+                if domain not in unique_domains:
+                    unique_domains.add(domain)
+                    urls.append(url)
+
+            if not len(urls) > 3:
+                return Response(
+                    {"error": "No similar URLs found"}, status=status.HTTP_404_NOT_FOUND
+                )
 
             return Response(
                 f"""
