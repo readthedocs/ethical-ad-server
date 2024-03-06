@@ -1131,7 +1131,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
                 return False
 
         if self.excluded_keywords:
-            # If any keyworks from the page in the exclude list, don't show this flight
+            # If any keywords from the page in the exclude list, don't show this flight
             if keyword_set.intersection(self.excluded_keywords):
                 return False
 
