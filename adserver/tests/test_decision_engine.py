@@ -356,6 +356,29 @@ class DecisionEngineTests(TestCase):
         ad, _ = self.backend.get_ad_and_placement()
         self.assertIsNone(ad)
 
+    def test_exclude_publisher_mobile_traffic(self):
+        self.publisher.ignore_mobile_traffic = True
+        self.publisher.save()
+
+        # Set a non-mobile UA
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+        )
+
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNotNone(ad)
+
+        # Setup a mobile user agent
+        self.backend.user_agent = parse(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) "
+            "AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+        )
+
+        # No ad should be served since the publisher's mobile traffic is excluded from ads
+        ad, _ = self.backend.get_ad_and_placement()
+        self.assertIsNone(ad)
+
     def test_flight_days_targeting(self):
         # Remove existing flights
         for flight in Flight.objects.all():

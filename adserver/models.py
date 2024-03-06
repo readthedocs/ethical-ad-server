@@ -342,6 +342,13 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         help_text=_("Completely disable this publisher"),
     )
 
+    # Use this for publishers with unoptimized/unsupported mobile placements
+    # This essentially means the network is "not buying" the publisher's mobile traffic
+    ignore_mobile_traffic = models.BooleanField(
+        default=False,
+        help_text=_("If true, no ads will be served to this publisher's mobile users"),
+    )
+
     saas = models.BooleanField(
         default=False,
         help_text=_(
