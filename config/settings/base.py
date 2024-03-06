@@ -440,6 +440,13 @@ SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
 SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
 
 
+# CORS
+# https://github.com/adamchainz/django-cors-headers
+# --------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOW_HEADERS = ["*"]
+
+
 # Metabase
 # Graphing and BI tool
 # --------------------------------------------------------------------------
@@ -540,10 +547,3 @@ if ADSERVER_IPADDRESS_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
 if ADSERVER_GEOIP_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
-
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
-CORS_ALLOW_HEADERS = ["*"]
