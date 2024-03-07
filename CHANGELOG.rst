@@ -5,6 +5,20 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v4.1.0
+--------------
+
+This ships an initial similarity API,
+which we're going to use for a marketing page.
+
+ * @davidfischer: Use a docker pip cache (#839)
+ * @davidfischer: Display negative keywords in the targeting details (#838)
+ * @davidfischer: Ignore publisher mobile traffic option (#837)
+ * @davidfischer: Filter staff advertiser report by campaign type (#836)
+ * @ericholscher: A couple small bug fixes for embeddings work (#835)
+ * @davidfischer: Add publisher eCPM to report table (#833)
+ * @ericholscher: Add initial similarity API (#832)
+
 Version v4.0.0
 --------------
 
