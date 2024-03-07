@@ -10,6 +10,8 @@ networkx<3.0
 # Has to be downloaded directly like this (~30MB)
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
 
+# Used to parse web pages and get the "main section" of the page
+trafilatura==1.7.0
 
 #######################################################################
 # Machine learning production requirements

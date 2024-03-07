@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "simple_history",
     "django_slack",
     "djstripe",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ MIDDLEWARE = [
     "enforce_host.EnforceHostMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -436,6 +438,14 @@ SLACK_TOKEN = env("SLACK_TOKEN", default=None)
 SLACK_CHANNEL = env("SLACK_CHANNEL", default="#ads-notifications")
 SLACK_USERNAME = env("SLACK_USERNAME", default="Ethical Ad Server")
 SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
+
+
+# CORS
+# https://github.com/adamchainz/django-cors-headers
+# --------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOW_HEADERS = ["*"]
+CORS_URLS_REGEX = r"^/api/v1/similar/.*$"
 
 
 # Metabase
