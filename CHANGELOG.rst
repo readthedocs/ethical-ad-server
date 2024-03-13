@@ -5,11 +5,24 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v4.1.1
+--------------
+
+Fixed a minor leading comma issue.
+
+:date: March 13, 2023
+
+ * @davidfischer: Minor Django upgrade (#841)
+
+
 Version v4.1.0
 --------------
 
 This ships an initial similarity API,
 which we're going to use for a marketing page.
+
+:date: March 7, 2023
 
  * @davidfischer: Use a docker pip cache (#839)
  * @davidfischer: Display negative keywords in the targeting details (#838)
