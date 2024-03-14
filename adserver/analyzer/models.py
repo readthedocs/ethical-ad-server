@@ -56,8 +56,6 @@ class AnalyzedUrl(TimeStampedModel):
         ),
     )
 
-    embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
-
     history = HistoricalRecords()
 
     def __str__(self):

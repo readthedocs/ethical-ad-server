@@ -17,6 +17,9 @@ from .utils import get_url_analyzer_backends
 from .utils import normalize_url
 from config.celery_app import app
 
+if "ethicalads_ext" in settings.INSTALLED_APPS:
+    from ethicalads_ext.models import Embedding
+
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -91,17 +94,27 @@ def analyze_url(url, publisher_slug, force=False):
         publisher=publisher,
         defaults={
             "keywords": keywords,
-            "embedding": embedding,
             "last_analyzed_date": timezone.now(),
         },
     )
 
     if not created:
         url_obj.keywords = keywords
-        url_obj.embedding = embedding
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
         url_obj.save()
+
+    if "ethicalads_ext" in settings.INSTALLED_APPS:
+        embedding_obj, embedding_created = Embedding.objects.get_or_create(
+            url=url_obj,
+            model="v1",
+            defaults={
+                "embedding": embedding,
+            },
+        )
+        if not embedding_created:
+            embedding_obj.embedding = embedding
+            embedding_obj.save()
 
 
 @app.task

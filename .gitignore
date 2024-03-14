@@ -65,6 +65,9 @@ celerybeat-schedule
 celerybeat-schedule.db
 celerybeat.pid
 
+# VSCode
+.vscode
+
 
 ##########################################################################
 # Ad Server specific ignores

@@ -23,6 +23,14 @@ try:
 except ImproperlyConfigured:
     log.info("Unable to read env file. Assuming environment is already set.")
 
+# This is a bit of a hack to allow us to import the ethicalads_ext package
+# which contains private extensions to the ad server.
+try:
+    import ethicalads_ext  # noqa
+
+    ext = True
+except ImportError:
+    ext = False
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(
@@ -68,6 +76,10 @@ INSTALLED_APPS = [
     "djstripe",
     "corsheaders",
 ]
+
+
+if ext:
+    INSTALLED_APPS.append("ethicalads_ext.embedding")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

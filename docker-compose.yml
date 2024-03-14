@@ -28,6 +28,8 @@ services:
       # Make it so we can edit the start script dynamically,
       # for example to install dependencies
       - ./docker-compose/django/start:/start
+      # Load the ethicalads_ext code from the host, so we don't have to rebuild
+      - ${PWD}/${EA_EXT_PATH:-../ethicalads-ext/ethicalads_ext}:/app/ethicalads_ext
     env_file:
       - ./.envs/local/django
       - ./.envs/local/postgres
