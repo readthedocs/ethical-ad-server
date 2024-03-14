@@ -17,8 +17,9 @@ from .utils import get_url_analyzer_backends
 from .utils import normalize_url
 from config.celery_app import app
 
+
 if "ethicalads_ext" in settings.INSTALLED_APPS:
-    from ethicalads_ext.models import Embedding
+    from ethicalads_ext.models import AnalyzedUrlEmbedding
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -105,7 +106,10 @@ def analyze_url(url, publisher_slug, force=False):
 
         if embeddings:
             embedding, model = embeddings[0]
-            embedding_obj, embedding_created = Embedding.objects.get_or_create(
+            (
+                embedding_obj,
+                embedding_created,
+            ) = AnalyzedUrlEmbedding.objects.get_or_create(
                 url=url_obj,
                 model=model,
                 defaults={
