@@ -3,16 +3,14 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
-from pgvector.django import VectorField
 from simple_history.models import HistoricalRecords
 
+from ..models import Advertiser
 from ..models import Publisher
 from .validators import KeywordsValidator
 
 
-class AnalyzedUrl(TimeStampedModel):
-
-    """Analyzed keywords for a given URL."""
+class BaseAnalyzedUrl(TimeStampedModel):
 
     url = models.URLField(
         db_index=True,
@@ -20,12 +18,6 @@ class AnalyzedUrl(TimeStampedModel):
         help_text=_(
             "URL of the page being analyzed after certain query parameters are stripped away"
         ),
-    )
-
-    publisher = models.ForeignKey(
-        Publisher,
-        help_text=_("Publisher where this URL appears"),
-        on_delete=models.CASCADE,
     )
 
     # Fields below are updated by the analyzer
@@ -67,4 +59,30 @@ class AnalyzedUrl(TimeStampedModel):
         return super().save(*args, **kwargs)
 
     class Meta:
+        abstract = True
+
+
+class AnalyzedUrl(BaseAnalyzedUrl):
+    """Analyzed keywords for a given URL."""
+
+    publisher = models.ForeignKey(
+        Publisher,
+        help_text=_("Publisher where this URL appears"),
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
         unique_together = ("url", "publisher")
+
+
+class AnalyzedAd(BaseAnalyzedUrl):
+    """Analyzed keywords for a given URL."""
+
+    advertiser = models.ForeignKey(
+        Advertiser,
+        help_text=_("Advertiser with the URL"),
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        unique_together = ("url", "advertiser")

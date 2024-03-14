@@ -2,6 +2,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
+from .models import AnalyzedAd
 from .models import AnalyzedUrl
 
 
@@ -21,6 +22,27 @@ class AnalyzedUrlAdmin(SimpleHistoryAdmin):
     list_filter = ("last_analyzed_date", "last_ad_served_date", "publisher")
     list_select_related = ("publisher",)
     raw_id_fields = ("publisher",)
+    search_fields = ("url", "keywords")
+
+    # Note: may need to use the estimated count paginator if this gets large
+
+
+@admin.register(AnalyzedAd)
+class AnalyzedAdAdmin(SimpleHistoryAdmin):
+
+    """Django admin configuration for analyzed ads."""
+
+    list_display = (
+        "url",
+        "advertiser",
+        "keywords",
+        "last_analyzed_date",
+        "visits_since_last_analyzed",
+    )
+    list_per_page = 500
+    list_filter = ("last_analyzed_date", "last_ad_served_date", "advertiser")
+    list_select_related = ("advertiser",)
+    raw_id_fields = ("advertiser",)
     search_fields = ("url", "keywords")
 
     # Note: may need to use the estimated count paginator if this gets large

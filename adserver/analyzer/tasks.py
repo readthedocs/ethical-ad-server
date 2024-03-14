@@ -66,27 +66,21 @@ def analyze_url(url, publisher_slug, force=False):
             response = backend_instance.fetch()
 
         analyzed_keywords = backend_instance.analyze(response)  # Can be None
-        log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
+        if analyzed_keywords:
+            log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
+
+            for kw in analyzed_keywords:
+                keywords.add(kw)
 
         analyzed_embedding = backend_instance.embedding(response)  # Can be None
         if analyzed_embedding:
             log.debug(
                 "Embedding from '%s': %s", backend.__name__, len(analyzed_embedding)
             )
-
-        if analyzed_keywords:
-            for kw in analyzed_keywords:
-                keywords.add(kw)
-
-        if analyzed_embedding:
-            embeddings.append(analyzed_embedding)
+            model = getattr(backend_instance, "MODEL_NAME", None)
+            embeddings.append([analyzed_embedding, model])
 
     log.debug("Keywords found : %s", keywords)
-
-    if len(embeddings) > 1:
-        log.warning("Multiple embeddings found for URL: %s", normalized_url)
-
-    embedding = embeddings[0] if embeddings else None
 
     keywords = list(keywords)
     url_obj, created = AnalyzedUrl.objects.get_or_create(
@@ -105,16 +99,22 @@ def analyze_url(url, publisher_slug, force=False):
         url_obj.save()
 
     if "ethicalads_ext" in settings.INSTALLED_APPS:
-        embedding_obj, embedding_created = Embedding.objects.get_or_create(
-            url=url_obj,
-            model="v1",
-            defaults={
-                "embedding": embedding,
-            },
-        )
-        if not embedding_created:
-            embedding_obj.embedding = embedding
-            embedding_obj.save()
+
+        if len(embeddings) > 1:
+            log.warning("Multiple embeddings found for URL: %s", normalized_url)
+
+        if embeddings:
+            embedding, model = embeddings[0]
+            embedding_obj, embedding_created = Embedding.objects.get_or_create(
+                url=url_obj,
+                model=model,
+                defaults={
+                    "vector": embedding,
+                },
+            )
+            if not embedding_created:
+                embedding_obj.vector = embedding
+                embedding_obj.save()
 
 
 @app.task

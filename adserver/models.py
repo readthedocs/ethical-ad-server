@@ -1644,6 +1644,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             },
         )
 
+    @property
+    def advertiser(self):
+        return self.flight.campaign.advertiser
+
     def incr(self, impression_type, publisher):
         """
         Add to the number of times this action has been performed, stored in the DB.
