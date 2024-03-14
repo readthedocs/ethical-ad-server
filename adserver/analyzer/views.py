@@ -31,7 +31,6 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
         """
 
         permission_classes = [AllowAny]
-        renderer_classes = [StaticHTMLRenderer]
 
         def get(self, request):
             """Return a list of similar URLs and scores based on querying the AnalyzedURL embedding for an incoming URL."""
@@ -74,19 +73,9 @@ if "adserver.analyzer" in settings.INSTALLED_APPS:
                 )
 
             return Response(
-                f"""
-                <h2>Results:</h2>
-                <ul>
-                    <li><a href="{urls[0].url}">{urls[0].url}</a></li>
-                    <li><a href="{urls[1].url}">{urls[1].url}</a></li>
-                    <li><a href="{urls[2].url}">{urls[2].url}</a></li>
-                    <li><a href="{urls[3].url}">{urls[3].url}</a></li>
-                </ul>
-                <h2>
-                Text:
-                </h2>
-                <textarea style="height:100%; width:80%" disabled>
-                {processed_text}
-                </textarea>
-                """
+                {
+                    "count": len(urls),
+                    "text": processed_text[:500],
+                    "results": [[url.url, url.distance] for url in urls],
+                }
             )
