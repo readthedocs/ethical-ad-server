@@ -27,6 +27,7 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
+LOGGING["loggers"]["ethicalads_ext"]["level"] = "DEBUG"
 
 
 # Celery settings for asynchronous tasks

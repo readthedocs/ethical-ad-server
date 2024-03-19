@@ -10,5 +10,6 @@ IGNORED_QUERY_PARAMS = (
     "utm_label",
     "utm_keyword",
     "utm_content",
+    "utm_term",
     "ref",
 )
