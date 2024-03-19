@@ -17,7 +17,7 @@ router.register(r"advertisers", AdvertiserViewSet, basename="advertisers")
 router.register(r"publishers", PublisherViewSet, basename="publishers")
 
 if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
-    from ethicalads_ext.embedding import urls as embedding_urls
+    from ethicalads_ext.embedding import urls as embedding_urls  # noqa
 
     urlpatterns += embedding_urls.urlpatterns
 
