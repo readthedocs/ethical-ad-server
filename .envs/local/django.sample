@@ -5,6 +5,9 @@ IPYTHONDIR=/app/.ipython
 MEDIA_URL=http://localhost:5000/media/
 #ADSERVER_ETHICALADS_BRANDING=True
 
+# Bash (Docker)
+# HISTFILE=/app/.bash_history
+
 # Redis
 # ------------------------------------------------------------------------------
 REDIS_URL=redis://redis:6379/0

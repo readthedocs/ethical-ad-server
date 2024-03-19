@@ -22,6 +22,7 @@ sftp-config.json
 # Basics
 *.py[cod]
 __pycache__
+.bash_history
 
 # Logs
 *.log

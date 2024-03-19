@@ -5,7 +5,7 @@ set -o pipefail
 set -o nounset
 
 # Reinstall dependencies without rebuilding docker image
-pip install -r /app/requirements/development.txt
+# pip install -r /app/requirements/development.txt
 
 # Don't auto-migrate locally because this can cause weird issues when testing migrations
 # python manage.py migrate
