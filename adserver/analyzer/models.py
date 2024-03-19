@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
+from pgvector.django import VectorField
 from simple_history.models import HistoricalRecords
 
 from ..models import Advertiser
@@ -47,6 +48,9 @@ class BaseAnalyzedUrl(TimeStampedModel):
             "Number of times ads have been served for this URL since it was last analyzed"
         ),
     )
+
+    # TODO: Delete this after deploy
+    embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
 
     history = HistoricalRecords()
 
