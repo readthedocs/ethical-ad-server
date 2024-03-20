@@ -7,7 +7,7 @@ ipdb==0.13.3
 ipython==8.10.0
 
 # Code formatters
-black==22.3.0
+black==24.3.0
 reorder-python-imports>=2.6.0,<3.0
 
 # For running the black code formatter before commits and other checks
