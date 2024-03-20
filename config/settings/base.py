@@ -81,9 +81,6 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
-if ext:
-    INSTALLED_APPS.append("ethicalads_ext.embedding")
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "enforce_host.EnforceHostMiddleware",
@@ -526,6 +523,8 @@ ADSERVER_ANALYZER_BACKEND = env.list(
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
+if ADSERVER_ANALYZER_BACKEND and ext:
+    INSTALLED_APPS.append("ethicalads_ext.embedding")
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False

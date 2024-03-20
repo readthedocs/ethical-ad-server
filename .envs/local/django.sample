@@ -44,4 +44,5 @@ COLUMNS=80
 # Analyzer
 # ------------------------------------------------------------------------------
 # See ``adserver.analyzer.backends`` for available backends
+# ADSERVER_ANALYZER_BACKEND="adserver.analyzer.backends.TextacyAnalyzerBackend,adserver.analyzer.backends.SentenceTransformerAnalyzerBackend"
 # ADSERVER_ANALYZER_BACKEND=
