@@ -33,7 +33,7 @@ LOGGING["loggers"]["ethicalads_ext"]["level"] = "DEBUG"
 # Celery settings for asynchronous tasks
 # http://docs.celeryproject.org
 # --------------------------------------------------------------------------
-CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = env("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default=None))
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_CREATE_MISSING_QUEUES = True

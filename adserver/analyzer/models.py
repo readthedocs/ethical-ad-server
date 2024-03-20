@@ -28,6 +28,7 @@ class BaseAnalyzedUrl(TimeStampedModel):
         null=True,
         validators=[KeywordsValidator()],
     )
+
     last_analyzed_date = models.DateTimeField(
         db_index=True,
         default=None,
@@ -35,22 +36,23 @@ class BaseAnalyzedUrl(TimeStampedModel):
         blank=True,
         help_text=_("Last time the ad server analyzed this URL"),
     )
-    # This is only accurate to the day
-    last_ad_served_date = models.DateField(
+
+    title = models.TextField(
+        _("Title of the page"),
         default=None,
         null=True,
         blank=True,
-        help_text=_("Last date an ad was served for this URL"),
     )
-    visits_since_last_analyzed = models.PositiveIntegerField(
-        default=0,
-        help_text=_(
-            "Number of times ads have been served for this URL since it was last analyzed"
-        ),
+
+    description = models.TextField(
+        _("Description of the page"),
+        default=None,
+        null=True,
+        blank=True,
     )
 
     # TODO: Delete this after deploy
-    embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
+    # embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
 
     history = HistoricalRecords()
 
@@ -75,11 +77,26 @@ class AnalyzedUrl(BaseAnalyzedUrl):
         on_delete=models.CASCADE,
     )
 
+    # This is only accurate to the day
+    last_ad_served_date = models.DateField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("Last date an ad was served for this URL"),
+    )
+
+    visits_since_last_analyzed = models.PositiveIntegerField(
+        default=0,
+        help_text=_(
+            "Number of times ads have been served for this URL since it was last analyzed"
+        ),
+    )
+
     class Meta:
         unique_together = ("url", "publisher")
 
 
-class AnalyzedAd(BaseAnalyzedUrl):
+class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
     """Analyzed keywords for a given URL."""
 
     advertiser = models.ForeignKey(
