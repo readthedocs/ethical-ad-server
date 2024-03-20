@@ -81,7 +81,6 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
-
 if ext:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
 

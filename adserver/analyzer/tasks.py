@@ -18,10 +18,6 @@ from .utils import normalize_url
 from config.celery_app import app
 
 
-if "ethicalads_ext" in settings.INSTALLED_APPS:
-    from ethicalads_ext.models import AnalyzedUrlEmbedding
-
-
 log = logging.getLogger(__name__)  # noqa
 
 
@@ -57,7 +53,6 @@ def analyze_url(url, publisher_slug, force=False):
 
     log.debug("Analyzing url: %s", normalized_url)
     keywords = set()
-    embeddings = []
     response = None
 
     for backend in get_url_analyzer_backends():
@@ -72,14 +67,6 @@ def analyze_url(url, publisher_slug, force=False):
 
             for kw in analyzed_keywords:
                 keywords.add(kw)
-
-        analyzed_embedding = backend_instance.embedding(response)  # Can be None
-        if analyzed_embedding:
-            log.debug(
-                "Embedding from '%s': %s", backend.__name__, len(analyzed_embedding)
-            )
-            model = getattr(backend_instance, "MODEL_NAME", None)
-            embeddings.append([analyzed_embedding, model])
 
     log.debug("Keywords found : %s", keywords)
 
@@ -98,27 +85,6 @@ def analyze_url(url, publisher_slug, force=False):
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
         url_obj.save()
-
-    if "ethicalads_ext" in settings.INSTALLED_APPS:
-
-        if len(embeddings) > 1:
-            log.warning("Multiple embeddings found for URL: %s", normalized_url)
-
-        if embeddings:
-            embedding, model = embeddings[0]
-            (
-                embedding_obj,
-                embedding_created,
-            ) = AnalyzedUrlEmbedding.objects.get_or_create(
-                url=url_obj,
-                model=model,
-                defaults={
-                    "vector": embedding,
-                },
-            )
-            if not embedding_created:
-                embedding_obj.vector = embedding
-                embedding_obj.save()
 
 
 @app.task
