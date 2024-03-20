@@ -52,7 +52,7 @@ class BaseAnalyzedUrl(TimeStampedModel):
     )
 
     # TODO: Delete this after deploy
-    # embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
+    embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
 
     history = HistoricalRecords()
 
