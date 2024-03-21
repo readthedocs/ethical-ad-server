@@ -5,6 +5,16 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v4.2.0
+--------------
+
+This removes the embedding logic from our OSS server,
+since it depends on a large amount of Postgres and implementation specific logic.
+
+:date: March 21, 2023
+
+ * @ericholscher: Add AnalyzedAd model to track ads (#847)
+ * @ericholscher: Remove embedding code from public repo (#846)
 
 Version v4.1.1
 --------------
