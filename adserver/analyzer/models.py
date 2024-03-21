@@ -54,8 +54,6 @@ class BaseAnalyzedUrl(TimeStampedModel):
     # TODO: Delete this after deploy
     embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
 
-    history = HistoricalRecords()
-
     def __str__(self):
         """Simple override."""
         return f"{self.keywords} on {self.url}"
@@ -92,6 +90,8 @@ class AnalyzedUrl(BaseAnalyzedUrl):
         ),
     )
 
+    history = HistoricalRecords()
+
     class Meta:
         unique_together = ("url", "publisher")
 
@@ -104,6 +104,8 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
         help_text=_("Advertiser with the URL"),
         on_delete=models.CASCADE,
     )
+
+    history = HistoricalRecords()
 
     class Meta:
         unique_together = ("url", "advertiser")
