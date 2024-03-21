@@ -53,7 +53,6 @@ def analyze_url(url, publisher_slug, force=False):
 
     log.debug("Analyzing url: %s", normalized_url)
     keywords = set()
-    embeddings = []
     response = None
 
     for backend in get_url_analyzer_backends():
@@ -63,27 +62,13 @@ def analyze_url(url, publisher_slug, force=False):
             response = backend_instance.fetch()
 
         analyzed_keywords = backend_instance.analyze(response)  # Can be None
-        log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
-
-        analyzed_embedding = backend_instance.embedding(response)  # Can be None
-        if analyzed_embedding:
-            log.debug(
-                "Embedding from '%s': %s", backend.__name__, len(analyzed_embedding)
-            )
-
         if analyzed_keywords:
+            log.debug("Keywords from '%s': %s", backend.__name__, analyzed_keywords)
+
             for kw in analyzed_keywords:
                 keywords.add(kw)
 
-        if analyzed_embedding:
-            embeddings.append(analyzed_embedding)
-
     log.debug("Keywords found : %s", keywords)
-
-    if len(embeddings) > 1:
-        log.warning("Multiple embeddings found for URL: %s", normalized_url)
-
-    embedding = embeddings[0] if embeddings else None
 
     keywords = list(keywords)
     url_obj, created = AnalyzedUrl.objects.get_or_create(
@@ -91,14 +76,12 @@ def analyze_url(url, publisher_slug, force=False):
         publisher=publisher,
         defaults={
             "keywords": keywords,
-            "embedding": embedding,
             "last_analyzed_date": timezone.now(),
         },
     )
 
     if not created:
         url_obj.keywords = keywords
-        url_obj.embedding = embedding
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
         url_obj.save()

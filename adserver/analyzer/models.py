@@ -6,13 +6,12 @@ from jsonfield import JSONField
 from pgvector.django import VectorField
 from simple_history.models import HistoricalRecords
 
+from ..models import Advertiser
 from ..models import Publisher
 from .validators import KeywordsValidator
 
 
-class AnalyzedUrl(TimeStampedModel):
-
-    """Analyzed keywords for a given URL."""
+class BaseAnalyzedUrl(TimeStampedModel):
 
     url = models.URLField(
         db_index=True,
@@ -22,12 +21,6 @@ class AnalyzedUrl(TimeStampedModel):
         ),
     )
 
-    publisher = models.ForeignKey(
-        Publisher,
-        help_text=_("Publisher where this URL appears"),
-        on_delete=models.CASCADE,
-    )
-
     # Fields below are updated by the analyzer
     keywords = JSONField(
         _("Keywords for this URL"),
@@ -35,6 +28,7 @@ class AnalyzedUrl(TimeStampedModel):
         null=True,
         validators=[KeywordsValidator()],
     )
+
     last_analyzed_date = models.DateTimeField(
         db_index=True,
         default=None,
@@ -42,20 +36,22 @@ class AnalyzedUrl(TimeStampedModel):
         blank=True,
         help_text=_("Last time the ad server analyzed this URL"),
     )
-    # This is only accurate to the day
-    last_ad_served_date = models.DateField(
+
+    title = models.TextField(
+        _("Title of the page"),
         default=None,
         null=True,
         blank=True,
-        help_text=_("Last date an ad was served for this URL"),
-    )
-    visits_since_last_analyzed = models.PositiveIntegerField(
-        default=0,
-        help_text=_(
-            "Number of times ads have been served for this URL since it was last analyzed"
-        ),
     )
 
+    description = models.TextField(
+        _("Description of the page"),
+        default=None,
+        null=True,
+        blank=True,
+    )
+
+    # TODO: Delete this after deploy
     embedding = VectorField(dimensions=384, default=None, null=True, blank=True)
 
     history = HistoricalRecords()
@@ -69,4 +65,45 @@ class AnalyzedUrl(TimeStampedModel):
         return super().save(*args, **kwargs)
 
     class Meta:
+        abstract = True
+
+
+class AnalyzedUrl(BaseAnalyzedUrl):
+    """Analyzed keywords for a given URL."""
+
+    publisher = models.ForeignKey(
+        Publisher,
+        help_text=_("Publisher where this URL appears"),
+        on_delete=models.CASCADE,
+    )
+
+    # This is only accurate to the day
+    last_ad_served_date = models.DateField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_("Last date an ad was served for this URL"),
+    )
+
+    visits_since_last_analyzed = models.PositiveIntegerField(
+        default=0,
+        help_text=_(
+            "Number of times ads have been served for this URL since it was last analyzed"
+        ),
+    )
+
+    class Meta:
         unique_together = ("url", "publisher")
+
+
+class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
+    """Analyzed keywords for a given URL."""
+
+    advertiser = models.ForeignKey(
+        Advertiser,
+        help_text=_("Advertiser with the URL"),
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        unique_together = ("url", "advertiser")

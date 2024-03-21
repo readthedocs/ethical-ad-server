@@ -16,10 +16,10 @@ router = routers.SimpleRouter()
 router.register(r"advertisers", AdvertiserViewSet, basename="advertisers")
 router.register(r"publishers", PublisherViewSet, basename="publishers")
 
-if "adserver.analyzer" in settings.INSTALLED_APPS:
-    from adserver.analyzer.views import EmbeddingViewSet
+if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
+    from ethicalads_ext.embedding import urls as embedding_urls  # noqa
 
-    urlpatterns += [path(r"similar/", EmbeddingViewSet.as_view(), name="similar")]
+    urlpatterns += embedding_urls.urlpatterns
 
 
 urlpatterns += router.urls

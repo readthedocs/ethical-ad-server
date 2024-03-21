@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import json
 import logging
 import os
+import sys
 
 import environ
 import stripe
@@ -23,12 +24,23 @@ try:
 except ImproperlyConfigured:
     log.info("Unable to read env file. Assuming environment is already set.")
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 )
 
+# This is a bit of a hack to allow us to import the ethicalads_ext package
+# which contains private extensions to the ad server.
+try:
+    ethicalads_ext_path = os.path.join(BASE_DIR, "..", "ethicalads-ext")
+    if os.path.exists(ethicalads_ext_path):
+        sys.path.insert(0, ethicalads_ext_path)
+
+    import ethicalads_ext  # noqa
+
+    ext = True
+except ImportError:
+    ext = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -308,6 +320,11 @@ LOGGING = {
             "handlers": ["console-adserver"],
             "propagate": False,
         },
+        "ethicalads_ext": {
+            "level": "INFO",
+            "handlers": ["console-adserver"],
+            "propagate": False,
+        },
         "django": {"level": "INFO", "handlers": ["console"], "propagate": False},
         "django.request": {
             "handlers": ["mail_admins"],
@@ -445,7 +462,7 @@ SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
 # --------------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_HEADERS = ["*"]
-CORS_URLS_REGEX = r"^/api/v1/similar/.*$"
+CORS_URLS_REGEX = r"^/api/v1/similar-.*/$"
 
 
 # Metabase
@@ -506,6 +523,8 @@ ADSERVER_ANALYZER_BACKEND = env.list(
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
+if ADSERVER_ANALYZER_BACKEND and ext:
+    INSTALLED_APPS.append("ethicalads_ext.embedding")
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False

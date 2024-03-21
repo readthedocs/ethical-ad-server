@@ -4,4 +4,4 @@ set -o errexit
 set -o nounset
 
 
-celery -A config.celery_app worker -l INFO -Q celery,analyzer
+celery -A config.celery_app worker -l INFO -Q celery,analyzer -c 1
