@@ -988,10 +988,10 @@ class AdClickProxyView(BaseProxyView):
 
         url = template.safe_substitute(
             publisher=publisher_slug,
-            advertisement=advertisement.slug,
             publisher_slug=publisher_slug,
-            advertisement_slug=advertisement.slug,
             publisher_name=publisher_name,
+            advertisement=advertisement.slug,
+            advertisement_slug=advertisement.slug,
             advertisement_name=advertisement.name,
         )
 
