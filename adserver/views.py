@@ -981,7 +981,7 @@ class AdClickProxyView(BaseProxyView):
         template = string.Template(advertisement.link)
 
         publisher_slug = "unknown"
-        publisher_Name = "unknown"
+        publisher_name = "unknown"
         if publisher:
             publisher_slug = publisher.slug
             publisher_name = publisher.name
