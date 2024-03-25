@@ -981,11 +981,18 @@ class AdClickProxyView(BaseProxyView):
         template = string.Template(advertisement.link)
 
         publisher_slug = "unknown"
+        publisher_name = "unknown"
         if publisher:
             publisher_slug = publisher.slug
+            publisher_name = publisher.name
 
         url = template.safe_substitute(
-            publisher=publisher_slug, advertisement=advertisement.slug
+            publisher=publisher_slug,
+            publisher_slug=publisher_slug,
+            publisher_name=publisher_name,
+            advertisement=advertisement.slug,
+            advertisement_slug=advertisement.slug,
+            advertisement_name=advertisement.name,
         )
 
         # Append a query string param ?ea-publisher=${publisher}
