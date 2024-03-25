@@ -5,6 +5,23 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v4.3.0
+--------------
+
+The changes in this release mostly pertain to our new similar pages
+API and landing page that we are launching.
+There was a small change to make the eCPM in the publisher overview screen
+show the total eCPM (paid + unpaid).
+
+:date: March 25, 2023
+
+ * @ericholscher: Add more explicit substitions to ad replacement (#853)
+ * @davidfischer: Add a new priority queue (#852)
+ * @ericholscher: Default DRF to JSON (#850)
+ * @JasonBarnabe: Stats above graph on reports page has wrong eCPM (#842)
+
+
 Version v4.2.0
 --------------
 
