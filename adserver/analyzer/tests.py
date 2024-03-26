@@ -166,7 +166,7 @@ class TestNaiveAnalyzer(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
-@pytest.mark.skipIf(skip_textacy, "TextacyAnalyzerBackend not setup")
+@pytest.mark.skipif(skip_textacy, reason="TextacyAnalyzerBackend not setup")
 class TestTextacyAnalyzerBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
@@ -230,7 +230,7 @@ class TestTextacyAnalyzerBackend(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
-@pytest.mark.skipIf(skip_ea, "EthicalAdsTopicsBackend not setup")
+@pytest.mark.skipif(skip_ea, reason="EthicalAdsTopicsBackend not setup")
 class TestEthicalAdsTopicsBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
