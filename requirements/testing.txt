@@ -1,4 +1,2 @@
--r analyzer.txt
-
 # Tox will setup its own environment and so it doesn't depend on anything
 tox<4.0
