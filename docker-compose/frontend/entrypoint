@@ -1,6 +1,6 @@
 #!/bin/sh
 
-npm install
+npm clean-install
 
 # Node-Sass contains architecture specific parts
 npm rebuild node-sass

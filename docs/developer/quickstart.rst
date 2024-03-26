@@ -51,7 +51,7 @@ Front-end assets
 
 To build the assets::
 
-    $ npm install
+    $ npm clean-install
     $ npm run build
 
 Install Python dependencies
