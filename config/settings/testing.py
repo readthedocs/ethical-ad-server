@@ -11,10 +11,10 @@ TESTING = True
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 
-# TODO: Remove this once we get the postgres-specific stuff out of analyzer migrations
-ADSERVER_ANALYZER_BACKEND = None
-if "adserver.analyzer" in INSTALLED_APPS:
-    INSTALLED_APPS.remove("adserver.analyzer")
+ADSERVER_ANALYZER_BACKEND = (
+    "adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend"
+)
+print(INSTALLED_APPS)
 
 # Skip the embedding app in testing
 if "ethicalads_ext.embedding" in INSTALLED_APPS:

@@ -520,7 +520,7 @@ ADSERVER_DECISION_BACKEND = env(
 # By default this is empty, you can find options in ``adserver.analyzer.backends``
 ADSERVER_ANALYZER_BACKEND = env.list(
     "ADSERVER_ANALYZER_BACKEND",
-    default=[],
+    default=["adserver.analyzer.backends.naive.NaiveAnalyzerBackend"],
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
