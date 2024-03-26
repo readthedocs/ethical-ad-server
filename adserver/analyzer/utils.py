@@ -1,4 +1,5 @@
 """Helper utilities for the adserver analyzer."""
+import re
 from urllib import parse as urlparse
 
 from django.conf import settings
@@ -39,3 +40,12 @@ def normalize_url(url):
     parts = parts._replace(query=urlparse.urlencode(query_params, True))
 
     return urlparse.urlunparse(parts)
+
+
+def normalize_title(title):
+    """
+    Remove trailing non-word characters from title.
+
+    Generally useful for cleaning up Sphinx docs.
+    """
+    return re.sub(r"\W+$", "", title)

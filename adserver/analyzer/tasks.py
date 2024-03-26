@@ -84,6 +84,7 @@ def analyze_url(url, publisher_slug, force=False):
         url_obj.keywords = keywords
         url_obj.last_analyzed_date = timezone.now()
         url_obj.visits_since_last_analyzed = 0
+
         url_obj.save()
 
 
