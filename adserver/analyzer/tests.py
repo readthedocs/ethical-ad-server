@@ -21,6 +21,7 @@ try:
     from .models import AnalyzedUrl
     from .utils import get_url_analyzer_backend
     from .utils import normalize_url
+    from .utils import normalize_title
     from .validators import KeywordsValidator
 except ImportError:
     pytest.skip(
@@ -76,6 +77,10 @@ class TestUtils(TestCase):
             get_url_analyzer_backend(),
             TextacyAnalyzerBackend,
         )
+
+    def test_normalize_title(self):
+        self.assertEqual(normalize_url("Title #"), "Title")
+        self.assertEqual(normalize_url("Deploy Your Own¶"), "Deploy Your Own")
 
 
 class TestModels(TestCase):
