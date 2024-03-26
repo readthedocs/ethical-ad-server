@@ -14,21 +14,21 @@ from . import tasks
 from ..models import Offer
 from ..models import Publisher
 from ..tests.common import BaseAdModelsTestCase
-from .backends import NaiveKeywordAnalyzerBackend
+from .backends.naive import NaiveKeywordAnalyzerBackend
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
 from .utils import normalize_url
 from .validators import KeywordsValidator
 
 try:
-    from .backends import EthicalAdsTopicsBackend
+    from .backends.eatopics import EthicalAdsTopicsBackend
 
     skip_ea = False
 except ImportError:
     skip_ea = True
 
 try:
-    from .backends import TextacyAnalyzerBackend
+    from .backends.textacynlp import TextacyAnalyzerBackend
 
     skip_textacy = False
 except ImportError:
@@ -166,7 +166,7 @@ class TestNaiveAnalyzer(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
-@pytest.skipIf(skip_textacy, "TextacyAnalyzerBackend not setup")
+@pytest.mark.skipIf(skip_textacy, "TextacyAnalyzerBackend not setup")
 class TestTextacyAnalyzerBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
@@ -230,7 +230,7 @@ class TestTextacyAnalyzerBackend(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
-@pytest.skipIf(skip_ea, "EthicalAdsTopicsBackend not setup")
+@pytest.mark.skipIf(skip_ea, "EthicalAdsTopicsBackend not setup")
 class TestEthicalAdsTopicsBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
