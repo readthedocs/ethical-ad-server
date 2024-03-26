@@ -12,10 +12,9 @@ TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 
 
-ADSERVER_ANALYZER_BACKEND = None
-if "adserver.analyzer" in INSTALLED_APPS:
-    INSTALLED_APPS.remove("adserver.analyzer")
-
+# Skip the embedding app in testing
+if "ethicalads_ext.embedding" in INSTALLED_APPS:
+    INSTALLED_APPS.remove("ethicalads_ext.embedding")
 
 # Whitenoise relies on the manifest being present.
 # Which may not be there in testing
