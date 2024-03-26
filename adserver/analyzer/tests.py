@@ -79,8 +79,8 @@ class TestUtils(TestCase):
         )
 
     def test_normalize_title(self):
-        self.assertEqual(normalize_url("Title #"), "Title")
-        self.assertEqual(normalize_url("Deploy Your Own¶"), "Deploy Your Own")
+        self.assertEqual(normalize_title("Title #"), "Title")
+        self.assertEqual(normalize_title("Deploy Your Own¶"), "Deploy Your Own")
 
 
 class TestModels(TestCase):
