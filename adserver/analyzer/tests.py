@@ -84,6 +84,10 @@ class TestUtils(TestCase):
             NaiveKeywordAnalyzerBackend,
         )
 
+    def test_normalize_title(self):
+        self.assertEqual(normalize_title("Title #"), "Title")
+        self.assertEqual(normalize_title("Deploy Your Own¶"), "Deploy Your Own")
+
 
 class TestModels(TestCase):
     def setUp(self):

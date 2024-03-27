@@ -1,3 +1,4 @@
+
 CHANGELOG
 =========
 
@@ -5,6 +6,20 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v4.4.0
+--------------
+
+This release removes the postgres dependency around embeddings,
+in prep for removing the migrations here to fix analyzer tests.
+
+:date: March 27, 2024
+
+ * @ericholscher: Be more defensive in PSF importer (#861)
+ * @ericholscher: Run clean-install instead of install (#860)
+ * @ericholscher: squash migrations (#859)
+ * @ericholscher: Remove embedding field on AnalyzerURL (#857)
+ * @ericholscher: Normalize titles from Sphinx (#856)
+ * @ericholscher: Skip another UTM code I found :) (#855)
 
 Version v4.3.0
 --------------
@@ -14,7 +29,7 @@ API and landing page that we are launching.
 There was a small change to make the eCPM in the publisher overview screen
 show the total eCPM (paid + unpaid).
 
-:date: March 25, 2023
+:date: March 25, 2024
 
  * @ericholscher: Add more explicit substitions to ad replacement (#853)
  * @davidfischer: Add a new priority queue (#852)
@@ -28,7 +43,7 @@ Version v4.2.0
 This removes the embedding logic from our OSS server,
 since it depends on a large amount of Postgres and implementation specific logic.
 
-:date: March 21, 2023
+:date: March 21, 2024
 
  * @ericholscher: Add AnalyzedAd model to track ads (#847)
  * @ericholscher: Remove embedding code from public repo (#846)
@@ -38,7 +53,7 @@ Version v4.1.1
 
 Fixed a minor leading comma issue.
 
-:date: March 13, 2023
+:date: March 13, 2024
 
  * @davidfischer: Minor Django upgrade (#841)
 
@@ -49,7 +64,7 @@ Version v4.1.0
 This ships an initial similarity API,
 which we're going to use for a marketing page.
 
-:date: March 7, 2023
+:date: March 7, 2024
 
  * @davidfischer: Use a docker pip cache (#839)
  * @davidfischer: Display negative keywords in the targeting details (#838)
@@ -64,7 +79,7 @@ Version v4.0.0
 
 Added the concept of embeddings as a first start towards a new approach of ad targeting
 
-:date: February 21, 2023
+:date: February 21, 2024
 
  * @davidfischer: Add publisher eCPM to report table (#833)
  * @davidfischer: Guide advertisers on maximum ad length (#831)
@@ -82,7 +97,7 @@ If a campaign doesn't target the default publisher groups (eg. Read the Docs onl
 then display the targeting in the flight view.
 Fixed an XSS issue that affected advertisers only not public websites.
 
-:date: February 13, 2023
+:date: February 13, 2024
 
  * @ericholscher: Show visits_since_last_analyzed in AnalyzedUrlAdmin (#823)
  * @ericholscher: Fix Slack msg (#822)
@@ -99,7 +114,7 @@ between ads that were rotated and those that were not.
 This release also includes a newer version of our classifier model
 trained in December.
 
-:date: January 4, 2023
+:date: January 4, 2024
 
  * @davidfischer: Store ad rotation status on offer (#813)
 
