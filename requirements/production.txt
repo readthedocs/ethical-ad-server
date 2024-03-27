@@ -6,6 +6,9 @@ gunicorn==20.0.4
 # Database driver
 psycopg2-binary==2.9.6 # Required for macOS
 
+# Postgres & Postgres vector support
+pgvector==0.2.5
+
 # Email sending
 django-anymail==8.5
 
