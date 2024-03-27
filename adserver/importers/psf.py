@@ -112,7 +112,10 @@ def run_import(sync=False, images=False):
             ad.live = True
             ad.ad_types.add(psf_ad)
             ad.ad_types.add(image_only_ad)
-            ad.save()
+            try:
+                ad.save()
+            except Exception:
+                log.exception(f"Failed to save ad: {ad}")
         else:
             # Try to get the ad if it exists to add to valid_ads
             try:
