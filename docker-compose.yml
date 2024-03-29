@@ -21,8 +21,8 @@ services:
       context: .
       dockerfile: ./docker-compose/django/Dockerfile
       args:
-        - SENTENCE_TRANSFORMERS_MODEL=$SENTENCE_TRANSFORMERS_MODEL
-        - SENTENCE_TRANSFORMERS_HOME=$SENTENCE_TRANSFORMERS_HOME
+        - SENTENCE_TRANSFORMERS_HOME=${SENTENCE_TRANSFORMERS_HOME:-/app}
+        - SENTENCE_TRANSFORMERS_MODEL=${SENTENCE_TRANSFORMERS_MODEL:-multi-qa-MiniLM-L6-cos-v1}
     image: ethicaladserver_local_django
     depends_on:
       - postgres
