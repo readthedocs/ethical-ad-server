@@ -17,6 +17,7 @@ from ..tests.common import BaseAdModelsTestCase
 from .backends.naive import NaiveKeywordAnalyzerBackend
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
+from .utils import normalize_title
 from .utils import normalize_url
 from .validators import KeywordsValidator
 
