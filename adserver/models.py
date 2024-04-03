@@ -1006,6 +1006,17 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return self.targeting_parameters.get("days", [])
 
     @property
+    def niche_targeting(self) -> float:
+        """
+        Return the niche targeting parameter for this flight.
+
+        Testing out return types here as well..
+        """
+        if not self.targeting_parameters:
+            return float(0)
+        return self.targeting_parameters.get("niche_targeting", float(0))
+
+    @property
     def state(self):
         today = get_ad_day().date()
         if self.live and self.start_date <= today:
@@ -1219,6 +1230,18 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         if self.excluded_domains:
             return domain not in self.excluded_domains
+
+        return True
+
+    def show_to_niche_targeting(self, weights):
+        """Filter flights based on distance of niche targeting"""
+
+        if self.niche_targeting:
+            if self.campaign.advertiser in weights:
+                goal_weight = self.niche_targeting
+                return weights[self.campaign.advertiser] < goal_weight
+            else:
+                return False
 
         return True
 

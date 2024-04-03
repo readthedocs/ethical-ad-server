@@ -17,8 +17,6 @@ from ..models import Flight
 from ..utils import get_ad_day
 from ..utils import get_client_user_agent
 
-# from ..analyzer.utils import normalize_url
-
 
 if "adserver.analyzer" in settings.INSTALLED_APPS:
     from ..analyzer.models import AnalyzedUrl
@@ -129,7 +127,6 @@ class BaseAdDecisionBackend:
             return None
 
         normalized_url = self.url
-        # normalized_url = normalize_url(self.url)
         analyzed_url = AnalyzedUrl.objects.filter(
             url=normalized_url, publisher=self.publisher
         ).first()
@@ -311,6 +308,12 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_to_day(timezone.now().strftime("%A").lower()):
             return False
 
+        if hasattr(self, "niche_weights"):
+            # Skip if the flight is not meant to show on these niches
+            if not flight.show_to_niche_targeting(self.niche_weights):
+                log.debug("Flight %s does not match niche targeting", flight)
+                return False
+
         return True
 
     def select_flight(self):
@@ -382,6 +385,14 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         if flights and (self.ad_slug or self.campaign_slug):
             # Ignore priorities for forcing a specific ad/campaign
             return random.choice(flights)
+
+        if self.url and "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
+            from ethicalads_ext.embedding.utils import get_niche_weights
+
+            self.niche_weights = get_niche_weights(
+                self.url,
+            )
+            log.info("Niche targeting weights: %s", self.niche_weights)
 
         for possible_flights in (
             paid_flights,
