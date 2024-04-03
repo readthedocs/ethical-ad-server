@@ -9,7 +9,7 @@ celery[redis]==5.3.1
 whitenoise==6.0.0
 
 # Handling and processing uploaded images
-Pillow==10.2.0
+Pillow==10.3.0
 
 # Our API
 djangorestframework==3.14.0
