@@ -15,6 +15,10 @@ LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 if "ethicalads_ext.embedding" in INSTALLED_APPS:
     INSTALLED_APPS.remove("ethicalads_ext.embedding")
 
+ADSERVER_ANALYZER_BACKEND = [
+    "adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend"
+]
+
 # Whitenoise relies on the manifest being present.
 # Which may not be there in testing
 # unless you run `collectstatic` before running tests
