@@ -10,23 +10,30 @@ from django.test import TestCase
 from django.utils import timezone
 from django_dynamic_fixture import get
 
+from . import tasks
+from ..models import Offer
+from ..models import Publisher
+from ..tests.common import BaseAdModelsTestCase
+from .backends.naive import NaiveKeywordAnalyzerBackend
+from .models import AnalyzedUrl
+from .utils import get_url_analyzer_backend
+from .utils import normalize_title
+from .utils import normalize_url
+from .validators import KeywordsValidator
+
 try:
-    from . import tasks
-    from ..models import Offer
-    from ..models import Publisher
-    from ..tests.common import BaseAdModelsTestCase
-    from .backends import EthicalAdsTopicsBackend
-    from .backends import NaiveKeywordAnalyzerBackend
-    from .backends import TextacyAnalyzerBackend
-    from .models import AnalyzedUrl
-    from .utils import get_url_analyzer_backend
-    from .utils import normalize_url
-    from .utils import normalize_title
-    from .validators import KeywordsValidator
+    from .backends.eatopics import EthicalAdsTopicsBackend
+
+    skip_ea = False
 except ImportError:
-    pytest.skip(
-        "Skip testing the analyzer due to missing dependencies", allow_module_level=True
-    )
+    skip_ea = True
+
+try:
+    from .backends.textacynlp import TextacyAnalyzerBackend
+
+    skip_textacy = False
+except ImportError:
+    skip_textacy = True
 
 
 class TestValidators(TestCase):
@@ -75,7 +82,7 @@ class TestUtils(TestCase):
     def test_get_analyzer_class(self):
         self.assertEqual(
             get_url_analyzer_backend(),
-            TextacyAnalyzerBackend,
+            NaiveKeywordAnalyzerBackend,
         )
 
     def test_normalize_title(self):
@@ -131,8 +138,9 @@ class TestNaiveAnalyzer(TestCase):
             </html>
             """,
         )
+        resp = self.analyzer.fetch()
         self.assertEqual(
-            self.analyzer.analyze(),
+            self.analyzer.analyze(resp),
             ["devops", "frontend"],  # Backend doesn't appear enough
         )
 
@@ -143,7 +151,8 @@ class TestNaiveAnalyzer(TestCase):
             self.url,
             status=404,
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
         responses.reset()
 
@@ -152,7 +161,8 @@ class TestNaiveAnalyzer(TestCase):
             self.url,
             status=500,
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
         responses.reset()
 
@@ -161,9 +171,11 @@ class TestNaiveAnalyzer(TestCase):
             self.url,
             body=requests.exceptions.ConnectTimeout(),
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
 
+@pytest.mark.skipif(skip_textacy, reason="TextacyAnalyzerBackend not setup")
 class TestTextacyAnalyzerBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
@@ -227,6 +239,7 @@ class TestTextacyAnalyzerBackend(TestCase):
         self.assertIsNone(self.analyzer.analyze())
 
 
+@pytest.mark.skipif(skip_ea, reason="EthicalAdsTopicsBackend not setup")
 class TestEthicalAdsTopicsBackend(TestCase):
     def setUp(self):
         self.url = "https://example.com"
