@@ -587,7 +587,7 @@ def daily_update_publishers(day=None):
             .values("publisher__name", "publisher_id")
             .annotate(
                 total_decisions=Sum("decisions"),
-                total_offers=Sum("offers"),
+                total_offers=Sum("offers", filter=Q(advertisement__isnull=False)),
                 total_views=Sum("views"),
                 total_clicks=Sum("clicks"),
                 total_revenue=Sum(
@@ -596,7 +596,6 @@ def daily_update_publishers(day=None):
                     output_field=FloatField(),
                 ),
             )
-            .filter(advertisement__isnull=False)
             .order_by("publisher__name")
             .iterator()
         ):

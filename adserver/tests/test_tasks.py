@@ -462,14 +462,27 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertAlmostEqual(float(ai.spend), 2.0)
 
     def test_daily_update_publisher_impressions(self):
-        # Publisher - offered/decision=6, views=5, clicks=1, revenue=$2
+        # Add a null offer (a decision that didn't result in an ad) in there
+        get(
+            Offer,
+            advertisement=None,
+            publisher=self.publisher,
+            country="MX",
+            viewed=False,
+            view_time=None,
+            keywords=["backend"],
+            div_id="id_2",
+            ad_type_slug=self.text_ad_type.slug,
+        )
+
+        # Publisher - offers=6, decisions=7, views=5, clicks=1, revenue=$2
         daily_update_impressions()
         daily_update_publishers()
 
         # Verify that the aggregation task worked correctly
         pi = PublisherImpression.objects.filter(publisher=self.publisher).first()
         self.assertIsNotNone(pi)
-        self.assertEqual(pi.decisions, 6)
+        self.assertEqual(pi.decisions, 7)
         self.assertEqual(pi.offers, 6)
         self.assertEqual(pi.views, 5)
         self.assertEqual(pi.clicks, 1)
@@ -477,6 +490,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
 
         pi = PublisherPaidImpression.objects.filter(publisher=self.publisher).first()
         self.assertIsNotNone(pi)
+        # The null offer isn't "paid" since there's no ad associated
         self.assertEqual(pi.decisions, 6)
         self.assertEqual(pi.offers, 6)
         self.assertEqual(pi.views, 5)
