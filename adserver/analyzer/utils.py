@@ -48,4 +48,6 @@ def normalize_title(title):
 
     Generally useful for cleaning up Sphinx docs.
     """
+    if not title:
+        return title
     return re.sub(r"\W+$", "", title)
