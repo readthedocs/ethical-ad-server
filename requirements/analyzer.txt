@@ -1,3 +1,4 @@
+-r st.txt
 # Used by the keyword/topic analyzer
 beautifulsoup4==4.11.1
 textacy==0.12.0
@@ -10,14 +11,8 @@ networkx<3.0
 # Has to be downloaded directly like this (~30MB)
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
 
-# Used to parse web pages and get the "main section" of the page
-trafilatura==1.7.0
-
 #######################################################################
 # Machine learning production requirements
 #######################################################################
 # This installs PyTorch which is ~250MB
 spacy-transformers==1.1.8
-
-# For the ST backend
-sentence-transformers==2.2.2

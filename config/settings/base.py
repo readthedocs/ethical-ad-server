@@ -527,6 +527,9 @@ if ADSERVER_ANALYZER_BACKEND:
 if ADSERVER_ANALYZER_BACKEND and ext:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
 
+ADSERVER_ANALYZER_MODEL = env("ADSERVER_ANALYZER_MODEL", default="v1")
+ADSERVER_ANALYZER_MODEL_HOME = env("ADSERVER_ANALYZER_MODEL_HOME", default="/tmp")
+
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
 
