@@ -1,10 +1,25 @@
-
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v5.0.0
+--------------
+
+The big feature in this release was that a number of analyzer-related migrations
+were squashed into one. To upgrade to here, upgrade directly from v4.4.0 and not prior versions.
+This release also included a number of small bugfixes and analyzer improvements.
+
+:date: April 11, 2024
+
+ * @davidfischer: Fixes a few docker issues with newer dependency versions (#868)
+ * @davidfischer: Minor bugfix related to publisher impression numbers (#867)
+ * @davidfischer: Normalize title - handle None (#866)
+ * @ericholscher: Squash analyzer migrations (#858)
+
 
 Version v4.4.0
 --------------
