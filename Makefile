@@ -27,26 +27,26 @@ clean:
 # Build the local multi-container application
 # This command can take a while the first time
 dockerbuild: clean
-	docker-compose -f $(DOCKER_CONFIG) build
+	docker compose -f $(DOCKER_CONFIG) build
 
 # You should run "dockerbuild" at least once before running this
 # It isn't a dependency because running "dockerbuild" can take some time
 dockerserve:
-	docker-compose -f $(DOCKER_CONFIG) up
+	docker compose -f $(DOCKER_CONFIG) up
 
 # This is similar to dockerserve, but it doesn't build the containers
 # and start all services in the background.
 dockerstart:
-	docker-compose -f $(DOCKER_CONFIG) start
+	docker compose -f $(DOCKER_CONFIG) start
 
 # Stop all services that were started by "dockerstart"
 dockerstop:
-	docker-compose -f $(DOCKER_CONFIG) stop
+	docker compose -f $(DOCKER_CONFIG) stop
 
 # Use this command to inspect the container, run management commands,
 # or run anything else on the Django container
 dockershell:
-	docker-compose -f $(DOCKER_CONFIG) run --rm django /bin/bash
+	docker compose -f $(DOCKER_CONFIG) run --rm django /bin/bash
 
 # Get the GeoIP databases from DB-IP or Maxmind
 geoip:

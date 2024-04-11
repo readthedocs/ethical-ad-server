@@ -13,6 +13,10 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0
 # Used to parse web pages and get the "main section" of the page
 trafilatura==1.7.0
 
+# Used as a transitive dependency
+# but we need to make sure lxml.html.clean is installed too
+lxml[html_clean]==5.2.1
+
 #######################################################################
 # Machine learning production requirements
 #######################################################################
