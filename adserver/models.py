@@ -1396,6 +1396,13 @@ class Flight(TimeStampedModel, IndestructibleModel):
         views = self.total_views
         return calculate_ctr(clicks, views)
 
+    def ecpc(self):
+        clicks = self.total_clicks
+        value_delivered = self.total_value()
+        if clicks > 0:
+            return value_delivered / clicks
+        return 0
+
     @cached_property
     def active_invoices(self):
         """Get invoices excluding drafts, void, and uncollectable ones."""
