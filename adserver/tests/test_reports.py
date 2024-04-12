@@ -105,7 +105,7 @@ class TestReportsBase(TestCase):
             slug="test-flight-2",
             campaign=self.community_campaign,
             live=False,
-            cpm=1.0,
+            cpm=0,
             sold_impressions=1000,
         )
         self.flight3 = get(
@@ -532,15 +532,38 @@ class TestReportViews(TestReportsBase):
 
         # Paid
         get(Offer, advertisement=self.ad1, publisher=self.publisher1, viewed=True)
-        get(Offer, advertisement=self.ad1, publisher=self.publisher1, viewed=True)
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher1,
+            viewed=True,
+            clicked=True,
+        )
 
         # Not paid
         get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
         get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
         get(Offer, advertisement=self.ad2, publisher=self.publisher1, viewed=True)
 
+        # Null offer
+        get(Offer, advertisement=None, publisher=self.publisher1)
+
         # Update reporting
         daily_update_impressions()
+
+        # Generate the report (used to check data)
+        report = PublisherReport(AdImpression.objects.filter(publisher=self.publisher1))
+        report.generate()
+
+        # Check the actual data
+        self.assertEqual(len(report.results), 1)
+        self.assertAlmostEqual(report.total["views"], 5)
+        self.assertAlmostEqual(report.total["clicks"], 1)
+        self.assertAlmostEqual(report.total["decisions"], 6)
+        self.assertAlmostEqual(report.total["offers"], 5)
+        self.assertAlmostEqual(report.total["paid_offers"], 2)
+        self.assertAlmostEqual(report.total["fill_rate"], 100 * 2 / 6)
+        self.assertAlmostEqual(report.total["revenue"], 2.0)
 
         # All reports
         response = self.client.get(url)

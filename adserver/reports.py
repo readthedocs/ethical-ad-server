@@ -298,6 +298,9 @@ class PublisherReport(BaseReport):
         self.total["index"] = "Total"
         self.total["decisions"] = sum(result["decisions"] for result in self.results)
         self.total["offers"] = sum(result["offers"] for result in self.results)
+        self.total["paid_offers"] = sum(
+            result["paid_offers"] for result in self.results
+        )
         self.total["views"] = sum(result["views"] for result in self.results)
         self.total["clicks"] = sum(result["clicks"] for result in self.results)
         self.total["revenue"] = sum(result["revenue"] for result in self.results)
@@ -311,7 +314,7 @@ class PublisherReport(BaseReport):
         self.total["ctr"] = calculate_ctr(self.total["clicks"], self.total["views"])
         self.total["ecpm"] = calculate_ecpm(self.total["revenue"], self.total["views"])
         self.total["fill_rate"] = calculate_ctr(
-            self.total["offers"], self.total["decisions"]
+            self.total["paid_offers"], self.total["decisions"]
         )
         self.total["view_rate"] = calculate_ctr(
             self.total["views"], self.total["offers"]
