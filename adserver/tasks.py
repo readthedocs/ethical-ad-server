@@ -587,13 +587,16 @@ def daily_update_publishers(day=None):
             .values("publisher__name", "publisher_id")
             .annotate(
                 total_decisions=Sum("decisions"),
-                total_offers=Sum("offers", filter=Q(advertisement__isnull=False)),
+                total_offers=Sum(
+                    "offers", filter=Q(advertisement__isnull=False), default=0
+                ),
                 total_views=Sum("views"),
                 total_clicks=Sum("clicks"),
                 total_revenue=Sum(
                     (F("clicks") * F("advertisement__flight__cpc"))
                     + (F("views") * F("advertisement__flight__cpm") / 1000),
                     output_field=FloatField(),
+                    default=0,
                 ),
             )
             .order_by("publisher__name")
