@@ -45,6 +45,7 @@
               <th><strong>{% trans 'End date' %}</strong></th>
               <th class="text-right"><strong>{% trans 'Budget' %}</strong></th>
               <th class="text-right"><strong>{% blocktrans %}<abbr title="Click through rate">CTR</abbr>{% endblocktrans %}</strong></th>
+              <th class="text-right"><strong>{% blocktrans %}<abbr title="Effective cost per click">eCPC</abbr>{% endblocktrans %}</strong></th>
               <th class="text-right"><strong>{% trans 'Options' %}</strong></th>
             </tr>
           </thead>
@@ -61,6 +62,7 @@
                 <td>{{ flight.end_date }}</td>
                 <td class="text-right">${{ flight.projected_total_value|floatformat:2 }}</td>
                 <td class="text-right">{{ flight.ctr|floatformat:3 }}%</td>
+                <td class="text-right">${{ flight.ecpc|floatformat:2 }}</td>
                 <td class="text-right">
                   <ul class="list-inline">
 
