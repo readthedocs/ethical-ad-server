@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.1.0
+--------------
+
+Fixed some minor aggregation bugs and added an eCPC for advertisers.
+The default from email from the server is now overridable (``SERVER_EMAIL``).
+
+:date: April 29, 2024
+
+ * @davidfischer: Update default from email (#874)
+ * @davidfischer: Advertiser eCPC in flight list (#872)
+ * @davidfischer: Staff fill rate fix (#871)
+ * @davidfischer: Publisher aggregation bugfix (#870)
+
+
 Version v5.0.0
 --------------
 
