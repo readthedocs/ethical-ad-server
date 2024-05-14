@@ -1,7 +1,7 @@
 -r base.txt
 
 # Gunicorn is the WSGI server used to run Django
-gunicorn==20.0.4
+gunicorn==22.0.0
 
 # Database driver
 psycopg2-binary==2.9.6 # Required for macOS
