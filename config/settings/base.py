@@ -229,7 +229,9 @@ SERVER_EMAIL = env("SERVER_EMAIL", default="noreply@example.com")
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 EMAIL_TIMEOUT = 5
 
-# For sending email through Front.
+# Front
+# --------------------------------------------------------------------------
+# For sending email through Front and processing Front webhooks
 FRONT_BACKEND = "frontbackend.backend.EmailBackend"
 FRONT_TOKEN = env("FRONT_TOKEN", default=None)
 FRONT_CHANNEL = env("FRONT_CHANNEL", default=None)
@@ -237,6 +239,9 @@ FRONT_AUTHOR = env("FRONT_AUTHOR", default=None)
 FRONT_SENDER_NAME = env("FRONT_SENDER_NAME", default=None)
 FRONT_ARCHIVE = env.bool("FRONT_ARCHIVE", default=False)
 FRONT_ENABLED = FRONT_TOKEN and FRONT_CHANNEL and FRONT_AUTHOR
+# This last value is only needed for processing webhooks.
+# It comes from the webhooks "App" in Front's settings
+FRONT_WEBHOOK_SECRET = env("FRONT_WEBHOOK_SECRET", default=None)
 
 
 # Internationalization
@@ -526,6 +531,8 @@ if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
 if ADSERVER_ANALYZER_BACKEND and ext:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
+if ext:
+    INSTALLED_APPS.append("ethicalads_ext.support")
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False

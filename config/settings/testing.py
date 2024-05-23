@@ -9,7 +9,9 @@ warnings.filterwarnings("ignore", message="No directory at", module="whitenoise.
 
 TESTING = True
 TEMPLATES[0]["OPTIONS"]["debug"] = DEBUG
+LOGGING["loggers"][""]["level"] = "CRITICAL"
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
+LOGGING["loggers"]["ethicalads_ext"]["level"] = "CRITICAL"
 
 # Skip the embedding app in testing
 if "ethicalads_ext.embedding" in INSTALLED_APPS:
