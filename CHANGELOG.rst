@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.2.0
+--------------
+
+This release had only minor changes to enable some more private support request
+related code and some fixes to various support options.
+
+:date: May 23, 2024
+
+ * @davidfischer: Add private webhook support app (#877)
+ * @davidfischer: Minor change to support links (#876)
+
+
 Version v5.1.0
 --------------
 
