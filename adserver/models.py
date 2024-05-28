@@ -1555,7 +1555,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     # using string.Template syntax
     link = models.URLField(
         _("Link URL"),
-        max_length=255,
+        max_length=1024,
         help_text=_(
             "URL of your landing page. "
             "This may contain UTM parameters so you know the traffic came from us. "
