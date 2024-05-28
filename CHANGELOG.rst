@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.3.0
+--------------
+
+There's a migration involving increasing the maximum ad landing page length
+from 256 to 1024.
+
+:date: May 28, 2024
+
+ * @davidfischer: Increase ad landing page URL length (#879)
+
+
 Version v5.2.0
 --------------
 
