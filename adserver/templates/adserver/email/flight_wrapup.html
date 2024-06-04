@@ -15,6 +15,7 @@
 <ul>
   {% for flight in completed_flights %}
   <li>
+    {% if flight.auto_renew %}<span>{% trans '[Renewed]' %} </span>{% endif %}
     <a href="{{ site.domain }}{{ flight.get_absolute_url }}?ref=email-wrapup">{{ flight.name }}</a>
     <span> (<abbr title="{% trans 'Click-through rate' %}">{% trans 'CTR' %}</abbr>: {{ flight.ctr|floatformat:3 }}%)</span>
   </li>

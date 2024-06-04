@@ -34,6 +34,7 @@ from .views import FlightDetailView
 from .views import FlightListView
 from .views import FlightRenewView
 from .views import FlightRequestView
+from .views import FlightSetAutoRenewView
 from .views import FlightUpdateView
 from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
@@ -209,6 +210,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/update/",
         FlightUpdateView.as_view(),
         name="flight_update",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/autorenew/",
+        FlightSetAutoRenewView.as_view(),
+        name="flight_auto_renew",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/renew/",

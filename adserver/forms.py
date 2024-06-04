@@ -195,7 +195,11 @@ class FlightForm(FlightMixin, forms.ModelForm):
                     Div("end_date", css_class="form-group col-lg-6"),
                     css_class="form-row",
                 ),
-                "live",
+                Div(
+                    Div("live", css_class="form-group col-lg-6"),
+                    Div("auto_renew", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
                 Div(
                     PrependedText(
                         "budget",
@@ -343,6 +347,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "start_date",
             "end_date",
             "live",
+            "auto_renew",
             "cpc",
             "sold_clicks",
             "cpm",
@@ -423,6 +428,41 @@ class FlightCreateForm(forms.ModelForm):
         )
 
 
+class FlightAutoRenewForm(forms.ModelForm):
+
+    """Allow customers to set a flight to automatically renew or not."""
+
+    def __init__(self, *args, **kwargs):
+        """Set the flight form helper and initial data."""
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.attrs = {"id": "flight-autorenew-form"}
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("auto_renew"),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Update flight auto-renewal")),
+            HTML(
+                "<p class='form-text small text-muted'>"
+                + str(
+                    _(
+                        "Your account manager will be notified and will adjust pricing if necessary."
+                    )
+                )
+                + "</p>"
+            ),
+        )
+
+    class Meta:
+        model = Flight
+
+        fields = ("auto_renew",)
+
+
 class FlightRenewForm(FlightMixin, FlightCreateForm):
 
     """Form class for creating a new flight via renewal."""
@@ -477,7 +517,11 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
                     Div("end_date", css_class="form-group col-lg-6"),
                     css_class="form-row",
                 ),
-                "live",
+                Div(
+                    Div("live", css_class="form-group col-lg-6"),
+                    Div("auto_renew", css_class="form-group col-lg-6"),
+                    css_class="form-row",
+                ),
                 Div(
                     PrependedText(
                         "budget",
@@ -566,6 +610,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
             "start_date",
             "end_date",
             "live",
+            "auto_renew",
             "cpc",
             "sold_clicks",
             "cpm",
@@ -658,6 +703,9 @@ class FlightRequestForm(FlightCreateForm):
         self.fields["end_date"].help_text = _(
             "The target end date for this flight (it may go after this date)"
         )
+        self.fields["auto_renew"].help_text = _(
+            "Flights that automatically renew receive an additional 10% discount"
+        )
         self.fields["advertisements"].queryset = (
             self.old_flight.advertisements.all()
             if self.old_flight
@@ -685,6 +733,7 @@ class FlightRequestForm(FlightCreateForm):
                     Div("end_date", css_class="form-group col-lg-6"),
                     css_class="form-row",
                 ),
+                Field("auto_renew"),
                 Div(
                     PrependedText(
                         "budget",
@@ -818,6 +867,7 @@ class FlightRequestForm(FlightCreateForm):
             "name",
             "start_date",
             "end_date",
+            "auto_renew",
         )
         widgets = {
             "start_date": forms.DateInput(
