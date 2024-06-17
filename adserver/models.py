@@ -808,6 +808,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
             "The flight will be stopped on the end date even if not completely fulfilled"
         ),
     )
+    auto_renew = models.BooleanField(
+        _("Automatically renew when complete"),
+        default=False,
+    )
     live = models.BooleanField(_("Live"), default=False)
     priority_multiplier = models.IntegerField(
         _("Priority Multiplier"),

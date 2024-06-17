@@ -12,6 +12,9 @@ from django.db.models import FloatField
 from django.db.models import Q
 from django.db.models import Sum
 from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
 from simple_history.utils import update_change_reason
@@ -760,6 +763,50 @@ def notify_on_ad_image_change(advertisement_id):
 
 
 @app.task()
+def notify_of_autorenewing_flights(days_before=7):
+    """Send a note to flights set to renew automatically."""
+    # Flight must end in exactly `days_before` days
+    # to receive the notification
+    end_date = get_ad_day().date() + datetime.timedelta(days=days_before)
+
+    for flight in Flight.objects.filter(
+        live=True,
+        auto_renew=True,
+        end_date=end_date,
+    ).select_related():
+        log.info("Notifying about flight %s auto-renewing", flight)
+        if settings.FRONT_ENABLED:
+            advertiser = flight.campaign.advertiser
+            site = get_current_site(request=None)
+
+            to_addresses = [
+                u.email
+                for u in advertiser.user_set.all()
+                if u.notify_on_completed_flights
+            ]
+
+            context = {
+                "site": site,
+                "flight": flight,
+                "advertiser": advertiser,
+            }
+
+            with mail.get_connection(
+                settings.FRONT_BACKEND,
+                sender_name=f"{site.name} Flight Tracker",
+            ) as connection:
+                message = mail.EmailMessage(
+                    _("Advertising flight renewing - %(name)s") % {"name": site.name},
+                    render_to_string("adserver/email/flight-renewing.html", context),
+                    from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                    to=to_addresses,
+                    connection=connection,
+                )
+                message.draft = True  # Only create a draft for now
+                message.send()
+
+
+@app.task()
 def notify_of_completed_flights():
     """Send a note and close flights which completed in the last day."""
     cutoff = get_ad_day() - datetime.timedelta(days=1)
@@ -816,6 +863,61 @@ def notify_of_completed_flights():
 
             completed_flights_by_advertiser[flight.campaign.advertiser.slug].append(
                 flight
+            )
+
+        if flight.auto_renew and not flight.live:
+            # This flight is completed but should be renewed
+            # CONSIDER: Breaking this out into a model method
+            #  although it's hard to re-use this with the
+            #  renewal form since more data is provided there.
+            log.info("Auto-renewing flight %s.", flight)
+
+            new_flight_name = f"{flight.campaign.advertiser} - {timezone.now():%b %Y}"
+            new_flight_slug = slugify(new_flight_name)
+
+            while Flight.objects.filter(slug=new_flight_slug).exists():
+                random_char = get_random_string(1)
+                new_flight_slug = slugify(f"{new_flight_slug}-{random_char}")
+
+            new_flight = Flight(
+                name=new_flight_name,
+                slug=new_flight_slug,
+                start_date=timezone.now().today(),
+                end_date=timezone.now().today() + (flight.end_date - flight.start_date),
+                live=True,
+            )
+
+            # Copy flight fields directly
+            for field in (
+                "targeting_parameters",
+                "priority_multiplier",
+                "traffic_cap",
+                "discount",
+                "cpc",
+                "cpm",
+                "sold_clicks",
+                "sold_impressions",
+                "campaign",
+                "auto_renew",  # New flight will also auto-renew
+            ):
+                setattr(new_flight, field, getattr(flight, field))
+
+            new_flight.save()
+
+            # Duplicate the active ads into the new flight
+            for ad in flight.advertisements.filter(live=True):
+                new_ad = ad.__copy__()
+                new_ad.flight = new_flight
+                new_ad.live = True
+                new_ad.save()  # Automatically gets a new slug
+
+            # Send a message about the auto-renewal
+            new_flight_url = generate_absolute_url(new_flight.get_absolute_url())
+            slack_message(
+                "adserver/slack/generic-message.slack",
+                {
+                    "text": f"Flight {flight.name} was automatically renewed as { new_flight.name }! {new_flight_url}"
+                },
             )
 
     # Send notification to advertiser - one email even if multiple flights finished

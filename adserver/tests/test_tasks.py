@@ -10,6 +10,7 @@ from django_slack.utils import get_backend
 from ..constants import HOUSE_CAMPAIGN
 from ..models import AdImpression
 from ..models import AdvertiserImpression
+from ..models import Flight
 from ..models import GeoImpression
 from ..models import KeywordImpression
 from ..models import Offer
@@ -30,11 +31,13 @@ from ..tasks import daily_update_publishers
 from ..tasks import daily_update_regiontopic
 from ..tasks import daily_update_uplift
 from ..tasks import disable_inactive_publishers
+from ..tasks import notify_of_autorenewing_flights
 from ..tasks import notify_of_completed_flights
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
 from ..tasks import remove_old_report_data
 from ..tasks import update_previous_day_reports
+from ..utils import get_ad_day
 from .common import BaseAdModelsTestCase
 
 
@@ -140,6 +143,32 @@ class TasksTest(BaseAdModelsTestCase):
         FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         FRONT_ENABLED=True,
     )
+    def test_notify_of_autorenewing_flights(self):
+        # Ensure there's a recipient for a wrapup email
+        self.staff_user.advertisers.add(self.advertiser)
+
+        notify_of_autorenewing_flights()
+
+        # Shouldn't be any completed flight messages
+        self.assertEqual(len(mail.outbox), 0)
+
+        self.flight.end_date = get_ad_day().date() + datetime.timedelta(days=7)
+        self.flight.auto_renew = True
+        self.flight.save()
+
+        notify_of_autorenewing_flights()
+
+        # Should be one email for the auto-renewing flight now
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(
+            mail.outbox[0].subject.startswith("Advertising flight renewing")
+        )
+
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
     def test_notify_completed_flights(self):
         # Ensure there's a recipient for a wrapup email
         self.staff_user.advertisers.add(self.advertiser)
@@ -221,6 +250,53 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertTrue(
             "was hard stopped. There was $100.00 value remaining" in messages[0]["text"]
         )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(mail.outbox[0].subject.startswith("Advertising flight wrapup"))
+
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
+    def test_notify_completed_flights_autorenew(self):
+        # Ensure there's a recipient for a wrapup email
+        self.staff_user.advertisers.add(self.advertiser)
+
+        backend = get_backend()
+        backend.reset_messages()
+
+        notify_of_completed_flights()
+        messages = backend.retrieve_messages()
+
+        # Shouldn't be any completed flight messages
+        self.assertEqual(len(messages), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+        # Set this flight to complete and renew
+        self.flight.auto_renew = True
+        self.flight.sold_clicks = 100
+        self.flight.total_views = 1_000
+        self.flight.total_clicks = 100
+        self.flight.hard_stop = True
+        self.flight.start_date = timezone.now() - datetime.timedelta(days=31)
+        self.flight.end_date = timezone.now() - datetime.timedelta(days=1)
+        self.flight.save()
+
+        # Should be just the 1 active flight
+        self.assertEqual(Flight.objects.filter(live=True).count(), 1)
+
+        # This should stop and renew the flight
+        notify_of_completed_flights()
+        self.flight.refresh_from_db()
+
+        # Flight should no longer be live
+        # but the renewed flight is active
+        self.assertFalse(self.flight.live)
+        self.assertEqual(Flight.objects.filter(live=True).count(), 1)
+
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 2)
+        self.assertTrue("was automatically renewed as" in messages[1]["text"])
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(mail.outbox[0].subject.startswith("Advertising flight wrapup"))
 

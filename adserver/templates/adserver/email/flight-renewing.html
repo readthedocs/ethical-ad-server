@@ -1,0 +1,22 @@
+{% extends 'adserver/email/advertiser-base.html' %}
+{% load i18n %}
+
+
+{% block content %}
+<p>{% blocktrans with advertiser_name=advertiser.name %}{{ advertiser_name }} team,{% endblocktrans %}</p>
+
+{% url 'flight_auto_renew' advertiser.slug flight.slug as autorenew_url %}
+<p>
+  {% blocktrans with site_domain=site.domain flight_url=flight.get_absolute_url %}
+
+  Your flight <a href="{{ site_domain }}{{ flight_url }}?ref=email-renewal">{{ flight.name }}</a>
+  is nearly complete and is set to automatically-renew when it does.
+  This is a courtesy email and no action is needed on your part.
+  Your can adjust your automatic renewal settings <a href="{{ site_domain }}{{ autorenew_url }}?ref=email-renewal">here</a>.
+
+  {% endblocktrans %}
+</p>
+
+<p>{% blocktrans with site_name=site.name %}Thanks again for advertising with {{ site_name }}!{% endblocktrans %}</p>
+
+{% endblock content %}

@@ -1,0 +1,36 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Flight auto-renewal' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Flight auto-renewal' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Flight auto-renewal for' %} {{ flight.name }}{% endblock heading %}</h1>
+
+<p>{% blocktrans %}Set your monthly or quarterly flight to renew automatically and receive a 10% discount.<br>You will get a notification a week before your flight completes and another notification when your flight renews.{% endblocktrans %}</p>
+
+<section>
+  <div class="row">
+
+    <div class="col-md-8">
+      {% crispy form %}
+    </div>
+
+  </div>
+</section>
+
+
+{% endblock content_container %}

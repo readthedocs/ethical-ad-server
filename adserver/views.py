@@ -60,6 +60,7 @@ from .constants import VIEWS
 from .forms import AccountForm
 from .forms import AdvertisementCopyForm
 from .forms import AdvertisementForm
+from .forms import FlightAutoRenewForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
 from .forms import FlightRenewForm
@@ -408,6 +409,71 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         )
 
 
+class FlightSetAutoRenewView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
+
+    """Allow advertisers to set a flight to auto-renew or not."""
+
+    form_class = FlightAutoRenewForm
+    model = Flight
+    template_name = "adserver/advertiser/flight-set-autorenew.html"
+
+    def get_object(self, queryset=None):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        return get_object_or_404(
+            Flight,
+            campaign__advertiser=self.advertiser,
+            slug=self.kwargs["flight_slug"],
+        )
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        flight = self.object
+
+        site_domain = generate_absolute_url("")
+        flight_url = f"{site_domain}{flight.get_absolute_url()}"
+        if flight.auto_renew:
+            msg = _("Your flight will automatically renew when complete.")
+            slack_message(
+                "adserver/slack/generic-message.slack",
+                {
+                    "text": f"Flight set to automatically renew: User={self.request.user}, Flight={flight_url}"
+                },
+            )
+        else:
+            msg = _(
+                "Your flight will not automatically renew when complete. "
+                "Your account manager will contact you about renewing."
+            )
+            slack_message(
+                "adserver/slack/generic-message.slack",
+                {
+                    "text": f"Flight Auto-renew canceled: User={self.request.user}, Flight={flight_url}"
+                },
+            )
+
+        messages.success(
+            self.request,
+            msg,
+        )
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"advertiser": self.advertiser, "flight": self.object})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.object.slug,
+            },
+        )
+
+
 class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
     """Renew an existing flight."""
@@ -536,6 +602,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
         site = get_current_site(None)
         site_domain = generate_absolute_url("")
         context = {
+            "site": site,
             "site_domain": site_domain,
             "user": self.request.user,
             "advertiser": self.advertiser,

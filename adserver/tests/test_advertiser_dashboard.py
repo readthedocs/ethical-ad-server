@@ -403,6 +403,72 @@ class TestAdvertiserDashboardViews(TestCase):
         self.flight.refresh_from_db()
         self.assertEqual(self.flight.included_countries, ["US", "CA"])
 
+    def test_flight_autorenew_view(self):
+        """Check that automatic renewals are working."""
+        url = reverse(
+            "flight_auto_renew",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.assertFalse(self.flight.auto_renew)
+
+        # Anonymous - no access
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["location"].startswith("/accounts/login/"))
+
+        user_no_advertisers = get(
+            get_user_model(),
+            name="test user2",
+            email="test2@example.com",
+        )
+
+        # Regular user - no access
+        self.client.force_login(user_no_advertisers)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        # Regular user - access to this advertiser
+        self.client.force_login(self.user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Flight auto-renewal")
+
+        resp = self.client.post(
+            url,
+            data={
+                "auto_renew": True,
+            },
+            follow=True,
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            "Your flight will automatically renew when complete.",
+        )
+        self.flight.refresh_from_db()
+        self.assertTrue(self.flight.auto_renew)
+
+        resp = self.client.post(
+            url,
+            data={
+                "auto_renew": False,
+            },
+            follow=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            "Your flight will not automatically renew when complete. "
+            "Your account manager will contact you about renewing.",
+        )
+        self.flight.refresh_from_db()
+        self.assertFalse(self.flight.auto_renew)
+
     def test_flight_renew_view(self):
         url = reverse(
             "flight_renew",
