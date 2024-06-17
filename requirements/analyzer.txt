@@ -25,3 +25,6 @@ spacy-transformers==1.1.8
 
 # For the ST backend
 sentence-transformers==2.2.2
+
+# Numpy v2 has some breaking changes (for now)
+numpy<2
