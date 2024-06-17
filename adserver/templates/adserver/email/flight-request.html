@@ -1,8 +1,8 @@
-{% extends 'adserver/email/base.html' %}
+{% extends 'adserver/email/advertiser-base.html' %}
 {% load i18n %}
 
 
-{% block body %}
+{% block content %}
 <p>{% blocktrans %}Ads support team,{% endblocktrans %}</p>
 
 {% url "advertiser_main" advertiser.slug as advertiser_url %}
@@ -23,4 +23,4 @@
   {% endfor %}
 </ul>
 
-{% endblock body %}
+{% endblock content %}

@@ -602,6 +602,7 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
         site = get_current_site(None)
         site_domain = generate_absolute_url("")
         context = {
+            "site": site,
             "site_domain": site_domain,
             "user": self.request.user,
             "advertiser": self.advertiser,
