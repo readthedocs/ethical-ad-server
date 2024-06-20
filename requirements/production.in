@@ -1,4 +1,4 @@
--r base.txt
+-r base.in
 
 # Gunicorn is the WSGI server used to run Django
 gunicorn
