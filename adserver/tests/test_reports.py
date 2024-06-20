@@ -151,7 +151,7 @@ class TestReportViews(TestReportsBase):
             url, {"login": self.user.email, "password": "invalid-password"}
         )
         self.assertContains(
-            response, "The e-mail address and/or password you specified are not correct"
+            response, "The email address and/or password you specified are not correct"
         )
 
     def test_home(self):
