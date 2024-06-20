@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.4.0
+--------------
+
+This version upgrades a number of dependencies and also has a migration
+to facilitate automatic renewals, which advertisers can opt-in
+to to get a discount.
+
+:date: June 20, 2024
+
+ * @davidfischer: Update Python dependencies (#882)
+ * @davidfischer: Automatic renewals (#881)
+
+
 Version v5.3.0
 --------------
 
