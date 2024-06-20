@@ -1,0 +1,37 @@
+-r base.txt
+-r testing.txt
+
+# Useful debugging tools
+django-debug-toolbar>=3.2,<4.0
+ipdb
+ipython
+
+# Code formatters
+black
+reorder-python-imports>=2.6.0,<3.0
+
+# For running the black code formatter before commits and other checks
+pre-commit
+
+# Sphinx for docs
+Sphinx >=6.0, <7.0
+sphinx-autobuild
+sphinx-rtd-theme
+sphinxcontrib-httpdomain
+
+# Various testing tools
+pytest
+pytest-django
+prospector
+django-dynamic-fixture
+responses
+
+# Used to keep things up-to-date
+django-upgrade
+
+# Coverage
+coverage
+django_coverage_plugin
+
+# Used to build the ML model
+requests-cache
