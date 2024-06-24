@@ -117,6 +117,8 @@ class BaseAdDecisionBackend:
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")
 
+        self.niche_weights = None
+
     def get_analyzer_keywords(self):
         """Get keywords for this URL from the analyzer."""
         if not self.url:
@@ -362,7 +364,6 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         """
         flights = self.get_candidate_flights()
 
-        self.niche_weights = None
         paid_flights = []
         affiliate_flights = []
         community_flights = []
