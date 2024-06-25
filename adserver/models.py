@@ -1013,8 +1013,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         Testing out return types here as well..
         """
         if not self.targeting_parameters:
-            return float(0)
-        return self.targeting_parameters.get("niche_targeting", float(0))
+            return 0.0
+        return self.targeting_parameters.get("niche_targeting", 0.0)
 
     @property
     def state(self):
@@ -1234,14 +1234,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return True
 
     def show_to_niche_targeting(self, weights):
-        """Filter flights based on distance of niche targeting"""
-
+        """Filter flights based on distance of niche targeting."""
         if self.niche_targeting:
             if self.campaign.advertiser in weights:
                 goal_weight = self.niche_targeting
                 return weights[self.campaign.advertiser] < goal_weight
-            else:
-                return False
+            return False
 
         return True
 
