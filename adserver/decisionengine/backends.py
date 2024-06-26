@@ -410,9 +410,9 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
                 ):
                     if not self.niche_weights:
-                        from ethicalads_ext.embedding.utils import (
+                        from ethicalads_ext.embedding.utils import (  # noqa
                             get_niche_weights,
-                        )  # noqa
+                        )
 
                         self.niche_weights = get_niche_weights(
                             self.url,
