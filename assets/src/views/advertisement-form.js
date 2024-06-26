@@ -6,9 +6,14 @@ function AdvertisementFormViewModel(method) {
   const MAX_PREVIEW_LENGTH = 100;
   const SENSIBLE_MAXIMUM_LENGTH = 1000;
 
+  const viewmodel = this;
+
   this.headline = ko.observable($("#id_headline").val());
   this.content = ko.observable($("#id_content").val());
   this.cta = ko.observable($("#id_cta").val());
+
+  this.image_width = ko.observable();
+  this.image_height = ko.observable();
 
   this.getHeadlinePreview = function () {
     return (this.headline() || "").slice(0, MAX_PREVIEW_LENGTH) + " ";
@@ -30,6 +35,21 @@ function AdvertisementFormViewModel(method) {
     return length;
   };
 
+  this.imageErrors = function () {
+    let image = document.querySelector("#id_image");
+    let expected_width = parseInt(image.getAttribute("data-width"));
+    let expected_height = parseInt(image.getAttribute("data-height"));
+
+    if (expected_width && expected_height && this.image_width() && this.image_height() &&
+        (expected_width != this.image_width() || expected_height != this.image_height())
+    ) {
+      return 'Expected an image sized ' + expected_width + '*' + expected_height + 'px ' +
+             '(it is ' + this.image_width() + '*' + this.image_height() + 'px).';
+    }
+
+    return '';
+  };
+
 
   this.maxLength = function () {
     // The actual max length passed from the backend form
@@ -42,6 +62,29 @@ function AdvertisementFormViewModel(method) {
 
     return max_length;
   };
+
+  // Handle uploading images cleanly including cropping/resizing
+  // and showing the preview
+  const upload = document.getElementById("id_image");
+  upload.addEventListener('change', e => {
+    if (e.target.files.length) {
+      for (const file of upload.files) {
+        // Get the image width/height
+        let imageSrc = URL.createObjectURL(file);
+        let tempImage = new Image();
+        tempImage.onload = function(ev) {
+          viewmodel.image_width(ev.target.width);
+          viewmodel.image_height(ev.target.height);
+        };
+        tempImage.src = imageSrc;
+
+        // Show the image in the ad preview(s)
+        document.querySelectorAll(".advertisement-preview img").forEach(element => {
+          element.src = imageSrc;
+        });
+      }
+    }
+  });
 }
 
 if ($('form#advertisement-update').length > 0) {
