@@ -80,6 +80,7 @@ class TargetingParametersValidator(BaseValidator):
         "str": _("%(word)s must be a string"),
         "percent": _("%(value)s must be a float between [0.0, 1.0]"),
         "days": _(f"%(value)s must be one of {days_values}"),
+        "niche_targeting": _("%(value)s must be a float between [0.0, 1.0]"),
     }
 
     validators = {
@@ -98,6 +99,7 @@ class TargetingParametersValidator(BaseValidator):
         "exclude_domains": "_validate_strs",
         "mobile_traffic": "_validate_mobile",
         "days": "_validate_days",
+        "niche_targeting": "_validate_niche_targeting",
     }
 
     def __init__(self, message=None):
@@ -152,6 +154,12 @@ class TargetingParametersValidator(BaseValidator):
         for value in values:
             if value not in self.days_values:
                 raise ValidationError(self.messages["days"], params={"value": value})
+
+    def _validate_niche_targeting(self, value):
+        if not isinstance(value, float) or value > 1.0 or value < 0:
+            raise ValidationError(
+                self.messages["niche_targeting"], params={"value": value}
+            )
 
     def _validate_regions(self, region_values):
         # Avoid a circular import since the models use these validators
