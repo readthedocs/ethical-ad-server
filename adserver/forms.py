@@ -1093,7 +1093,6 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
                     data_width=ad_type_image_width,
                     data_height=ad_type_image_height,
                 ),
-                HTML("<p data-bind='text: imageErrors()' class='text-danger'></p>"),
                 css_class="my-3",
             ),
             Fieldset(

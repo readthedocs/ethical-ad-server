@@ -7,6 +7,9 @@ $fa-font-path: "~font-awesome/fonts";
 // Import ad styles from the ad client
 @import "~ethical-ad-client/styles.scss";
 
+// $cropper-image-path: '../images';
+@import "~cropperjs/src/index.css";
+
 @import "theme.scss";
 @import "branding.scss";
 @import "utils.scss";
