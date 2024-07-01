@@ -1,0 +1,23 @@
+-r base.in
+
+# Gunicorn is the WSGI server used to run Django
+gunicorn
+
+# Database driver
+psycopg2-binary
+
+# Postgres & Postgres vector support
+pgvector
+
+# Email sending
+django-anymail
+
+# Redis (cache)
+django-redis
+
+# Upload files to cloud storage (Azure)
+django-storages[azure]
+
+# Logging and monitoring
+newrelic
+sentry-sdk

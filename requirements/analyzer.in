@@ -1,0 +1,30 @@
+# Used by the keyword/topic analyzer
+beautifulsoup4
+textacy
+spacy
+# Spacy transformers is listed in the production requirements
+# It installs PyTorch which is hundreds of MB
+langdetect
+# Our use of textacy has an incompatibility with networkx v3
+networkx<3.0
+# Has to be downloaded directly like this (~30MB)
+https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
+
+# Used to parse web pages and get the "main section" of the page
+trafilatura
+
+# Used as a transitive dependency
+# but we need to make sure lxml.html.clean is installed too
+lxml[html_clean]
+
+#######################################################################
+# Machine learning production requirements
+#######################################################################
+# This installs PyTorch which is ~250MB
+spacy-transformers
+
+# For the ST backend
+sentence-transformers
+
+# Numpy v2 has some breaking changes (for now)
+numpy<2

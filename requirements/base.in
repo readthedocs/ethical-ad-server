@@ -1,0 +1,64 @@
+# Django itself and its requirements (pytz)
+Django
+pytz
+
+# Asynchronous tasks
+celery[redis]
+
+# Static files
+whitenoise
+
+# Handling and processing uploaded images
+Pillow
+
+# Our API
+djangorestframework
+djangorestframework-jsonp
+
+# Django helpers
+django-extensions
+
+# Form helpers
+crispy-bootstrap4
+django-crispy-forms
+
+# Authentication
+django-allauth
+
+# Reading Django settings environment variables
+django-environ
+
+# For rate limiting advertising clicks
+django-ratelimit
+
+# For tracking historical changes
+django-simple-history
+
+# Parsing browser user agents
+user-agents
+
+# IP database libraries
+geoip2
+IP2Proxy
+
+# Countries helper used in ad targeting
+django-countries
+
+jsonfield
+bleach
+
+# Security features
+django-enforce-host
+
+# For Slack notifications and possibly for logging errors to Slack
+django-slack
+
+# Stripe for payments
+stripe<=5.0.0
+dj-stripe
+
+# JWT used by Metabase embedding
+PyJWT
+
+# CORS headers
+django-cors-headers
