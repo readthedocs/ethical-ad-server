@@ -1045,6 +1045,14 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         ad_type_max_lengths = [at.max_text_length for at in adtype_queryset] or [0]
         maximum_text_length = min(ad_type_max_lengths)
 
+        # Get the width/height of any ad types (if applicable)
+        ad_type_image_width = (
+            [at.image_width for at in adtype_queryset if at.image_width] or [0]
+        )[0]
+        ad_type_image_height = (
+            [at.image_height for at in adtype_queryset if at.image_height] or [0]
+        )[0]
+
         self.fields["image"].help_text = _(
             "Sized according to the ad type. Need help with manipulating or resizing images? We can <a href='%s'>help</a>."
         ) % (reverse("support") + "?subject=Image+help")
@@ -1080,7 +1088,12 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
                 _("Advertisement display"),
                 "ad_types",
                 "link",
-                "image",
+                Field(
+                    "image",
+                    data_width=ad_type_image_width,
+                    data_height=ad_type_image_height,
+                ),
+                HTML("<p data-bind='text: imageErrors()' class='text-danger'></p>"),
                 css_class="my-3",
             ),
             Fieldset(
