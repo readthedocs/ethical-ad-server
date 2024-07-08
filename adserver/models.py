@@ -2129,6 +2129,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "publisher": publisher,
                 "image_url": self.image.url if self.image else image_preview_url,
                 "link_url": click_url or self.link,
+                "link_domain": get_domain_from_url(self.link),
                 "view_url": view_url,
                 "text_as_html": self.render_links(link=click_url, preview=preview),
                 # Pass keywords and topics so we can be smart with what landing page
