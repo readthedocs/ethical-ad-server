@@ -72,7 +72,7 @@ django-simple-history==3.0.0
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
-djangorestframework==3.15.1
+djangorestframework==3.15.2
     # via -r base.in
 djangorestframework-jsonp==1.0.2
     # via -r base.in
