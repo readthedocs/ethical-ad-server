@@ -5,6 +5,18 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v5.5.0
+--------------
+
+This change adds an image uploading resizer, and implements support in ad targeting for niche targeting.
+
+ * @davidfischer: Add the ad destination domain to template context (#888)
+ * @davidfischer: Add a crop/resize widget for uploading ads (#887)
+ * @davidfischer: Improve image uploading (#886)
+ * @ericholscher: Clarify copy around payouts (#885)
+ * @ericholscher: Handle all requirements with pip-tools (#884)
+ * @ericholscher: Add support for niche targeting (#865)
+
 
 Version v5.4.0
 --------------
