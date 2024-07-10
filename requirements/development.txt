@@ -10,8 +10,6 @@ amqp==5.2.0
     # via kombu
 appdirs==1.4.4
     # via requests-cache
-appnope==0.1.4
-    # via ipython
 asgiref==3.8.1
     # via
     #   django
@@ -51,7 +49,7 @@ cattrs==22.2.0
     # via requests-cache
 celery[redis]==5.3.1
     # via -r base.in
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 cfgv==3.4.0
     # via pre-commit
