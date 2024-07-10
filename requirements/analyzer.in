@@ -2,11 +2,14 @@
 beautifulsoup4
 textacy
 spacy
+
 # Spacy transformers is listed in the production requirements
 # It installs PyTorch which is hundreds of MB
 langdetect
+
 # Our use of textacy has an incompatibility with networkx v3
 networkx<3.0
+
 # Has to be downloaded directly like this (~30MB)
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
 
@@ -20,6 +23,10 @@ lxml[html_clean]
 #######################################################################
 # Machine learning production requirements
 #######################################################################
+
+# Postgres & Postgres vector support
+pgvector
+
 # This installs PyTorch which is ~250MB
 spacy-transformers
 

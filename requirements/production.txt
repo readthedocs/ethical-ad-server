@@ -113,12 +113,8 @@ maxminddb==2.6.2
     # via geoip2
 newrelic==7.4.0.172
     # via -r production.in
-numpy==2.0.0
-    # via pgvector
 packaging==24.1
     # via gunicorn
-pgvector==0.2.5
-    # via -r production.in
 pillow==10.3.0
     # via -r base.in
 prompt-toolkit==3.0.47
