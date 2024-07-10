@@ -51,6 +51,7 @@ filelock==3.15.3
     #   huggingface-hub
     #   torch
     #   transformers
+    #   triton
 fsspec==2024.6.0
     # via
     #   huggingface-hub
@@ -82,7 +83,7 @@ langdetect==1.0.9
     # via -r analyzer.in
 language-data==1.2.0
     # via langcodes
-lxml[html_clean]==5.2.1
+lxml[html-clean,html_clean]==5.2.1
     # via
     #   -r analyzer.in
     #   htmldate
@@ -122,6 +123,37 @@ numpy==1.26.4
     #   thinc
     #   torchvision
     #   transformers
+nvidia-cublas-cu12==12.1.3.1
+    # via
+    #   nvidia-cudnn-cu12
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-cuda-cupti-cu12==12.1.105
+    # via torch
+nvidia-cuda-nvrtc-cu12==12.1.105
+    # via torch
+nvidia-cuda-runtime-cu12==12.1.105
+    # via torch
+nvidia-cudnn-cu12==8.9.2.26
+    # via torch
+nvidia-cufft-cu12==11.0.2.54
+    # via torch
+nvidia-curand-cu12==10.3.2.106
+    # via torch
+nvidia-cusolver-cu12==11.4.5.107
+    # via torch
+nvidia-cusparse-cu12==12.1.0.106
+    # via
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-nccl-cu12==2.20.5
+    # via torch
+nvidia-nvjitlink-cu12==12.5.82
+    # via
+    #   nvidia-cusolver-cu12
+    #   nvidia-cusparse-cu12
+nvidia-nvtx-cu12==12.1.105
+    # via torch
 packaging==24.1
     # via
     #   huggingface-hub
@@ -244,6 +276,8 @@ transformers==4.21.3
     # via
     #   sentence-transformers
     #   spacy-transformers
+triton==2.3.1
+    # via torch
 typer==0.4.2
     # via
     #   pathy

@@ -24,7 +24,8 @@ pytest
 pytest-django
 prospector
 django-dynamic-fixture
-responses
+responses >=0.25.3, <1
+urllib3 >= 2.2.2, <3
 
 # Used to keep things up-to-date
 django-upgrade
@@ -34,4 +35,4 @@ coverage
 django_coverage_plugin
 
 # Used to build the ML model
-requests-cache
+requests-cache >=1.2.1, <2

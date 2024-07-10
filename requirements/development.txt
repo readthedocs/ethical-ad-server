@@ -8,10 +8,6 @@ alabaster==0.7.16
     # via sphinx
 amqp==5.2.0
     # via kombu
-appdirs==1.4.4
-    # via requests-cache
-appnope==0.1.4
-    # via ipython
 asgiref==3.8.1
     # via
     #   django
@@ -138,9 +134,7 @@ docutils==0.18.1
 dodgy==0.2.1
     # via prospector
 exceptiongroup==1.2.1
-    # via
-    #   cattrs
-    #   requests-cache
+    # via cattrs
 executing==2.0.1
     # via stack-data
 filelock==3.15.3
@@ -219,6 +213,7 @@ platformdirs==4.2.2
     # via
     #   black
     #   pylint
+    #   requests-cache
     #   virtualenv
 pluggy==1.5.0
     # via
@@ -289,6 +284,7 @@ pyyaml==6.0.1
     # via
     #   pre-commit
     #   prospector
+    #   responses
 redis==5.0.6
     # via celery
 reorder-python-imports==2.8.0
@@ -301,11 +297,11 @@ requests==2.32.3
     #   responses
     #   sphinx
     #   stripe
-requests-cache==0.9.5
+requests-cache==1.2.1
     # via -r development.in
 requirements-detector==0.7
     # via prospector
-responses==0.20.0
+responses==0.25.3
     # via -r development.in
 setoptconf-tmp==0.3.1
     # via prospector
@@ -392,8 +388,9 @@ ua-parser==0.18.0
     # via user-agents
 url-normalize==1.4.3
     # via requests-cache
-urllib3==1.26.19
+urllib3==2.2.2
     # via
+    #   -r development.in
     #   requests
     #   requests-cache
     #   responses
