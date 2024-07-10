@@ -6,9 +6,6 @@ gunicorn
 # Database driver
 psycopg2-binary
 
-# Postgres & Postgres vector support
-pgvector
-
 # Email sending
 django-anymail
 
