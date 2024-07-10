@@ -10,8 +10,6 @@ amqp==5.2.0
     # via kombu
 appdirs==1.4.4
     # via requests-cache
-appnope==0.1.4
-    # via ipython
 asgiref==3.8.1
     # via
     #   django
@@ -84,7 +82,7 @@ distlib==0.3.8
     # via virtualenv
 dj-stripe==2.8.1
     # via -r base.in
-django==4.2.11
+django==4.2.14
     # via
     #   -r base.in
     #   crispy-bootstrap4
