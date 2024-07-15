@@ -1,4 +1,5 @@
 """Custom validators for the ad server."""
+
 from django.core.exceptions import ValidationError
 from django.core.validators import BaseValidator
 from django.utils.deconstruct import deconstructible
@@ -9,7 +10,6 @@ from .utils import COUNTRY_DICT
 
 @deconstructible
 class TopicPricingValidator(BaseValidator):
-
     """Field validator for per topic pricing for regions."""
 
     message = _("Enter a valid value")
@@ -50,7 +50,6 @@ class TopicPricingValidator(BaseValidator):
 
 @deconstructible
 class TargetingParametersValidator(BaseValidator):
-
     """A Django model and form validator for validating ad targeting."""
 
     message = _("Enter a valid value")
@@ -187,7 +186,6 @@ class TargetingParametersValidator(BaseValidator):
 
 @deconstructible
 class TrafficFillValidator(TargetingParametersValidator):
-
     """
     Validator for traffic fill and cap data.
 

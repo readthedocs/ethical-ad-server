@@ -42,7 +42,6 @@ class TestAccountOverviewView(TestCase):
 
 
 class TestApiTokenMangementViews(TestCase):
-
     """Test the API token management (list, create, delete) views."""
 
     def setUp(self):

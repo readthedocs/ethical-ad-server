@@ -1,4 +1,5 @@
 """Ad server URLs."""
+
 from django.urls import include
 from django.urls import path
 from django.views.generic import TemplateView
@@ -26,9 +27,6 @@ from .views import AdViewTimeProxyView
 from .views import ApiTokenCreateView
 from .views import ApiTokenDeleteView
 from .views import ApiTokenListView
-from .views import dashboard
-from .views import do_not_track
-from .views import do_not_track_policy
 from .views import FlightCreateView
 from .views import FlightDetailView
 from .views import FlightListView
@@ -36,7 +34,6 @@ from .views import FlightRenewView
 from .views import FlightRequestView
 from .views import FlightSetAutoRenewView
 from .views import FlightUpdateView
-from .views import publisher_stripe_oauth_return
 from .views import PublisherAdvertiserReportView
 from .views import PublisherAuthorizedUsersInviteView
 from .views import PublisherAuthorizedUsersRemoveView
@@ -62,6 +59,10 @@ from .views import StaffPublisherReportView
 from .views import StaffRegionReportView
 from .views import StaffRegionTopicReportView
 from .views import StaffUpliftReportView
+from .views import dashboard
+from .views import do_not_track
+from .views import do_not_track_policy
+from .views import publisher_stripe_oauth_return
 
 
 urlpatterns = [

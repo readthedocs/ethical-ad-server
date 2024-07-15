@@ -75,11 +75,11 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         with override_settings(
             STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
         ):
-            with mock.patch("stripe.InvoiceItem.create") as _, mock.patch(
-                "stripe.Invoice.create"
-            ) as invoice_create, mock.patch(
-                "adserver.admin.Invoice.sync_from_stripe_data"
-            ) as _2:
+            with (
+                mock.patch("stripe.InvoiceItem.create") as _,
+                mock.patch("stripe.Invoice.create") as invoice_create,
+                mock.patch("adserver.admin.Invoice.sync_from_stripe_data") as _2,
+            ):
                 # No Stripe ID for this advertiser
                 resp = self.client.post(url, data, follow=True)
                 self.assertContains(resp, "No Stripe customer ID")
@@ -143,11 +143,13 @@ class AdModelAdminTests(BaseAdModelsTestCase):
         with override_settings(
             STRIPE_LIVE_SECRET_KEY="test-12345", STRIPE_ENABLED=True
         ):
-            with mock.patch("stripe.InvoiceItem.create") as _, mock.patch(
-                "stripe.Invoice.create"
-            ) as invoice_create, mock.patch(
-                "adserver.admin.Invoice.sync_from_stripe_data"
-            ) as invoice_object:
+            with (
+                mock.patch("stripe.InvoiceItem.create") as _,
+                mock.patch("stripe.Invoice.create") as invoice_create,
+                mock.patch(
+                    "adserver.admin.Invoice.sync_from_stripe_data"
+                ) as invoice_object,
+            ):
                 resp = self.client.post(url, data, follow=True)
                 self.assertContains(
                     resp,

@@ -1,4 +1,5 @@
 """Run the ML model on the specified URLs."""
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.validators import URLValidator
@@ -37,7 +38,6 @@ class Command(BaseCommand):
 
         keywords = []
         for backend in get_url_analyzer_backends():
-
             backend_instance = backend(url)
             response = backend_instance.fetch()
             if not response:

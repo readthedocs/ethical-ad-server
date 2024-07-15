@@ -1,11 +1,12 @@
 """Views for the administrator actions."""
+
 import logging
 
 import stripe
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import HTML
 from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
-from crispy_forms.layout import HTML
 from crispy_forms.layout import Layout
 from crispy_forms.layout import Submit
 from django import forms
@@ -26,13 +27,13 @@ from ..models import Flight
 from ..models import Publisher
 from ..models import PublisherGroup
 
+
 log = logging.getLogger(__name__)  # noqa
 
 User = get_user_model()
 
 
 class CreateAdvertiserForm(forms.Form):
-
     """
     Creates an advertiser.
 
@@ -187,7 +188,6 @@ class CreateAdvertiserForm(forms.Form):
 
 
 class CreatePublisherForm(forms.Form):
-
     """
     Creates a publisher.
 
@@ -335,7 +335,6 @@ class CreatePublisherForm(forms.Form):
 
 
 class StartPublisherPayoutForm(forms.Form):
-
     """Start a publisher payout with an email."""
 
     # Advertiser information

@@ -7,6 +7,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+
 import json
 import logging
 import os
@@ -15,6 +16,7 @@ import sys
 import environ
 import stripe
 from django.core.exceptions import ImproperlyConfigured
+
 
 log = logging.getLogger(__name__)  # noqa
 

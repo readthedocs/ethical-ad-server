@@ -11,6 +11,7 @@ Only a few environment variables are required:
 - DATABASE_URL
 - SENDGRID_API_KEY
 """
+
 import logging
 import socket
 import ssl

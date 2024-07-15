@@ -1,4 +1,5 @@
 """Ad server views."""
+
 import collections
 import csv
 import logging
@@ -194,7 +195,6 @@ def dashboard(request):
 
 
 class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
-
     """Should be (or redirect to) the main view for an advertiser that they see when first logging in."""
 
     advertiser = None
@@ -271,7 +271,6 @@ class AdvertiserMainView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView)
 
 
 class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
-
     """List view for advertiser flights."""
 
     model = Flight
@@ -294,7 +293,6 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
 
 
 class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
-
     """Detail view for flights."""
 
     model = Flight
@@ -325,7 +323,6 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
 
 
 class FlightCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
-
     """Create a new flight for an advertiser."""
 
     form_class = FlightCreateForm
@@ -368,7 +365,6 @@ class FlightCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
 
 class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-
     """Update view for flights."""
 
     form_class = FlightForm
@@ -410,7 +406,6 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
 
 class FlightSetAutoRenewView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
-
     """Allow advertisers to set a flight to auto-renew or not."""
 
     form_class = FlightAutoRenewForm
@@ -475,7 +470,6 @@ class FlightSetAutoRenewView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateV
 
 
 class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
-
     """Renew an existing flight."""
 
     form_class = FlightRenewForm
@@ -522,7 +516,6 @@ class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
 
 class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
-
     """Create a new flight for an advertiser."""
 
     form_class = FlightRequestForm
@@ -638,7 +631,6 @@ class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
 
 
 class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
-
     """Detail view for advertisements."""
 
     model = Advertisement
@@ -666,7 +658,6 @@ class AdvertisementUpdateView(
     AdvertisementValidateLinkMixin,
     UpdateView,
 ):
-
     """Update view for advertisements."""
 
     form_class = AdvertisementForm
@@ -721,7 +712,6 @@ class AdvertisementCreateView(
     AdvertisementValidateLinkMixin,
     CreateView,
 ):
-
     """Create view for advertisements."""
 
     form_class = AdvertisementForm
@@ -777,7 +767,6 @@ class AdvertisementCreateView(
 
 
 class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, FormView):
-
     """Create a copy of an existing ad."""
 
     form_class = AdvertisementCopyForm
@@ -834,7 +823,6 @@ class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, FormView
 
 
 class BaseProxyView(View):
-
     """A base view for proxying ad views and clicks and collecting relevant metrics on clicks and views."""
 
     log_level = logging.DEBUG
@@ -1024,7 +1012,6 @@ class BaseProxyView(View):
 
 
 class AdViewProxyView(BaseProxyView):
-
     """Track an ad view."""
 
     impression_type = VIEWS
@@ -1037,7 +1024,6 @@ class AdViewProxyView(BaseProxyView):
 
 
 class AdClickProxyView(BaseProxyView):
-
     """Track an ad click and redirect to the ad destination link."""
 
     impression_type = CLICKS
@@ -1073,7 +1059,6 @@ class AdClickProxyView(BaseProxyView):
 
 
 class AdViewTimeProxyView(AdViewProxyView):
-
     """Track the time an ad was viewed."""
 
     error_message = "Invalid view time"
@@ -1102,7 +1087,6 @@ class AdViewTimeProxyView(AdViewProxyView):
 
 
 class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
-
     """
     A base report that other reports can extend.
 
@@ -1229,7 +1213,6 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
 
 class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
-
     """A report for one advertiser."""
 
     export_view = "advertiser_report_export"
@@ -1266,7 +1249,6 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
 
 
 class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
-
     """A report for one flight for an advertiser."""
 
     export_view = "flight_report_export"
@@ -1319,7 +1301,6 @@ class AdvertiserFlightReportView(AdvertiserAccessMixin, BaseReportView):
 
 
 class AdvertiserGeoReportView(AdvertiserAccessMixin, BaseReportView):
-
     """A report for an advertiser broken down by geo."""
 
     export_view = "advertiser_geo_report_export"
@@ -1345,7 +1326,6 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, BaseReportView):
 
 
 class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
-
     """A report for an advertiser broken down by publishers where the advertisers ads are shown."""
 
     export_view = "advertiser_publisher_report_export"
@@ -1415,7 +1395,6 @@ class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
 class AdvertiserKeywordReportView(
     AdvertiserAccessMixin, GeoReportMixin, BaseReportView
 ):
-
     """A report for an advertiser broken down by geo."""
 
     template_name = "adserver/reports/advertiser-keyword.html"
@@ -1439,7 +1418,6 @@ class AdvertiserKeywordReportView(
 
 
 class AdvertiserTopicReportView(AdvertiserAccessMixin, BaseReportView):
-
     """A report for an advertiser broken down by topic."""
 
     template_name = "adserver/reports/advertiser-topic.html"
@@ -1463,7 +1441,6 @@ class AdvertiserTopicReportView(AdvertiserAccessMixin, BaseReportView):
 
 
 class StaffAdvertiserReportView(BaseReportView):
-
     """A report aggregating all advertisers."""
 
     impression_model = AdvertiserImpression
@@ -1533,7 +1510,6 @@ class StaffAdvertiserReportView(BaseReportView):
 class AdvertiserAuthorizedUsersView(
     AdvertiserAccessMixin, UserPassesTestMixin, ListView
 ):
-
     """Authorized users for an advertiser."""
 
     context_object_name = "users"
@@ -1555,7 +1531,6 @@ class AdvertiserAuthorizedUsersView(
 class AdvertiserAuthorizedUsersInviteView(
     AdvertiserAccessMixin, UserPassesTestMixin, CreateView
 ):
-
     """Invite additional authorized users for an advertiser."""
 
     form_class = InviteUserForm
@@ -1592,7 +1567,6 @@ class AdvertiserAuthorizedUsersInviteView(
 class AdvertiserAuthorizedUsersRemoveView(
     AdvertiserAccessMixin, UserPassesTestMixin, TemplateView
 ):
-
     """
     Remove authorized users for an advertiser.
 
@@ -1634,7 +1608,6 @@ class AdvertiserAuthorizedUsersRemoveView(
 
 
 class AdvertiserStripePortalView(AdvertiserAccessMixin, UserPassesTestMixin, View):
-
     """
     Redirect advertiser to the stripe portal where they can download invoices.
 
@@ -1673,7 +1646,6 @@ class AdvertiserStripePortalView(AdvertiserAccessMixin, UserPassesTestMixin, Vie
 
 
 class PublisherReportView(PublisherAccessMixin, BaseReportView):
-
     """A report for a single publisher."""
 
     export_view = "publisher_report_export"
@@ -1712,7 +1684,6 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
 
 class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
-
     """A report for a single publisher broken down by placement (Div/ad type)."""
 
     export_view = "publisher_placement_report_export"
@@ -1781,7 +1752,6 @@ class PublisherPlacementReportView(PublisherAccessMixin, BaseReportView):
 
 
 class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
-
     """A report for a single publisher across countries."""
 
     template_name = "adserver/reports/publisher-geo.html"
@@ -1805,7 +1775,6 @@ class PublisherGeoReportView(PublisherAccessMixin, BaseReportView):
 
 
 class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
-
     """Show top advertisers for a publisher."""
 
     export_view = "publisher_advertiser_report_export"
@@ -1875,7 +1844,6 @@ class PublisherAdvertiserReportView(PublisherAccessMixin, BaseReportView):
 
 
 class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
-
     """A keyword report for a single publisher (generated from Metabase)."""
 
     template_name = "adserver/reports/publisher-keyword.html"
@@ -1899,7 +1867,6 @@ class PublisherKeywordReportView(PublisherAccessMixin, BaseReportView):
 
 
 class PublisherEmbedView(PublisherAccessMixin, UserPassesTestMixin, TemplateView):
-
     """Advertising embed code for a publisher."""
 
     template_name = "adserver/publisher/embed.html"
@@ -1935,7 +1902,6 @@ class FallbackAdsMixin:
 class PublisherFallbackAdsView(
     FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, DetailView
 ):
-
     """Displays a list of fallback ads."""
 
     model = Flight
@@ -1979,7 +1945,6 @@ class PublisherFallbackAdsView(
 class PublisherFallbackAdsDetailView(
     FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, DetailView
 ):
-
     """Displays a single fallback ad."""
 
     model = Advertisement
@@ -2001,7 +1966,6 @@ class PublisherFallbackAdsDetailView(
 class PublisherFallbackAdsUpdateView(
     FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, UpdateView
 ):
-
     """Update a fallback ad."""
 
     form_class = AdvertisementForm
@@ -2045,7 +2009,6 @@ class PublisherFallbackAdsUpdateView(
 class PublisherFallbackAdsCreateView(
     FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, CreateView
 ):
-
     """Create a fallback ad."""
 
     form_class = AdvertisementForm
@@ -2091,7 +2054,6 @@ class PublisherFallbackAdsCreateView(
 
 
 class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):
-
     """Settings configuration for a publisher."""
 
     form_class = PublisherSettingsForm
@@ -2124,7 +2086,6 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
 class PublisherStripeOauthConnectView(
     PublisherAccessMixin, UserPassesTestMixin, RedirectView
 ):
-
     """Redirect the user to the correct Stripe connect URL for the publisher."""
 
     model = Publisher
@@ -2226,7 +2187,6 @@ def publisher_stripe_oauth_return(request):
 
 
 class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListView):
-
     """List of publisher payouts."""
 
     model = PublisherPayout
@@ -2268,7 +2228,6 @@ class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListVie
 
 
 class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
-
     """Details of a specific publisher payout."""
 
     template_name = "adserver/publisher/payout.html"
@@ -2289,7 +2248,6 @@ class PublisherPayoutDetailView(PublisherAccessMixin, UserPassesTestMixin, Detai
 
 
 class StaffPublisherReportView(BaseReportView):
-
     """A report for all publishers."""
 
     # Report should always show our revenue for all publishers
@@ -2412,7 +2370,6 @@ class StaffPublisherReportView(BaseReportView):
 
 
 class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, ListView):
-
     """Authorized users for a publisher."""
 
     context_object_name = "users"
@@ -2434,7 +2391,6 @@ class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, Li
 class PublisherAuthorizedUsersInviteView(
     PublisherAccessMixin, UserPassesTestMixin, CreateView
 ):
-
     """Invite additional authorized users for a publisher."""
 
     form_class = InviteUserForm
@@ -2471,7 +2427,6 @@ class PublisherAuthorizedUsersInviteView(
 class PublisherAuthorizedUsersRemoveView(
     PublisherAccessMixin, UserPassesTestMixin, TemplateView
 ):
-
     """
     Remove authorized users for a publisher.
 
@@ -2513,7 +2468,6 @@ class PublisherAuthorizedUsersRemoveView(
 
 
 class StaffUpliftReportView(AllReportMixin, BaseReportView):
-
     """An uplift report for all publishers."""
 
     export_view = "publisher_uplift_report_export"
@@ -2525,7 +2479,6 @@ class StaffUpliftReportView(AllReportMixin, BaseReportView):
 
 
 class StaffKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView):
-
     """A keyword report for all publishers."""
 
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
@@ -2536,7 +2489,6 @@ class StaffKeywordReportView(AllReportMixin, KeywordReportMixin, BaseReportView)
 
 
 class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
-
     """A geo report for all publishers."""
 
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "our_revenue"]
@@ -2547,7 +2499,6 @@ class StaffGeoReportView(AllReportMixin, GeoReportMixin, BaseReportView):
 
 
 class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
-
     """An region & topic report for all publishers."""
 
     fieldnames = [
@@ -2569,7 +2520,6 @@ class StaffRegionTopicReportView(AllReportMixin, BaseReportView):
 
 
 class StaffRegionReportView(AllReportMixin, BaseReportView):
-
     """An region report for all publishers."""
 
     export_view = "staff_region_report_export"
@@ -2604,7 +2554,6 @@ class StaffRegionReportView(AllReportMixin, BaseReportView):
 
 
 class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
-
     """Should be (or redirect to) the main view for a publisher that they see when first logging in."""
 
     publisher = None
@@ -2662,7 +2611,6 @@ class PublisherMainView(PublisherAccessMixin, UserPassesTestMixin, DetailView):
 
 
 class AccountOverviewView(LoginRequiredMixin, UpdateView):
-
     """Manage account name and other user settings."""
 
     form_class = AccountForm
@@ -2681,7 +2629,6 @@ class AccountOverviewView(LoginRequiredMixin, UpdateView):
 
 
 class AccountSupportView(LoginRequiredMixin, FormView):
-
     """
     View for submitting a support request.
 
@@ -2724,7 +2671,6 @@ class AccountSupportView(LoginRequiredMixin, FormView):
 
 
 class ApiTokenMixin(LoginRequiredMixin):
-
     """User token to access the ad server API."""
 
     model = Token
@@ -2743,7 +2689,6 @@ class ApiTokenListView(ApiTokenMixin, ListView):
 
 
 class ApiTokenCreateView(ApiTokenMixin, CreateView):
-
     """View to generate a Token object for the logged in User."""
 
     http_method_names = ["post"]
@@ -2758,7 +2703,6 @@ class ApiTokenCreateView(ApiTokenMixin, CreateView):
 
 
 class ApiTokenDeleteView(ApiTokenMixin, DeleteView):
-
     """View to delete/revoke the current Token of the logged in User."""
 
     http_method_names = ["post"]

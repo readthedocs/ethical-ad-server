@@ -3,6 +3,7 @@ Default settings for the Front email backend.
 
 These can be overridden when initializing the backend.
 """
+
 from django.conf import settings
 
 

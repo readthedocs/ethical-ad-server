@@ -1,4 +1,5 @@
 """Helper utilities for the adserver analyzer."""
+
 import re
 from urllib import parse as urlparse
 

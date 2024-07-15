@@ -1,4 +1,5 @@
 """Custom template tags for advertisements."""
+
 from django import template
 from django.utils.safestring import mark_safe
 

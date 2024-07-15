@@ -13,6 +13,7 @@ This command is run (on the ad server):
 
     $ ./manage.py rtdimport ads-data.json
 """
+
 import argparse
 import json
 import os
@@ -39,7 +40,6 @@ from ...models import Publisher
 
 
 class Command(BaseCommand):
-
     """Management command to import advertising DB data from a Read the Docs data dump."""
 
     help = "Import advertising DB data from a Read the Docs data dump"

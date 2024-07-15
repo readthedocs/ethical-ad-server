@@ -1,4 +1,5 @@
 """Django admin configuration for the ad server."""
+
 from datetime import timedelta
 
 import stripe
@@ -46,7 +47,6 @@ from .utils import calculate_ecpm
 
 
 class RemoveDeleteMixin:
-
     """Removes the ability to delete this model from the admin."""
 
     def get_actions(self, request):
@@ -55,14 +55,11 @@ class RemoveDeleteMixin:
             del actions["delete_selected"]  # pragma: no cover
         return actions
 
-    def has_delete_permission(
-        self, request, obj=None
-    ):  # pylint: disable=unused-argument
+    def has_delete_permission(self, request, obj=None):  # pylint: disable=unused-argument
         return False
 
 
 class KeywordInline(admin.TabularInline):
-
     """For inlining the keywords on the topic admin."""
 
     model = Keyword.topics.through
@@ -111,7 +108,6 @@ class CountryRegionAdmin(admin.ModelAdmin):
 
 
 class CountryInline(admin.TabularInline):
-
     """For inlining the countries on the region admin."""
 
     model = CountryRegion
@@ -147,7 +143,6 @@ class RegionAdmin(admin.ModelAdmin):
 
 @admin.register(Publisher)
 class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
-
     """Django admin configuration for publishers."""
 
     list_display = (
@@ -196,7 +191,6 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
 
 class CampaignInline(admin.TabularInline):
-
     """For inlining the campaigns on the advertiser admin."""
 
     model = Campaign
@@ -219,7 +213,6 @@ class CampaignInline(admin.TabularInline):
 
 @admin.register(Advertiser)
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
-
     """Django admin configuration for advertisers."""
 
     actions = ["action_create_draft_invoice"]
@@ -314,7 +307,6 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
 @admin.register(AdType)
 class AdTypeAdmin(SimpleHistoryAdmin):
-
     """Django admin configuration for ad types."""
 
     model = AdType
@@ -335,7 +327,6 @@ class AdTypeAdmin(SimpleHistoryAdmin):
 
 
 class AdvertisementMixin:
-
     """Used by the AdvertisementInline and the AdvertisementAdmin."""
 
     MAX_IMAGE_WIDTH = 120
@@ -367,7 +358,6 @@ class AdvertisementMixin:
 
 @admin.register(Advertisement)
 class AdvertisementAdmin(RemoveDeleteMixin, AdvertisementMixin, SimpleHistoryAdmin):
-
     """Django admin configuration for advertisements."""
 
     form = AdvertisementAdminForm
@@ -430,7 +420,6 @@ class CPCCPMFilter(admin.SimpleListFilter):
 
 
 class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
-
     """An inline for displaying non-editable list of advertisements."""
 
     model = Advertisement
@@ -482,7 +471,6 @@ class AdvertisementsInline(AdvertisementMixin, admin.TabularInline):
 
 
 class InvoiceInline(admin.TabularInline):
-
     """List of Stripe invoices for a flight."""
 
     model = Flight.invoices.through
@@ -513,7 +501,6 @@ class InvoiceInline(admin.TabularInline):
 
 
 class FlightMixin:
-
     """Used by the FlightAdmin and FlightInline."""
 
     def num_ads(self, obj):
@@ -537,7 +524,6 @@ class FlightMixin:
 
 @admin.register(Flight)
 class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
-
     """Django admin admin configuration for ad Flights."""
 
     model = Flight
@@ -720,7 +706,6 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
 
 class FlightsInline(FlightMixin, admin.TabularInline):
-
     """An inline for displaying non-editable list of flights."""
 
     model = Flight
@@ -750,7 +735,6 @@ class FlightsInline(FlightMixin, admin.TabularInline):
 
 @admin.register(Campaign)
 class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
-
     """Django admin configuration for ad campaigns."""
 
     model = Campaign
@@ -798,7 +782,6 @@ class CampaignAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
 
 class ImpressionsAdmin(RemoveDeleteMixin, admin.ModelAdmin):
-
     """Django admin configuration for the ad impressions."""
 
     readonly_fields = (
@@ -905,7 +888,6 @@ class KeywordImpressionAdmin(ImpressionsAdmin):
 
 
 class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
-
     """Django admin configuration for the base class of ad views and clicks."""
 
     readonly_fields = (
@@ -964,7 +946,6 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
 
 @admin.register(Offer)
 class OfferAdmin(AdBaseAdmin):
-
     """Django admin configuration for ad offers."""
 
     model = Offer
@@ -1024,7 +1005,6 @@ class OfferAdmin(AdBaseAdmin):
 
 @admin.register(Click)
 class ClickAdmin(AdBaseAdmin):
-
     """Django admin configuration for ad clicks."""
 
     model = Click
@@ -1032,7 +1012,6 @@ class ClickAdmin(AdBaseAdmin):
 
 @admin.register(View)
 class ViewAdmin(AdBaseAdmin):
-
     """Django admin configuration for ad views."""
 
     model = View

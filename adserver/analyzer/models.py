@@ -1,4 +1,5 @@
 """Stored results of offline content targeting analysis."""
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel
@@ -10,7 +11,6 @@ from .validators import KeywordsValidator
 
 
 class BaseAnalyzedUrl(TimeStampedModel):
-
     url = models.URLField(
         db_index=True,
         max_length=1024,
