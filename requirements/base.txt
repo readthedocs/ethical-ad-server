@@ -60,7 +60,7 @@ django==5.0.7
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth==0.63.4
+django-allauth==0.63.6
     # via -r base.in
 django-cors-headers==4.4.0
     # via -r base.in
@@ -76,7 +76,7 @@ django-environ==0.11.2
     # via -r base.in
 django-extensions==3.2.3
     # via -r base.in
-django-ratelimit==4.1.0
+django-ratelimit==3.0.1
     # via -r base.in
 django-simple-history==3.7.0
     # via -r base.in
@@ -129,7 +129,7 @@ six==1.16.0
     # via
     #   bleach
     #   python-dateutil
-sqlparse==0.5.0
+sqlparse==0.5.1
     # via django
 stripe==4.2.0
     # via

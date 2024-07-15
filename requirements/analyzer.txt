@@ -10,7 +10,7 @@ beautifulsoup4==4.12.3
     # via -r analyzer.in
 blis==0.7.11
     # via thinc
-cachetools==5.3.3
+cachetools==5.4.0
     # via textacy
 catalogue==2.0.10
     # via
@@ -53,6 +53,7 @@ filelock==3.15.4
     #   huggingface-hub
     #   torch
     #   transformers
+    #   triton
 floret==0.10.5
     # via textacy
 fsspec==2024.6.1
@@ -86,7 +87,7 @@ langdetect==1.0.9
     # via -r analyzer.in
 language-data==1.2.0
     # via langcodes
-lxml[html_clean]==5.2.2
+lxml[html-clean,html_clean]==5.2.2
     # via
     #   -r analyzer.in
     #   htmldate
@@ -139,7 +140,7 @@ pathlib-abc==0.1.1
     # via pathy
 pathy==0.11.0
     # via spacy
-pgvector==0.3.0
+pgvector==0.3.1
     # via -r analyzer.in
 pillow==10.4.0
     # via torchvision
@@ -257,6 +258,8 @@ transformers==4.26.1
     # via
     #   sentence-transformers
     #   spacy-transformers
+triton==2.3.1
+    # via torch
 typer==0.7.0
     # via
     #   pathy

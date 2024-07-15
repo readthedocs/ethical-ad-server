@@ -29,7 +29,7 @@ django-allauth
 django-environ
 
 # For rate limiting advertising clicks
-django-ratelimit
+django-ratelimit < 4
 
 # For tracking historical changes
 django-simple-history
