@@ -142,7 +142,6 @@ class TestReportsBase(TestCase):
 
 
 class TestReportViews(TestReportsBase):
-
     """These are the HTML reports that logged-in advertisers and publishers see."""
 
     def test_login(self):
@@ -1211,13 +1210,12 @@ class TestReportClasses(TestReportsBase):
 
 class TestReportTasks(TestReportsBase):
     def test_index_all_reports(self):
-        with patch("adserver.tasks.daily_update_geos") as patched_geos, patch(
-            "adserver.tasks.daily_update_keywords"
-        ) as patched_keywords, patch(
-            "adserver.tasks.daily_update_placements"
-        ) as patched_placements, patch(
-            "adserver.tasks.daily_update_uplift"
-        ) as patched_uplift:
+        with (
+            patch("adserver.tasks.daily_update_geos") as patched_geos,
+            patch("adserver.tasks.daily_update_keywords") as patched_keywords,
+            patch("adserver.tasks.daily_update_placements") as patched_placements,
+            patch("adserver.tasks.daily_update_uplift") as patched_uplift,
+        ):
             update_previous_day_reports()
 
             yesterday = get_ad_day() - datetime.timedelta(days=1)

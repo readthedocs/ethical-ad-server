@@ -1,4 +1,5 @@
 """API Urls for the ad server."""
+
 from django.conf import settings
 from django.urls import path
 from rest_framework import routers

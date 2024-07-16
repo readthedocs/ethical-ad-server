@@ -1,4 +1,5 @@
 """Ad server utilities."""
+
 import hashlib
 import ipaddress
 import logging
@@ -43,7 +44,6 @@ COUNTRY_DICT["T1"] = "Tor"
 
 @dataclass
 class GeolocationData:
-
     """Dataclass for (temporarily) storing geolocation information for ad viewers."""
 
     country: str = (

@@ -1,4 +1,5 @@
 """Ad server middleware."""
+
 import ipaddress
 import logging
 import socket
@@ -13,7 +14,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class ServerInfoMiddleware:
-
     """Sets informational headers for staff users or in DEBUG mode."""
 
     def __init__(self, get_response):
@@ -32,7 +32,6 @@ class ServerInfoMiddleware:
 
 
 class IpAddressMiddleware:
-
     """
     Sets the IP address of the user onto the request object.
 
@@ -60,7 +59,6 @@ class IpAddressMiddleware:
 
 
 class XForwardedForMiddleware(IpAddressMiddleware):
-
     """
     Sets request.ip_address with the client's IP from x-forwarded-for.
 
@@ -104,7 +102,6 @@ class XForwardedForMiddleware(IpAddressMiddleware):
 
 
 class CloudflareIpAddressMiddleware(IpAddressMiddleware):
-
     """
     Sets request.ip_address from Cloudflare headers.
 
@@ -139,7 +136,6 @@ class CloudflareIpAddressMiddleware(IpAddressMiddleware):
 
 
 class GeoIpMiddleware:
-
     """
     Sets a request.geo dictionary onto the request object.
 
@@ -170,7 +166,6 @@ class GeoIpMiddleware:
 
 
 class CloudflareGeoIpMiddleware(GeoIpMiddleware):
-
     """
     Sets request.geo from Cloudflare headers.
 
@@ -206,7 +201,6 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
 
 
 class GeoIpDatabaseMiddleware(GeoIpMiddleware):
-
     """Sets request.geo using a GeoIP database."""
 
     PROVIDER_NAME = "GeoIP DB"

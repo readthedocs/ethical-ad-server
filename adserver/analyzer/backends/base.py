@@ -1,4 +1,5 @@
 """Base class for all topic/keyword analyzers."""
+
 import logging
 
 import requests

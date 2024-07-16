@@ -8,6 +8,7 @@ This management command archives old offers to CSV files, zips them,
 can copy them to remote storage (settings.BACKUPS_STORAGE)
 and with a passed flag can delete the archives from the DB.
 """
+
 import datetime
 import subprocess
 import tempfile
@@ -23,7 +24,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Command(BaseCommand):
-
     """Management command to help archive offers."""
 
     help = "Archives offers in CSV form from the database to files: one per day."

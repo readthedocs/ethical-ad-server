@@ -3,6 +3,7 @@ Custom permissions for our API.
 
 https://www.django-rest-framework.org/api-guide/permissions/#custom-permissions
 """
+
 from rest_framework import permissions
 
 from ..models import Advertiser
@@ -10,7 +11,6 @@ from ..models import Publisher
 
 
 class AdvertiserPermission(permissions.IsAuthenticated):
-
     """
     Checks whether the authenticated user is associated with the given advertiser.
 
@@ -30,7 +30,6 @@ class AdvertiserPermission(permissions.IsAuthenticated):
 
 
 class PublisherPermission(permissions.IsAuthenticated):
-
     """
     Checks whether the authenticated user is associated with the given publisher.
 

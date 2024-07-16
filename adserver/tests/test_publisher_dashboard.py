@@ -22,7 +22,6 @@ from ..tasks import daily_update_publishers
 
 
 class TestPublisherDashboardViews(TestCase):
-
     """Test the publisher dashboard interface for configuring publishers and payouts."""
 
     def setUp(self):
@@ -510,7 +509,6 @@ class TestPublisherDashboardViews(TestCase):
 
 
 class TestPublisherFallbackAdsViews(TestCase):
-
     """Test fallback ads for the publisher."""
 
     def setUp(self):

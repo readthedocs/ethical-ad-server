@@ -1,4 +1,5 @@
 """Naive keyword analyzer that is simply based on keyword counts."""
+
 import collections
 
 from bs4 import BeautifulSoup
@@ -8,7 +9,6 @@ from .base import BaseAnalyzerBackend
 
 
 class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
-
     """
     A very naive keyword analyzer.
 

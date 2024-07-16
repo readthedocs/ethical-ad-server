@@ -399,7 +399,6 @@ class DecisionEngineTests(TestCase):
 
         # Fun times with dates
         with unittest.mock.patch("adserver.decisionengine.backends.timezone") as tz:
-
             tz.now.return_value = datetime.datetime(2020, 6, 1, 0, 0, 0)  # Monday
 
             # Monday targeting works
@@ -539,7 +538,6 @@ class DecisionEngineTests(TestCase):
                 total = flight1_prob + flight2_prob
 
                 with unittest.mock.patch("random.randint") as randint:
-
                     randint.return_value = -1
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
                     self.assertEqual(ad, None)

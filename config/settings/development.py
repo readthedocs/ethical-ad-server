@@ -1,8 +1,10 @@
 """Development settings."""
+
 from celery.schedules import crontab
 
 from .base import *  # noqa
 from .base import env
+
 
 # Allow to use weak passwords for development
 AUTH_PASSWORD_VALIDATORS = []

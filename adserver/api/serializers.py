@@ -1,4 +1,5 @@
 """De-serializers for the ad server APIs."""
+
 import logging
 
 from django.core.exceptions import ValidationError
@@ -17,7 +18,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class AdPlacementSerializer(serializers.Serializer):
-
     """
     De-serializes incoming possible ad placements for the API.
 
@@ -40,7 +40,6 @@ class AdPlacementSerializer(serializers.Serializer):
 
 
 class AdDecisionSerializer(serializers.Serializer):
-
     """De-serializes incoming possibilities for the ad API."""
 
     # Required fields

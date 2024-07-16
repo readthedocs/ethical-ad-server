@@ -1,4 +1,5 @@
 """Tasks for analyzing URLs for topics and keywords."""
+
 import datetime
 import logging
 
@@ -8,6 +9,8 @@ from django.core.validators import URLValidator
 from django.db import models
 from django.utils import timezone
 
+from config.celery_app import app
+
 from ..constants import PAID
 from ..models import Offer
 from ..models import Publisher
@@ -15,7 +18,6 @@ from ..utils import get_day
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backends
 from .utils import normalize_url
-from config.celery_app import app
 
 
 log = logging.getLogger(__name__)  # noqa

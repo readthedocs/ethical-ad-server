@@ -1,4 +1,5 @@
 """Advertising performance reports displayed to advertisers, publishers, and staff."""
+
 import collections
 import datetime
 import logging
@@ -23,7 +24,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class BaseReport:
-
     """Base report which other reports are extended from."""
 
     # Model of the aggregated impression class
@@ -90,7 +90,6 @@ class BaseReport:
 
 
 class AdvertiserReport(BaseReport):
-
     """Report for showing daily ad performance for an advertiser."""
 
     model = AdImpression
@@ -157,7 +156,6 @@ class AdvertiserReport(BaseReport):
 
 
 class OptimizedAdvertiserReport(AdvertiserReport):
-
     """A report using the optimized AdvertiserImpression index showing daily ad performance for an advertiser."""
 
     model = AdvertiserImpression
@@ -167,7 +165,6 @@ class OptimizedAdvertiserReport(AdvertiserReport):
 
 
 class AdvertiserGeoReport(AdvertiserReport):
-
     """Report to breakdown advertiser performance by country."""
 
     model = GeoImpression
@@ -182,7 +179,6 @@ class AdvertiserGeoReport(AdvertiserReport):
 
 
 class AdvertiserPublisherReport(AdvertiserReport):
-
     """Report to breakdown advertiser performance by publisher."""
 
     model = AdImpression
@@ -192,7 +188,6 @@ class AdvertiserPublisherReport(AdvertiserReport):
 
 
 class PublisherReport(BaseReport):
-
     """Report for showing daily ad performance for a publisher."""
 
     model = AdImpression
@@ -334,7 +329,6 @@ class PublisherReport(BaseReport):
 
 
 class OptimizedPublisherPaidReport(PublisherReport):
-
     """
     A report using the optimized PublisherPaidImpression index showing daily ad performance for a publisher.
 
@@ -348,7 +342,6 @@ class OptimizedPublisherPaidReport(PublisherReport):
 
 
 class PublisherGeoReport(PublisherReport):
-
     """Report to breakdown publisher performance by country."""
 
     model = GeoImpression
@@ -363,7 +356,6 @@ class PublisherGeoReport(PublisherReport):
 
 
 class PublisherRegionReport(PublisherReport):
-
     """Report to breakdown publisher performance by country."""
 
     model = RegionImpression
@@ -377,7 +369,6 @@ class PublisherRegionReport(PublisherReport):
 
 
 class PublisherPlacementReport(PublisherReport):
-
     """Report to breakdown publisher performance by placement (<div>'s, ad type)."""
 
     model = PlacementImpression
@@ -386,7 +377,6 @@ class PublisherPlacementReport(PublisherReport):
 
 
 class PublisherAdvertiserReport(PublisherReport):
-
     """Report to breakdown publisher performance by advertiser."""
 
     model = AdImpression
@@ -402,7 +392,6 @@ class PublisherAdvertiserReport(PublisherReport):
 
 
 class PublisherKeywordReport(PublisherReport):
-
     """Report to breakdown publisher performance by keyword."""
 
     model = KeywordImpression
@@ -411,7 +400,6 @@ class PublisherKeywordReport(PublisherReport):
 
 
 class PublisherUpliftReport(PublisherReport):
-
     """Report to breakdown publisher performance by keyword."""
 
     model = UpliftImpression
@@ -420,7 +408,6 @@ class PublisherUpliftReport(PublisherReport):
 
 
 class PublisherRegionTopicReport(PublisherReport):
-
     """Report to breakdown publisher performance by region & topic."""
 
     model = RegionTopicImpression

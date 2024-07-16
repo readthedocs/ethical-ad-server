@@ -1,4 +1,5 @@
 """Downloads and updates various IP databases used for geolocation and proxy detection."""
+
 import argparse
 import io
 import os
