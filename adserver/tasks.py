@@ -1,4 +1,5 @@
 """Celery tasks for the ad server."""
+
 import datetime
 import logging
 from collections import defaultdict
@@ -18,6 +19,8 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
 from simple_history.utils import update_change_reason
+
+from config.celery_app import app
 
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
@@ -46,7 +49,7 @@ from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_day
-from config.celery_app import app
+
 
 log = logging.getLogger(__name__)  # noqa
 
@@ -124,9 +127,9 @@ def daily_update_geos(day=None, geo=True, region=True):
 
             publisher = values["publisher"]
             advertisement = values["advertisement"]
-            topic_mapping[f"{advertisement}:{publisher}:{_region}"][
-                "decisions"
-            ] += values["total_decisions"]
+            topic_mapping[f"{advertisement}:{publisher}:{_region}"]["decisions"] += (
+                values["total_decisions"]
+            )
             topic_mapping[f"{advertisement}:{publisher}:{_region}"]["offers"] += values[
                 "total_offers"
             ]
@@ -187,7 +190,6 @@ def daily_update_placements(day=None):
         .order_by("-total_decisions")
         .iterator()
     ):
-
         impression, _ = PlacementImpression.objects.using("default").get_or_create(
             publisher_id=values["publisher"],
             advertisement_id=values["advertisement"],
@@ -233,7 +235,6 @@ def daily_update_impressions(day=None):
         .order_by("-total_decisions")
         .iterator()
     ):
-
         impression, _ = AdImpression.objects.using("default").get_or_create(
             publisher_id=values["publisher"],
             advertisement_id=values["advertisement"],

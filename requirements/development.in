@@ -7,8 +7,7 @@ ipdb
 ipython
 
 # Code formatters
-black
-reorder-python-imports>=2.6.0,<3.0
+ruff==0.5.2
 
 # For running the black code formatter before commits and other checks
 pre-commit
@@ -22,7 +21,6 @@ sphinxcontrib-httpdomain
 # Various testing tools
 pytest
 pytest-django
-prospector
 django-dynamic-fixture
 responses >=0.25.3, <1
 urllib3 >= 2.2.2, <3

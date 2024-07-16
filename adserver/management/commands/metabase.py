@@ -1,4 +1,5 @@
 """Dump or load data from Metabase."""
+
 import argparse
 import getpass
 import json
@@ -11,7 +12,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Command(BaseCommand):
-
     """Management command to dump/load data from Metabase."""
 
     help = "Dump or load questions from metabase."

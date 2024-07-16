@@ -5,6 +5,7 @@ By default, this is not used but it can be configured by setting the
 DEFAULT_FILE_STORAGE and DEFAULT_FILE_STORAGE_HOSTNAME envvars.
 See config/settings/production.py.
 """
+
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
@@ -13,7 +14,6 @@ from storages.backends.azure_storage import AzureStorage  # noqa
 
 
 class OverrideHostnameMixin:
-
     """
     Override the hostname when outputting URLs.
 
@@ -37,14 +37,12 @@ class OverrideHostnameMixin:
 
 
 class AzureCDNFileStorage(OverrideHostnameMixin, AzureStorage):
-
     """An Azure Storage backend that uses a CDN and custom hostname for media."""
 
     override_hostname = getattr(settings, "DEFAULT_FILE_STORAGE_HOSTNAME", None)
 
 
 class AzureBackupsStorage(AzureStorage):
-
     """An Azure Storage backend for backups."""
 
     azure_container = (

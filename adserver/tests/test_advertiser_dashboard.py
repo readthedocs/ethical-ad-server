@@ -29,7 +29,6 @@ User = get_user_model()
 
 
 class TestAdvertiserDashboardViews(TestCase):
-
     """Test the advertiser dashboard interface for creating and updating ads."""
 
     def setUp(self):

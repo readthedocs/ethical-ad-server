@@ -1,4 +1,5 @@
 """Django admin configuration for the ad server URL analyzer."""
+
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
@@ -8,7 +9,6 @@ from .models import AnalyzedUrl
 
 @admin.register(AnalyzedUrl)
 class AnalyzedUrlAdmin(SimpleHistoryAdmin):
-
     """Django admin configuration for analyzed URLs."""
 
     list_display = (
@@ -29,7 +29,6 @@ class AnalyzedUrlAdmin(SimpleHistoryAdmin):
 
 @admin.register(AnalyzedAdvertiserUrl)
 class AnalyzedAdvertiserUrlAdmin(SimpleHistoryAdmin):
-
     """Django admin configuration for analyzed ads."""
 
     list_display = (

@@ -1,4 +1,5 @@
 """Custom user model for the ad server."""
+
 from allauth.account.forms import default_token_generator
 from allauth.account.utils import user_pk_to_url_str
 from django.conf import settings
@@ -18,7 +19,6 @@ from ..models import Publisher
 
 
 class AdServerUserManager(BaseUserManager):
-
     """A django query manager for our custom user model."""
 
     def create_user(self, email, password, **extra_fields):
@@ -47,7 +47,6 @@ class AdServerUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-
     """
     The custom extensible user model for the ad server.
 

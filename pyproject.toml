@@ -1,21 +1,35 @@
-# https://black.readthedocs.io/
-[tool.black]
+# https://docs.astral.sh/ruff/configuration/
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
+exclude = [
+  "manage.py",
+  "docs",
+  "migrations",
+  "tests",
+  "tests.py",
+]
+
+# Same as Black.
 line-length = 88
-target_version = ['py38']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | node_modules
-  | migrations
-)/
-'''
+indent-width = 4
+
+# Assume Python 3.10
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable:
+#  Pyflakes (`F`)
+#  pycodestyle (`E`) error codes.
+#  isort (`I`) import sorting
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.isort]
+# https://docs.astral.sh/ruff/settings/#lintisort
+force-single-line = true
+case-sensitive = false
+lines-after-imports = 2
+
+# Ignore `F405` (import *) in config files
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*" = ["F405"]

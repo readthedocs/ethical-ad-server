@@ -1,4 +1,5 @@
 """Mixins for API views and viewsets."""
+
 from django.conf import settings
 
 from ..utils import generate_client_id
@@ -8,7 +9,6 @@ from ..utils import get_geolocation
 
 
 class GeoIpMixin:
-
     """
     A mixin that attaches updated IP, User Agent, and Geolocation data to the request.
 

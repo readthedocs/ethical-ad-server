@@ -1,4 +1,5 @@
 """Forms for the ad server."""
+
 import logging
 from datetime import timedelta
 
@@ -6,10 +7,10 @@ import bleach
 import stripe
 from crispy_forms.bootstrap import PrependedText
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import HTML
 from crispy_forms.layout import Div
 from crispy_forms.layout import Field
 from crispy_forms.layout import Fieldset
-from crispy_forms.layout import HTML
 from crispy_forms.layout import Layout
 from crispy_forms.layout import Submit
 from django import forms
@@ -44,7 +45,6 @@ User = get_user_model()
 
 
 class AdvertisementMultipleChoiceField(forms.ModelMultipleChoiceField):
-
     """
     Create a multiple choice field of advertisements with previews and additional data.
 
@@ -57,7 +57,6 @@ class AdvertisementMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 
 class FlightMixin:
-
     """Ensure the flight can't have both CPC and CPM."""
 
     def clean(self):
@@ -78,7 +77,6 @@ class FlightMixin:
 
 
 class FlightAdminForm(FlightMixin, forms.ModelForm):
-
     """The form for flights used by the Django Admin."""
 
     class Meta:
@@ -108,7 +106,6 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
 
 
 class FlightForm(FlightMixin, forms.ModelForm):
-
     """
     The form for flights used in a staff interface.
 
@@ -366,7 +363,6 @@ class FlightForm(FlightMixin, forms.ModelForm):
 
 
 class FlightCreateForm(forms.ModelForm):
-
     """Create a new flight for this advertiser."""
 
     def __init__(self, *args, **kwargs):
@@ -429,7 +425,6 @@ class FlightCreateForm(forms.ModelForm):
 
 
 class FlightAutoRenewForm(forms.ModelForm):
-
     """Allow customers to set a flight to automatically renew or not."""
 
     def __init__(self, *args, **kwargs):
@@ -464,7 +459,6 @@ class FlightAutoRenewForm(forms.ModelForm):
 
 
 class FlightRenewForm(FlightMixin, FlightCreateForm):
-
     """Form class for creating a new flight via renewal."""
 
     advertisements = AdvertisementMultipleChoiceField(
@@ -627,7 +621,6 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
 
 
 class FlightRequestForm(FlightCreateForm):
-
     """Used by advertisers to request a new flight."""
 
     advertisements = AdvertisementMultipleChoiceField(
@@ -880,7 +873,6 @@ class FlightRequestForm(FlightCreateForm):
 
 
 class AdvertisementFormMixin:
-
     """Common functionality shared by the admin form and the one used by advertisers."""
 
     messages = {
@@ -1008,7 +1000,6 @@ class AdvertisementAdminForm(AdvertisementFormMixin, forms.ModelForm):
 
 
 class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
-
     """Model form used by advertisers to edit ads."""
 
     def __init__(self, *args, **kwargs):
@@ -1161,7 +1152,6 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
 
 
 class AdvertisementCopyForm(forms.Form):
-
     """Used by advertisers to re-use their ads."""
 
     advertisements = AdvertisementMultipleChoiceField(
@@ -1212,7 +1202,6 @@ class AdvertisementCopyForm(forms.Form):
 
 
 class PublisherSettingsForm(forms.ModelForm):
-
     """Form for letting publishers control publisher specific settings."""
 
     def __init__(self, *args, **kwargs):
@@ -1327,7 +1316,6 @@ class PublisherSettingsForm(forms.ModelForm):
 
 
 class InviteUserForm(forms.ModelForm):
-
     """
     Used to invite users to collaborate on an advertiser/publisher.
 
@@ -1384,7 +1372,6 @@ class InviteUserForm(forms.ModelForm):
 
 
 class AccountForm(forms.ModelForm):
-
     """Form used to update account information and notifications."""
 
     def __init__(self, *args, **kwargs):
@@ -1412,7 +1399,6 @@ class AccountForm(forms.ModelForm):
 
 
 class SupportForm(forms.Form):
-
     """
     Form used to contact the support team.
 

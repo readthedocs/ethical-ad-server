@@ -1,4 +1,5 @@
 """Celery app for running async tasks on the ad server."""
+
 import os
 
 from celery import Celery

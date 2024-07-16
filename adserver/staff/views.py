@@ -1,4 +1,5 @@
 """Views for the administrator actions."""
+
 import datetime
 import logging
 
@@ -17,6 +18,8 @@ from django.views.generic import DetailView
 from django.views.generic import FormView
 from django.views.generic import TemplateView
 
+from adserver.utils import generate_publisher_payout_data
+
 from ..constants import PAID
 from ..mixins import StaffUserMixin
 from ..models import Advertiser
@@ -24,7 +27,6 @@ from ..models import Publisher
 from .forms import CreateAdvertiserForm
 from .forms import CreatePublisherForm
 from .forms import StartPublisherPayoutForm
-from adserver.utils import generate_publisher_payout_data
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -79,7 +81,6 @@ class CreatePublisherView(PermissionRequiredMixin, FormView):
 
 
 class PublisherPayoutView(StaffUserMixin, TemplateView):
-
     """
     A view listing all the payouts that are due in the upcoming month.
 
@@ -109,7 +110,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         today = timezone.now()
 
         for publisher in queryset:
-
             current_payout = publisher.payouts.filter(
                 date__month=today.month,
                 date__year=today.year,
@@ -191,7 +191,6 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
 
 
 class PublisherStartPayoutView(StaffUserMixin, FormView):
-
     """Start a payout for a publisher."""
 
     form_class = StartPublisherPayoutForm
@@ -254,7 +253,6 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
 
 
 class PublisherFinishPayoutView(StaffUserMixin, DetailView):
-
     """Start a payout for a publisher."""
 
     template_name = "adserver/staff/publisher-payout-finish.html"

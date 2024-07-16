@@ -1,4 +1,5 @@
 """Spacy-based topic classifier that uses our trained model and gives a likelihood that text is about our topics."""
+
 import logging
 import textwrap
 
@@ -11,7 +12,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class EthicalAdsTopicsBackend(TextacyAnalyzerBackend):
-
     """A model that uses our own custom dataset behind the scenes."""
 
     # Name of the model package

@@ -11,16 +11,12 @@ repos:
   hooks:
   - id: django-upgrade
     args: [--target-version, "4.2"]
-- repo: https://github.com/ambv/black
-  rev: "22.3.0"
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.5.2
   hooks:
-  - id: black
-    # Since the pre-commit runs on a file by file basis rather than a whole project,
-    # The excludes in pyproject.toml are ignored
-    exclude: migrations
-    language_version: python3
-- repo: https://github.com/asottile/reorder_python_imports
-  rev: v2.7.1
-  hooks:
-  - id: reorder-python-imports
-    language_version: python3
+    # Run the linter.
+    - id: ruff
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format

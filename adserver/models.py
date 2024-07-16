@@ -1,4 +1,5 @@
 """Core models for the ad server."""
+
 import datetime
 import html
 import logging
@@ -54,9 +55,9 @@ from .constants import PAYOUT_STRIPE
 from .constants import PENDING
 from .constants import PUBLISHER_PAYOUT_METHODS
 from .constants import VIEWS
+from .utils import COUNTRY_DICT
 from .utils import anonymize_ip_address
 from .utils import calculate_ctr
-from .utils import COUNTRY_DICT
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_client_country
@@ -69,6 +70,7 @@ from .validators import TargetingParametersValidator
 from .validators import TopicPricingValidator
 from .validators import TrafficFillValidator
 
+
 log = logging.getLogger(__name__)  # noqa
 
 
@@ -77,7 +79,6 @@ def default_flight_end_date():
 
 
 class IndestructibleQuerySet(models.QuerySet):
-
     """A queryset object without the delete option."""
 
     def delete(self):
@@ -86,7 +87,6 @@ class IndestructibleQuerySet(models.QuerySet):
 
 
 class IndestructibleManager(models.Manager):
-
     """A model manager that generates ``IndestructibleQuerySets``."""
 
     def get_queryset(self):
@@ -94,7 +94,6 @@ class IndestructibleManager(models.Manager):
 
 
 class IndestructibleModel(models.Model):
-
     """A model that disallows the delete method or deleting at the queryset level."""
 
     objects = IndestructibleManager()
@@ -108,7 +107,6 @@ class IndestructibleModel(models.Model):
 
 
 class Topic(TimeStampedModel, models.Model):
-
     """Topics able to be targeted by the ad server."""
 
     # Topics are cached for 30m
@@ -153,7 +151,6 @@ class Topic(TimeStampedModel, models.Model):
 
 
 class Keyword(TimeStampedModel, models.Model):
-
     """A keyword for a topic on the ad server."""
 
     slug = models.SlugField(_("Slug"), max_length=200, unique=True)
@@ -170,7 +167,6 @@ class Keyword(TimeStampedModel, models.Model):
 
 
 class Region(TimeStampedModel, models.Model):
-
     """A region able to be targeted by the ad server."""
 
     # Regions are cached for 30m
@@ -272,7 +268,6 @@ class Region(TimeStampedModel, models.Model):
 
 
 class CountryRegion(TimeStampedModel, models.Model):
-
     """Countries in targeted regions."""
 
     country = CountryField()
@@ -287,7 +282,6 @@ class CountryRegion(TimeStampedModel, models.Model):
 
 
 class Publisher(TimeStampedModel, IndestructibleModel):
-
     """
     A publisher that displays advertising from the ad server.
 
@@ -562,7 +556,6 @@ class Publisher(TimeStampedModel, IndestructibleModel):
 
 
 class PublisherGroup(TimeStampedModel):
-
     """Group of publishers that can be targeted by advertiser's campaigns."""
 
     name = models.CharField(
@@ -595,7 +588,6 @@ class PublisherGroup(TimeStampedModel):
 
 
 class Advertiser(TimeStampedModel, IndestructibleModel):
-
     """An advertiser who buys advertising from the ad server."""
 
     name = models.CharField(_("Name"), max_length=200)
@@ -643,7 +635,6 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
 
 class Campaign(TimeStampedModel, IndestructibleModel):
-
     """
     A collection of advertisements (:py:class:`~Advertisement`) from the same advertiser.
 
@@ -757,7 +748,6 @@ class Campaign(TimeStampedModel, IndestructibleModel):
 
 
 class Flight(TimeStampedModel, IndestructibleModel):
-
     """
     A flight is a collection of :py:class:`~Advertisement` objects.
 
@@ -1435,7 +1425,6 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
 
 class AdType(TimeStampedModel, models.Model):
-
     """
     A type of advertisement including such parameters as the amount of text and images size.
 
@@ -1520,7 +1509,6 @@ class AdType(TimeStampedModel, models.Model):
 
 
 class Advertisement(TimeStampedModel, IndestructibleModel):
-
     """
     A single advertisement creative.
 
@@ -2141,7 +2129,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
 
 class BaseImpression(TimeStampedModel, models.Model):
-
     """Statistics for tracking."""
 
     date = models.DateField(_("Date"), db_index=True)
@@ -2199,7 +2186,6 @@ class BaseImpression(TimeStampedModel, models.Model):
 
 
 class AdImpression(BaseImpression):
-
     """
     Track stats around how successful this ad has been.
 
@@ -2237,7 +2223,6 @@ class AdImpression(BaseImpression):
 
 
 class AdvertiserImpression(BaseImpression):
-
     """
     Create a daily index by advertiser (and nothing else).
 
@@ -2284,7 +2269,6 @@ class BasePublisherImpression(BaseImpression):
 
 
 class PublisherImpression(BasePublisherImpression):
-
     """
     Create a daily index by publisher (and nothing else).
 
@@ -2305,7 +2289,6 @@ class PublisherImpression(BasePublisherImpression):
 
 
 class PublisherPaidImpression(BasePublisherImpression):
-
     """
     Create a daily index by publisher (and nothing else) for paid impressions ONLY.
 
@@ -2326,7 +2309,6 @@ class PublisherPaidImpression(BasePublisherImpression):
 
 
 class PlacementImpression(BaseImpression):
-
     """
     Create an index of placements for ads.
 
@@ -2362,7 +2344,6 @@ class PlacementImpression(BaseImpression):
 
 
 class GeoImpression(BaseImpression):
-
     """
     Create an index of geo targeting for ads.
 
@@ -2390,7 +2371,6 @@ class GeoImpression(BaseImpression):
 
 
 class RegionImpression(BaseImpression):
-
     """
     Create an index of region geo targeting for ads.
 
@@ -2423,7 +2403,6 @@ class RegionImpression(BaseImpression):
 
 
 class KeywordImpression(BaseImpression):
-
     """
     Create an index of keyword targeting for ads.
 
@@ -2451,7 +2430,6 @@ class KeywordImpression(BaseImpression):
 
 
 class UpliftImpression(BaseImpression):
-
     """
     Create an index of uplift for ads.
 
@@ -2479,7 +2457,6 @@ class UpliftImpression(BaseImpression):
 
 
 class RegionTopicImpression(BaseImpression):
-
     """
     Create an index combining aggregated keywords & geos.
 
@@ -2505,7 +2482,6 @@ class RegionTopicImpression(BaseImpression):
 
 
 class AdBase(TimeStampedModel, IndestructibleModel):
-
     """A base class for data on ad views and clicks."""
 
     DIV_MAXLENGTH = 100
@@ -2586,7 +2562,6 @@ class AdBase(TimeStampedModel, IndestructibleModel):
 
 
 class Click(AdBase):
-
     """Contains data on ad clicks."""
 
     advertisement = models.ForeignKey(
@@ -2596,7 +2571,6 @@ class Click(AdBase):
 
 
 class View(AdBase):
-
     """Contains data on ad views."""
 
     advertisement = models.ForeignKey(
@@ -2606,7 +2580,6 @@ class View(AdBase):
 
 
 class Offer(AdBase):
-
     """Contains data on ad views."""
 
     MAX_VIEW_TIME = 5 * 60  # seconds
@@ -2698,7 +2671,6 @@ class Offer(AdBase):
 
 
 class PublisherPayout(TimeStampedModel):
-
     """Details on historical publisher payouts."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

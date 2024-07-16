@@ -1,4 +1,5 @@
 """Custom context processors that inject certain settings values into all templates."""
+
 from django.conf import settings
 
 
