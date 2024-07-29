@@ -31,15 +31,6 @@
         </tr>
       </thead>
       <tbody>
-        {% for payout in payouts %}
-          <tr>
-            <td>
-              <a href="{% url 'publisher_payout' publisher.slug payout.pk %}">{{ payout.date|date:"M j, Y" }}</a>
-            </td>
-            <td>${{ payout.amount|floatformat:2|intcomma }}</td>
-            <td>{{ payout.get_status_display }}</td>
-          </tr>
-        {% endfor %}
 
         {% if due_report %}
           <tr>
@@ -51,13 +42,24 @@
           </tr>
         {% endif %}
 
+        <tr>
+          <td>
+            <a href="{{ current_report_url }}">Balance for this month</a>
+          </td>
+          <td>${{ current_report.total.revenue_share|floatformat:2|intcomma }}</td>
+          <td>{% trans "Upcoming" %}</td>
+        </tr>
+
+        {% for payout in payouts %}
           <tr>
             <td>
-              <a href="{{ current_report_url }}">Balance for this month</a>
+              <a href="{% url 'publisher_payout' publisher.slug payout.pk %}">{{ payout.date|date:"M j, Y" }}</a>
             </td>
-            <td>${{ current_report.total.revenue_share|floatformat:2|intcomma }}</td>
-            <td>{% trans "Upcoming" %}</td>
+            <td>${{ payout.amount|floatformat:2|intcomma }}</td>
+            <td>{{ payout.get_status_display }}</td>
           </tr>
+        {% endfor %}
+
       </tbody>
       <tfoot>
         <tr>
