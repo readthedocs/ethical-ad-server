@@ -43,7 +43,8 @@
               {% else %}
                 <span class="fa-li fa fa-square-o"></span>
               {% endif %}
-              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>.{% endblocktrans %}</p>
+              {% url 'support' as support_url %}
+              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>. Need help getting your ads setup? <a href="{{ support_url }}?subject=Help+with+ads">Let us know</a>. We're happy to help!{% endblocktrans %}</p>
             </li>
             <li>
               {% if has_paid_invoice %}
@@ -55,6 +56,10 @@
               <p>{% blocktrans %}Pay your <a href="{{ billing_portal_url }}">first invoice</a> and we will start sending traffic to you.{% endblocktrans %}</p>
             </li>
           </ol>
+
+          {% if are_ads_set_up and has_paid_invoice %}
+            <p class="mt-5 lead">{% blocktrans %}🎉 Great job! You've taken care of everything. We'll review your ads and start your campaign shortly.{% endblocktrans %}</p>
+          {% endif %}
         </div>
       </div>
     {% elif not has_views_this_month %}
