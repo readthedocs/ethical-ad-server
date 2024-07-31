@@ -44,7 +44,7 @@
                 <span class="fa-li fa fa-square-o"></span>
               {% endif %}
               {% url 'support' as support_url %}
-              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>. Need help getting your ads setup? <a href="{{ support_url }}?subject=Help+with+ads">Let us know</a>. We're happy to help!{% endblocktrans %}</p>
+              <p>{% blocktrans %}Upload your ad creatives to your <a href="{{ flight_list_url }}">flights</a>. See our <a target="_blank" href="https://www.ethicalads.io/advertisers/ad-design-and-specs/">creatives specs</a> and <a target="_blank" href="https://www.ethicalads.io/downloads/ethicalads-creatives-that-convert.pdf">tips for optimizing ads for our network</a>. Need help getting your ads setup? <a href="{{ support_url }}?subject=Help+with+ads">Let us know</a>. We're happy to help!{% endblocktrans %}</p>
             </li>
             <li>
               {% if has_paid_invoice %}
