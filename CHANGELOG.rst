@@ -5,6 +5,28 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v5.6.0
+--------------
+
+This release had a number of minor improvements.
+This release also had a pretty significant dependency updates that are not user facing.
+
+:date: August 1, 2024
+
+ * @davidfischer: Small improvements to advertiser onboarding checklist (#900)
+ * @davidfischer: Link to creatives guide when creating ads (#899)
+ * @davidfischer: Put pending payouts on top of publisher payout list (#898)
+ * @davidfischer: Update the ad client dependency (#897)
+ * @davidfischer: Use ruff formatter for code style and linting (#896)
+ * @ericholscher: Upgrade all dependencies (#895)
+ * @dependabot[bot]: Bump django from 4.2.11 to 4.2.14 in /requirements (#894)
+ * @davidfischer: Fixed a minor dependency consistency issue (#893)
+ * @ericholscher: Move pgvector to analyzer requirements (#892)
+ * @dependabot[bot]: Bump certifi from 2024.6.2 to 2024.7.4 in /requirements (#891)
+ * @dependabot[bot]: Bump djangorestframework from 3.15.1 to 3.15.2 in /requirements (#890)
+
+
 Version v5.5.0
 --------------
 
