@@ -11,6 +11,7 @@ from adserver.models import AdType
 from adserver.models import Advertisement
 from adserver.models import Flight
 
+
 log = logging.getLogger(__name__)  # noqa
 
 
@@ -73,7 +74,7 @@ def run_import(sync=False, images=False):
                 image = File(
                     BytesIO(image_response.content), name=url[url.rfind("/") + 1 :]
                 )
-        except:
+        except:  # noqa
             log.exception("WARNING: No ad image: %s" % item)
             continue
 

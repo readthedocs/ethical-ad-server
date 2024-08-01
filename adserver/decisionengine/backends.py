@@ -1,4 +1,5 @@
 """Ad decision backends."""
+
 import logging
 import random
 
@@ -27,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class BaseAdDecisionBackend:
-
     """A base decision backend -- other decision backends should extend this."""
 
     def __init__(self, request, placements, publisher, **kwargs):
@@ -203,7 +203,6 @@ class BaseAdDecisionBackend:
 
 
 class AdvertisingDisabledBackend(BaseAdDecisionBackend):
-
     """A backend where no ads are displayed."""
 
     def get_ad_and_placement(self):
@@ -214,7 +213,6 @@ class AdvertisingDisabledBackend(BaseAdDecisionBackend):
 
 
 class AdvertisingEnabledBackend(BaseAdDecisionBackend):
-
     """A backend where ads are displayed (default ad order)."""
 
     def get_candidate_flights(self):
@@ -346,7 +344,6 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
 
 
 class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
-
     """
     A backend where flights are selected randomly weighted by the clicks needed today.
 
@@ -371,7 +368,6 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         house_flights = []
 
         for flight in flights:
-
             # Separate flights by campaign type, so we can prioritize them in this order
             if flight.campaign.campaign_type == PAID_CAMPAIGN:
                 paid_flights.append(flight)
@@ -402,7 +398,6 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             total_clicks_needed = 0
 
             for flight in possible_flights:
-
                 # Apply niche targeting only when any flight has it.
                 # This is to track whether we should do expensive distance queries.
                 if (

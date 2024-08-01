@@ -177,7 +177,9 @@ class UtilsTest(TestCase):
             self.assertEqual(geolocation.country, "FR")
 
         with mock.patch("adserver.utils.geoip") as geoip:
-            geoip.city.side_effect = AddressNotFoundError()
+            geoip.city.side_effect = AddressNotFoundError(
+                "IP Address Not Found somehow"
+            )
             geolocation = get_geoipdb_geolocation(self.request)
             self.assertIsNone(geolocation.country)
 

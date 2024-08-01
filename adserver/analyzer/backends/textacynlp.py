@@ -1,4 +1,5 @@
 """Textacy/Spacy-based keyword analyzer that lemmatizes and uses textrank for keyphrase extraction."""
+
 import collections
 import logging
 
@@ -12,7 +13,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class TextacyAnalyzerBackend(NaiveKeywordAnalyzerBackend):
-
     """
     An analyzer backend that uses textacy for lemmatization and keyword extraction.
 

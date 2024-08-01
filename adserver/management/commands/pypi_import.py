@@ -1,4 +1,5 @@
 """Import data from Python API."""
+
 from django.core.management.base import BaseCommand
 from django.utils.translation import gettext_lazy as _
 
@@ -6,7 +7,6 @@ from adserver.importers import psf
 
 
 class Command(BaseCommand):
-
     """Import data for PSF."""
 
     help = "Import data for PSF"

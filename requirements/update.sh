@@ -10,7 +10,7 @@ do
   if [[ -f "$file" ]]; then
     echo "Compiling $file..."
     # Call pip-compile for each .in file
-    pip-compile "$file"
+    pip-compile -U "$file"
   else
     echo "No .in files found in the directory."
     break

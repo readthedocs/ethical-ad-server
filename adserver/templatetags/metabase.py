@@ -1,4 +1,5 @@
 """Custom template tags for metabase embedding."""
+
 import logging
 import time
 from datetime import date
@@ -19,7 +20,7 @@ def serialize_params(params):
     # These parameters must be JSON serializable to be signed
     # Notably, dates aren't serializable by default
     serializable_params = {}
-    for (k, val) in params.items():
+    for k, val in params.items():
         if isinstance(val, (date, datetime)):
             serializable_params[k] = str(val)
         else:

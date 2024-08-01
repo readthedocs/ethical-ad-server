@@ -1,4 +1,5 @@
 """Mixins for advertiser and publisher views."""
+
 import logging
 
 import requests
@@ -23,7 +24,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class StaffUserMixin(UserPassesTestMixin):
-
     """Mixin requiring staff access."""
 
     def test_func(self):
@@ -31,7 +31,6 @@ class StaffUserMixin(UserPassesTestMixin):
 
 
 class AdvertiserAccessMixin:
-
     """Mixin for checking advertiser access that works with the ``UserPassesTestMixin``."""
 
     advertiser_slug_parameter = "advertiser_slug"
@@ -51,7 +50,6 @@ class AdvertiserAccessMixin:
 
 
 class PublisherAccessMixin:
-
     """Mixin for checking publisher access that works with the ``UserPassesTestMixin``."""
 
     publisher_slug_parameter = "publisher_slug"
@@ -71,7 +69,6 @@ class PublisherAccessMixin:
 
 
 class AdvertisementValidateLinkMixin:
-
     """
     Mixin for validating the landing page returns a 200.
 
@@ -121,7 +118,6 @@ class AdvertisementValidateLinkMixin:
 
 
 class ReportQuerysetMixin:
-
     """Mixin for getting a queryset of advertiser report data."""
 
     # Subclasses must define one of these
@@ -172,7 +168,6 @@ class ReportQuerysetMixin:
 
 
 class GeoReportMixin:
-
     """Provide geo report functionality. MUST be used with BaseReportView."""
 
     def get_queryset(self, **kwargs):
@@ -204,7 +199,6 @@ class GeoReportMixin:
 
 
 class KeywordReportMixin:
-
     """Provide keyword functionality. MUST be used with BaseReportView."""
 
     def get_queryset(self, **kwargs):
@@ -219,7 +213,6 @@ class KeywordReportMixin:
         return queryset
 
     def get_keyword_options(self, queryset):
-
         # The order_by here is to enable distinct to work
         # https://docs.djangoproject.com/en/dev/ref/models/querysets/#distinct
         keyword_options = (
@@ -233,7 +226,6 @@ class KeywordReportMixin:
 
 
 class AllReportMixin:
-
     """A mixin that handles the primary "view" logic for staff reports."""
 
     def get_context_data(self, **kwargs):
@@ -299,7 +291,6 @@ class AllReportMixin:
 
 
 class EstimatedCountPaginator(Paginator):
-
     """
     Paginator that gives only an estimated count based on DB statistics..
 

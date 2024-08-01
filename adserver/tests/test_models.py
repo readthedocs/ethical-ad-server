@@ -25,7 +25,6 @@ from .common import BaseAdModelsTestCase
 
 
 class TestProtectedModels(BaseAdModelsTestCase):
-
     """Test that models extending IndestructibleModel can't be deleted"""
 
     def test_delete_model(self):

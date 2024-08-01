@@ -1,4 +1,5 @@
 """Custom validators for the ad server analyzer."""
+
 from django.core.exceptions import ValidationError
 from django.core.validators import BaseValidator
 from django.utils.deconstruct import deconstructible
@@ -7,7 +8,6 @@ from django.utils.translation import gettext_lazy as _
 
 @deconstructible
 class KeywordsValidator(BaseValidator):
-
     """A Django model and form validator for keyword analysis."""
 
     message = _("Enter a valid value")

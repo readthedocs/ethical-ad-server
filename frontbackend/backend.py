@@ -13,6 +13,7 @@ There's some differences from normal email:
 - By appending an attribute "draft" to an email message,
   the backend will create a draft instead of sending the message.
 """
+
 import logging
 
 import requests
@@ -26,7 +27,6 @@ log = logging.getLogger(__name__)  # noqa
 
 
 class EmailBackend(BaseEmailBackend):
-
     """
     Custom email backend to send messages through Front (front.com).
 

@@ -5,6 +5,7 @@ Different sites may want different backends based on how different
 ads should be prioritized. For example, you may want to prioritize
 ads which one makes the most money or by which one is the most relevant.
 """
+
 from django.conf import settings
 from django.utils.module_loading import import_string
 
