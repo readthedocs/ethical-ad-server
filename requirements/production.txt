@@ -59,7 +59,7 @@ cryptography==42.0.8
     # via azure-storage-blob
 dj-stripe==2.8.4
     # via -r base.in
-django==5.0.7
+django==5.0.8
     # via
     #   -r base.in
     #   crispy-bootstrap4
