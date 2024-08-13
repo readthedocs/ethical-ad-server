@@ -100,6 +100,7 @@ from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import OptimizedAdvertiserReport
 from .reports import OptimizedPublisherPaidReport
+from .reports import OptimizedPublisherReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
@@ -1128,6 +1129,9 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
 
         return super().render_to_response(context, **response_kwargs)
 
+    def get_report_class(self, **kwargs):
+        return self.report
+
     def get_context_data(self, **kwargs):
         start_date = self.get_start_date()
         end_date = self.get_end_date()
@@ -1216,7 +1220,8 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
     """A report for one advertiser."""
 
     export_view = "advertiser_report_export"
-    report = AdvertiserReport
+    report = OptimizedAdvertiserReport
+    impression_model = AdvertiserImpression
     template_name = "adserver/reports/advertiser.html"
 
     def get_context_data(self, **kwargs):
@@ -1227,11 +1232,14 @@ class AdvertiserReportView(AdvertiserAccessMixin, BaseReportView):
         advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
 
         queryset = self.get_queryset(
-            advertiser=advertiser,
             start_date=context["start_date"],
             end_date=context["end_date"],
+        ).filter(
+            # Have to filter advertisers separately for the OptimizedAdvertiserReport
+            advertiser=advertiser,
         )
-        report = self.report(queryset)
+        report_class = self.get_report_class()
+        report = report_class(queryset)
         report.generate()
 
         context.update(
@@ -1474,7 +1482,8 @@ class StaffAdvertiserReportView(BaseReportView):
                         advertiser=advertiser,
                     ).values("advertiser_id")
                 )
-            report = self.report(queryset)
+            report_class = self.get_report_class()
+            report = report_class(queryset)
             report.generate()
 
             if report.total["views"] > 0:
@@ -1651,6 +1660,8 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     export_view = "publisher_report_export"
     template_name = "adserver/reports/publisher.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
+    report = OptimizedPublisherReport
+    impression_model = PublisherImpression
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1660,19 +1671,18 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
         queryset = self.get_queryset(
             publisher=publisher,
-            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
         )
 
-        report = PublisherReport(queryset)
+        report_class = self.get_report_class()
+        report = report_class(queryset)
         report.generate()
 
         context.update(
             {
                 "publisher": publisher,
                 "report": report,
-                "campaign_types": CAMPAIGN_TYPES,
                 "export_url": self.get_export_url(publisher_slug=publisher.slug),
                 "metabase_publisher_dashboard": settings.METABASE_DASHBOARDS.get(
                     "PUBLISHER_FIGURES"
@@ -2288,7 +2298,8 @@ class StaffPublisherReportView(BaseReportView):
                 start_date=context["start_date"],
                 end_date=context["end_date"],
             )
-            report = self.report(queryset, force_revshare=force_revshare)
+            report_class = self.get_report_class()
+            report = report_class(queryset, force_revshare=force_revshare)
             report.generate()
             if report.total["views"] > 0:
                 publishers_and_reports.append((publisher, report))

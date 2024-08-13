@@ -26,9 +26,7 @@
 
 
 {% block toc %}
-  {# Note: the publisher dashboard only shows if there is no set campaign type (meaning all types) #}
-  {#       Otherwise the data will not match the tabular report below. #}
-  {% if metabase_publisher_dashboard and not campaign_type %}
+  {% if metabase_publisher_dashboard %}
     <section class="mb-5">
       <div class="row mb-5">
         <div class="col min-vh-75">
@@ -48,7 +46,7 @@
     You can filter it to better understand what is going on with your traffic.
   </p>
   <em>
-  This report updates close to real-time.
+  This report updates every five minutes.
   </em>
 </section>
 {% endblock explainer %}
