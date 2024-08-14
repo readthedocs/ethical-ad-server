@@ -15,6 +15,15 @@ log = logging.getLogger(__name__)  # noqa
 class BaseAnalyzerBackend:
     """Base class that all analyzers should extend."""
 
+    # CSS selectors that attempt to find competing ad networks
+    # This is a predictor of publishers moving off the platform
+    COMPETITORS_SELECTORS = (
+        "script[src*='carbonads.com']",
+        # Google
+        "script[src*='adsbygoogle.js']",
+        "script[src*='show_ads.js']",
+    )
+
     # CSS selectors to select the "main" content of the page
     # The first of these to match anything is used
     MAIN_CONTENT_SELECTORS = (

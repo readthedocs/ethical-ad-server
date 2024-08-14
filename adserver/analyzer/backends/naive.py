@@ -1,11 +1,15 @@
 """Naive keyword analyzer that is simply based on keyword counts."""
 
 import collections
+import logging
 
 from bs4 import BeautifulSoup
 
 from ...models import Topic
 from .base import BaseAnalyzerBackend
+
+
+log = logging.getLogger(__name__)  # noqa
 
 
 class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
@@ -35,6 +39,15 @@ class NaiveKeywordAnalyzerBackend(BaseAnalyzerBackend):
         keywords = []
 
         soup = BeautifulSoup(resp.content, features="html.parser")
+
+        for selector in self.COMPETITORS_SELECTORS:
+            results = soup.select(selector)
+            if results:
+                log.warning(
+                    "Found competitor ads on publisher page. url=%s, selector=%s",
+                    resp.url,
+                    selector,
+                )
 
         for selector in self.REMOVE_CONTENT_SELECTORS:
             for nodes in soup.select(selector):
