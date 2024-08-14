@@ -99,7 +99,6 @@ def run_import(sync=False, images=False):
         if sync:
             log.debug(f"Syncing: {name}")
             ad, created = Advertisement.objects.get_or_create(
-                name=name,
                 slug=slugify(name),
                 flight=flight,
             )
@@ -107,6 +106,7 @@ def run_import(sync=False, images=False):
                 log.info(f"NEW SPONSOR: Created new sponsor {ad}")
 
             # Update things that might change
+            ad.name = name
             ad.image = image
             ad.text = item["description"]
             ad.link = item["sponsor_url"]
