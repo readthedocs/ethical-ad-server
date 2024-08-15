@@ -26,9 +26,9 @@
 
 
 {% block toc %}
-    {# Note: the publisher dashboard only shows if there is no set campaign type (meaning all types) #}
-    {#       Otherwise the data will not match the tabular report below. #}
-    {% if metabase_publisher_dashboard and not campaign_type %}
+  {# Note: the publisher dashboard only shows if there is no set campaign type (meaning all types) #}
+  {#       Otherwise the data will not match the tabular report below. #}
+  {% if metabase_publisher_dashboard and not campaign_type %}
     <section class="mb-5">
       <div class="row mb-5">
         <div class="col min-vh-75">
