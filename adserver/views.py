@@ -100,7 +100,6 @@ from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import OptimizedAdvertiserReport
 from .reports import OptimizedPublisherPaidReport
-from .reports import OptimizedPublisherReport
 from .reports import PublisherAdvertiserReport
 from .reports import PublisherGeoReport
 from .reports import PublisherKeywordReport
@@ -1660,8 +1659,8 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
     export_view = "publisher_report_export"
     template_name = "adserver/reports/publisher.html"
     fieldnames = ["index", "views", "clicks", "ctr", "ecpm", "revenue", "revenue_share"]
-    report = OptimizedPublisherReport
-    impression_model = PublisherImpression
+    report = PublisherReport
+    impression_model = AdImpression
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1671,6 +1670,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
 
         queryset = self.get_queryset(
             publisher=publisher,
+            campaign_type=context["campaign_type"],
             start_date=context["start_date"],
             end_date=context["end_date"],
         )
@@ -1683,6 +1683,7 @@ class PublisherReportView(PublisherAccessMixin, BaseReportView):
             {
                 "publisher": publisher,
                 "report": report,
+                "campaign_types": CAMPAIGN_TYPES,
                 "export_url": self.get_export_url(publisher_slug=publisher.slug),
                 "metabase_publisher_dashboard": settings.METABASE_DASHBOARDS.get(
                     "PUBLISHER_FIGURES"

@@ -569,6 +569,13 @@ class TestReportViews(TestReportsBase):
         response = self.client.get(url)
         self.assertContains(response, '<td class="text-right"><strong>5</strong></td>')
 
+        # Filter reports
+        response = self.client.get(url, {"campaign_type": "paid"})
+        self.assertContains(response, '<td class="text-right"><strong>2</strong></td>')
+        self.assertNotContains(
+            response, '<td class="text-right"><strong>3</strong></td>'
+        )
+
         # Verify the export URL is configured
         self.assertContains(response, "CSV Export")
 

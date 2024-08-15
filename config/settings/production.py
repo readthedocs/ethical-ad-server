@@ -172,7 +172,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "halfhourly-publisher-index": {
         "task": "adserver.tasks.daily_update_publishers",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/30"),
     },
     # Run publisher importers daily
     "every-day-sync-publisher-data": {
