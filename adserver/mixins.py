@@ -120,12 +120,16 @@ class AdvertisementValidateLinkMixin:
 class ReportQuerysetMixin:
     """Mixin for getting a queryset of advertiser report data."""
 
-    # Subclasses must define one of these
+    # Subclasses must define this OR `get_impression_model`
     impression_model = None
+
+    def get_impression_model(self, **kwargs):
+        return self.impression_model
 
     def get_queryset(self, **kwargs):
         """Get the queryset (from ``impression_model``) used to generate the report."""
-        queryset = self.impression_model.objects.all()
+        model = self.get_impression_model(**kwargs)
+        queryset = model.objects.all()
 
         if "start_date" in kwargs and kwargs["start_date"]:
             queryset = queryset.filter(date__gte=kwargs["start_date"])
