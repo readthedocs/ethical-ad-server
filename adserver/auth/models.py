@@ -83,6 +83,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     publishers = models.ManyToManyField(Publisher, blank=True)
 
     # Notifications
+    flight_notifications = models.BooleanField(
+        default=True,
+        help_text=_("Receive email notification about ad flights"),
+    )
+    # DEPRECATED and replaced by `flight_notifications`
     notify_on_completed_flights = models.BooleanField(
         default=True,
         help_text=_(

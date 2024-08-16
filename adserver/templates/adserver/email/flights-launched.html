@@ -1,0 +1,30 @@
+{% extends 'adserver/email/advertiser-base.html' %}
+{% load i18n %}
+
+
+{% block content %}
+<p>{% blocktrans with advertiser_name=advertiser.name %}{{ advertiser_name }} team,{% endblocktrans %}</p>
+
+<p>{% blocktrans with site_name=site.name %}Congrats on launching your first ad flight with {{ site_name }}!{% endblocktrans %}</p>
+
+{% spaceless %}
+
+<p>{% blocktrans with total_flights=flights|length pluralized_flights=flights|length|pluralize %}
+  You have {{ total_flights }} flight{{ pluralized_flights }} that launched today.
+  Below are links to your flight{{ pluralized_flights }} and performance reports in our ad dashboard:
+{% endblocktrans %}</p>
+<ul>
+  {% for flight in flights %}
+  {% url "flight_report" advertiser.slug flight.slug as flight_report_url %}
+  <li>
+    <a href="{{ site.domain }}{{ flight.get_absolute_url }}?ref=email-flight-launched">{{ flight.name }}</a>
+    <span> (<a href="{{ site.domain }}{{ flight_report_url }}?ref=email-flight-launched">{% trans 'report' %}</a>)</span>
+  </li>
+  {% endfor %}
+</ul>
+
+<p>{% blocktrans %}Thanks for advertising with us and don't hesitate to let us know if there's anything we can do to help make advertising with us a success for you.{% endblocktrans %}</p>
+
+{% endspaceless %}
+
+{% endblock content %}

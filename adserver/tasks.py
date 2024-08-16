@@ -764,6 +764,61 @@ def notify_on_ad_image_change(advertisement_id):
 
 
 @app.task()
+def notify_of_first_flight_launched():
+    """Notify when an advertiser's first ever flight launches."""
+    start_date = get_ad_day().date() - datetime.timedelta(days=1)
+    site = get_current_site(request=None)
+
+    # Get advertisers who launched today and
+    # exclude advertisers with flights launched before today
+    advertisers_launched_today = Flight.objects.filter(
+        live=True,
+        start_date=start_date,
+    ).values("campaign__advertiser")
+    advertisers_launched_before_today = Flight.objects.filter(
+        start_date__lt=start_date,
+    ).values("campaign__advertiser")
+
+    for advertiser in Advertiser.objects.filter(
+        pk__in=advertisers_launched_today
+    ).exclude(pk__in=advertisers_launched_before_today):
+        log.debug(
+            "Advertiser with first flights launched today. advertiser=%s", advertiser
+        )
+
+        flights = Flight.objects.filter(
+            live=True,
+            start_date=start_date,
+            campaign__advertiser=advertiser,
+        ).select_related()
+
+        if settings.FRONT_ENABLED:
+            to_addresses = [
+                u.email for u in advertiser.user_set.all() if u.flight_notifications
+            ]
+
+            context = {
+                "site": site,
+                "flights": flights,
+                "advertiser": advertiser,
+            }
+
+            with mail.get_connection(
+                settings.FRONT_BACKEND,
+                sender_name=f"{site.name} Flight Tracker",
+            ) as connection:
+                message = mail.EmailMessage(
+                    _("Advertising launched - %(name)s") % {"name": site.name},
+                    render_to_string("adserver/email/flights-launched.html", context),
+                    from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
+                    to=to_addresses,
+                    connection=connection,
+                )
+                message.draft = True  # Only create a draft for now
+                message.send()
+
+
+@app.task()
 def notify_of_autorenewing_flights(days_before=7):
     """Send a note to flights set to renew automatically."""
     # Flight must end in exactly `days_before` days
@@ -781,9 +836,7 @@ def notify_of_autorenewing_flights(days_before=7):
             site = get_current_site(request=None)
 
             to_addresses = [
-                u.email
-                for u in advertiser.user_set.all()
-                if u.notify_on_completed_flights
+                u.email for u in advertiser.user_set.all() if u.flight_notifications
             ]
 
             context = {
@@ -932,9 +985,7 @@ def notify_of_completed_flights():
             advertiser = Advertiser.objects.get(slug=advertiser_slug)
 
             to_addresses = [
-                u.email
-                for u in advertiser.user_set.all()
-                if u.notify_on_completed_flights
+                u.email for u in advertiser.user_set.all() if u.flight_notifications
             ]
 
             if not to_addresses:

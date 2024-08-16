@@ -17,7 +17,14 @@ class UserAdmin(SimpleHistoryAdmin):
         (None, {"fields": ("email", "name", "password")}),
         (
             _("Ad server details"),
-            {"fields": ("advertisers", "publishers", "notify_on_completed_flights")},
+            {
+                "fields": (
+                    "advertisers",
+                    "publishers",
+                    "flight_notifications",
+                    "notify_on_completed_flights",  # DEPRECATED
+                )
+            },
         ),
         (
             _("Permissions"),

@@ -33,6 +33,7 @@ from ..tasks import daily_update_uplift
 from ..tasks import disable_inactive_publishers
 from ..tasks import notify_of_autorenewing_flights
 from ..tasks import notify_of_completed_flights
+from ..tasks import notify_of_first_flight_launched
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
 from ..tasks import remove_old_report_data
@@ -137,6 +138,31 @@ class TasksTest(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.ad1.sampled_ctr, 100 * (1 / 10))
         self.assertAlmostEqual(self.ad2.sampled_ctr, 100 * (2 / 7))
+
+    @override_settings(
+        # Use the memory email backend instead of front for testing
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONT_ENABLED=True,
+    )
+    def test_notify_of_flights_launched(self):
+        # Ensure there's a recipient for a wrapup email
+        self.staff_user.advertisers.add(self.advertiser)
+
+        notify_of_first_flight_launched()
+
+        # Shouldn't be any flight launched messages
+        self.assertEqual(len(mail.outbox), 0)
+
+        self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=1)
+        self.flight.save()
+
+        notify_of_first_flight_launched()
+
+        # Should be one email for the flight that launched 'yesterday' now
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(
+            mail.outbox[0].subject.startswith("Advertising launched")
+        )
 
     @override_settings(
         # Use the memory email backend instead of front for testing
