@@ -7,6 +7,7 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.test import TestCase
+from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
@@ -21,6 +22,7 @@ from ..models import Flight
 from ..models import Publisher
 from ..models import Region
 from ..models import Topic
+from ..tasks import daily_update_advertisers
 from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
 
@@ -131,7 +133,9 @@ class TestAdvertiserDashboardViews(TestCase):
             email="staff@example.com",
         )
 
-    def advertiser_overview(self):
+        self.factory = RequestFactory()
+
+    def test_advertiser_overview(self):
         url = reverse(
             "advertiser_main", kwargs={"advertiser_slug": self.advertiser.slug}
         )
@@ -141,14 +145,19 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
+        # Flight is "over"
         self.flight.live = False
+        self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=35)
+        self.flight.end_date = get_ad_day().date() - datetime.timedelta(days=5)
         self.flight.save()
 
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "no active flights")
+        self.assertContains(response, "no active or upcoming flights")
 
+        # Flight is live and ongoing
+        self.flight.end_date = get_ad_day().date() + datetime.timedelta(days=5)
         self.flight.live = True
         self.flight.save()
 
@@ -172,13 +181,25 @@ class TestAdvertiserDashboardViews(TestCase):
             div_id="foo",
             keywords=None,
         )
+        daily_update_advertisers()
 
         response = self.client.get(url)
         self.assertNotContains(
             response,
             "There are a few steps to getting started with your first ad campaign with us",
         )
-        self.assertContains(response, "Welcome back")
+        self.assertContains(response, f"Month to date overview for {self.advertiser.name}")
+
+        self.assertNotContains(response, f"/advertiser/{self.advertiser.slug}/report/topics/")
+        self.assertNotContains(response, f"/advertiser/{self.advertiser.slug}/report/keywords/")
+
+        self.advertiser.show_keyword_report = True
+        self.advertiser.show_topic_report = True
+        self.advertiser.save()
+
+        response = self.client.get(url)
+        self.assertContains(response, f"/advertiser/{self.advertiser.slug}/report/topics/")
+        self.assertContains(response, f"/advertiser/{self.advertiser.slug}/report/keywords/")
 
     def test_flight_list_view(self):
         url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})

@@ -104,17 +104,27 @@
                   <span>{% trans 'Publishers' %}</span>
                 </a>
               </li>
-              {% if request.user.is_staff %}
+              {% if request.user.is_staff or advertiser.show_keyword_report %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'advertiser_keyword_report' advertiser.slug %}" data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}">
-                  <span class="fa fa-lock fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                <a
+                  class="nav-link"
+                  href="{% url 'advertiser_keyword_report' advertiser.slug %}"
+                  {% if not advertiser.show_keyword_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}"{% endif %}
+                >
+                  <span class="fa fa-bullseye fa-fw ml-4 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Keywords' %}</span>
                 </a>
               </li>
+              {% endif %}
 
+              {% if request.user.is_staff or advertiser.show_topic_report %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'advertiser_topic_report' advertiser.slug %}" data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}">
-                  <span class="fa fa-lock fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                <a
+                  class="nav-link"
+                  href="{% url 'advertiser_topic_report' advertiser.slug %}"
+                  {% if not advertiser.show_topic_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}"{% endif %}
+                >
+                  <span class="fa fa-dot-circle-o fa-fw ml-4 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Topics' %}</span>
                 </a>
               </li>

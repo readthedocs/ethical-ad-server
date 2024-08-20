@@ -612,6 +612,15 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
         default=None,
     )
 
+    show_keyword_report = models.BooleanField(
+        default=False,
+        help_text=_("Show the link to the Keyword Report in the advertiser dashboard"),
+    )
+    show_topic_report = models.BooleanField(
+        default=False,
+        help_text=_("Show the link to the Topic Report in the advertiser dashboard"),
+    )
+
     # Deprecated - will migration to `customer`
     stripe_customer_id = models.CharField(
         _("Stripe Customer ID"), max_length=200, blank=True, null=True, default=None
