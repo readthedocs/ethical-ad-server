@@ -161,7 +161,7 @@ class TasksTest(BaseAdModelsTestCase):
         # Should be one email for the flight that launched 'yesterday' now
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(
-            mail.outbox[0].subject.startswith("Advertising launched")
+            mail.outbox[0].subject.startswith("Advertising campaign launched")
         )
 
     @override_settings(
