@@ -1357,8 +1357,8 @@ class InviteUserForm(forms.ModelForm):
             user = super().save(commit)
             user.invite_user()
 
-        # Track who added this user
-        update_change_reason(user, "Invited via authorized users view")
+            # Track who added this user
+            update_change_reason(user, "Invited via authorized users view")
 
         # You will need to add the user to the publisher/advertiser in the view
         return user
@@ -1387,7 +1387,7 @@ class AccountForm(forms.ModelForm):
             ),
             Fieldset(
                 _("Notification settings"),
-                "notify_on_completed_flights",
+                "flight_notifications",
                 css_class="my-3",
             ),
             Submit("submit", _("Update account")),
@@ -1395,7 +1395,7 @@ class AccountForm(forms.ModelForm):
 
     class Meta:
         model = get_user_model()
-        fields = ("name", "notify_on_completed_flights")
+        fields = ("name", "flight_notifications")
 
 
 class SupportForm(forms.Form):
