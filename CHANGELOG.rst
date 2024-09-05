@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.7.0
+--------------
+
+This release had a few advertiser improvements and turned on a few extra
+reports for advertisers.
+
+:date: September 5, 2024
+
+ * @dependabot[bot]: Bump cryptography from 42.0.8 to 43.0.1 in /requirements (#909)
+ * @davidfischer: Option for enabling/disabling keyword/topic report link (#907)
+ * @davidfischer: First flight launched notification (#906)
+ * @davidfischer: Advertiser report optimizations (#904)
+ * @dependabot[bot]: Bump django from 5.0.7 to 5.0.8 in /requirements (#902)
+
+
 Version v5.6.0
 --------------
 
