@@ -190,17 +190,6 @@ class TestAdvertiserDashboardViews(TestCase):
         )
         self.assertContains(response, f"Month to date overview for {self.advertiser.name}")
 
-        self.assertNotContains(response, f"/advertiser/{self.advertiser.slug}/report/topics/")
-        self.assertNotContains(response, f"/advertiser/{self.advertiser.slug}/report/keywords/")
-
-        self.advertiser.show_keyword_report = True
-        self.advertiser.show_topic_report = True
-        self.advertiser.save()
-
-        response = self.client.get(url)
-        self.assertContains(response, f"/advertiser/{self.advertiser.slug}/report/topics/")
-        self.assertContains(response, f"/advertiser/{self.advertiser.slug}/report/keywords/")
-
     def test_flight_list_view(self):
         url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
 

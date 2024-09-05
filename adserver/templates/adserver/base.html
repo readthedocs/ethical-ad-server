@@ -104,7 +104,6 @@
                   <span>{% trans 'Publishers' %}</span>
                 </a>
               </li>
-              {% if request.user.is_staff or advertiser.show_keyword_report %}
               <li class="nav-item">
                 <a
                   class="nav-link"
@@ -115,9 +114,6 @@
                   <span>{% trans 'Keywords' %}</span>
                 </a>
               </li>
-              {% endif %}
-
-              {% if request.user.is_staff or advertiser.show_topic_report %}
               <li class="nav-item">
                 <a
                   class="nav-link"
@@ -128,7 +124,6 @@
                   <span>{% trans 'Topics' %}</span>
                 </a>
               </li>
-              {% endif %}
 
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'advertiser_users' advertiser.slug %}">
