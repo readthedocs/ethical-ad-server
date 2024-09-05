@@ -407,15 +407,12 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     # We have to do this here,
                     # so we can filter by the weight in the filter_flight call below
                     # TODO: Handle filtering by multiple flights in the future
-                    if not self.niche_weights:
-                        from ethicalads_ext.embedding.utils import (  # noqa
-                            get_niche_weights,
-                        )
+                    from ethicalads_ext.embedding.utils import (  # noqa
+                        get_niche_weights,
+                    )
 
-                        self.niche_weights = get_niche_weights(
-                            self.url, flights=[flight]
-                        )
-                        log.info("Niche targeting weights: %s", self.niche_weights)
+                    self.niche_weights = get_niche_weights(self.url, flights=[flight])
+                    log.info("Niche targeting weights: %s", self.niche_weights)
 
                 # Handle excluding flights based on targeting
                 if not self.filter_flight(flight):

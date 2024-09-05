@@ -1224,14 +1224,18 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return True
 
     def show_to_niche_targeting(self, weights):
-        """Filter flights based on distance of niche targeting."""
-        if self.niche_targeting:
-            if self.campaign.advertiser in weights:
-                goal_weight = self.niche_targeting
-                return weights[self.campaign.advertiser] < goal_weight
-            return False
+        """
+        Filter flights based on distance of niche targeting.
 
-        return True
+        Only filters if the flight has a niche targeting goal set.
+        """
+        if not self.niche_targeting:
+            return True
+
+        if self.campaign.advertiser in weights:
+            goal_weight = self.niche_targeting
+            return weights[self.campaign.advertiser] < goal_weight
+        return False
 
     def sold_days(self):
         # The flight is considered to end at the end of the day on the `end_date`
