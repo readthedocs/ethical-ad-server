@@ -549,6 +549,7 @@ class TestReportViews(TestReportsBase):
 
         # Update reporting
         daily_update_impressions()
+        daily_update_publishers()
 
         # Generate the report (used to check data)
         report = PublisherReport(AdImpression.objects.filter(publisher=self.publisher1))
@@ -579,7 +580,7 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "CSV Export")
 
         # Check staff fields not present since the permission wasn't configured
-        self.assertNotContains(response, "Fill Rate")
+        self.assertNotContains(response, "Our&nbsp;Rev")
 
         # Add the permission
         self.staff_user.user_permissions.add(
@@ -589,7 +590,7 @@ class TestReportViews(TestReportsBase):
             )
         )
         response = self.client.get(url)
-        self.assertContains(response, "Fill Rate")
+        self.assertContains(response, "Our&nbsp;Rev")
 
     def test_publisher_placement_report_contents(self):
         self.client.force_login(self.staff_user)

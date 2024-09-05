@@ -168,7 +168,7 @@ CELERY_BEAT_SCHEDULE = {
     # Very fast indexes that can be run more frequently
     "halfhourly-advertiser-index": {
         "task": "adserver.tasks.daily_update_advertisers",
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(minute="*/5"),
     },
     "halfhourly-publisher-index": {
         "task": "adserver.tasks.daily_update_publishers",

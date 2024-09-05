@@ -11,6 +11,7 @@ from .models import AdvertiserImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
+from .models import PublisherImpression
 from .models import PublisherPaidImpression
 from .models import RegionImpression
 from .models import RegionTopicImpression
@@ -326,6 +327,15 @@ class PublisherReport(BaseReport):
             return value
 
         return super().get_index_display(index)
+
+
+class OptimizedPublisherReport(PublisherReport):
+    """A report using the optimized PublisherImpression index showing daily ad performance for a publisher."""
+
+    model = PublisherImpression
+    index = "date"
+    order = "-date"
+    select_related_fields = ("publisher",)
 
 
 class OptimizedPublisherPaidReport(PublisherReport):
