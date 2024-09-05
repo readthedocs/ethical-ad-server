@@ -808,7 +808,7 @@ def notify_of_first_flight_launched():
                 sender_name=f"{site.name} Flight Tracker",
             ) as connection:
                 message = mail.EmailMessage(
-                    _("Advertising launched - %(name)s") % {"name": site.name},
+                    _("Advertising campaign launched - %(name)s") % {"name": site.name},
                     render_to_string("adserver/email/flights-launched.html", context),
                     from_email=settings.DEFAULT_FROM_EMAIL,  # Front doesn't use this
                     to=to_addresses,
