@@ -413,7 +413,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
 
                 self.niche_weights = get_niche_weights(
-                    self.url, flights=flights_with_niche_targeting
+                    url=self.url, flights=flights_with_niche_targeting
                 )
                 log.info("Niche targeting weights: %s", self.niche_weights)
 
