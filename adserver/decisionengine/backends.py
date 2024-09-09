@@ -396,24 +396,28 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             # Choose a flight based on the impressions needed
             flight_range = []
             total_clicks_needed = 0
+            self.niche_weights = None
+
+            flights_with_niche_targeting = [
+                flight for flight in possible_flights if flight.niche_targeting
+            ]
+
+            # Apply niche targeting only when any flight has it.
+            # This is to track whether we should do expensive distance queries.
+            if (
+                flights_with_niche_targeting
+                and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
+            ):
+                # We have to do this here,
+                # so we can filter by the weight in the filter_flight call below
+                from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
+
+                self.niche_weights = get_niche_weights(
+                    url=self.url, flights=flights_with_niche_targeting
+                )
+                log.info("Niche targeting weights: %s", self.niche_weights)
 
             for flight in possible_flights:
-                # Apply niche targeting only when any flight has it.
-                # This is to track whether we should do expensive distance queries.
-                if (
-                    flight.niche_targeting
-                    and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
-                ):
-                    if not self.niche_weights:
-                        from ethicalads_ext.embedding.utils import (  # noqa
-                            get_niche_weights,
-                        )
-
-                        self.niche_weights = get_niche_weights(
-                            self.url,
-                        )
-                        log.info("Niche targeting weights: %s", self.niche_weights)
-
                 # Handle excluding flights based on targeting
                 if not self.filter_flight(flight):
                     continue
