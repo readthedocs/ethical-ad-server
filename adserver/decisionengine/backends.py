@@ -396,24 +396,29 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             # Choose a flight based on the impressions needed
             flight_range = []
             total_clicks_needed = 0
+            self.niche_weights = None
 
-            for flight in possible_flights:
+            flights_with_niche_targeting = [
+                flight for flight in flights if flight.niche_targeting
+            ]
+
+            if flights_with_niche_targeting:
                 # Apply niche targeting only when any flight has it.
                 # This is to track whether we should do expensive distance queries.
                 if (
-                    flight.niche_targeting
+                    flights_with_niche_targeting
                     and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
                 ):
                     # We have to do this here,
                     # so we can filter by the weight in the filter_flight call below
-                    # TODO: Handle filtering by multiple flights in the future
-                    from ethicalads_ext.embedding.utils import (  # noqa
-                        get_niche_weights,
-                    )
+                    from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
 
-                    self.niche_weights = get_niche_weights(self.url, flights=[flight])
+                    self.niche_weights = get_niche_weights(
+                        self.url, flights=flights_with_niche_targeting
+                    )
                     log.info("Niche targeting weights: %s", self.niche_weights)
 
+            for flight in possible_flights:
                 # Handle excluding flights based on targeting
                 if not self.filter_flight(flight):
                     continue
