@@ -1000,7 +1000,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         """
         Return the niche targeting parameter for this flight.
 
-        Testing out return types here as well..
+        0.0 means no niche targeting,
+        and then the lower the number the more niche the targeting.
         """
         if not self.targeting_parameters:
             return 0.0
