@@ -399,7 +399,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             self.niche_weights = None
 
             flights_with_niche_targeting = [
-                flight for flight in flights if flight.niche_targeting
+                flight for flight in possible_flights if flight.niche_targeting
             ]
 
             # Apply niche targeting only when any flight has it.
