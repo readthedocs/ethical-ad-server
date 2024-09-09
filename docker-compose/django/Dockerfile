@@ -44,7 +44,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/prod
 # Its requirements are huge and include PyTorch and other ML tools.
 # If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
 # in your environment file `./envs/local/django`.
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/st.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/analyzer.txt
 
 COPY ./docker-compose/django/start /start
 RUN chmod +x /start
