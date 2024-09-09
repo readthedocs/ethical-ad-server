@@ -1,7 +1,0 @@
-# For the ST backend
-textacy==0.12.0
-beautifulsoup4==4.11.1
-langdetect==1.0.9
-trafilatura==1.7.0
-sentence-transformers==2.6.1
-einops==0.7.0
