@@ -415,7 +415,8 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 self.niche_weights = get_niche_weights(
                     url=self.url, flights=flights_with_niche_targeting
                 )
-                log.info("Niche targeting weights: %s", self.niche_weights)
+                if self.niche_weights:
+                    log.debug("Niche targeting weights: %s", self.niche_weights)
 
             for flight in possible_flights:
                 # Handle excluding flights based on targeting
