@@ -89,10 +89,6 @@ class AnalyzedUrl(BaseAnalyzedUrl):
     class Meta:
         unique_together = ("url", "publisher")
 
-    def __str__(self):
-        """Simple override."""
-        return f"Analyzed URL: {self.url} for {self.publisher}"
-
 
 class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
     """Analyzed keywords for a given URL."""
@@ -111,7 +107,3 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
 
     class Meta:
         unique_together = ("url", "advertiser")
-
-    def __str__(self):
-        """Simple override."""
-        return f"Analyzed Advertiser URL: {self.url} for {self.advertiser}"
