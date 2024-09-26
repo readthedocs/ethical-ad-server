@@ -1,6 +1,5 @@
 """Stored results of offline content targeting analysis."""
 
-from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel
@@ -90,16 +89,6 @@ class AnalyzedUrl(BaseAnalyzedUrl):
     class Meta:
         unique_together = ("url", "publisher")
 
-    def save(self, *args, **kwargs):
-        """Trigger embedding analysis when saving."""
-
-        if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
-            from ethicalads_ext.embedding.tasks import analyze_publisher_url
-
-            analyze_publisher_url.delay(self.url, self.publisher.slug, force=True)
-
-        return super().save(*args, **kwargs)
-
 
 class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
     """Analyzed keywords for a given URL."""
@@ -118,13 +107,3 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
 
     class Meta:
         unique_together = ("url", "advertiser")
-
-    def save(self, *args, **kwargs):
-        """Trigger embedding analysis when saving."""
-
-        if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
-            from ethicalads_ext.embedding.tasks import analyze_advertiser_url
-
-            analyze_advertiser_url.delay(self.url, self.advertiser.slug, force=True)
-
-        return super().save(*args, **kwargs)
