@@ -191,6 +191,10 @@ if "adserver.analyzer" in INSTALLED_APPS:
         "task": "adserver.analyzer.tasks.daily_analyze_urls",
         "schedule": crontab(hour="4", minute="0"),
     }
+    CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
+        "task": "adserver.analyzer.tasks.daily_analyze_advertiser_urls",
+        "schedule": crontab(hour="4", minute="30"),
+    }
 
 
 # Sentry settings for error monitoring
