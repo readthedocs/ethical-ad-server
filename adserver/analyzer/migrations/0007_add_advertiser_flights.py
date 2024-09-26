@@ -6,7 +6,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("adserver", "0097_add_advertiser_flights"),
         ("adserver_analyzer", "0001_squashed_0006_remove_embedding"),
     ]
 

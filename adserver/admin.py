@@ -528,8 +528,8 @@ class AnalyzedAdvertiserUrlInline(admin.TabularInline):
     """For inlining the analyzed advertiser URLs on the flight admin."""
 
     model = AnalyzedAdvertiserUrl.flights.through
-
     raw_id_fields = ("analyzedadvertiserurl",)
+    verbose_name = "Niche targeting flight"
 
 
 @admin.register(Flight)
