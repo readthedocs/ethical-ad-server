@@ -40,7 +40,7 @@ class AnalyzedAdvertiserUrlAdmin(SimpleHistoryAdmin):
     list_per_page = 500
     list_filter = ("last_analyzed_date", "advertiser")
     list_select_related = ("advertiser",)
-    raw_id_fields = ("advertiser",)
+    raw_id_fields = ("advertiser", "flights")
     search_fields = ("url", "keywords")
 
     # Note: may need to use the estimated count paginator if this gets large
