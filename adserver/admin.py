@@ -14,6 +14,8 @@ from django.utils.translation import gettext_lazy as _
 from djstripe.models import Invoice
 from simple_history.admin import SimpleHistoryAdmin
 
+from adserver.analyzer.models import AnalyzedAdvertiserUrl
+
 from .forms import AdvertisementAdminForm
 from .forms import FlightAdminForm
 from .mixins import EstimatedCountPaginator
@@ -522,6 +524,14 @@ class FlightMixin:
         return "${:.2f}".format(calculate_ecpm(cost, views))
 
 
+class AnalyzedAdvertiserUrlInline(admin.TabularInline):
+    """For inlining the analyzed advertiser URLs on the flight admin."""
+
+    model = AnalyzedAdvertiserUrl.flights.through
+    raw_id_fields = ("analyzedadvertiserurl",)
+    verbose_name = "Niche targeting flight"
+
+
 @admin.register(Flight)
 class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     """Django admin admin configuration for ad Flights."""
@@ -531,7 +541,7 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
     save_as = True
 
     actions = ["action_create_draft_invoice"]
-    inlines = (AdvertisementsInline, InvoiceInline)
+    inlines = (AdvertisementsInline, InvoiceInline, AnalyzedAdvertiserUrlInline)
     list_display = (
         "name",
         "slug",
