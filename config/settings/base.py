@@ -537,8 +537,13 @@ if ADSERVER_ANALYZER_BACKEND and ext:
 if ext:
     INSTALLED_APPS.append("ethicalads_ext.support")
 
-ADSERVER_ANALYZER_MODEL = env("ADSERVER_ANALYZER_MODEL", default="v1")
+ADSERVER_ANALYZER_MODEL = env(
+    "ADSERVER_ANALYZER_MODEL", default="multi-qa-MiniLM-L6-cos-v1"
+)
 ADSERVER_ANALYZER_MODEL_HOME = env("ADSERVER_ANALYZER_MODEL_HOME", default="/tmp")
+ADSERVER_ANALYZER_MODEL_NORMALIZE = env(
+    "ADSERVER_ANALYZER_MODEL_NORMALIZE", default=False
+)
 
 # Whether Do Not Track is enabled for the ad server
 ADSERVER_DO_NOT_TRACK = False
