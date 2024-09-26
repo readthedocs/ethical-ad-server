@@ -102,7 +102,6 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
     flights = models.ManyToManyField(
         Flight,
         help_text=_("Flights to filter this URL by"),
-        null=True,
     )
 
     class Meta:
