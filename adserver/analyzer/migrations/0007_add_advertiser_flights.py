@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="flights",
             field=models.ManyToManyField(
                 help_text="Flights to filter this URL by",
-                null=True,
+                blank=True,
                 to="adserver.flight",
             ),
         ),
