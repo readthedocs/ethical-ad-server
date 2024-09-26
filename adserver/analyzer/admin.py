@@ -48,13 +48,42 @@ class AnalyzedAdvertiserUrlAdmin(SimpleHistoryAdmin):
 
 
 if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
+    from ethicalads_ext.embedding.models import AnalyzedAdvertiserUrlEmbedding
+    from ethicalads_ext.embedding.models import AnalyzedUrlEmbedding
     from ethicalads_ext.embedding.tasks import analyze_advertiser_url
+    from ethicalads_ext.embedding.tasks import analyze_publisher_url
+
+    class AnalyzedUrlEmbeddingInline(admin.TabularInline):
+        """Inline for AnalyzedUrlEmbedding."""
+
+        model = AnalyzedUrlEmbedding
+        readonly_fields = ["model"]
+        fields = readonly_fields
+        extra = 0
 
     @admin.action(description="Re-analyze the selected URLs")
-    def reanalyze_url(self, request, queryset):
+    def reanalyze_publisher_url(self, request, queryset):
+        for purl in queryset:
+            analyze_publisher_url.delay(purl.url, purl.publisher.slug, force=True)
+        self.message_user(request, "Re-analyzed selected URLs.")
+
+    AnalyzedUrlAdmin.actions = [reanalyze_publisher_url]
+    AnalyzedUrlAdmin.inlines = [AnalyzedUrlEmbeddingInline]
+
+    class AnalyzedAdvertiserUrlEmbeddingInline(admin.TabularInline):
+        """Inline for AnalyzedAdvertiserUrlEmbedding."""
+
+        model = AnalyzedAdvertiserUrlEmbedding
+        readonly_fields = ["model"]
+        fields = readonly_fields
+        extra = 0
+
+    @admin.action(description="Re-analyze the selected URLs")
+    def reanalyze_advertiser_url(self, request, queryset):
         """Re-analyze the selected URLs."""
         for aaurl in queryset:
             analyze_advertiser_url.delay(aaurl.url, aaurl.advertiser.slug, force=True)
         self.message_user(request, "Re-analyzed selected URLs.")
 
-    AnalyzedAdvertiserUrlAdmin.actions = [reanalyze_url]
+    AnalyzedAdvertiserUrlAdmin.actions = [reanalyze_advertiser_url]
+    AnalyzedAdvertiserUrlAdmin.inlines = [AnalyzedAdvertiserUrlEmbeddingInline]
