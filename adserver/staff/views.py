@@ -3,6 +3,7 @@
 import datetime
 import logging
 
+import stripe
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -17,10 +18,12 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 from django.views.generic import FormView
 from django.views.generic import TemplateView
+from djstripe.models import Transfer
 
 from adserver.utils import generate_publisher_payout_data
 
 from ..constants import PAID
+from ..constants import PAYOUT_STRIPE
 from ..mixins import StaffUserMixin
 from ..models import Advertiser
 from ..models import Publisher
@@ -275,7 +278,32 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         self.get_object()
+
+        # Automatically handle payout via Stripe
+        if self.payout.method == PAYOUT_STRIPE and self.request.POST.get(
+            "stripe-payout-confirm"
+        ):
+            transfer = self.pay_via_stripe_connect(self.payout)
+            self.payout.note = f"Stripe Transfer: { transfer.id }"
+            messages.success(self.request, _("Successfully paid via Stripe Connect"))
+
         self.payout.status = PAID
         self.payout.save()
         messages.success(self.request, _("Successfully updated payout to paid status"))
         return redirect(self.payout.get_absolute_url())
+
+    def pay_via_stripe_connect(self, payout):
+        """
+        Perform a Stripe connected account transfer for this payout.
+
+        See: https://docs.stripe.com/connect/separate-charges-and-transfers?platform=web&ui=stripe-hosted#create-transfer
+        """
+        publisher = payout.publisher
+        amount = int(100 * payout.amount)  # Convert to US cents and make it an integer
+        xfer = stripe.Transfer.create(
+            amount=amount,
+            currency="usd",
+            destination=publisher.djstripe_account.id,
+            transfer_group=f"PublisherPayout-{ self.payout.id }",
+        )
+        return Transfer.sync_from_stripe_data(xfer)
