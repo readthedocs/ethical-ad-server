@@ -44,7 +44,6 @@ IP2Proxy
 # Countries helper used in ad targeting
 django-countries
 
-jsonfield
 bleach
 
 # Security features
