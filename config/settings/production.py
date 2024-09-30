@@ -150,6 +150,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.notify_of_autorenewing_flights",
         "schedule": crontab(hour="5", minute="30"),
     },
+    "every-day-new-advertiser-flight-launched": {
+        "task": "adserver.tasks.notify_of_first_flight_launched",
+        "schedule": crontab(hour="1", minute="30"),
+    },
     "every-week-notify-publisher-changes": {
         "task": "adserver.tasks.notify_of_publisher_changes",
         # Runs on Wednesday
@@ -190,6 +194,10 @@ if "adserver.analyzer" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-urls"] = {
         "task": "adserver.analyzer.tasks.daily_analyze_urls",
         "schedule": crontab(hour="4", minute="0"),
+    }
+    CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
+        "task": "adserver.analyzer.tasks.daily_analyze_advertiser_urls",
+        "schedule": crontab(hour="4", minute="30"),
     }
 
 

@@ -67,7 +67,11 @@
       <tbody>
         {% for publisher, payout_data in payouts.items %}
           <tr>
-            <td><a href="{{ payout_data.due_report_url }}">{{ publisher.name }}</a></td>
+            <td>
+              {% if payout_data.due_report_url %}<a href="{{ payout_data.due_report_url }}">{% endif %}
+                <span>{{ publisher.name }}</span>
+              {% if payout_data.due_report_url %}</a>{% endif %}
+            </td>
             <td>{{ payout_data.start_date|date }}</td>
             <td>{{ payout_data.first }}</td>
             <td>${{ payout_data.total }}</td>

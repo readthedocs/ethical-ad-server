@@ -269,7 +269,7 @@ class PublisherPayoutTests(TestCase):
         list_response = self.client.get(url)
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
     def test_list_view_filters(self):
         url = reverse("staff-publisher-payouts")
@@ -279,34 +279,34 @@ class PublisherPayoutTests(TestCase):
         list_response = self.client.get(url + "?paid=True")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertNotContains(list_response, f"<span>{self.publisher1.name}</span>")
 
         list_response = self.client.get(url + "?paid=False")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
         # Filter first
         list_response = self.client.get(url + "?first=True")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
         list_response = self.client.get(url + "?first=False")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertNotContains(list_response, f"<span>{self.publisher1.name}</span>")
 
         # Filter publisher
         list_response = self.client.get(url + "?publisher=foo")
         self.assertEqual(list_response.status_code, 200)
         self.assertNotContains(list_response, "<td>$70.00</td>")
-        self.assertNotContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertNotContains(list_response, f"<span>{self.publisher1.name}</span>")
 
         list_response = self.client.get(url + "?publisher=test")
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "<td>$70.00</td>")
-        self.assertContains(list_response, f"{self.publisher1.name}</a></td>")
+        self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
     @override_settings(
         # Use the memory email backend instead of front for testing

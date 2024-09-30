@@ -6,6 +6,7 @@ from django_extensions.db.models import TimeStampedModel
 from jsonfield import JSONField
 
 from ..models import Advertiser
+from ..models import Flight
 from ..models import Publisher
 from .validators import KeywordsValidator
 
@@ -96,6 +97,12 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
         Advertiser,
         help_text=_("Advertiser with the URL"),
         on_delete=models.CASCADE,
+    )
+
+    flights = models.ManyToManyField(
+        Flight,
+        help_text=_("Flights to filter this URL by"),
+        blank=True,
     )
 
     class Meta:
