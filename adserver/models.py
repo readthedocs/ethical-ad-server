@@ -33,7 +33,6 @@ from django.utils.translation import gettext_lazy as _
 from django_countries.fields import CountryField
 from django_extensions.db.models import TimeStampedModel
 from djstripe.enums import InvoiceStatus
-from jsonfield import JSONField
 from simple_history.models import HistoricalRecords
 from user_agents import parse
 
@@ -195,7 +194,7 @@ class Region(TimeStampedModel, models.Model):
         help_text=_("Whether advertisers can select this region for new flights"),
     )
 
-    prices = JSONField(
+    prices = models.JSONField(
         _("Topic prices"),
         blank=True,
         null=True,
@@ -831,7 +830,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         Campaign, related_name="flights", on_delete=models.PROTECT
     )
 
-    targeting_parameters = JSONField(
+    targeting_parameters = models.JSONField(
         _("Targeting parameters"),
         blank=True,
         null=True,
@@ -866,7 +865,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     #    "countries": {"US": 0.1, "CA": 0.05, "DE": 0.05},
     #    "regions": {"us-ca": 0.25, "eu": 0.5},
     #  }
-    traffic_fill = JSONField(
+    traffic_fill = models.JSONField(
         _("Traffic fill"),
         blank=True,
         null=True,
@@ -877,7 +876,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
     # If set, any publisher, country, or region whose `traffic_fill` exceeds the cap
     # will not be eligible to show on this campaign until they're below the cap.
     # Format is the same as `traffic_fill` but this is set manually
-    traffic_cap = JSONField(
+    traffic_cap = models.JSONField(
         _("Traffic cap"),
         blank=True,
         null=True,
@@ -2540,7 +2539,9 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     )
 
     # Client data
-    keywords = JSONField(_("Keyword targeting for this view"), blank=True, null=True)
+    keywords = models.JSONField(
+        _("Keyword targeting for this view"), blank=True, null=True
+    )
     div_id = models.CharField(
         _("Div id"), blank=True, null=True, max_length=DIV_MAXLENGTH
     )
