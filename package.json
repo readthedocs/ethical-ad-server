@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/readthedocs/ethical-ad-server#readme",
   "dependencies": {
-    "bootstrap": "^4.6.2",
+    "bootstrap": "^5.0.0",
     "cropperjs": "^1.6.2",
     "font-awesome": "^4.7.0",
     "jquery": "^3.5.1",
