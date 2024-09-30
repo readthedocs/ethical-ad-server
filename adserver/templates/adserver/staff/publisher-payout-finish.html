@@ -15,46 +15,65 @@
 {% block content_container %}
 <h1>{% block heading %}{% trans 'Finish Payout' %}{% endblock heading %}</h1>
 
-<dl>
-  <dt>{% trans 'Publisher' %}</dt>
-  <dd>{{ payout.publisher }}</dd>
+<div>
 
-  <dt>{% trans 'Method' %}</dt>
-  <dd>
-  {{ payout.publisher.get_payout_method_display }}:
-  </dd>
+<form method="post">
 
-  {% if payout.publisher.paypal_email %}
-  <dt>{% trans 'User' %}</dt>
-  <dd>
-  {{ payout.publisher.paypal_email }}
-  </dd>
-  {% endif %}
+  <dl>
+    <dt>{% trans 'Publisher' %}</dt>
+    <dd>{{ payout.publisher }}</dd>
 
-  <dt>{% trans 'Status' %}</dt>
-  <dd>{{ payout.get_status_display }}</dd>
+    <dt>{% trans 'Method' %}</dt>
+    <dd>
+    {{ payout.publisher.get_payout_method_display }}:
+    </dd>
 
-  <dt>{% trans 'Amount' %}</dt>
-  <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+    {% if payout.publisher.paypal_email %}
+    <dt>{% trans 'User' %}</dt>
+    <dd>
+    {{ payout.publisher.paypal_email }}
+    </dd>
+    {% endif %}
 
-  <dt>{% trans 'Subject' %}</dt>
-  <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
+    <dt>{% trans 'Status' %}</dt>
+    <dd>{{ payout.get_status_display }}</dd>
 
-  <dt>{% trans 'Action' %}</dt>
-  <dd>
-  {% if payout.status == 'emailed' and payout.publisher.payout_url %}
-  <a href="{{ payout.publisher.payout_url }}" class="button">{% trans "Send Money" %}</a>
-  {% endif %}
-  </dd>
+    <dt>{% trans 'Amount' %}</dt>
+    <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
 
-</dl>
+    <dt>{% trans 'Subject' %}</dt>
+    <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
 
-<div id="content" class="colM delete-confirmation">
-  <form method="post">
-    {% csrf_token %}
-    <input type="submit" value="{% trans "Finish payout" %}" class="btn btn-primary">
-    <p class="small">{% trans "This will mark the payout as paid" %}</p>
-  </form>
+    <dt>{% trans 'Action' %}</dt>
+    <dd>
+      <div class="ml-2 mb-5">
+
+        {% if payout.status == 'emailed' and payout.publisher.payout_url %}
+          {% if payout.method == "stripe" %}
+            <div class="form-group form-check">
+              <input type="checkbox" class="form-check-input" id="stripe-payout-confirm" name="stripe-payout-confirm">
+              <label class="form-check-label" for="stripe-payout-confirm">
+                <span>{% blocktrans with amount=payout.amount|floatformat:2|intcomma %}Send ${{ amount }} via Stripe Connect{% endblocktrans %}</span>
+              </label>
+            </div>
+
+            <a href="{{ payout.publisher.payout_url }}" class="btn btn-sm btn-outline-secondary">{% trans "Or Send Manually" %}</a>
+          {% else %}
+            <a href="{{ payout.publisher.payout_url }}" class="btn btn-sm btn-outline-secondary">{% trans "Send Money" %}</a>
+          {% endif %}
+        {% endif %}
+
+      </div>
+    </dd>
+
+  </dl>
+
+  {% csrf_token %}
+  <input type="submit" value="{% trans "Finish payout" %}" class="btn btn-primary">
+  <p class="small">{% trans "This will mark the payout as paid" %}</p>
+
+</form>
+
 </div>
 
 {% endblock content_container %}
