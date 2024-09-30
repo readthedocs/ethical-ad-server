@@ -5,6 +5,18 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+Version v5.8.0
+--------------
+
+Automates Stripe payouts and niche targeting based on specific flights.
+
+:Date: September 30, 2024
+
+ * @davidfischer: Automate stripe publisher payouts (#916)
+ * @ericholscher: Add Flights to the AnalyzedAdvertiserUrl for targeting (#915)
+ * @davidfischer: Actually run the flight launched email task (#914)
+ * @davidfischer: Fix Mailchimp email list signup (#913)
+
 
 Version v5.7.0
 --------------
