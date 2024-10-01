@@ -107,7 +107,7 @@ django-crispy-forms==2.3
     # via
     #   -r base.in
     #   crispy-bootstrap4
-django-debug-toolbar==4.4.6
+django-debug-toolbar==3.8.1
     # via -r development.in
 django-dynamic-fixture==4.0.1
     # via -r development.in
