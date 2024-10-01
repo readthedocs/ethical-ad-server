@@ -2,7 +2,7 @@
 -r testing.in
 
 # Useful debugging tools
-django-debug-toolbar>=3.2,<4.0
+django-debug-toolbar
 ipdb
 ipython
 
