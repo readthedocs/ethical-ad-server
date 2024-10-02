@@ -44,6 +44,11 @@
 
         {% if export_url %}
           <aside class="mb-3 col-md-4 text-right">
+            <a href="{% url 'advertiser_per_ad_report' advertiser.slug %}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
+              <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
+              <span>Per Ad Breakdown</span>
+            </a>
+
             <a href="{{ export_url }}" class="btn btn-sm btn-outline-secondary" role="button" aria-pressed="true">
               <span class="fa fa-download mr-1" aria-hidden="true"></span>
               <span>CSV Export</span>
