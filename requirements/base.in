@@ -44,7 +44,6 @@ IP2Proxy
 # Countries helper used in ad targeting
 django-countries
 
-jsonfield
 bleach
 
 # Security features
@@ -62,3 +61,6 @@ PyJWT
 
 # CORS headers
 django-cors-headers
+
+# Deprecated, but still used in migrations
+jsonfield
