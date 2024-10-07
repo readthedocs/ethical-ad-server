@@ -1332,6 +1332,30 @@ class AdvertiserGeoReportView(AdvertiserAccessMixin, BaseReportView):
         return context
 
 
+class AdvertiserPerAdPerDayReportView(AdvertiserAccessMixin, BaseReportView):
+    """A report for an advertiser broken down by day and by ad."""
+
+    impression_model = GeoImpression
+    template_name = "adserver/reports/advertiser-per-ad.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "metabase_advertiser_per_ad": settings.METABASE_QUESTIONS.get(
+                    "ADVERTISER_PER_AD_TABLE"
+                ),
+            }
+        )
+
+        return context
+
+
 class AdvertiserPublisherReportView(AdvertiserAccessMixin, BaseReportView):
     """A report for an advertiser broken down by publishers where the advertisers ads are shown."""
 

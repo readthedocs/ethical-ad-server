@@ -18,6 +18,7 @@ from .views import AdvertiserFlightReportView
 from .views import AdvertiserGeoReportView
 from .views import AdvertiserKeywordReportView
 from .views import AdvertiserMainView
+from .views import AdvertiserPerAdPerDayReportView
 from .views import AdvertiserPublisherReportView
 from .views import AdvertiserReportView
 from .views import AdvertiserStripePortalView
@@ -166,6 +167,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/report/geos.csv",
         AdvertiserGeoReportView.as_view(export=True),
         name="advertiser_geo_report_export",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/report/ad-breakdown/",
+        AdvertiserPerAdPerDayReportView.as_view(),
+        name="advertiser_per_ad_report",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/report/publishers/",

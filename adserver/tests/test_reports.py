@@ -396,6 +396,20 @@ class TestReportViews(TestReportsBase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
 
+    def test_advertiser_perday_report_contents(self):
+        url = reverse("advertiser_per_ad_report", args=[self.advertiser1.slug])
+
+        # Anonymous
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.staff_user)
+
+        # Metabase-only report
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
     def test_advertiser_publisher_report_contents(self):
         get(
             Offer,
