@@ -18,7 +18,6 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
-from simple_history.utils import update_change_reason
 
 from config.celery_app import app
 
@@ -886,9 +885,10 @@ def notify_of_completed_flights():
             flight.save()
 
             # Store the change reason in the history
-            update_change_reason(
-                flight, f"Hard stopped with ${value_remaining} value remaining."
-            )
+            # See: https://github.com/jazzband/django-simple-history/issues/1181
+            # update_change_reason(
+            #     flight, f"Hard stopped with ${value_remaining} value remaining."
+            # )
 
             completed_flights_by_advertiser[flight.campaign.advertiser.slug].append(
                 flight

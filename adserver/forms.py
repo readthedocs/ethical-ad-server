@@ -28,7 +28,6 @@ from django.utils.html import format_html
 from django.utils.text import slugify
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
-from simple_history.utils import update_change_reason
 
 from .models import Advertisement
 from .models import Campaign
@@ -1358,7 +1357,8 @@ class InviteUserForm(forms.ModelForm):
             user.invite_user()
 
             # Track who added this user
-            update_change_reason(user, "Invited via authorized users view")
+            # See: https://github.com/jazzband/django-simple-history/issues/1181
+            # update_change_reason(user, "Invited via authorized users view")
 
         # You will need to add the user to the publisher/advertiser in the view
         return user
