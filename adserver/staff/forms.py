@@ -17,7 +17,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from djstripe.models import Customer
-from simple_history.utils import update_change_reason
 
 from ..constants import EMAILED
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
@@ -110,7 +109,10 @@ class CreateAdvertiserForm(forms.Form):
         user_email = self.cleaned_data["user_email"]
 
         user = User.objects.create_user(name=user_name, email=user_email, password="")
-        update_change_reason(user, self.message)
+
+        # See: https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(user, self.message)
+
         if hasattr(user, "invite_user"):
             user.invite_user()
         return user
@@ -134,7 +136,7 @@ class CreateAdvertiserForm(forms.Form):
             campaign.publisher_groups.add(pub_group)
 
         flight_name = f"{advertiser_name} Initial Flight"
-        flight = Flight.objects.create(
+        Flight.objects.create(
             campaign=campaign,
             name=flight_name,
             slug=slugify(flight_name),
@@ -145,9 +147,10 @@ class CreateAdvertiserForm(forms.Form):
             },
         )
 
-        update_change_reason(advertiser, self.message)
-        update_change_reason(campaign, self.message)
-        update_change_reason(flight, self.message)
+        # See https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(advertiser, self.message)
+        # update_change_reason(campaign, self.message)
+        # update_change_reason(flight, self.message)
 
         return advertiser
 
@@ -256,7 +259,10 @@ class CreatePublisherForm(forms.Form):
         user_email = self.cleaned_data["user_email"]
 
         user = User.objects.create_user(name=user_name, email=user_email, password="")
-        update_change_reason(user, self.message)
+
+        # See https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(user, self.message)
+
         if hasattr(user, "invite_user"):
             user.invite_user()
         return user
@@ -277,7 +283,8 @@ class CreatePublisherForm(forms.Form):
         if group_obj:
             group_obj.publishers.add(publisher)
 
-        update_change_reason(publisher, self.message)
+        # See: https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(publisher, self.message)
 
         # Create this publisher's advertiser account
         self.create_publisher_advertiser_account(publisher)
@@ -305,7 +312,7 @@ class CreatePublisherForm(forms.Form):
             campaign.publisher_groups.add(pub_group)
 
         flight_name = f"{publisher.name} House Ads"
-        flight = Flight.objects.create(
+        Flight.objects.create(
             campaign=campaign,
             name=flight_name,
             slug=slugify(flight_name),
@@ -316,9 +323,10 @@ class CreatePublisherForm(forms.Form):
             },
         )
 
-        update_change_reason(advertiser, self.message)
-        update_change_reason(campaign, self.message)
-        update_change_reason(flight, self.message)
+        # See: https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(advertiser, self.message)
+        # update_change_reason(campaign, self.message)
+        # update_change_reason(flight, self.message)
 
     def save(self):
         """Create the publisher and associated objects. Send the invitation to the user account."""
@@ -408,6 +416,7 @@ class StartPublisherPayoutForm(forms.Form):
             status=EMAILED,
         )
 
-        update_change_reason(payout, "Payout via staff interface")
+        # See: https://github.com/jazzband/django-simple-history/issues/1181
+        # update_change_reason(payout, "Payout via staff interface")
 
         return payout
