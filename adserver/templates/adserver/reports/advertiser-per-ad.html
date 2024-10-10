@@ -1,0 +1,40 @@
+{% extends "adserver/reports/advertiser.html" %}
+{% load humanize %}
+{% load i18n %}
+{% load metabase %}
+
+
+{% block title %}{% trans 'Advertiser Per Ad Per Day Report' %} - {{ advertiser }}{% endblock %}
+
+
+{% block heading %}
+{% blocktrans %}Advertiser Per Ad Per Day Report for {{ advertiser }}{% endblocktrans %}
+{% endblock heading %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Per Ad Per Day Report' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block explainer %}
+<section class="mb-5">
+  <h3>{% trans 'About this report' %}</h3>
+  <p>
+    <span>{% trans 'This report shows a table of data with one entry for each ad for every day that ad is shown.' %} </span>
+    <span><strong>{% trans 'The data can be exported to CSV/Excel for further analysis with the icon at the bottom right.' %}</strong></span>
+  </p>
+</section>
+{% endblock explainer %}
+
+
+{% block report %}{% endblock report %}
+
+
+{% block summary %}
+  <div class="row mb-5">
+    <div class="col min-vh-100">
+      {% metabase_question_embed metabase_advertiser_per_ad advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}
+    </div>
+  </div>
+{% endblock summary %}
