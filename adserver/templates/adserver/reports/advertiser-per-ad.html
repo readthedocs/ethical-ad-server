@@ -20,7 +20,10 @@
 {% block explainer %}
 <section class="mb-5">
   <h3>{% trans 'About this report' %}</h3>
-  <p>{% trans 'This report shows a table of data with one entry for each ad for every day that ad is shown. The data can be exported to CSV/Excel for further analysis with the icon at the bottom right.' %}</p>
+  <p>
+    <span>{% trans 'This report shows a table of data with one entry for each ad for every day that ad is shown.' %} </span>
+    <span><strong>{% trans 'The data can be exported to CSV/Excel for further analysis with the icon at the bottom right.' %}</strong></span>
+  </p>
 </section>
 {% endblock explainer %}
 
