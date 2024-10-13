@@ -6,7 +6,7 @@
 #
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.8
+aiohttp==3.10.10
     # via geoip2
 aiosignal==1.3.1
     # via aiohttp
@@ -50,7 +50,7 @@ certifi==2024.8.30
     # via requests
 cfgv==3.4.0
     # via pre-commit
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via
@@ -67,17 +67,17 @@ click-repl==0.3.0
     # via celery
 colorama==0.4.6
     # via sphinx-autobuild
-coverage==7.6.1
+coverage==7.6.2
     # via
     #   -r development.in
     #   django-coverage-plugin
-crispy-bootstrap4==2024.1
+crispy-bootstrap4==2024.10
     # via -r base.in
 decorator==5.1.1
     # via
     #   ipdb
     #   ipython
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
 dj-stripe==2.8.4
     # via -r base.in
@@ -97,7 +97,7 @@ django==5.0.9
     #   jsonfield
 django-allauth==65.0.2
     # via -r base.in
-django-cors-headers==4.4.0
+django-cors-headers==4.5.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
@@ -123,7 +123,7 @@ django-simple-history==3.7.0
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
-django-upgrade==1.21.0
+django-upgrade==1.22.1
     # via -r development.in
 djangorestframework==3.15.2
     # via -r base.in
@@ -164,11 +164,11 @@ imagesize==1.4.1
     # via sphinx
 iniconfig==2.0.0
     # via pytest
-ip2proxy==3.4.1
+ip2proxy==3.4.2
     # via -r base.in
 ipdb==0.13.13
     # via -r development.in
-ipython==8.27.0
+ipython==8.28.0
     # via
     #   -r development.in
     #   ipdb
@@ -180,7 +180,7 @@ jsonfield==3.1.0
     # via -r base.in
 kombu==5.4.2
     # via celery
-markupsafe==2.1.5
+markupsafe==3.0.1
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -211,12 +211,14 @@ pluggy==1.5.0
     # via
     #   pytest
     #   tox
-pre-commit==3.8.0
+pre-commit==4.0.1
     # via -r development.in
 prompt-toolkit==3.0.48
     # via
     #   click-repl
     #   ipython
+propcache==0.2.0
+    # via yarl
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
@@ -243,7 +245,7 @@ pyyaml==6.0.2
     # via
     #   pre-commit
     #   responses
-redis==5.1.0
+redis==5.1.1
     # via celery
 requests==2.32.3
     # via
@@ -280,9 +282,9 @@ sphinx==6.2.1
     #   sphinx-rtd-theme
     #   sphinxcontrib-httpdomain
     #   sphinxcontrib-jquery
-sphinx-autobuild==2024.9.19
+sphinx-autobuild==2024.10.3
     # via -r development.in
-sphinx-rtd-theme==2.0.0
+sphinx-rtd-theme==3.0.1
     # via -r development.in
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
@@ -314,7 +316,7 @@ stripe==4.2.0
     #   dj-stripe
 tokenize-rt==6.0.0
     # via django-upgrade
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   ipdb
     #   pytest
@@ -350,7 +352,7 @@ urllib3==2.2.3
     #   responses
 user-agents==2.2.0
     # via -r base.in
-uvicorn==0.31.0
+uvicorn==0.31.1
     # via sphinx-autobuild
 vine==5.1.0
     # via
@@ -371,7 +373,7 @@ websockets==13.1
     # via sphinx-autobuild
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.13.1
+yarl==1.15.1
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
