@@ -6,7 +6,7 @@
 #
 beautifulsoup4==4.12.3
     # via -r testing.in
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
 filelock==3.16.1
     # via
@@ -24,7 +24,7 @@ six==1.16.0
     # via tox
 soupsieve==2.6
     # via beautifulsoup4
-tomli==2.0.1
+tomli==2.0.2
     # via tox
 tox==3.28.0
     # via -r testing.in
