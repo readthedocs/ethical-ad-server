@@ -3,7 +3,8 @@ Django<5.1
 pytz
 
 # Asynchronous tasks
-celery[redis]
+# Celery <5.5 has a stability issue the redis broker: https://github.com/celery/celery/issues/8030
+celery[redis]==5.5.0rc1
 
 # Static files
 whitenoise

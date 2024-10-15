@@ -173,7 +173,7 @@ pathy==0.11.0
     # via spacy
 pgvector==0.3.5
     # via -r analyzer.in
-pillow==10.4.0
+pillow==11.0.0
     # via torchvision
 preshed==3.0.9
     # via
