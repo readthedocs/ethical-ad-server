@@ -33,7 +33,7 @@ billiard==4.2.1
     # via celery
 bleach==6.1.0
     # via -r base.in
-celery[redis]==5.4.0
+celery[redis]==5.5.0rc1
     # via -r base.in
 certifi==2024.8.30
     # via
@@ -139,7 +139,7 @@ newrelic==10.1.0
     # via -r production.in
 packaging==24.1
     # via gunicorn
-pillow==10.4.0
+pillow==11.0.0
     # via -r base.in
 prompt-toolkit==3.0.48
     # via click-repl
@@ -187,9 +187,7 @@ typing-extensions==4.12.2
     #   django-countries
     #   multidict
 tzdata==2024.2
-    # via
-    #   celery
-    #   kombu
+    # via kombu
 ua-parser==0.18.0
     # via user-agents
 urllib3==2.2.3
@@ -210,7 +208,7 @@ webencodings==0.5.1
     # via bleach
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.1
+yarl==1.15.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

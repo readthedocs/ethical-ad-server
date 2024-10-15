@@ -14,7 +14,7 @@ alabaster==0.7.16
     # via sphinx
 amqp==5.2.0
     # via kombu
-anyio==4.6.0
+anyio==4.6.2.post1
     # via
     #   starlette
     #   watchfiles
@@ -44,7 +44,7 @@ bleach==6.1.0
     # via -r base.in
 cattrs==24.1.2
     # via requests-cache
-celery[redis]==5.4.0
+celery[redis]==5.5.0rc1
     # via -r base.in
 certifi==2024.8.30
     # via requests
@@ -67,7 +67,7 @@ click-repl==0.3.0
     # via celery
 colorama==0.4.6
     # via sphinx-autobuild
-coverage==7.6.2
+coverage==7.6.3
     # via
     #   -r development.in
     #   django-coverage-plugin
@@ -201,7 +201,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==10.4.0
+pillow==11.0.0
     # via -r base.in
 platformdirs==4.3.6
     # via
@@ -308,7 +308,7 @@ sqlparse==0.5.1
     #   django-debug-toolbar
 stack-data==0.6.3
     # via ipython
-starlette==0.39.2
+starlette==0.41.0
     # via sphinx-autobuild
 stripe==4.2.0
     # via
@@ -337,9 +337,7 @@ typing-extensions==4.12.2
     #   multidict
     #   uvicorn
 tzdata==2024.2
-    # via
-    #   celery
-    #   kombu
+    # via kombu
 ua-parser==0.18.0
     # via user-agents
 url-normalize==1.4.3
@@ -352,7 +350,7 @@ urllib3==2.2.3
     #   responses
 user-agents==2.2.0
     # via -r base.in
-uvicorn==0.31.1
+uvicorn==0.32.0
     # via sphinx-autobuild
 vine==5.1.0
     # via
@@ -373,7 +371,7 @@ websockets==13.1
     # via sphinx-autobuild
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.1
+yarl==1.15.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
