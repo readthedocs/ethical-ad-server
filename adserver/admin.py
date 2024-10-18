@@ -41,6 +41,7 @@ from .models import PublisherPayout
 from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import RotationImpression
 from .models import Topic
 from .models import UpliftImpression
 from .models import View
@@ -877,6 +878,11 @@ class PublisherImpressionAdmin(ImpressionsAdmin):
 
 class UpliftImpressionAdmin(ImpressionsAdmin):
     pass
+
+
+@admin.register(RotationImpression)
+class RotationImpressionAdmin(ImpressionsAdmin):
+    date_hierarchy = "date"
 
 
 class PlacementImpressionAdmin(ImpressionsAdmin):

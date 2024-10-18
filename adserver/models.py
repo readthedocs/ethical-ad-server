@@ -2460,6 +2460,33 @@ class UpliftImpression(BaseImpression):
         return "Uplift of %s on %s" % (self.advertisement, self.date)
 
 
+class RotationImpression(BaseImpression):
+    """
+    Create an index of ads that were rotated.
+
+    Indexed one per ad/publisher per day.
+    This is a subset of AdImpressions. Only rotated ads (rotations > 1) are counted.
+    """
+
+    publisher = models.ForeignKey(
+        Publisher, related_name="rotated_impressions", on_delete=models.PROTECT
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="rotated_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("publisher", "advertisement", "date")
+
+    def __str__(self):
+        """Simple override."""
+        return "Rotations of %s on %s" % (self.advertisement, self.date)
+
+
 class RegionTopicImpression(BaseImpression):
     """
     Create an index combining aggregated keywords & geos.
