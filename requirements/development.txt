@@ -180,7 +180,7 @@ jsonfield==3.1.0
     # via -r base.in
 kombu==5.4.2
     # via celery
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -357,7 +357,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.26.6
+virtualenv==20.27.0
     # via
     #   pre-commit
     #   tox
@@ -371,7 +371,7 @@ websockets==13.1
     # via sphinx-autobuild
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.2
+yarl==1.15.5
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
