@@ -4,7 +4,9 @@
 #
 #    pip-compile production.in
 #
-aiohttp==3.9.5
+aiohappyeyeballs==2.4.3
+    # via aiohttp
+aiohttp==3.10.10
     # via geoip2
 aiosignal==1.3.1
     # via aiohttp
@@ -19,27 +21,27 @@ async-timeout==4.0.3
     # via
     #   aiohttp
     #   redis
-attrs==23.2.0
+attrs==24.2.0
     # via aiohttp
-azure-core==1.30.2
+azure-core==1.31.0
     # via
     #   azure-storage-blob
     #   django-storages
-azure-storage-blob==12.20.0
+azure-storage-blob==12.23.1
     # via django-storages
-billiard==4.2.0
+billiard==4.2.1
     # via celery
 bleach==6.1.0
     # via -r base.in
-celery[redis]==5.4.0
+celery[redis]==5.5.0rc1
     # via -r base.in
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   requests
     #   sentry-sdk
-cffi==1.16.0
+cffi==1.17.1
     # via cryptography
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via
@@ -53,13 +55,13 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.3.0
     # via celery
-crispy-bootstrap4==2024.1
+crispy-bootstrap4==2024.10
     # via -r base.in
 cryptography==43.0.1
     # via azure-storage-blob
 dj-stripe==2.8.4
     # via -r base.in
-django==5.0.8
+django==5.0.9
     # via
     #   -r base.in
     #   crispy-bootstrap4
@@ -75,15 +77,15 @@ django==5.0.8
     #   django-storages
     #   djangorestframework
     #   jsonfield
-django-allauth==0.63.6
+django-allauth==65.0.2
     # via -r base.in
-django-anymail==11.0.1
+django-anymail==12.0
     # via -r production.in
-django-cors-headers==4.4.0
+django-cors-headers==4.5.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
-django-crispy-forms==2.2
+django-crispy-forms==2.3
     # via
     #   -r base.in
     #   crispy-bootstrap4
@@ -113,45 +115,47 @@ frozenlist==1.4.1
     #   aiosignal
 geoip2==4.8.0
     # via -r base.in
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r production.in
-idna==3.7
+idna==3.10
     # via
     #   requests
     #   yarl
-ip2proxy==3.4.0
+ip2proxy==3.4.2
     # via -r base.in
-isodate==0.6.1
+isodate==0.7.2
     # via azure-storage-blob
 jsonfield==3.1.0
     # via -r base.in
-kombu==5.3.7
+kombu==5.4.2
     # via celery
 maxminddb==2.6.2
     # via geoip2
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-newrelic==9.12.0
+newrelic==10.1.0
     # via -r production.in
 packaging==24.1
     # via gunicorn
-pillow==10.4.0
+pillow==11.0.0
     # via -r base.in
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
     # via click-repl
+propcache==0.2.0
+    # via yarl
 psycopg2-binary==2.9.9
     # via -r production.in
 pycparser==2.22
     # via cffi
-pyjwt==2.8.0
+pyjwt==2.9.0
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery
-pytz==2024.1
+pytz==2024.2
     # via -r base.in
-redis==5.0.7
+redis==5.1.1
     # via
     #   celery
     #   django-redis
@@ -162,13 +166,12 @@ requests==2.32.3
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.10.0
+sentry-sdk==2.16.0
     # via -r production.in
 six==1.16.0
     # via
     #   azure-core
     #   bleach
-    #   isodate
     #   python-dateutil
 sqlparse==0.5.1
     # via django
@@ -182,11 +185,12 @@ typing-extensions==4.12.2
     #   azure-core
     #   azure-storage-blob
     #   django-countries
-tzdata==2024.1
-    # via celery
+    #   multidict
+tzdata==2024.2
+    # via kombu
 ua-parser==0.18.0
     # via user-agents
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   django-anymail
     #   requests
@@ -204,7 +208,7 @@ webencodings==0.5.1
     # via bleach
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.9.4
+yarl==1.15.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

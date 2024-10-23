@@ -3,7 +3,10 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Loop through all .in files in the current directory
+# Change to the directory where the script is located
+cd "$(dirname "$0")"
+
+# Loop through all .in files in the script's directory
 for file in *.in
 do
   # Check if the file exists to avoid errors if there are no .in files
@@ -12,7 +15,7 @@ do
     # Call pip-compile for each .in file
     pip-compile -U "$file"
   else
-    echo "No .in files found in the directory."
+    echo "No .in files found."
     break
   fi
 done

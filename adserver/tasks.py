@@ -18,7 +18,6 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django_slack import slack_message
-from simple_history.utils import update_change_reason
 
 from config.celery_app import app
 
@@ -41,6 +40,7 @@ from .models import PublisherPaidImpression
 from .models import Region
 from .models import RegionImpression
 from .models import RegionTopicImpression
+from .models import RotationImpression
 from .models import Topic
 from .models import UpliftImpression
 from .reports import PublisherReport
@@ -510,6 +510,56 @@ def daily_update_uplift(day=None):
 
 
 @app.task()
+def daily_update_rotations(day=None):
+    """
+    Generate the daily index of RotationImpressions.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = get_day(day)
+
+    log.info("Updating rotation data for %s-%s", start_date, end_date)
+
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
+    for values in (
+        queryset.values("publisher", "advertisement")
+        .filter(rotations__gt=1)
+        .annotate(
+            total_decisions=Count("publisher"),
+            total_offers=Count("publisher", filter=Q(advertisement__isnull=False)),
+            total_views=Count("publisher", filter=Q(viewed=True)),
+            total_clicks=Count("publisher", filter=Q(clicked=True)),
+        )
+        .filter(total_decisions__gt=0)
+        .order_by("-total_decisions")
+        .values(
+            "publisher",
+            "advertisement",
+            "total_decisions",
+            "total_offers",
+            "total_views",
+            "total_clicks",
+        )
+        .iterator()
+    ):
+        impression, _ = RotationImpression.objects.using("default").get_or_create(
+            publisher_id=values["publisher"],
+            advertisement_id=values["advertisement"],
+            date=start_date,
+        )
+        RotationImpression.objects.using("default").filter(pk=impression.pk).update(
+            decisions=values["total_decisions"],
+            offers=values["total_offers"],
+            views=values["total_views"],
+            clicks=values["total_clicks"],
+        )
+
+
+@app.task()
 def daily_update_advertisers(day=None):
     """
     Generate the daily index of AdvertiserImpressions.
@@ -648,6 +698,7 @@ def update_previous_day_reports(day=None):
     daily_update_publishers(start_date)  # Important: after daily_update_impressions
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
+    daily_update_rotations(start_date)
     daily_update_regiontopic(start_date)
 
     # Updates an aggregation on each paid flight
@@ -886,9 +937,10 @@ def notify_of_completed_flights():
             flight.save()
 
             # Store the change reason in the history
-            update_change_reason(
-                flight, f"Hard stopped with ${value_remaining} value remaining."
-            )
+            # See: https://github.com/jazzband/django-simple-history/issues/1181
+            # update_change_reason(
+            #     flight, f"Hard stopped with ${value_remaining} value remaining."
+            # )
 
             completed_flights_by_advertiser[flight.campaign.advertiser.slug].append(
                 flight

@@ -3,7 +3,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.models import TimeStampedModel
-from jsonfield import JSONField
 
 from ..models import Advertiser
 from ..models import Flight
@@ -21,7 +20,7 @@ class BaseAnalyzedUrl(TimeStampedModel):
     )
 
     # Fields below are updated by the analyzer
-    keywords = JSONField(
+    keywords = models.JSONField(
         _("Keywords for this URL"),
         blank=True,
         null=True,

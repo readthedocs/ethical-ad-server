@@ -1,9 +1,10 @@
 # Django itself and its requirements (pytz)
-Django
+Django<5.1
 pytz
 
 # Asynchronous tasks
-celery[redis]
+# Celery <5.5 has a stability issue the redis broker: https://github.com/celery/celery/issues/8030
+celery[redis]==5.5.0rc1
 
 # Static files
 whitenoise
@@ -44,7 +45,6 @@ IP2Proxy
 # Countries helper used in ad targeting
 django-countries
 
-jsonfield
 bleach
 
 # Security features
@@ -62,3 +62,6 @@ PyJWT
 
 # CORS headers
 django-cors-headers
+
+# Deprecated, but still used in migrations
+jsonfield
