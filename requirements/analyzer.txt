@@ -56,13 +56,13 @@ filelock==3.16.1
     #   triton
 floret==0.10.5
     # via textacy
-fsspec==2024.9.0
+fsspec==2024.10.0
     # via
     #   huggingface-hub
     #   torch
 htmldate==1.9.1
     # via trafilatura
-huggingface-hub==0.25.2
+huggingface-hub==0.26.1
     # via
     #   sentence-transformers
     #   transformers
@@ -98,7 +98,7 @@ lxml-html-clean==0.3.1
     # via lxml
 marisa-trie==1.2.1
     # via language-data
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via jinja2
 mpmath==1.3.0
     # via sympy
@@ -124,41 +124,41 @@ numpy==1.26.4
     #   scipy
     #   sentence-transformers
     #   spacy
-    #   spacy-transformers
     #   textacy
     #   thinc
     #   torchvision
     #   transformers
-nvidia-cublas-cu12==12.1.3.1
+nvidia-cublas-cu12==12.4.5.8
     # via
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-cupti-cu12==12.4.127
     # via torch
-nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.4.127
     # via torch
-nvidia-cuda-runtime-cu12==12.1.105
+nvidia-cuda-runtime-cu12==12.4.127
     # via torch
 nvidia-cudnn-cu12==9.1.0.70
     # via torch
-nvidia-cufft-cu12==11.0.2.54
+nvidia-cufft-cu12==11.2.1.3
     # via torch
-nvidia-curand-cu12==10.3.2.106
+nvidia-curand-cu12==10.3.5.147
     # via torch
-nvidia-cusolver-cu12==11.4.5.107
+nvidia-cusolver-cu12==11.6.1.9
     # via torch
-nvidia-cusparse-cu12==12.1.0.106
+nvidia-cusparse-cu12==12.3.1.170
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-nccl-cu12==2.20.5
+nvidia-nccl-cu12==2.21.5
     # via torch
-nvidia-nvjitlink-cu12==12.6.77
+nvidia-nvjitlink-cu12==12.4.127
     # via
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
-nvidia-nvtx-cu12==12.1.105
+    #   torch
+nvidia-nvtx-cu12==12.4.127
     # via torch
 packaging==24.1
     # via
@@ -245,7 +245,7 @@ spacy-legacy==3.0.12
     # via spacy
 spacy-loggers==1.0.5
     # via spacy
-spacy-transformers==1.2.1
+spacy-transformers==1.1.9
     # via -r analyzer.in
 srsly==2.4.8
     # via
@@ -254,7 +254,7 @@ srsly==2.4.8
     #   spacy-transformers
     #   thinc
     #   weasel
-sympy==1.13.3
+sympy==1.13.1
     # via torch
 textacy==0.13.0
     # via -r analyzer.in
@@ -268,12 +268,12 @@ tokenizers==0.13.3
     # via transformers
 toolz==1.0.0
     # via cytoolz
-torch==2.4.1
+torch==2.5.0
     # via
     #   sentence-transformers
     #   spacy-transformers
     #   torchvision
-torchvision==0.19.1
+torchvision==0.20.0
     # via sentence-transformers
 tqdm==4.66.5
     # via
@@ -285,11 +285,11 @@ tqdm==4.66.5
     #   transformers
 trafilatura==1.12.2
     # via -r analyzer.in
-transformers==4.26.1
+transformers==4.25.1
     # via
     #   sentence-transformers
     #   spacy-transformers
-triton==3.0.0
+triton==3.1.0
     # via torch
 typer==0.7.0
     # via

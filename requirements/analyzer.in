@@ -28,7 +28,7 @@ lxml[html_clean]
 pgvector
 
 # This installs PyTorch which is ~250MB
-spacy-transformers
+spacy-transformers<1.2.0,>=1.1.8
 
 # For the ST backend
 sentence-transformers
