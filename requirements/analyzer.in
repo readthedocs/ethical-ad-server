@@ -35,3 +35,6 @@ sentence-transformers
 
 # Numpy v2 has some breaking changes (for now)
 numpy<2
+
+# https://github.com/FunAudioLLM/CosyVoice/issues/516#issuecomment-2423324107
+huggingface_hub<0.25
