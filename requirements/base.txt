@@ -163,7 +163,7 @@ webencodings==0.5.1
     # via bleach
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.2
+yarl==1.15.5
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
