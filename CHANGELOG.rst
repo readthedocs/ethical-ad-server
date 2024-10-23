@@ -5,6 +5,30 @@ CHANGELOG
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
 
+
+Version v5.9.0
+--------------
+
+This release added a data aggregation for rotated ads,
+it also added a new exportable report for advertisers to get performance
+for all of their specific ads over a time period.
+This version also updated many dependency versions.
+Specifically Celery was having some stability issues with the previous version (5.4)
+
+:Date: October 23, 2024
+
+ * @davidfischer: Build an aggregation for ad rotations (#928)
+ * @davidfischer: Celery upgrade to v5.5rc (#927)
+ * @dependabot[bot]: Bump starlette from 0.39.2 to 0.40.0 in /requirements (#926)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#925)
+ * @davidfischer: Remove simple history change reason (#924)
+ * @davidfischer: Per ad per day advertiser table/export (#921)
+ * @ericholscher: fix pip tools (#920)
+ * @ericholscher: Migrate JSONField to Django builtin JSONField (#919)
+ * @dependabot[bot]: Bump bootstrap from 4.6.2 to 5.0.0 (#918)
+ * @dependabot[bot]: Bump webpack from 5.90.1 to 5.94.0 (#908)
+
+
 Version v5.8.0
 --------------
 
