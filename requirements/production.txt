@@ -15,6 +15,7 @@ amqp==5.2.0
 asgiref==3.8.1
     # via
     #   django
+    #   django-allauth
     #   django-cors-headers
     #   django-countries
 async-timeout==4.0.3
@@ -57,7 +58,7 @@ click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2024.10
     # via -r base.in
-cryptography==43.0.1
+cryptography==43.0.3
     # via azure-storage-blob
 dj-stripe==2.8.4
     # via -r base.in
@@ -77,7 +78,7 @@ django==5.0.9
     #   django-storages
     #   djangorestframework
     #   jsonfield
-django-allauth==65.0.2
+django-allauth==65.1.0
     # via -r base.in
 django-anymail==12.0
     # via -r production.in
@@ -109,7 +110,7 @@ djangorestframework==3.15.2
     # via -r base.in
 djangorestframework-jsonp==1.0.2
     # via -r base.in
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
@@ -135,7 +136,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-newrelic==10.1.0
+newrelic==10.2.0
     # via -r production.in
 packaging==24.1
     # via gunicorn
@@ -145,7 +146,7 @@ prompt-toolkit==3.0.48
     # via click-repl
 propcache==0.2.0
     # via yarl
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via -r production.in
 pycparser==2.22
     # via cffi
@@ -155,7 +156,7 @@ python-dateutil==2.9.0.post0
     # via celery
 pytz==2024.2
     # via -r base.in
-redis==5.1.1
+redis==5.2.0
     # via
     #   celery
     #   django-redis
@@ -166,7 +167,7 @@ requests==2.32.3
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.16.0
+sentry-sdk==2.17.0
     # via -r production.in
 six==1.16.0
     # via
@@ -208,7 +209,7 @@ webencodings==0.5.1
     # via bleach
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.2
+yarl==1.16.0
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

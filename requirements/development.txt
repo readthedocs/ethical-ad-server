@@ -21,6 +21,7 @@ anyio==4.6.2.post1
 asgiref==3.8.1
     # via
     #   django
+    #   django-allauth
     #   django-cors-headers
     #   django-countries
 asttokens==2.4.1
@@ -67,7 +68,7 @@ click-repl==0.3.0
     # via celery
 colorama==0.4.6
     # via sphinx-autobuild
-coverage==7.6.3
+coverage==7.6.4
     # via
     #   -r development.in
     #   django-coverage-plugin
@@ -95,7 +96,7 @@ django==5.0.9
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth==65.0.2
+django-allauth==65.1.0
     # via -r base.in
 django-cors-headers==4.5.0
     # via -r base.in
@@ -145,7 +146,7 @@ filelock==3.16.1
     # via
     #   tox
     #   virtualenv
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
@@ -168,7 +169,7 @@ ip2proxy==3.4.2
     # via -r base.in
 ipdb==0.13.13
     # via -r development.in
-ipython==8.28.0
+ipython==8.29.0
     # via
     #   -r development.in
     #   ipdb
@@ -180,7 +181,7 @@ jsonfield==3.1.0
     # via -r base.in
 kombu==5.4.2
     # via celery
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
@@ -245,7 +246,7 @@ pyyaml==6.0.2
     # via
     #   pre-commit
     #   responses
-redis==5.1.1
+redis==5.2.0
     # via celery
 requests==2.32.3
     # via
@@ -314,7 +315,7 @@ stripe==4.2.0
     # via
     #   -r base.in
     #   dj-stripe
-tokenize-rt==6.0.0
+tokenize-rt==6.1.0
     # via django-upgrade
 tomli==2.0.2
     # via
@@ -357,7 +358,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.26.6
+virtualenv==20.27.0
     # via
     #   pre-commit
     #   tox
@@ -371,7 +372,7 @@ websockets==13.1
     # via sphinx-autobuild
 whitenoise==6.7.0
     # via -r base.in
-yarl==1.15.2
+yarl==1.16.0
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
