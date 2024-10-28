@@ -135,7 +135,7 @@ html_static_path = ["_static"]
 # html_sidebars = {}
 
 html_css_files = [
-    "_static/css/custom.css",
+    "css/custom.css",
 ]
 
 html_js_files = []
