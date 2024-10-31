@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from .views import AccountOverviewView
 from .views import AccountSupportView
 from .views import AdClickProxyView
+from .views import AdvertisementBulkCreateView
 from .views import AdvertisementCopyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
@@ -144,6 +145,14 @@ urlpatterns = [
     ),
     # Advertiser management and reporting
     path(
+        r"advertiser/advertisement-bulk-create-template.csv",
+        TemplateView.as_view(
+            template_name="adserver/advertiser/advertisement-bulk-create-template.csv",
+            content_type="text/csv",
+        ),
+        name="advertiser_bulk_create_template",
+    ),
+    path(
         r"advertiser/<slug:advertiser_slug>/",
         AdvertiserMainView.as_view(),
         name="advertiser_main",
@@ -247,6 +256,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/create/",
         AdvertisementCreateView.as_view(),
         name="advertisement_create",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/bulk-create/",
+        AdvertisementBulkCreateView.as_view(),
+        name="advertisement_bulk_create",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/",

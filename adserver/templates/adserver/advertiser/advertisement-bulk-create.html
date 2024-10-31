@@ -1,0 +1,57 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans 'Bulk create ads' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Bulk create ads' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<h1>{% block heading %}{% trans 'Bulk create ads' %}{% endblock heading %}</h1>
+
+<div class="row">
+
+  <div class="col-md-8">
+
+    {% if not preview_ads %}
+      {% url 'advertiser_bulk_create_template' as bulk_create_template_url %}
+      <p class="mb-2">{% blocktrans %}Create multiple ads for your flight by uploading a CSV file. Download the <a href="{{ bulk_create_template_url }}">CSV template</a> and upload it with your ads.{% endblocktrans %}</p>
+
+      <p class="mb-5">{% trans 'For tips on crafting high-performing ads across EthicalAds, see our <a target="_blank" href="https://www.ethicalads.io/downloads/ethicalads-creatives-that-convert.pdf">"creatives that convert" guide</a>.' %}</p>
+
+      {% crispy form form.helper %}
+    {% else %}
+      {% url 'advertisement_bulk_create' advertiser flight as bulk_create_url %}
+      <p class="mb-5">{% blocktrans %}Preview and save your ads or update your CSV and <a href="{{ advertisement_bulk_create }}">upload again</a>.{% endblocktrans %}</p>
+
+      <div class="mb-2">
+        {% for advertisement in preview_ads %}
+          <h5>{{ advertisement.name }}</h5>
+          {% with ad_type=preview_ad_type %}
+            {% include "adserver/includes/ad-preview.html" %}
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="signed_advertisements" value="{{ signed_advertisements }}">
+        <input type="submit" class="btn btn-primary" value="{% trans 'Save your uploaded ads' %}">
+      </form>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock content_container %}
