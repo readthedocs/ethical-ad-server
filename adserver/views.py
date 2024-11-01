@@ -900,6 +900,11 @@ class AdvertisementBulkCreateView(
         )
         return context
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        return kwargs
+
     def get_signer(self):
         return signing.TimestampSigner()
 

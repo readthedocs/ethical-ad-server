@@ -773,6 +773,14 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Bulk create ads")
 
+        with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload_invalid.csv") as fd:
+            resp = self.client.post(url, data={
+                "advertisements": fd,
+            })
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Total text for &#x27;Invalid Ad1&#x27; must be 100 or less")
+
         with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload.csv") as fd:
             resp = self.client.post(url, data={
                 "advertisements": fd,

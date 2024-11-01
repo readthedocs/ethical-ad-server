@@ -1173,9 +1173,6 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
         "Content",
         "Call to Action",
     ]
-    MAXIMUM_TEXT_LENGTH = 100
-    IMAGE_WIDTH = 240
-    IMAGE_HEIGHT = 180
 
     advertisements = forms.FileField(
         label=_("Advertisements"), help_text=_("Upload a CSV using our ad template")
@@ -1183,6 +1180,11 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
+        if "flight" in kwargs:
+            self.flight = kwargs.pop("flight")
+        else:
+            raise RuntimeError("'flight' is required for the bulk ad form")
+
         super().__init__(*args, **kwargs)
 
         self.fields["advertisements"].widget.attrs["accept"] = "text/csv"
@@ -1215,8 +1217,8 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
         for fieldname in self.REQUIRED_FIELD_NAMES:
             if fieldname not in reader.fieldnames:
                 raise forms.ValidationError(
-                    _("Missing required field %(fieldname)s.")
-                    % {"fieldname": fieldname}
+                    _("Missing required field %(fieldname)s."),
+                    params={"fieldname": fieldname},
                 )
 
         ads = []
@@ -1229,23 +1231,12 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
             content = row["Content"].strip()
             cta = row["Call to Action"].strip()
 
-            text_length = len(f"{headline}{content}{cta}")
-            if text_length > self.MAXIMUM_TEXT_LENGTH:
-                raise forms.ValidationError(
-                    "Total text for '%(ad)s' must be %(max_chars)s or less (it is %(text_len)s)"
-                    % {
-                        "ad": name,
-                        "max_chars": self.MAXIMUM_TEXT_LENGTH,
-                        "text_len": text_length,
-                    }
-                )
-
             for url in (image_url, link_url):
                 try:
                     url_validator(url)
                 except ValidationError:
                     raise forms.ValidationError(
-                        _("'%(url)s' is an invalid URL.") % {"url": url}
+                        _("'%(url)s' is an invalid URL."), params={"url": url}
                     )
 
             image_resp = None
@@ -1256,32 +1247,73 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
 
             if not image_resp or not image_resp.ok:
                 raise forms.ValidationError(
-                    _("Could not retrieve image '%(image)s'.") % {"image": image_url}
+                    _("Could not retrieve image '%(image)s'."),
+                    params={"image": image_url},
                 )
 
             image = BytesIO(image_resp.raw.read())
             width, height = get_image_dimensions(image)
+
             if width is None or height is None:
-                forms.ValidationError(
+                raise forms.ValidationError(
                     _("Image for %(name)s isn't a valid image"),
                     params={
                         "name": name,
                     },
                 )
-            if width != self.IMAGE_WIDTH or height != self.IMAGE_HEIGHT:
-                forms.ValidationError(
-                    _(
-                        "Images must be %(required_width)s * %(required_height)s "
-                        "(for %(name)s it is %(width)s * %(height)s)"
-                    ),
-                    params={
-                        "name": name,
-                        "required_width": self.IMAGE_WIDTH,
-                        "required_height": self.IMAGE_HEIGHT,
-                        "width": width,
-                        "height": height,
-                    },
+
+            text_length = len(f"{headline}{content}{cta}")
+
+            for ad_type in self.flight.campaign.allowed_ad_types(
+                exclude_deprecated=True
+            ):
+                log.info(
+                    "Ad-type=%s, required-width=%s, required-height=%s",
+                    ad_type,
+                    ad_type.image_width,
+                    ad_type.image_height,
                 )
+                if ad_type.max_text_length and text_length > ad_type.max_text_length:
+                    raise forms.ValidationError(
+                        _(
+                            "Total text for '%(ad)s' must be %(max_chars)s or less (it is %(text_len)s)"
+                        ),
+                        params={
+                            "ad": name,
+                            "max_chars": ad_type.max_text_length,
+                            "text_len": text_length,
+                        },
+                    )
+
+                if all(
+                    (
+                        ad_type.has_image,
+                        ad_type.image_width,
+                        ad_type.image_height,
+                        (
+                            width != ad_type.image_width
+                            or height != ad_type.image_height
+                        ),
+                        (
+                            width // 2 != ad_type.image_width
+                            or height // 2 != ad_type.image_height
+                        ),
+                    )
+                ):
+                    raise forms.ValidationError(
+                        _(
+                            "Images must be %(required_width)s * %(required_height)s "
+                            "(for %(name)s it is %(width)s * %(height)s)"
+                        ),
+                        params={
+                            "name": name,
+                            "required_width": ad_type.image_width,
+                            "required_height": ad_type.image_height,
+                            "width": width,
+                            "height": height,
+                        },
+                    )
+
             image_name = image_url[image_url.rfind("/") + 1 :]
             image_path = f"images/{timezone.now():%Y}/{timezone.now():%m}/{image_name}"
             default_storage.save(image_path, image)
