@@ -41,7 +41,7 @@ beautifulsoup4==4.12.3
     # via -r testing.in
 billiard==4.2.1
     # via celery
-bleach==6.1.0
+bleach==6.2.0
     # via -r base.in
 cattrs==24.1.2
     # via requests-cache
@@ -98,7 +98,7 @@ django==5.0.9
     #   jsonfield
 django-allauth==65.1.0
     # via -r base.in
-django-cors-headers==4.5.0
+django-cors-headers==4.6.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
@@ -265,7 +265,6 @@ ruff==0.5.2
 six==1.16.0
     # via
     #   asttokens
-    #   bleach
     #   python-dateutil
     #   sphinxcontrib-httpdomain
     #   tox
@@ -309,7 +308,7 @@ sqlparse==0.5.1
     #   django-debug-toolbar
 stack-data==0.6.3
     # via ipython
-starlette==0.41.0
+starlette==0.41.2
     # via sphinx-autobuild
 stripe==4.2.0
     # via
@@ -358,7 +357,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.27.0
+virtualenv==20.27.1
     # via
     #   pre-commit
     #   tox
@@ -370,9 +369,9 @@ webencodings==0.5.1
     # via bleach
 websockets==13.1
     # via sphinx-autobuild
-whitenoise==6.7.0
+whitenoise==6.8.2
     # via -r base.in
-yarl==1.16.0
+yarl==1.17.1
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

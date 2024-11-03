@@ -26,7 +26,7 @@ attrs==24.2.0
     # via aiohttp
 billiard==4.2.1
     # via celery
-bleach==6.1.0
+bleach==6.2.0
     # via -r base.in
 celery[redis]==5.5.0rc1
     # via -r base.in
@@ -65,7 +65,7 @@ django==5.0.9
     #   jsonfield
 django-allauth==65.1.0
     # via -r base.in
-django-cors-headers==4.5.0
+django-cors-headers==4.6.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
@@ -131,9 +131,7 @@ requests==2.32.3
     #   geoip2
     #   stripe
 six==1.16.0
-    # via
-    #   bleach
-    #   python-dateutil
+    # via python-dateutil
 sqlparse==0.5.1
     # via django
 stripe==4.2.0
@@ -162,9 +160,9 @@ wcwidth==0.2.13
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-whitenoise==6.7.0
+whitenoise==6.8.2
     # via -r base.in
-yarl==1.16.0
+yarl==1.17.1
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

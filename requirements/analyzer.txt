@@ -35,7 +35,7 @@ confection==0.1.5
     # via
     #   thinc
     #   weasel
-courlan==1.3.1
+courlan==1.3.2
     # via trafilatura
 cymem==2.0.8
     # via
@@ -173,7 +173,7 @@ pathlib-abc==0.1.1
     # via pathy
 pathy==0.11.0
     # via spacy
-pgvector==0.3.5
+pgvector==0.3.6
     # via -r analyzer.in
 pillow==11.0.0
     # via torchvision
@@ -187,7 +187,7 @@ pydantic==1.10.18
     #   spacy
     #   thinc
     #   weasel
-pyphen==0.16.0
+pyphen==0.17.0
     # via textacy
 python-dateutil==2.9.0.post0
     # via
@@ -270,14 +270,14 @@ tokenizers==0.13.3
     # via transformers
 toolz==1.0.0
     # via cytoolz
-torch==2.5.0
+torch==2.5.1
     # via
     #   sentence-transformers
     #   spacy-transformers
     #   torchvision
-torchvision==0.20.0
+torchvision==0.20.1
     # via sentence-transformers
-tqdm==4.66.5
+tqdm==4.66.6
     # via
     #   huggingface-hub
     #   nltk

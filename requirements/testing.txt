@@ -28,5 +28,5 @@ tomli==2.0.2
     # via tox
 tox==3.28.0
     # via -r testing.in
-virtualenv==20.27.0
+virtualenv==20.27.1
     # via tox
