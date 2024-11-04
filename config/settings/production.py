@@ -195,8 +195,9 @@ if "adserver.analyzer" in INSTALLED_APPS:
         "task": "adserver.analyzer.tasks.daily_analyze_urls",
         "schedule": crontab(hour="4", minute="0"),
     }
+if "ethicalads_ext.embedding" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
-        "task": "adserver.analyzer.tasks.daily_analyze_advertiser_urls",
+        "task": "ethicalads_ext.embedding.tasks.daily_analyze_advertiser_urls",
         "schedule": crontab(hour="4", minute="30"),
     }
 
