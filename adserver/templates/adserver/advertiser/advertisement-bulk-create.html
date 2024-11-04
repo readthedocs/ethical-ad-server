@@ -25,7 +25,7 @@
   <div class="col-md-8">
 
     {% if not preview_ads %}
-      {% url 'advertiser_bulk_create_template' as bulk_create_template_url %}
+      {% static 'advertisement-bulk-create-template.csv' as bulk_create_template_url %}
       <p class="mb-2">{% blocktrans %}Create multiple ads for your flight by uploading a CSV file. Download the <a href="{{ bulk_create_template_url }}">CSV template</a> and upload it with your ads.{% endblocktrans %}</p>
 
       <p class="mb-5">{% trans 'For tips on crafting high-performing ads across EthicalAds, see our <a target="_blank" href="https://www.ethicalads.io/downloads/ethicalads-creatives-that-convert.pdf">"creatives that convert" guide</a>.' %}</p>

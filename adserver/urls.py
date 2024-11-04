@@ -145,14 +145,6 @@ urlpatterns = [
     ),
     # Advertiser management and reporting
     path(
-        r"advertiser/advertisement-bulk-create-template.csv",
-        TemplateView.as_view(
-            template_name="adserver/advertiser/advertisement-bulk-create-template.csv",
-            content_type="text/csv",
-        ),
-        name="advertiser_bulk_create_template",
-    ),
-    path(
         r"advertiser/<slug:advertiser_slug>/",
         AdvertiserMainView.as_view(),
         name="advertiser_main",
