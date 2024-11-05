@@ -1094,24 +1094,12 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             Submit("submit", _("Save advertisement")),
         )
 
-    def generate_slug(self):
-        campaign_slug = self.flight.campaign.slug
-        slug = slugify(self.instance.name)
-        if not slug.startswith(campaign_slug):
-            slug = slugify(f"{campaign_slug}-{slug}")
-
-        while Advertisement.objects.filter(slug=slug).exists():
-            random_chars = get_random_string(3)
-            slug = slugify(f"{slug}-{random_chars}")
-
-        return slug
-
     def save(self, commit=True):
         if not self.instance.flight_id:
             self.instance.flight = self.flight
         if not self.instance.slug:
             # Only needed on create
-            self.instance.slug = self.generate_slug()
+            self.instance.slug = Advertisement.generate_slug(self.instance.name)
 
         new_instance = super().save(commit)
 

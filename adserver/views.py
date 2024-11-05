@@ -36,7 +36,6 @@ from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView
@@ -858,7 +857,7 @@ class AdvertisementBulkCreateView(
                 ad_object = Advertisement(
                     flight=self.flight,
                     name=ad["name"],
-                    slug=self.get_ad_slug(ad["name"]),
+                    slug=Advertisement.generate_slug(ad["name"]),
                     image=ImageFile(
                         default_storage.open(ad["image_path"]), name=ad["image_name"]
                     ),
@@ -880,15 +879,6 @@ class AdvertisementBulkCreateView(
             return redirect(self.get_success_url())
         else:
             return redirect(self.get_error_url())
-
-    def get_ad_slug(self, name):
-        slug = slugify(f"{name}")
-
-        while Advertisement.objects.filter(slug=slug).exists():
-            random_chars = get_random_string(8)
-            slug = slugify(f"{name}-{random_chars}")
-
-        return slug
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
