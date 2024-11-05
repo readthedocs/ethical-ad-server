@@ -943,24 +943,10 @@ class AdvertisementFormMixin:
                     ),
                 )
 
-            # Check image size - allow @2x images (double height, double width)
             if ad_type.has_image and image:
                 width, height = get_image_dimensions(image)
 
-                if all(
-                    (
-                        ad_type.image_width,
-                        ad_type.image_height,
-                        (
-                            width != ad_type.image_width
-                            or height != ad_type.image_height
-                        ),
-                        (
-                            width // 2 != ad_type.image_width
-                            or height // 2 != ad_type.image_height
-                        ),
-                    )
-                ):
+                if not ad_type.validate_image(image):
                     self.add_error(
                         "image",
                         forms.ValidationError(
@@ -982,7 +968,7 @@ class AdvertisementFormMixin:
                 else:
                     stripped_text = f"{headline}{content}{cta}"
 
-                if len(stripped_text) > ad_type.max_text_length:
+                if not ad_type.validate_text(stripped_text):
                     self.add_error(
                         "text" if text else "content",
                         forms.ValidationError(
@@ -1262,18 +1248,12 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
                     },
                 )
 
-            text_length = len(f"{headline}{content}{cta}")
+            ad_text = f"{headline}{content}{cta}"
 
             for ad_type in self.flight.campaign.allowed_ad_types(
                 exclude_deprecated=True
             ):
-                log.info(
-                    "Ad-type=%s, required-width=%s, required-height=%s",
-                    ad_type,
-                    ad_type.image_width,
-                    ad_type.image_height,
-                )
-                if ad_type.max_text_length and text_length > ad_type.max_text_length:
+                if not ad_type.validate_text(ad_text):
                     raise forms.ValidationError(
                         _(
                             "Total text for '%(ad)s' must be %(max_chars)s or less (it is %(text_len)s)"
@@ -1281,25 +1261,11 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
                         params={
                             "ad": name,
                             "max_chars": ad_type.max_text_length,
-                            "text_len": text_length,
+                            "text_len": len(ad_text),
                         },
                     )
 
-                if all(
-                    (
-                        ad_type.has_image,
-                        ad_type.image_width,
-                        ad_type.image_height,
-                        (
-                            width != ad_type.image_width
-                            or height != ad_type.image_height
-                        ),
-                        (
-                            width // 2 != ad_type.image_width
-                            or height // 2 != ad_type.image_height
-                        ),
-                    )
-                ):
+                if not ad_type.validate_image(image):
                     raise forms.ValidationError(
                         _(
                             "Images must be %(required_width)s * %(required_height)s "

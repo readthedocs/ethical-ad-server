@@ -14,6 +14,7 @@ import pytz
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache import caches
+from django.core.files.images import get_image_dimensions
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -1510,6 +1511,41 @@ class AdType(TimeStampedModel, models.Model):
     def __str__(self):
         """Simple override."""
         return self.name
+
+    def validate_text(self, text):
+        """Return true if this text is valid for this ad type and False otherwise."""
+        text_length = len(text)
+        if (
+            self.has_text
+            and self.max_text_length
+            and text_length > self.max_text_length
+        ):
+            return False
+
+        # Default is to pass validation if there is no text on this ad type
+        return True
+
+    def validate_image(self, image):
+        """Return true if this image is valid for this ad type and False otherwise."""
+        if self.has_image:
+            width, height = get_image_dimensions(image)
+
+            if not width or not height:
+                return False
+
+            # Check image size - allow @2x images (double height, double width)
+            if all(
+                (
+                    self.image_width,  # If these are none, ad type accepts all sizes
+                    self.image_height,
+                    width != self.image_width or height != self.image_height,
+                    width // 2 != self.image_width or height // 2 != self.image_height,
+                )
+            ):
+                return False
+
+        # If there's no image on this ad type -- always pass validation
+        return True
 
 
 class Advertisement(TimeStampedModel, IndestructibleModel):
