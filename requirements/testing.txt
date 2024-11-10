@@ -12,7 +12,7 @@ filelock==3.16.1
     # via
     #   tox
     #   virtualenv
-packaging==24.1
+packaging==24.2
     # via tox
 platformdirs==4.3.6
     # via virtualenv
@@ -28,5 +28,5 @@ tomli==2.0.2
     # via tox
 tox==3.28.0
     # via -r testing.in
-virtualenv==20.27.0
+virtualenv==20.27.1
     # via tox
