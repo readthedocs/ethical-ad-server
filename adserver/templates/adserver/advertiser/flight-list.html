@@ -56,6 +56,8 @@
                   <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
                   {% if not flight.live %}
                     <span class="fa fa-eye-slash fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'This flight is disabled' %}"></span>
+                  {% elif flight.auto_renew %}
+                    <span class="fa fa-refresh fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'Flight will automatically renew when complete' %}" data-original-title="{% trans 'Flight will automatically renew when complete' %}"></span>
                   {% endif %}
                 </td>
                 <td>{{ flight.start_date }}</td>
