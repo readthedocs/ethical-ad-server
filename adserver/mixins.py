@@ -9,10 +9,11 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db import models
-from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
+from .auth.models import UserAdvertiserMember
+from .auth.models import UserPublisherMember
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .models import Advertiser
@@ -34,38 +35,78 @@ class AdvertiserAccessMixin:
     """Mixin for checking advertiser access that works with the ``UserPassesTestMixin``."""
 
     advertiser_slug_parameter = "advertiser_slug"
+    allowed_roles = (
+        UserAdvertiserMember.ROLE_ADMIN,
+        UserAdvertiserMember.ROLE_MANAGER,
+        UserAdvertiserMember.ROLE_REPORTER,
+    )
 
     def test_func(self):
         """The user must have access on the advertiser or be staff."""
         if self.request.user.is_anonymous:
             return False
 
-        advertiser = get_object_or_404(
-            Advertiser, slug=self.kwargs[self.advertiser_slug_parameter]
-        )
         return (
             self.request.user.is_staff
-            or advertiser in self.request.user.advertisers.all()
+            or self.request.user.useradvertisermember_set.filter(
+                advertiser__slug=self.kwargs[self.advertiser_slug_parameter],
+                role__in=self.allowed_roles,
+            ).exists()
         )
+
+
+class AdvertiserAdminAccessMixin(AdvertiserAccessMixin):
+    """Mixin for checking advertiser ADMIN role that works with the ``UserPassesTestMixin``."""
+
+    allowed_roles = (UserAdvertiserMember.ROLE_ADMIN,)
+
+
+class AdvertiserManagerAccessMixin(AdvertiserAccessMixin):
+    """Mixin for checking advertiser Manager or Admin role that works with the ``UserPassesTestMixin``."""
+
+    allowed_roles = (
+        UserAdvertiserMember.ROLE_ADMIN,
+        UserAdvertiserMember.ROLE_MANAGER,
+    )
 
 
 class PublisherAccessMixin:
     """Mixin for checking publisher access that works with the ``UserPassesTestMixin``."""
 
     publisher_slug_parameter = "publisher_slug"
+    allowed_roles = (
+        UserPublisherMember.ROLE_ADMIN,
+        UserPublisherMember.ROLE_MANAGER,
+        UserPublisherMember.ROLE_REPORTER,
+    )
 
     def test_func(self):
         """The user must have access on the publisher or be staff."""
         if self.request.user.is_anonymous:
             return False
 
-        publisher = get_object_or_404(
-            Publisher, slug=self.kwargs[self.publisher_slug_parameter]
-        )
         return (
             self.request.user.is_staff
-            or publisher in self.request.user.publishers.all()
+            or self.request.user.userpublishermember_set.filter(
+                publisher__slug=self.kwargs[self.publisher_slug_parameter],
+                role__in=self.allowed_roles,
+            ).exists()
         )
+
+
+class PublisherAdminAccessMixin(PublisherAccessMixin):
+    """Mixin for checking publisher ADMIN role that works with the ``UserPassesTestMixin``."""
+
+    allowed_roles = (UserPublisherMember.ROLE_ADMIN,)
+
+
+class PublisherManagerAccessMixin(PublisherAccessMixin):
+    """Mixin for checking publisher Manager or Admin role that works with the ``UserPassesTestMixin``."""
+
+    allowed_roles = (
+        UserPublisherMember.ROLE_ADMIN,
+        UserPublisherMember.ROLE_MANAGER,
+    )
 
 
 class AdvertisementValidateLinkMixin:

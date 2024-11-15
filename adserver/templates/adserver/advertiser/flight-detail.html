@@ -2,6 +2,10 @@
 {% load i18n %}
 {% load static %}
 {% load humanize %}
+{% load ad_extras %}
+
+
+{% advertiser_role request.user advertiser as user_advertiser_role %}
 
 
 {% block title %}{{ flight.name }}{% endblock %}
@@ -30,10 +34,12 @@
       <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
       <span>{% trans 'See full report' %}</span>
     </a>
+    {% if request.user.is_staff or user_advertiser_role  == "Admin" or user_advertiser_role  == "Manager" %}
     <a title="{% if flight.auto_renew %}{% trans 'Your flight will renew when complete.' %}{% else %}{% trans 'Flights that automatically renew receive an additional 10% discount' %}{% endif %}" data-toggle="tooltip" data-placement="left" href="{% url 'flight_auto_renew' advertiser.slug flight.slug %}" class="btn btn-sm  btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-refresh mr-1" aria-hidden="true"></span>
       <span>{% if flight.auto_renew %}{% trans 'Renewing' %}{% else %}{% trans 'Automatically renew' %}{% endif %}</span>
     </a>
+    {% endif %}
     {% if "adserver.change_flight" in perms %}
     <a href="{% url 'flight_update' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-lock mr-1" aria-hidden="true"></span>
@@ -54,6 +60,7 @@
     <h5 class="col-md-8">{% trans 'Live ads' %}</h5>
 
     <aside class="col-md-4 text-right">
+      {% if request.user.is_staff or user_advertiser_role  == "Admin" or user_advertiser_role  == "Manager" %}
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
@@ -63,6 +70,7 @@
         <span>{% trans 'Copy existing ads' %}</span>
       </a>
     </aside>
+    {% endif %}
   </div>
 
   {% if live_ads %}
@@ -73,7 +81,13 @@
     </div>
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
-    <p class="text-center">{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+    <p class="text-center">
+      {% if user_advertiser_role  == "Reporter" %}
+      <span>{% blocktrans %}There are no live ads in this flight yet.{% endblocktrans %}</span>
+      {% else %}
+      <span>{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</span>
+      {% endif %}
+    </p>
   {% endif %}
 
 

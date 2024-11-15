@@ -25,6 +25,7 @@ from ..models import Topic
 from ..tasks import daily_update_advertisers
 from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
+from ..auth.models import UserAdvertiserMember
 
 
 User = get_user_model()
@@ -442,6 +443,18 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Regular user - access to this advertiser
         self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Reporter"
+        member.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        member.role = "Manager"
+        member.save()
+
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Flight auto-renewal")
@@ -576,6 +589,19 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Regular user - access to this advertiser
         self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Reporter"
+        member.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 403)
+
+        member.role = "Manager"
+        member.save()
+
+        self.client.force_login(self.user)
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Request a new flight")
@@ -697,6 +723,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
         self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Reporter"
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        member.role = "Manager"
+        member.save()
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
@@ -732,6 +770,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
         self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Reporter"
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        member.role = "Manager"
+        member.save()
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Create advertisement")
@@ -767,6 +817,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
         self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Reporter"
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        member.role = "Manager"
+        member.save()
+
         response = self.client.get(url)
         self.assertContains(response, "Re-use your previous ads")
         self.assertContains(response, self.ad1.name)
@@ -828,11 +890,17 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
+        # Make it a manager who can't invite users
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Manager"
+        member.save()
+
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.user.name)
         self.assertContains(response, self.user.email)
+        self.assertNotContains(response, "Invite user")
 
         self.user.advertisers.remove(self.advertiser)
 
@@ -885,7 +953,17 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
+        # Make it a manager who can't invite users
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = "Manager"
+        member.save()
+
         self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        member.role = "Admin"
+        member.save()
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -893,7 +971,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": "Another User", "email": "another@example.com"},
+            data={"name": "Another User", "email": "another@example.com", "role": "Manager"},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -914,7 +992,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": name, "email": email},
+            data={"name": name, "email": email, "role": "Manager"},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -924,7 +1002,7 @@ class TestAdvertiserDashboardViews(TestCase):
         # Invite the same user again to check that the user isn't created again
         response = self.client.post(
             url,
-            data={"name": "Yet Another User", "email": email},
+            data={"name": "Yet Another User", "email": email, "role": "Manager"},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)

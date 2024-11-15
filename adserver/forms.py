@@ -29,6 +29,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
+from .auth.models import UserAdvertiserMember
 from .models import Advertisement
 from .models import Campaign
 from .models import Flight
@@ -1322,6 +1323,14 @@ class InviteUserForm(forms.ModelForm):
     without a duplicate being created.
     """
 
+    role = forms.ChoiceField(
+        required=True,
+        # This form works for both publishers and advertisers
+        # Currently, the roles are the same for both
+        # If that ever changes, this will need an update
+        choices=((r, r) for r in UserAdvertiserMember.ROLES),
+    )
+
     def __init__(self, *args, **kwargs):
         """Add the form helper and customize the look of the form."""
         super().__init__(*args, **kwargs)
@@ -1331,6 +1340,7 @@ class InviteUserForm(forms.ModelForm):
                 "",
                 Field("name"),
                 Field("email", placeholder="user@yourdomain.com"),
+                Field("role"),
                 css_class="my-3",
             ),
             Submit("submit", "Send invite"),

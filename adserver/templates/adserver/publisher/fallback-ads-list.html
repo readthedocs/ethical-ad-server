@@ -1,6 +1,10 @@
 {% extends "adserver/publisher/overview.html" %}
 {% load humanize %}
 {% load i18n %}
+{% load ad_extras %}
+
+
+{% publisher_role request.user publisher as user_publisher_role %}
 
 
 {% block title %}{% trans 'Fallback ads' %} - {{ publisher }}{% endblock %}
@@ -25,10 +29,12 @@
     <h5 class="col-md-8">{% trans 'Advertisements' %}</h5>
 
     <aside class="col-md-4 text-right">
+      {% if request.user.is_staff or user_publisher_role  == "Admin" or user_publisher_role == "Manager" %}
       <a href="{{ create_ad_url }}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create fallback ad' %}</span>
       </a>
+      {% endif %}
     </aside>
   </div>
 
@@ -67,7 +73,13 @@
       </table>
     </div>
   {% else %}
-    <p class="text-center">{% blocktrans %}There are no fallback ads yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+    <p class="text-center">
+      {% if user_publisher_role  == "Reporter" %}
+      <span>{% blocktrans %}There are no fallback ads yet.{% endblocktrans %}</span>
+      {% else %}
+      <span>{% blocktrans %}There are no fallback ads yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</span>
+      {% endif %}
+    </p>
   {% endif %}
 </section>
 

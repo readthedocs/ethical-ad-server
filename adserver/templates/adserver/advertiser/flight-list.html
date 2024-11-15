@@ -2,6 +2,10 @@
 {% load i18n %}
 {% load static %}
 {% load humanize %}
+{% load ad_extras %}
+
+
+{% advertiser_role request.user advertiser as user_advertiser_role %}
 
 
 {% block title %}{% trans 'Manage Advertising' %}{% endblock %}
@@ -25,10 +29,12 @@
       <span>{% trans 'Create flight' %}</span>
     </a>
   {% endif %}
+  {% if request.user.is_staff or user_advertiser_role  == "Admin" or user_advertiser_role  == "Manager" %}
   <a href="{% url 'flight_request' advertiser.slug %}" class="btn btn-sm btn-outline-info mb-3" role="button" aria-pressed="true">
     <span class="fa fa-plus mr-1" aria-hidden="true"></span>
     <span>{% trans 'Request a new flight' %}</span>
   </a>
+  {% endif %}
 </aside>
 
 

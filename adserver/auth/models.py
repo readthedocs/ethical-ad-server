@@ -79,8 +79,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_date = models.DateTimeField(_("create date"), auto_now_add=True)
 
     # A user may have access to zero or more advertisers or publishers
-    advertisers = models.ManyToManyField(Advertiser, blank=True)
-    publishers = models.ManyToManyField(Publisher, blank=True)
+    advertisers = models.ManyToManyField(
+        Advertiser, blank=True, through="UserAdvertiserMember"
+    )
+    publishers = models.ManyToManyField(
+        Publisher, blank=True, through="UserPublisherMember"
+    )
 
     # Notifications
     flight_notifications = models.BooleanField(
@@ -146,3 +150,51 @@ class User(AbstractBaseUser, PermissionsMixin):
             [self.email],
         )
         return True
+
+
+class UserAdvertiserMember(models.Model):
+    """User-Advertiser 'through' model."""
+
+    ROLE_ADMIN = "Admin"
+    ROLE_MANAGER = "Manager"
+    ROLE_REPORTER = "Reporter"
+    ROLES = (ROLE_ADMIN, ROLE_MANAGER, ROLE_REPORTER)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    advertiser = models.ForeignKey(Advertiser, on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=100,
+        choices=(
+            (ROLE_ADMIN, _(ROLE_ADMIN)),
+            (ROLE_MANAGER, _(ROLE_MANAGER)),
+            (ROLE_REPORTER, _(ROLE_REPORTER)),
+        ),
+        default=ROLE_ADMIN,
+    )
+
+    class Meta:
+        db_table = "adserver_auth_user_advertisers"
+
+
+class UserPublisherMember(models.Model):
+    """User-Publisher 'through' model."""
+
+    ROLE_ADMIN = "Admin"
+    ROLE_MANAGER = "Manager"
+    ROLE_REPORTER = "Reporter"
+    ROLES = (ROLE_ADMIN, ROLE_MANAGER, ROLE_REPORTER)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=100,
+        choices=(
+            (ROLE_ADMIN, _(ROLE_ADMIN)),
+            (ROLE_MANAGER, _(ROLE_MANAGER)),
+            (ROLE_REPORTER, _(ROLE_REPORTER)),
+        ),
+        default=ROLE_ADMIN,
+    )
+
+    class Meta:
+        db_table = "adserver_auth_user_publishers"
