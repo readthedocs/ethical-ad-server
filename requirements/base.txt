@@ -6,11 +6,11 @@
 #
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.10
+aiohttp==3.11.2
     # via geoip2
 aiosignal==1.3.1
     # via aiohttp
-amqp==5.2.0
+amqp==5.3.1
     # via kombu
 asgiref==3.8.1
     # via
@@ -18,7 +18,7 @@ asgiref==3.8.1
     #   django-allauth
     #   django-cors-headers
     #   django-countries
-async-timeout==4.0.3
+async-timeout==5.0.1
     # via
     #   aiohttp
     #   redis
@@ -26,7 +26,7 @@ attrs==24.2.0
     # via aiohttp
 billiard==4.2.1
     # via celery
-bleach==6.1.0
+bleach==6.2.0
     # via -r base.in
 celery[redis]==5.5.0rc1
     # via -r base.in
@@ -63,9 +63,9 @@ django==5.0.9
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth==65.1.0
+django-allauth==65.2.0
     # via -r base.in
-django-cors-headers==4.5.0
+django-cors-headers==4.6.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
@@ -116,7 +116,9 @@ pillow==11.0.0
 prompt-toolkit==3.0.48
     # via click-repl
 propcache==0.2.0
-    # via yarl
+    # via
+    #   aiohttp
+    #   yarl
 pyjwt==2.9.0
     # via -r base.in
 python-dateutil==2.9.0.post0
@@ -131,10 +133,8 @@ requests==2.32.3
     #   geoip2
     #   stripe
 six==1.16.0
-    # via
-    #   bleach
-    #   python-dateutil
-sqlparse==0.5.1
+    # via python-dateutil
+sqlparse==0.5.2
     # via django
 stripe==4.2.0
     # via
@@ -162,9 +162,9 @@ wcwidth==0.2.13
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-whitenoise==6.7.0
+whitenoise==6.8.2
     # via -r base.in
-yarl==1.16.0
+yarl==1.17.1
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
