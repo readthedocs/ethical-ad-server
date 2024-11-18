@@ -156,14 +156,14 @@ class TestPublisherDashboardViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher1,
-            role="Manager",
+            role=UserPublisherMember.ROLE_MANAGER,
         )
         self.client.force_login(self.user)
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        member.role = "Admin"
+        member.role = UserPublisherMember.ROLE_ADMIN
         member.save()
 
         resp = self.client.get(url)
@@ -406,7 +406,7 @@ class TestPublisherDashboardViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher1,
-            role="Manager",
+            role=UserPublisherMember.ROLE_MANAGER,
         )
         self.client.force_login(self.user)
 
@@ -473,7 +473,7 @@ class TestPublisherDashboardViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher1,
-            role="Manager",
+            role=UserPublisherMember.ROLE_MANAGER,
         )
 
         self.client.force_login(self.user)
@@ -481,7 +481,7 @@ class TestPublisherDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
-        member.role = "Admin"
+        member.role = UserPublisherMember.ROLE_ADMIN
         member.save()
 
         response = self.client.get(url)
@@ -490,7 +490,7 @@ class TestPublisherDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": "Another User", "email": "another@example.com", "role": "Reporter"},
+            data={"name": "Another User", "email": "another@example.com", "role": UserPublisherMember.ROLE_REPORTER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -514,7 +514,7 @@ class TestPublisherDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": name, "email": email, "role": "Reporter"},
+            data={"name": name, "email": email, "role": UserPublisherMember.ROLE_REPORTER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -524,7 +524,7 @@ class TestPublisherDashboardViews(TestCase):
         # Invite the same user again to check that the user isn't created again
         response = self.client.post(
             url,
-            data={"name": "Yet Another User", "email": email, "role": "Reporter"},
+            data={"name": "Yet Another User", "email": email, "role": UserPublisherMember.ROLE_REPORTER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -603,7 +603,7 @@ class TestPublisherFallbackAdsViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher,
-            role="Manager",
+            role=UserPublisherMember.ROLE_MANAGER,
         )
 
         resp = self.client.get(url)
@@ -611,7 +611,7 @@ class TestPublisherFallbackAdsViews(TestCase):
         self.assertContains(resp, "Test Ad 1")
         self.assertContains(resp, "Create fallback ad")
 
-        member.role = "Reporter"
+        member.role = UserPublisherMember.ROLE_REPORTER
         member.save()
 
         resp = self.client.get(url)
@@ -637,7 +637,7 @@ class TestPublisherFallbackAdsViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher,
-            role="Manager",
+            role=UserPublisherMember.ROLE_MANAGER,
         )
 
         resp = self.client.get(url)
@@ -645,7 +645,7 @@ class TestPublisherFallbackAdsViews(TestCase):
         self.assertContains(resp, "Test Ad 1")
         self.assertContains(resp, "Edit fallback ad")
 
-        member.role = "Reporter"
+        member.role = UserPublisherMember.ROLE_REPORTER
         member.save()
 
         resp = self.client.get(url)
@@ -671,14 +671,14 @@ class TestPublisherFallbackAdsViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher,
-            role="Reporter",
+            role=UserPublisherMember.ROLE_REPORTER,
         )
 
         # Reporters can't edit
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserPublisherMember.ROLE_MANAGER
         member.save()
 
         resp = self.client.get(url)
@@ -719,14 +719,14 @@ class TestPublisherFallbackAdsViews(TestCase):
         member = UserPublisherMember.objects.create(
             user=self.user,
             publisher=self.publisher,
-            role="Reporter",
+            role=UserPublisherMember.ROLE_REPORTER,
         )
 
         # Reporter can't create
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserPublisherMember.ROLE_MANAGER
         member.save()
 
         resp = self.client.get(url)

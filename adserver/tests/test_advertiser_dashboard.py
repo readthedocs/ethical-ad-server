@@ -446,13 +446,13 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Reporter"
+        member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         resp = self.client.get(url)
@@ -592,13 +592,13 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Reporter"
+        member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         self.client.force_login(self.user)
@@ -726,13 +726,13 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Reporter"
+        member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         response = self.client.get(url)
@@ -773,13 +773,13 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Reporter"
+        member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         response = self.client.get(url)
@@ -820,13 +820,13 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Reporter"
+        member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         response = self.client.get(url)
@@ -892,7 +892,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a manager who can't invite users
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         self.client.force_login(self.user)
@@ -955,14 +955,14 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Make it a manager who can't invite users
         member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
-        member.role = "Manager"
+        member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
         self.client.force_login(self.user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
-        member.role = "Admin"
+        member.role = UserAdvertiserMember.ROLE_ADMIN
         member.save()
 
         response = self.client.get(url)
@@ -971,7 +971,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": "Another User", "email": "another@example.com", "role": "Manager"},
+            data={"name": "Another User", "email": "another@example.com", "role": UserAdvertiserMember.ROLE_MANAGER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -992,7 +992,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": name, "email": email, "role": "Manager"},
+            data={"name": name, "email": email, "role": UserAdvertiserMember.ROLE_MANAGER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -1002,7 +1002,7 @@ class TestAdvertiserDashboardViews(TestCase):
         # Invite the same user again to check that the user isn't created again
         response = self.client.post(
             url,
-            data={"name": "Yet Another User", "email": email, "role": "Manager"},
+            data={"name": "Yet Another User", "email": email, "role": UserAdvertiserMember.ROLE_MANAGER},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
