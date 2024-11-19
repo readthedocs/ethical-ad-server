@@ -144,7 +144,7 @@
 
             </ul>
           {% elif publisher %}
-            {% publisher_role request.user publisher as user_publisher_role %}
+            {% publisher_admin_role request.user publisher as has_publisher_admin_permission %}
             <h6 class="text-muted">{{ publisher }}</h6>
 
             <ul class="nav flex-column mb-5">
@@ -218,7 +218,7 @@
                 </a>
               </li>
 
-              {% if request.user.is_staff or user_publisher_role  == "Admin" %}
+              {% if has_publisher_admin_permission %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_settings' publisher.slug %}">
                   <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>

@@ -5,9 +5,6 @@
 {% load ad_extras %}
 
 
-{% advertiser_role request.user advertiser as user_advertiser_role %}
-
-
 {% block title %}{{ flight.name }}{% endblock %}
 
 
@@ -19,6 +16,8 @@
 
 
 {% block content_container %}
+
+{% advertiser_manager_role request.user advertiser as has_advertiser_edit_permission %}
 
 <h1>{% block heading %}{% trans 'Flight' %}: {{ flight.name }}{% endblock heading %}</h1>
 
@@ -34,7 +33,7 @@
       <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
       <span>{% trans 'See full report' %}</span>
     </a>
-    {% if request.user.is_staff or user_advertiser_role  == "Admin" or user_advertiser_role  == "Manager" %}
+    {% if has_advertiser_edit_permission %}
     <a title="{% if flight.auto_renew %}{% trans 'Your flight will renew when complete.' %}{% else %}{% trans 'Flights that automatically renew receive an additional 10% discount' %}{% endif %}" data-toggle="tooltip" data-placement="left" href="{% url 'flight_auto_renew' advertiser.slug flight.slug %}" class="btn btn-sm  btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-refresh mr-1" aria-hidden="true"></span>
       <span>{% if flight.auto_renew %}{% trans 'Renewing' %}{% else %}{% trans 'Automatically renew' %}{% endif %}</span>
@@ -60,7 +59,7 @@
     <h5 class="col-md-8">{% trans 'Live ads' %}</h5>
 
     <aside class="col-md-4 text-right">
-      {% if request.user.is_staff or user_advertiser_role  == "Admin" or user_advertiser_role  == "Manager" %}
+      {% if has_advertiser_edit_permission %}
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
@@ -82,10 +81,10 @@
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
     <p class="text-center">
-      {% if user_advertiser_role  == "Reporter" %}
-      <span>{% blocktrans %}There are no live ads in this flight yet.{% endblocktrans %}</span>
-      {% else %}
+      {% if has_advertiser_edit_permission %}
       <span>{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</span>
+      {% else %}
+      <span>{% blocktrans %}There are no live ads in this flight yet.{% endblocktrans %}</span>
       {% endif %}
     </p>
   {% endif %}

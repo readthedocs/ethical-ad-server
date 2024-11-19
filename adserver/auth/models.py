@@ -119,6 +119,54 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.get_full_name()
 
+    def get_advertiser_role(self, advertiser):
+        """
+        Returns the users role in this advertiser or None if the user has no permissions.
+
+        Staff status is not taken into account. Caches the result on the user so future calls
+        don't involve a DB lookup.
+        """
+        if not hasattr(self, "_advertiser_roles"):
+            self._advertiser_roles = {}
+
+        if advertiser.pk in self._advertiser_roles:
+            return self._advertiser_roles[advertiser.pk]
+
+        membership = self.useradvertisermember_set.filter(
+            advertiser=advertiser,
+        ).first()
+
+        role = None
+        if membership:
+            role = membership.role
+
+        self._advertiser_roles[advertiser.pk] = role
+        return role
+
+    def get_publisher_role(self, publisher):
+        """
+        Returns the users role in this publisher or None if the user has no permissions.
+
+        Staff status is not taken into account. Caches the result on the user so future calls
+        don't involve a DB lookup.
+        """
+        if not hasattr(self, "_publisher_roles"):
+            self._publisher_roles = {}
+
+        if publisher.pk in self._publisher_roles:
+            return self._publisher_roles[publisher.pk]
+
+        membership = self.userpublishermember_set.filter(
+            publisher=publisher,
+        ).first()
+
+        role = None
+        if membership:
+            role = membership.role
+
+        self._publisher_roles[publisher.pk] = role
+        return role
+
     def get_password_reset_url(self):
         temp_key = default_token_generator.make_token(self)
         path = reverse(
@@ -134,6 +182,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         return "{scheme}://{domain}{path}".format(
             scheme=scheme, domain=domain, path=path
         )
+
+    def has_advertiser_permission(self, advertiser):
+        role = self.get_advertiser_role(advertiser)
+        return role is not None
+
+    def has_advertiser_manager_permission(self, advertiser):
+        role = self.get_advertiser_role(advertiser)
+        return role in (
+            UserAdvertiserMember.ROLE_ADMIN,
+            UserAdvertiserMember.ROLE_MANAGER,
+        )
+
+    def has_advertiser_admin_permission(self, advertiser):
+        role = self.get_advertiser_role(advertiser)
+        return role == UserAdvertiserMember.ROLE_ADMIN
+
+    def has_publisher_permission(self, publisher):
+        role = self.get_publisher_role(publisher)
+        return role is not None
+
+    def has_publisher_manager_permission(self, publisher):
+        role = self.get_publisher_role(publisher)
+        return role in (
+            UserPublisherMember.ROLE_ADMIN,
+            UserPublisherMember.ROLE_MANAGER,
+        )
+
+    def has_publisher_admin_permission(self, publisher):
+        role = self.get_publisher_role(publisher)
+        return role == UserPublisherMember.ROLE_ADMIN
 
     def invite_user(self):
         site = get_current_site(request=None)
@@ -173,6 +251,8 @@ class UserAdvertiserMember(models.Model):
     )
 
     class Meta:
+        # This was migrated from a regular many-to-many
+        # To do that, we needed to start with the same table
         db_table = "adserver_auth_user_advertisers"
 
 
@@ -197,4 +277,6 @@ class UserPublisherMember(models.Model):
     )
 
     class Meta:
+        # This was migrated from a regular many-to-many
+        # To do that, we needed to start with the same table
         db_table = "adserver_auth_user_publishers"

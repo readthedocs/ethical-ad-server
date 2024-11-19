@@ -204,6 +204,15 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.flight.name)
 
+        # Make it a reporter who can't request a new flight
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Request a new flight")
+
     def test_flight_detail_view(self):
         url = reverse(
             "flight_detail",
@@ -233,6 +242,15 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
+
+        # Make it a reporter who can't edit
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Create advertisement")
 
     def test_flight_detail_metadata(self):
         url = reverse(
@@ -706,6 +724,15 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Edit advertisement")
 
     def test_ad_update_view(self):
         url = reverse(

@@ -4,9 +4,6 @@
 {% load ad_extras %}
 
 
-{% publisher_role request.user publisher as user_publisher_role %}
-
-
 {% block title %}{% trans 'Authorized Users' %} - {{ publisher }}{% endblock %}
 
 
@@ -17,6 +14,8 @@
 
 
 {% block content_container %}
+  {% publisher_admin_role request.user publisher as has_publisher_admin_permission %}
+
   <section>
     <h1>{% blocktrans %}Authorized users for {{ publisher }}{% endblocktrans %}</h1>
     <p class="mb-3">{% trans 'These are users who have access to manage ads and view reports. The role levels are:' %}</p>
@@ -30,7 +29,7 @@
     </dl>
 
     <aside class="mb-3 text-right">
-      {% if request.user.is_staff or user_publisher_role  == "Admin" %}
+      {% if has_publisher_admin_permission %}
       <a href="{% url 'publisher_users_invite' publisher.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Invite user' %}</span>
@@ -56,7 +55,7 @@
                 <td>{{ member.user.email }}</td>
                 <td>{{ member.role }}</td>
                 <td>
-                  {% if request.user.is_staff or user_publisher_role  == "Admin" %}
+                  {% if has_publisher_admin_permission %}
                   {% if request.user.id != member.user.id %}
                     <a href="{% url 'publisher_users_remove' publisher.slug member.user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
                   {% endif %}

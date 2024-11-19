@@ -5,9 +5,6 @@
 {% load ad_extras %}
 
 
-{% publisher_role request.user publisher as user_publisher_role %}
-
-
 {% block title %}{% trans 'Fallback ad: ' %}{{ advertisement.name }}{% endblock %}
 
 
@@ -19,6 +16,8 @@
 
 
 {% block content_container %}
+
+{% publisher_manager_role request.user publisher as has_publisher_edit_permission %}
 
 <h1>{% block heading %}{% trans 'Fallback ad: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
 
@@ -62,7 +61,7 @@
 </div>
 
 <div class="row mt-5">
-  {% if request.user.is_staff or user_publisher_role  == "Admin" or user_publisher_role == "Manager" %}
+  {% if has_publisher_edit_permission %}
   <div class="col">
     <a href="{% url 'publisher_fallback_ads_update' publisher.slug advertisement.slug %}" class="btn btn-outline-primary" role="button" aria-pressed="true">{% trans 'Edit fallback ad' %}</a>
   </div>

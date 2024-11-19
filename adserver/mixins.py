@@ -41,18 +41,21 @@ class AdvertiserAccessMixin:
         UserAdvertiserMember.ROLE_REPORTER,
     )
 
+    def check_advertiser_role(self, advertiser):
+        return self.request.user.get_advertiser_role(advertiser) in self.allowed_roles
+
     def test_func(self):
         """The user must have access on the advertiser or be staff."""
         if self.request.user.is_anonymous:
             return False
 
-        return (
-            self.request.user.is_staff
-            or self.request.user.useradvertisermember_set.filter(
-                advertiser__slug=self.kwargs[self.advertiser_slug_parameter],
-                role__in=self.allowed_roles,
-            ).exists()
-        )
+        advertiser = Advertiser.objects.filter(
+            slug=self.kwargs[self.advertiser_slug_parameter]
+        ).first()
+        if not advertiser:
+            return False
+
+        return self.request.user.is_staff or self.check_advertiser_role(advertiser)
 
 
 class AdvertiserAdminAccessMixin(AdvertiserAccessMixin):
@@ -80,18 +83,21 @@ class PublisherAccessMixin:
         UserPublisherMember.ROLE_REPORTER,
     )
 
+    def check_publisher_role(self, publisher):
+        return self.request.user.get_publisher_role(publisher) in self.allowed_roles
+
     def test_func(self):
         """The user must have access on the publisher or be staff."""
         if self.request.user.is_anonymous:
             return False
 
-        return (
-            self.request.user.is_staff
-            or self.request.user.userpublishermember_set.filter(
-                publisher__slug=self.kwargs[self.publisher_slug_parameter],
-                role__in=self.allowed_roles,
-            ).exists()
-        )
+        publisher = Publisher.objects.filter(
+            slug=self.kwargs[self.publisher_slug_parameter]
+        ).first()
+        if not publisher:
+            return False
+
+        return self.request.user.is_staff or self.check_publisher_role(publisher)
 
 
 class PublisherAdminAccessMixin(PublisherAccessMixin):

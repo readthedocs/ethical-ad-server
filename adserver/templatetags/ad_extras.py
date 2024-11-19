@@ -1,9 +1,12 @@
 """Custom template tags for advertisements."""
 
+import logging
+
 from django import template
 from django.utils.safestring import mark_safe
 
 
+log = logging.getLogger(__name__)  # noqa
 register = template.Library()
 
 
@@ -17,52 +20,40 @@ def advertisement_preview(ad, ad_type=None):
 
 
 @register.simple_tag
-def advertiser_role(user, advertiser):
+def advertiser_manager_role(user, advertiser):
     """
-    Returns the users role in this advertiser or None if the user has no permissions.
+    Returns True if the user has manager or higher role on this advertiser and False otherwise.
 
-    Staff status is not taken into account. Caches the result on the user so future calls
-    don't involve a DB lookup.
+    Return True for staff.
     """
-    if not hasattr(user, "_advertiser_roles"):
-        user._advertiser_roles = {}
-
-    if advertiser.pk in user._advertiser_roles:
-        return user._advertiser_roles[advertiser.pk]
-
-    membership = user.useradvertisermember_set.filter(
-        advertiser=advertiser,
-    ).first()
-
-    role = None
-    if membership:
-        role = membership.role
-
-    user._advertiser_roles[advertiser.pk] = role
-    return role
+    return user.is_staff or user.has_advertiser_manager_permission(advertiser)
 
 
 @register.simple_tag
-def publisher_role(user, publisher):
+def advertiser_admin_role(user, advertiser):
     """
-    Returns the users role in this publisher or None if the user has no permissions.
+    Returns True if the user has admin role on this advertiser and False otherwise.
 
-    Staff status is not taken into account. Caches the result on the user so future calls
-    don't involve a DB lookup.
+    Return True for staff.
     """
-    if not hasattr(user, "_publisher_roles"):
-        user._publisher_roles = {}
+    return user.is_staff or user.has_advertiser_admin_permission(advertiser)
 
-    if publisher.pk in user._publisher_roles:
-        return user._publisher_roles[publisher.pk]
 
-    membership = user.userpublishermember_set.filter(
-        publisher=publisher,
-    ).first()
+@register.simple_tag
+def publisher_manager_role(user, publisher):
+    """
+    Returns True if the user has manager or higher role on this publisher and False otherwise.
 
-    role = None
-    if membership:
-        role = membership.role
+    Return True for staff.
+    """
+    return user.is_staff or user.has_publisher_manager_permission(publisher)
 
-    user._publisher_roles[publisher.pk] = role
-    return role
+
+@register.simple_tag
+def publisher_admin_role(user, publisher):
+    """
+    Returns True if the user has admin role on this publisher and False otherwise.
+
+    Return True for staff.
+    """
+    return user.is_staff or user.has_publisher_admin_permission(publisher)
