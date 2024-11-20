@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load ad_extras %}
 
 
 {% block body_classes %}adserver-dashboard{% endblock body_classes %}
@@ -143,6 +144,7 @@
 
             </ul>
           {% elif publisher %}
+            {% publisher_admin_role request.user publisher as has_publisher_admin_permission %}
             <h6 class="text-muted">{{ publisher }}</h6>
 
             <ul class="nav flex-column mb-5">
@@ -216,12 +218,14 @@
                 </a>
               </li>
 
+              {% if has_publisher_admin_permission %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_settings' publisher.slug %}">
                   <span class="fa fa-cog fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Settings' %}</span>
                 </a>
               </li>
+              {% endif %}
 
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'publisher_users' publisher.slug %}">

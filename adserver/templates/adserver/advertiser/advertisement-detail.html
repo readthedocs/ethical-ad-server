@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load humanize %}
+{% load ad_extras %}
 
 
 {% block title %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock %}
@@ -16,6 +17,8 @@
 
 
 {% block content_container %}
+
+{% advertiser_manager_role request.user advertiser as has_advertiser_edit_permission %}
 
 <h1>{% block heading %}{% trans 'Advertisement: ' %}{{ advertisement.name }}{% endblock heading %}</h1>
 
@@ -61,9 +64,11 @@
 </div>
 
 <div class="row mt-5">
+  {% if has_advertiser_edit_permission %}
   <div class="col">
     <a href="{% url 'advertisement_update' advertiser.slug advertisement.flight.slug advertisement.slug %}" class="btn btn-outline-primary" role="button" aria-pressed="true">{% trans 'Edit advertisement' %}</a>
   </div>
+  {% endif %}
 </div>
 
 {% endblock content_container %}

@@ -53,6 +53,8 @@ from djstripe.models import Invoice
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
+from .auth.models import UserAdvertiserMember
+from .auth.models import UserPublisherMember
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
@@ -76,10 +78,14 @@ from .forms import PublisherSettingsForm
 from .forms import SupportForm
 from .mixins import AdvertisementValidateLinkMixin
 from .mixins import AdvertiserAccessMixin
+from .mixins import AdvertiserAdminAccessMixin
+from .mixins import AdvertiserManagerAccessMixin
 from .mixins import AllReportMixin
 from .mixins import GeoReportMixin
 from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
+from .mixins import PublisherAdminAccessMixin
+from .mixins import PublisherManagerAccessMixin
 from .mixins import ReportQuerysetMixin
 from .models import AdImpression
 from .models import AdType
@@ -410,7 +416,9 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         )
 
 
-class FlightSetAutoRenewView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
+class FlightSetAutoRenewView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, UpdateView
+):
     """Allow advertisers to set a flight to auto-renew or not."""
 
     form_class = FlightAutoRenewForm
@@ -520,7 +528,7 @@ class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         )
 
 
-class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
+class FlightRequestView(AdvertiserManagerAccessMixin, UserPassesTestMixin, CreateView):
     """Create a new flight for an advertiser."""
 
     form_class = FlightRequestForm
@@ -658,7 +666,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
 
 
 class AdvertisementUpdateView(
-    AdvertiserAccessMixin,
+    AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
     AdvertisementValidateLinkMixin,
     UpdateView,
@@ -712,7 +720,7 @@ class AdvertisementUpdateView(
 
 
 class AdvertisementCreateView(
-    AdvertiserAccessMixin,
+    AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
     AdvertisementValidateLinkMixin,
     CreateView,
@@ -772,7 +780,7 @@ class AdvertisementCreateView(
 
 
 class AdvertisementBulkCreateView(
-    AdvertiserAccessMixin,
+    AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
     FormView,
 ):
@@ -917,7 +925,9 @@ class AdvertisementBulkCreateView(
         )
 
 
-class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, FormView):
+class AdvertisementCopyView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, FormView
+):
     """Create a copy of an existing ad."""
 
     form_class = AdvertisementCopyForm
@@ -1695,8 +1705,8 @@ class AdvertiserAuthorizedUsersView(
 ):
     """Authorized users for an advertiser."""
 
-    context_object_name = "users"
-    model = get_user_model()
+    context_object_name = "members"
+    model = UserAdvertiserMember
     template_name = "adserver/advertiser/users.html"
 
     def get_context_data(self, **kwargs):
@@ -1708,11 +1718,15 @@ class AdvertiserAuthorizedUsersView(
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs.get("advertiser_slug", "")
         )
-        return self.advertiser.user_set.all()
+        return (
+            UserAdvertiserMember.objects.filter(advertiser=self.advertiser)
+            .select_related()
+            .all()
+        )
 
 
 class AdvertiserAuthorizedUsersInviteView(
-    AdvertiserAccessMixin, UserPassesTestMixin, CreateView
+    AdvertiserAdminAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Invite additional authorized users for an advertiser."""
 
@@ -1728,7 +1742,15 @@ class AdvertiserAuthorizedUsersInviteView(
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        self.object.advertisers.add(self.advertiser)
+
+        # Add m2m and role
+        role = form.cleaned_data["role"]
+        UserAdvertiserMember.objects.create(
+            advertiser=self.advertiser,
+            user=self.object,
+            role=role,
+        )
+
         messages.success(
             self.request,
             _("Successfully invited %(user)s to %(advertiser)s")
@@ -1748,7 +1770,7 @@ class AdvertiserAuthorizedUsersInviteView(
 
 
 class AdvertiserAuthorizedUsersRemoveView(
-    AdvertiserAccessMixin, UserPassesTestMixin, TemplateView
+    AdvertiserAdminAccessMixin, UserPassesTestMixin, TemplateView
 ):
     """
     Remove authorized users for an advertiser.
@@ -2150,7 +2172,7 @@ class PublisherFallbackAdsDetailView(
 
 
 class PublisherFallbackAdsUpdateView(
-    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, UpdateView
+    FallbackAdsMixin, PublisherManagerAccessMixin, UserPassesTestMixin, UpdateView
 ):
     """Update a fallback ad."""
 
@@ -2193,7 +2215,7 @@ class PublisherFallbackAdsUpdateView(
 
 
 class PublisherFallbackAdsCreateView(
-    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, CreateView
+    FallbackAdsMixin, PublisherManagerAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Create a fallback ad."""
 
@@ -2239,7 +2261,7 @@ class PublisherFallbackAdsCreateView(
         )
 
 
-class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):
+class PublisherSettingsView(PublisherAdminAccessMixin, UserPassesTestMixin, UpdateView):
     """Settings configuration for a publisher."""
 
     form_class = PublisherSettingsForm
@@ -2270,7 +2292,7 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
 
 
 class PublisherStripeOauthConnectView(
-    PublisherAccessMixin, UserPassesTestMixin, RedirectView
+    PublisherAdminAccessMixin, UserPassesTestMixin, RedirectView
 ):
     """Redirect the user to the correct Stripe connect URL for the publisher."""
 
@@ -2559,7 +2581,7 @@ class StaffPublisherReportView(BaseReportView):
 class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, ListView):
     """Authorized users for a publisher."""
 
-    context_object_name = "users"
+    context_object_name = "members"
     model = get_user_model()
     template_name = "adserver/publisher/users.html"
 
@@ -2572,11 +2594,15 @@ class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, Li
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs.get("publisher_slug", "")
         )
-        return self.publisher.user_set.all()
+        return (
+            UserPublisherMember.objects.filter(publisher=self.publisher)
+            .select_related()
+            .all()
+        )
 
 
 class PublisherAuthorizedUsersInviteView(
-    PublisherAccessMixin, UserPassesTestMixin, CreateView
+    PublisherAdminAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Invite additional authorized users for a publisher."""
 
@@ -2592,7 +2618,15 @@ class PublisherAuthorizedUsersInviteView(
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        self.object.publishers.add(self.publisher)
+
+        # Add m2m and role
+        role = form.cleaned_data["role"]
+        UserPublisherMember.objects.create(
+            publisher=self.publisher,
+            user=self.object,
+            role=role,
+        )
+
         messages.success(
             self.request,
             _("Successfully invited %(user)s to %(publisher)s")
@@ -2612,7 +2646,7 @@ class PublisherAuthorizedUsersInviteView(
 
 
 class PublisherAuthorizedUsersRemoveView(
-    PublisherAccessMixin, UserPassesTestMixin, TemplateView
+    PublisherAdminAccessMixin, UserPassesTestMixin, TemplateView
 ):
     """
     Remove authorized users for a publisher.
