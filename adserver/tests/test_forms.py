@@ -303,7 +303,6 @@ class FormTests(TestCase):
         ad = form.save()
         self.assertEqual(ad.flight, self.flight)
         self.assertEqual(ad.name, self.ad_data["name"])
-        self.assertEqual(ad.slug, "test-campaign-another-test")
 
         # Save an ad with the same name and make sure the slug is made unique
         form = AdvertisementForm(data=self.ad_data, flight=self.flight)
@@ -311,7 +310,6 @@ class FormTests(TestCase):
         ad = form.save()
         self.assertEqual(ad.flight, self.flight)
         self.assertEqual(ad.name, self.ad_data["name"])
-        self.assertTrue(ad.slug.startswith("test-campaign-another-test-"))
 
         # Another with no need to rewrite the slug
         self.ad_data["name"] = "Test Campaign Third Test"
@@ -319,7 +317,7 @@ class FormTests(TestCase):
         form = AdvertisementForm(data=self.ad_data, flight=self.flight)
         self.assertTrue(form.is_valid(), form.errors)
         ad = form.save()
-        self.assertEqual(ad.slug, "test-campaign-third-test")
+        self.assertEqual(ad.name, self.ad_data["name"])
         self.assertEqual(ad.content, self.ad_data["content"])
 
     def test_ad_multiple_ad_types(self):

@@ -1,9 +1,13 @@
 """Forms for the ad server."""
 
+import csv
 import logging
 from datetime import timedelta
+from io import BytesIO
+from io import TextIOWrapper
 
 import bleach
+import requests
 import stripe
 from crispy_forms.bootstrap import PrependedText
 from crispy_forms.helper import FormHelper
@@ -17,8 +21,11 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ValidationError
 from django.core.files.images import get_image_dimensions
+from django.core.files.storage import default_storage
 from django.core.mail import EmailMessage
+from django.core.validators import URLValidator
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -937,24 +944,10 @@ class AdvertisementFormMixin:
                     ),
                 )
 
-            # Check image size - allow @2x images (double height, double width)
             if ad_type.has_image and image:
                 width, height = get_image_dimensions(image)
 
-                if all(
-                    (
-                        ad_type.image_width,
-                        ad_type.image_height,
-                        (
-                            width != ad_type.image_width
-                            or height != ad_type.image_height
-                        ),
-                        (
-                            width // 2 != ad_type.image_width
-                            or height // 2 != ad_type.image_height
-                        ),
-                    )
-                ):
+                if not ad_type.validate_image(image):
                     self.add_error(
                         "image",
                         forms.ValidationError(
@@ -976,7 +969,7 @@ class AdvertisementFormMixin:
                 else:
                     stripped_text = f"{headline}{content}{cta}"
 
-                if len(stripped_text) > ad_type.max_text_length:
+                if not ad_type.validate_text(stripped_text):
                     self.add_error(
                         "text" if text else "content",
                         forms.ValidationError(
@@ -1102,24 +1095,12 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             Submit("submit", _("Save advertisement")),
         )
 
-    def generate_slug(self):
-        campaign_slug = self.flight.campaign.slug
-        slug = slugify(self.instance.name)
-        if not slug.startswith(campaign_slug):
-            slug = slugify(f"{campaign_slug}-{slug}")
-
-        while Advertisement.objects.filter(slug=slug).exists():
-            random_chars = get_random_string(3)
-            slug = slugify(f"{slug}-{random_chars}")
-
-        return slug
-
     def save(self, commit=True):
         if not self.instance.flight_id:
             self.instance.flight = self.flight
         if not self.instance.slug:
             # Only needed on create
-            self.instance.slug = self.generate_slug()
+            self.instance.slug = Advertisement.generate_slug(self.instance.name)
 
         new_instance = super().save(commit)
 
@@ -1149,6 +1130,170 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
             "image": forms.FileInput(),
             "ad_types": forms.CheckboxSelectMultiple(),
         }
+
+
+class BulkAdvertisementUploadCSVForm(forms.Form):
+    """
+    Used by advertisers to upload ads in bulk.
+
+    The actual saving of bulk ads is done by the BulkAdvertisementPreviewForm.
+    """
+
+    REQUIRED_FIELD_NAMES = [
+        "Name",
+        "Live",
+        "Link URL",
+        "Image URL",
+        "Headline",
+        "Content",
+        "Call to Action",
+    ]
+
+    advertisements = forms.FileField(
+        label=_("Advertisements"), help_text=_("Upload a CSV using our ad template")
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Add the form helper and customize the look of the form."""
+        if "flight" in kwargs:
+            self.flight = kwargs.pop("flight")
+        else:
+            raise RuntimeError("'flight' is required for the bulk ad form")
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["advertisements"].widget.attrs["accept"] = "text/csv"
+
+        self.helper = FormHelper()
+        self.helper.attrs = {
+            "id": "advertisements-bulk-upload",
+            "enctype": "multipart/form-data",
+        }
+
+        self.helper.layout = Layout(
+            Fieldset(
+                "",
+                Field("advertisements", placeholder="Upload a CSV file"),
+                css_class="my-3",
+            ),
+            Submit("submit", _("Preview ads")),
+        )
+
+    def clean_advertisements(self):
+        """Verify the CSV can be opened and has all the right fields."""
+        csvfile = self.cleaned_data["advertisements"]
+        try:
+            reader = csv.DictReader(
+                TextIOWrapper(csvfile, encoding="utf-8", newline="")
+            )
+        except Exception:
+            raise forms.ValidationError(_("Could not open the CSV file."))
+
+        for fieldname in self.REQUIRED_FIELD_NAMES:
+            if fieldname not in reader.fieldnames:
+                raise forms.ValidationError(
+                    _("Missing required field %(fieldname)s."),
+                    params={"fieldname": fieldname},
+                )
+
+        ads = []
+        url_validator = URLValidator(schemes=("http", "https"))
+        for row in reader:
+            image_url = row["Image URL"].strip()
+            link_url = row["Link URL"].strip()
+            name = row["Name"].strip()
+            headline = row["Headline"].strip()
+            content = row["Content"].strip()
+            cta = row["Call to Action"].strip()
+
+            for url in (image_url, link_url):
+                try:
+                    url_validator(url)
+                except ValidationError:
+                    raise forms.ValidationError(
+                        _("'%(url)s' is an invalid URL."), params={"url": url}
+                    )
+
+            image_resp = None
+            try:
+                image_resp = requests.get(image_url, timeout=3, stream=True)
+            except Exception:
+                pass
+
+            if not image_resp or not image_resp.ok:
+                raise forms.ValidationError(
+                    _("Could not retrieve image '%(image)s'."),
+                    params={"image": image_url},
+                )
+
+            image = BytesIO(image_resp.raw.read())
+            width, height = get_image_dimensions(image)
+
+            if width is None or height is None:
+                raise forms.ValidationError(
+                    _("Image for %(name)s isn't a valid image"),
+                    params={
+                        "name": name,
+                    },
+                )
+
+            ad_text = f"{headline}{content}{cta}"
+
+            for ad_type in self.flight.campaign.allowed_ad_types(
+                exclude_deprecated=True
+            ):
+                if not ad_type.validate_text(ad_text):
+                    raise forms.ValidationError(
+                        _(
+                            "Total text for '%(ad)s' must be %(max_chars)s or less (it is %(text_len)s)"
+                        ),
+                        params={
+                            "ad": name,
+                            "max_chars": ad_type.max_text_length,
+                            "text_len": len(ad_text),
+                        },
+                    )
+
+                if not ad_type.validate_image(image):
+                    raise forms.ValidationError(
+                        _(
+                            "Images must be %(required_width)s * %(required_height)s "
+                            "(for %(name)s it is %(width)s * %(height)s)"
+                        ),
+                        params={
+                            "name": name,
+                            "required_width": ad_type.image_width,
+                            "required_height": ad_type.image_height,
+                            "width": width,
+                            "height": height,
+                        },
+                    )
+
+            image_name = image_url[image_url.rfind("/") + 1 :]
+            image_path = f"images/{timezone.now():%Y}/{timezone.now():%m}/{image_name}"
+            default_storage.save(image_path, image)
+
+            ads.append(
+                {
+                    "name": name,
+                    "image_path": image_path,
+                    "image_name": image_name,
+                    "image_url": default_storage.url(image_path),
+                    "live": row["Live"].strip().lower() == "true",
+                    "link": link_url,
+                    "headline": headline,
+                    "content": content,
+                    "cta": cta,
+                }
+            )
+
+        return ads
+
+    def get_ads(self):
+        if not self.is_valid():
+            raise RuntimeError("Form must be valid and bound to get the ads")
+
+        return self.cleaned_data["advertisements"]
 
 
 class AdvertisementCopyForm(forms.Form):

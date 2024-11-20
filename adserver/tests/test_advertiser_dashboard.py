@@ -1,5 +1,6 @@
 import datetime
 
+import bs4
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -11,6 +12,7 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
+from django.conf import settings
 
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
@@ -828,6 +830,62 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(
             Advertisement.objects.filter(flight=self.flight, name="New Name").exists()
         )
+
+    def test_ad_bulk_create_view(self):
+        url = reverse(
+            "advertisement_bulk_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bulk create ads")
+
+        with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload_invalid.csv") as fd:
+            resp = self.client.post(url, data={
+                "advertisements": fd,
+            })
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Total text for &#x27;Invalid Ad1&#x27; must be 100 or less")
+
+        with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload.csv") as fd:
+            resp = self.client.post(url, data={
+                "advertisements": fd,
+            })
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Preview and save your ads")
+
+            soup = bs4.BeautifulSoup(resp.content)
+            elem = soup.find("input", attrs={"name": "signed_advertisements"})
+            self.assertIsNotNone(elem)
+
+            signed_ads = elem.attrs["value"]
+
+        resp = self.client.post(url, follow=True, data={
+            "signed_advertisements": signed_ads,
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Successfully uploaded")
+
+        signed_ads = "invalid"
+        resp = self.client.post(url, follow=True, data={
+            "signed_advertisements": signed_ads,
+        })
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Upload expired or invalid")
 
     def test_ad_copy_view(self):
         url = reverse(

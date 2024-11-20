@@ -5,6 +5,7 @@ import csv
 import logging
 import string
 import urllib
+from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
 
@@ -18,7 +19,10 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
+from django.core import signing
 from django.core.exceptions import ValidationError
+from django.core.files.images import ImageFile
+from django.core.files.storage import default_storage
 from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
@@ -63,6 +67,7 @@ from .constants import VIEWS
 from .forms import AccountForm
 from .forms import AdvertisementCopyForm
 from .forms import AdvertisementForm
+from .forms import BulkAdvertisementUploadCSVForm
 from .forms import FlightAutoRenewForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
@@ -770,6 +775,152 @@ class AdvertisementCreateView(
                 "advertiser_slug": self.advertiser.slug,
                 "flight_slug": self.flight.slug,
                 "advertisement_slug": self.object.slug,
+            },
+        )
+
+
+class AdvertisementBulkCreateView(
+    AdvertiserManagerAccessMixin,
+    UserPassesTestMixin,
+    FormView,
+):
+    """
+    Bulk create view for advertisements.
+
+    Data is validated on upload and then stored in a signed field while being previewed.
+    When the user submits the previewed data, the signed data is stored in the database.
+    """
+
+    form_class = BulkAdvertisementUploadCSVForm
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-bulk-create.html"
+    MAXIMUM_SIGNED_TIME_LENGTH = 24 * 60 * 60
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if "advertisements" in self.request.FILES:
+            # This is step 1 of uploading the file
+            form = self.get_form()
+            if form.is_valid():
+                # CSV uploaded successfully - show preview
+                preview_ad_type = self.flight.campaign.allowed_ad_types(
+                    exclude_deprecated=True
+                ).first()
+
+                signer = self.get_signer()
+                ads = form.get_ads()
+                ad_objects = []
+
+                # Used as a hack to store the image URL since we haven't created the image file field yet
+                Image = namedtuple("Image", ["url"])
+
+                for ad in ads:
+                    ad_objects.append(
+                        Advertisement(
+                            name=ad["name"],
+                            image=Image(ad["image_url"]),
+                            live=ad["live"],
+                            link=ad["link"],
+                            headline=ad["headline"],
+                            content=ad["content"],
+                            cta=ad["cta"],
+                        )
+                    )
+
+                context = self.get_context_data()
+                context["preview_ad_type"] = preview_ad_type
+                context["preview_ads"] = ad_objects
+                context["signed_advertisements"] = signer.sign_object(ads)
+                return self.render_to_response(context)
+            else:
+                return self.form_invalid(form)
+        elif "signed_advertisements" in self.request.POST:
+            # Process previewed ads and save them
+            signer = self.get_signer()
+
+            try:
+                ads = signer.unsign_object(
+                    self.request.POST["signed_advertisements"],
+                    max_age=self.MAXIMUM_SIGNED_TIME_LENGTH,
+                )
+            except signing.BadSignature:
+                messages.error(
+                    self.request,
+                    _("Upload expired or invalid. Please upload ads again."),
+                )
+                return redirect(self.get_error_url())
+
+            # Save the ads which have already been validated
+            for ad in ads:
+                ad_object = Advertisement(
+                    flight=self.flight,
+                    name=ad["name"],
+                    slug=Advertisement.generate_slug(ad["name"]),
+                    image=ImageFile(
+                        default_storage.open(ad["image_path"]), name=ad["image_name"]
+                    ),
+                    live=ad["live"],
+                    link=ad["link"],
+                    headline=ad["headline"],
+                    content=ad["content"],
+                    cta=ad["cta"],
+                )
+                ad_object.save()
+                ad_object.ad_types.set(
+                    self.flight.campaign.allowed_ad_types(exclude_deprecated=True)
+                )
+
+            messages.success(
+                self.request,
+                _("Successfully uploaded %(num_ads)s ads") % {"num_ads": len(ads)},
+            )
+            return redirect(self.get_success_url())
+        else:
+            return redirect(self.get_error_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flight": self.flight,
+            }
+        )
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        return kwargs
+
+    def get_signer(self):
+        return signing.TimestampSigner()
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+    def get_error_url(self):
+        return reverse(
+            "advertisement_bulk_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
             },
         )
 
