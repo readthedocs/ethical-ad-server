@@ -6,6 +6,27 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.10.0
+--------------
+
+This release added a few advertiser features including
+role based user accounts (for publishers too),
+some visual cues, and bulk ad creation.
+Other changes were mostly minor fixes, dependencies, and documentation.
+
+:Date: November 20, 2024
+
+ * @dependabot[bot]: Bump aiohttp from 3.10.10 to 3.10.11 in /requirements (#943)
+ * @davidfischer: Add roles for advertisers and publishers (#941)
+ * @davidfischer: Add a visual cue for renewing flights on listview (#940)
+ * @davidfischer: Fix a celerybeat task configuration (#938)
+ * @mithucste30: Unknown task (#937)
+ * @davidfischer: Bulk ad upload (#935)
+ * @davidfischer: Remove explicit docs ad placement (#934)
+ * @ericholscher: Fix custom.css (#933)
+ * @davidfischer: Analyzer versions hotfix (#931)
+
+
 Version v5.9.0
 --------------
 
