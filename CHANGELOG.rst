@@ -7,7 +7,7 @@ CHANGELOG
 
 
 Version v5.10.0
---------------
+---------------
 
 This release added a few advertiser features including
 role based user accounts (for publishers too),
