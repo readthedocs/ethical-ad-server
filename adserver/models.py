@@ -14,6 +14,7 @@ import pytz
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache import caches
+from django.core.files.images import get_image_dimensions
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError
@@ -25,6 +26,7 @@ from django.template.loader import get_template
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django.utils.html import mark_safe
@@ -1511,6 +1513,41 @@ class AdType(TimeStampedModel, models.Model):
         """Simple override."""
         return self.name
 
+    def validate_text(self, text):
+        """Return true if this text is valid for this ad type and False otherwise."""
+        text_length = len(text)
+        if (
+            self.has_text
+            and self.max_text_length
+            and text_length > self.max_text_length
+        ):
+            return False
+
+        # Default is to pass validation if there is no text on this ad type
+        return True
+
+    def validate_image(self, image):
+        """Return true if this image is valid for this ad type and False otherwise."""
+        if self.has_image:
+            width, height = get_image_dimensions(image)
+
+            if not width or not height:
+                return False
+
+            # Check image size - allow @2x images (double height, double width)
+            if all(
+                (
+                    self.image_width,  # If these are none, ad type accepts all sizes
+                    self.image_height,
+                    width != self.image_width or height != self.image_height,
+                    width // 2 != self.image_width or height // 2 != self.image_height,
+                )
+            ):
+                return False
+
+        # If there's no image on this ad type -- always pass validation
+        return True
+
 
 class Advertisement(TimeStampedModel, IndestructibleModel):
     """
@@ -1622,32 +1659,18 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         ad = Advertisement.objects.get(pk=self.pk)
 
         new_name = ad.name
-        new_slug = ad.slug
 
         # Fix up names/slugs of ads that have been copied before
         # Remove dates and (" Copy") from the end of the name/slug
         new_name = re.sub(" \d{4}-\d{2}-\d{2}$", "", new_name)
         while new_name.endswith(" Copy"):
             new_name = new_name[:-5]
-        new_slug = re.sub("-copy\d*$", "", new_slug)
-        new_slug = re.sub("-\d{8}(-\d+)?$", "", new_slug)
-
-        # Get a slug that doesn't already exist
-        # This tries -20230501, then -20230501-1, etc.
-        new_slug += "-{}".format(timezone.now().strftime("%Y%m%d"))
-        digit = 0
-        while Advertisement.objects.filter(slug=new_slug).exists():
-            ending = f"-{digit}"
-            if new_slug.endswith(ending):
-                new_slug = new_slug[: -len(ending)]
-            digit += 1
-            new_slug += f"-{digit}"
 
         ad_types = ad.ad_types.all()
 
         ad.pk = None
         ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
-        ad.slug = new_slug
+        ad.slug = Advertisement.generate_slug(new_name)
         ad.live = False  # The new ad should always be non-live
         ad.save()
 
@@ -1667,6 +1690,17 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "advertisement_slug": self.slug,
             },
         )
+
+    @classmethod
+    def generate_slug(cls, name):
+        """Generates an available slug -- involves database lookup(s)."""
+        slug = slugify(f"{name}-{timezone.now():%Y%m%d}")
+
+        while Advertisement.objects.filter(slug=slug).exists():
+            random_chars = get_random_string(8)
+            slug = slugify(f"{name}-{random_chars}")
+
+        return slug
 
     @property
     def advertiser(self):

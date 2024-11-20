@@ -51,12 +51,16 @@
 <section class="mt-5">
 
   <div class="row">
-    <h5 class="col-md-8">{% trans 'Live ads' %}</h5>
+    <h5 class="col-md-6">{% trans 'Live ads' %}</h5>
 
-    <aside class="col-md-4 text-right">
+    <aside class="col-md-6 text-right">
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
+      </a>
+      <a href="{% url 'advertisement_bulk_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
+        <span class="fa fa-plus-circle mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Bulk create' %}</span>
       </a>
       <a href="{% url 'advertisement_copy' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-clone mr-1" aria-hidden="true"></span>
@@ -73,7 +77,8 @@
     </div>
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
-    <p class="text-center">{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+    {% url 'advertisement_bulk_create' advertiser.slug flight.slug as bulk_create_ad_url %}
+    <p class="text-center">{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a> or create them in <a href="{{ bulk_create_ad_url }}"></a>bulk</a>.{% endblocktrans %}</p>
   {% endif %}
 
 
