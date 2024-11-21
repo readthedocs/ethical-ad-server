@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.10.1
+---------------
+
+Fixed a dependency pinning issue and updated additional dependencies.
+
+:Date: November 20, 2024
+
+ * @davidfischer: Dependency update Nov 2024 (#945)
+
+
 Version v5.10.0
 ---------------
 
