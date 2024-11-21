@@ -12,7 +12,7 @@ filelock==3.16.1
     # via
     #   tox
     #   virtualenv
-packaging==24.1
+packaging==24.2
     # via tox
 platformdirs==4.3.6
     # via virtualenv
@@ -24,9 +24,9 @@ six==1.16.0
     # via tox
 soupsieve==2.6
     # via beautifulsoup4
-tomli==2.0.2
+tomli==2.1.0
     # via tox
 tox==3.28.0
     # via -r testing.in
-virtualenv==20.27.0
+virtualenv==20.27.1
     # via tox

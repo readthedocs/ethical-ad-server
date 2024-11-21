@@ -35,7 +35,7 @@ confection==0.1.5
     # via
     #   thinc
     #   weasel
-courlan==1.3.1
+courlan==1.3.2
     # via trafilatura
 cymem==2.0.8
     # via
@@ -59,7 +59,7 @@ fsspec==2024.10.0
     # via
     #   huggingface-hub
     #   torch
-htmldate==1.9.1
+htmldate==1.9.2
     # via trafilatura
 huggingface-hub==0.24.7
     # via
@@ -81,11 +81,11 @@ joblib==1.4.2
     #   textacy
 justext==3.0.1
     # via trafilatura
-langcodes==3.4.1
+langcodes==3.5.0
     # via spacy
 langdetect==1.0.9
     # via -r analyzer.in
-language-data==1.2.0
+language-data==1.3.0
     # via langcodes
 lxml[html-clean,html_clean]==5.3.0
     # via
@@ -94,7 +94,7 @@ lxml[html-clean,html_clean]==5.3.0
     #   justext
     #   lxml-html-clean
     #   trafilatura
-lxml-html-clean==0.3.1
+lxml-html-clean==0.4.1
     # via lxml
 marisa-trie==1.2.1
     # via language-data
@@ -124,7 +124,6 @@ numpy==1.26.4
     #   scipy
     #   sentence-transformers
     #   spacy
-    #   spacy-transformers
     #   textacy
     #   thinc
     #   torchvision
@@ -161,7 +160,7 @@ nvidia-nvjitlink-cu12==12.4.127
     #   torch
 nvidia-nvtx-cu12==12.4.127
     # via torch
-packaging==24.1
+packaging==24.2
     # via
     #   huggingface-hub
     #   spacy
@@ -172,7 +171,7 @@ pathlib-abc==0.1.1
     # via pathy
 pathy==0.11.0
     # via spacy
-pgvector==0.3.5
+pgvector==0.3.6
     # via -r analyzer.in
 pillow==11.0.0
     # via torchvision
@@ -180,13 +179,13 @@ preshed==3.0.9
     # via
     #   spacy
     #   thinc
-pydantic==1.10.18
+pydantic==1.10.19
     # via
     #   confection
     #   spacy
     #   thinc
     #   weasel
-pyphen==0.16.0
+pyphen==0.17.0
     # via textacy
 python-dateutil==2.9.0.post0
     # via
@@ -198,7 +197,7 @@ pyyaml==6.0.2
     # via
     #   huggingface-hub
     #   transformers
-regex==2024.9.11
+regex==2024.11.6
     # via
     #   dateparser
     #   nltk
@@ -246,7 +245,7 @@ spacy-legacy==3.0.12
     # via spacy
 spacy-loggers==1.0.5
     # via spacy
-spacy-transformers==1.2.1
+spacy-transformers==1.1.9
     # via -r analyzer.in
 srsly==2.4.8
     # via
@@ -269,14 +268,14 @@ tokenizers==0.13.3
     # via transformers
 toolz==1.0.0
     # via cytoolz
-torch==2.5.0
+torch==2.5.1
     # via
     #   sentence-transformers
     #   spacy-transformers
     #   torchvision
-torchvision==0.20.0
+torchvision==0.20.1
     # via sentence-transformers
-tqdm==4.66.5
+tqdm==4.67.0
     # via
     #   huggingface-hub
     #   nltk
@@ -286,7 +285,7 @@ tqdm==4.66.5
     #   transformers
 trafilatura==1.12.2
     # via -r analyzer.in
-transformers==4.26.1
+transformers==4.25.1
     # via
     #   sentence-transformers
     #   spacy-transformers
