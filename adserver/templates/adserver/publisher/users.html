@@ -1,6 +1,7 @@
 {% extends "adserver/publisher/overview.html" %}
 {% load crispy_forms_tags %}
 {% load i18n %}
+{% load ad_extras %}
 
 
 {% block title %}{% trans 'Authorized Users' %} - {{ publisher }}{% endblock %}
@@ -13,35 +14,51 @@
 
 
 {% block content_container %}
+  {% publisher_admin_role request.user publisher as has_publisher_admin_permission %}
+
   <section>
     <h1>{% blocktrans %}Authorized users for {{ publisher }}{% endblocktrans %}</h1>
-    <p class="mb-5">{% trans 'These are users who have access to manage ads and view reports.' %}</p>
+    <p class="mb-3">{% trans 'These are users who have access to manage ads and view reports. The role levels are:' %}</p>
+    <dl class="mb-5">
+      <dt>{% trans 'Admin' %}</dt>
+      <dd>{% trans 'Can invite new users to collaborate, update settings, as well as all permissions below.' %}</dd>
+      <dt>{% trans 'Manager' %}</dt>
+      <dd>{% trans 'Can manage fallback ads as well as all permissions below.' %}</dd>
+      <dt>{% trans 'Reporter' %}</dt>
+      <dd>{% trans 'Can only view reports but not change anything.' %}</dd>
+    </dl>
 
     <aside class="mb-3 text-right">
+      {% if has_publisher_admin_permission %}
       <a href="{% url 'publisher_users_invite' publisher.slug %}" class="btn btn-sm btn-outline-primary" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Invite user' %}</span>
       </a>
+      {% endif %}
     </aside>
 
-    {% if users %}
+    {% if members %}
       <div class="table-responsive">
         <table class="table table-hover">
           <thead>
             <tr>
               <th><strong>{% trans 'Name' %}</strong></th>
               <th><strong>{% trans 'Email' %}</strong></th>
+              <th><strong>{% trans 'Role' %}</strong></th>
               <th><strong>{% trans 'Options' %}</strong></th>
             </tr>
           </thead>
           <tbody>
-            {% for user in users %}
+            {% for member in members %}
               <tr>
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
+                <td>{{ member.user.name }}</td>
+                <td>{{ member.user.email }}</td>
+                <td>{{ member.role }}</td>
                 <td>
-                  {% if request.user.id != user.id %}
-                    <a href="{% url 'publisher_users_remove' publisher.slug user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
+                  {% if has_publisher_admin_permission %}
+                  {% if request.user.id != member.user.id %}
+                    <a href="{% url 'publisher_users_remove' publisher.slug member.user.id %}" title="{% trans 'You will have a chance to confirm' %}">{% trans 'remove' %}</a>
+                  {% endif %}
                   {% endif %}
                 </td>
               </tr>

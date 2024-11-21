@@ -123,6 +123,9 @@
                           <tr>
                             <td>
                               <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
+                              {% if flight.auto_renew %}
+                                <span class="fa fa-refresh fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" title="{% trans 'Flight will automatically renew when complete' %}" data-original-title="{% trans 'Flight will automatically renew when complete' %}"></span>
+                              {% endif %}
                             </td>
                             <td>{{ flight.end_date }}</td>
                             <td class="text-right">{{ flight.ctr|floatformat:3 }}%</td>

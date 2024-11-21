@@ -40,9 +40,9 @@ try:
 
     import ethicalads_ext  # noqa
 
-    ext = True
+    ADSERVER_EXT = True
 except ImportError:
-    ext = False
+    ADSERVER_EXT = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -272,6 +272,7 @@ STORAGES = {
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets", "dist"),
     os.path.join(BASE_DIR, "assets", "img"),
+    os.path.join(BASE_DIR, "assets", "files"),
 ]
 
 
@@ -533,9 +534,9 @@ ADSERVER_ANALYZER_BACKEND = env.list(
 )
 if ADSERVER_ANALYZER_BACKEND:
     INSTALLED_APPS.append("adserver.analyzer")
-if ADSERVER_ANALYZER_BACKEND and ext:
+if ADSERVER_ANALYZER_BACKEND and ADSERVER_EXT:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
-if ext:
+if ADSERVER_EXT:
     INSTALLED_APPS.append("ethicalads_ext.support")
 
 # Whether Do Not Track is enabled for the ad server

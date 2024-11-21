@@ -1,0 +1,2 @@
+Name,Live,Link URL,Image URL,Headline,Content,Call to Action
+Invalid Ad1,true,http://example.com/ad1,https://ethicalads.blob.core.windows.net/media/images/2022/11/ethicalads-housead.png,Ad headline,"Ad content that is so long that it will raise an error since it's too long and there's a maximum",Ad CTA

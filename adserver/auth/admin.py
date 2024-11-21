@@ -6,6 +6,22 @@ from django.utils.translation import gettext_lazy as _
 from simple_history.admin import SimpleHistoryAdmin
 
 from .models import User
+from .models import UserAdvertiserMember
+from .models import UserPublisherMember
+
+
+class UserAdvertiserInline(admin.TabularInline):
+    """For inlining the user-advertiser relationship."""
+
+    model = UserAdvertiserMember
+    raw_id_fields = ("advertiser",)
+
+
+class UserPublisherInline(admin.TabularInline):
+    """For inlining the user-publisher relationship."""
+
+    model = UserPublisherMember
+    raw_id_fields = ("publisher",)
 
 
 @admin.register(User)
@@ -19,8 +35,6 @@ class UserAdmin(SimpleHistoryAdmin):
             _("Ad server details"),
             {
                 "fields": (
-                    "advertisers",
-                    "publishers",
                     "flight_notifications",
                     "notify_on_completed_flights",  # DEPRECATED
                 )
@@ -43,6 +57,7 @@ class UserAdmin(SimpleHistoryAdmin):
             {"fields": ("last_login", "updated_date", "created_date")},
         ),
     )
+    inlines = (UserAdvertiserInline, UserPublisherInline)
     list_display = (
         "email",
         "name",

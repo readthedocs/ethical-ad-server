@@ -5,6 +5,7 @@ import csv
 import logging
 import string
 import urllib
+from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
 
@@ -18,7 +19,10 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
+from django.core import signing
 from django.core.exceptions import ValidationError
+from django.core.files.images import ImageFile
+from django.core.files.storage import default_storage
 from django.db import models
 from django.http import Http404
 from django.http import HttpResponse
@@ -49,6 +53,8 @@ from djstripe.models import Invoice
 from rest_framework.authtoken.models import Token
 from user_agents import parse as parse_user_agent
 
+from .auth.models import UserAdvertiserMember
+from .auth.models import UserPublisherMember
 from .constants import ALL_CAMPAIGN_TYPES
 from .constants import CAMPAIGN_TYPES
 from .constants import CLICKS
@@ -61,6 +67,7 @@ from .constants import VIEWS
 from .forms import AccountForm
 from .forms import AdvertisementCopyForm
 from .forms import AdvertisementForm
+from .forms import BulkAdvertisementUploadCSVForm
 from .forms import FlightAutoRenewForm
 from .forms import FlightCreateForm
 from .forms import FlightForm
@@ -71,10 +78,14 @@ from .forms import PublisherSettingsForm
 from .forms import SupportForm
 from .mixins import AdvertisementValidateLinkMixin
 from .mixins import AdvertiserAccessMixin
+from .mixins import AdvertiserAdminAccessMixin
+from .mixins import AdvertiserManagerAccessMixin
 from .mixins import AllReportMixin
 from .mixins import GeoReportMixin
 from .mixins import KeywordReportMixin
 from .mixins import PublisherAccessMixin
+from .mixins import PublisherAdminAccessMixin
+from .mixins import PublisherManagerAccessMixin
 from .mixins import ReportQuerysetMixin
 from .models import AdImpression
 from .models import AdType
@@ -405,7 +416,9 @@ class FlightUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         )
 
 
-class FlightSetAutoRenewView(AdvertiserAccessMixin, UserPassesTestMixin, UpdateView):
+class FlightSetAutoRenewView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, UpdateView
+):
     """Allow advertisers to set a flight to auto-renew or not."""
 
     form_class = FlightAutoRenewForm
@@ -515,7 +528,7 @@ class FlightRenewView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         )
 
 
-class FlightRequestView(AdvertiserAccessMixin, UserPassesTestMixin, CreateView):
+class FlightRequestView(AdvertiserManagerAccessMixin, UserPassesTestMixin, CreateView):
     """Create a new flight for an advertiser."""
 
     form_class = FlightRequestForm
@@ -653,7 +666,7 @@ class AdvertisementDetailView(AdvertiserAccessMixin, UserPassesTestMixin, Detail
 
 
 class AdvertisementUpdateView(
-    AdvertiserAccessMixin,
+    AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
     AdvertisementValidateLinkMixin,
     UpdateView,
@@ -707,7 +720,7 @@ class AdvertisementUpdateView(
 
 
 class AdvertisementCreateView(
-    AdvertiserAccessMixin,
+    AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
     AdvertisementValidateLinkMixin,
     CreateView,
@@ -766,7 +779,155 @@ class AdvertisementCreateView(
         )
 
 
-class AdvertisementCopyView(AdvertiserAccessMixin, UserPassesTestMixin, FormView):
+class AdvertisementBulkCreateView(
+    AdvertiserManagerAccessMixin,
+    UserPassesTestMixin,
+    FormView,
+):
+    """
+    Bulk create view for advertisements.
+
+    Data is validated on upload and then stored in a signed field while being previewed.
+    When the user submits the previewed data, the signed data is stored in the database.
+    """
+
+    form_class = BulkAdvertisementUploadCSVForm
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-bulk-create.html"
+    MAXIMUM_SIGNED_TIME_LENGTH = 24 * 60 * 60
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        if "advertisements" in self.request.FILES:
+            # This is step 1 of uploading the file
+            form = self.get_form()
+            if form.is_valid():
+                # CSV uploaded successfully - show preview
+                preview_ad_type = self.flight.campaign.allowed_ad_types(
+                    exclude_deprecated=True
+                ).first()
+
+                signer = self.get_signer()
+                ads = form.get_ads()
+                ad_objects = []
+
+                # Used as a hack to store the image URL since we haven't created the image file field yet
+                Image = namedtuple("Image", ["url"])
+
+                for ad in ads:
+                    ad_objects.append(
+                        Advertisement(
+                            name=ad["name"],
+                            image=Image(ad["image_url"]),
+                            live=ad["live"],
+                            link=ad["link"],
+                            headline=ad["headline"],
+                            content=ad["content"],
+                            cta=ad["cta"],
+                        )
+                    )
+
+                context = self.get_context_data()
+                context["preview_ad_type"] = preview_ad_type
+                context["preview_ads"] = ad_objects
+                context["signed_advertisements"] = signer.sign_object(ads)
+                return self.render_to_response(context)
+            else:
+                return self.form_invalid(form)
+        elif "signed_advertisements" in self.request.POST:
+            # Process previewed ads and save them
+            signer = self.get_signer()
+
+            try:
+                ads = signer.unsign_object(
+                    self.request.POST["signed_advertisements"],
+                    max_age=self.MAXIMUM_SIGNED_TIME_LENGTH,
+                )
+            except signing.BadSignature:
+                messages.error(
+                    self.request,
+                    _("Upload expired or invalid. Please upload ads again."),
+                )
+                return redirect(self.get_error_url())
+
+            # Save the ads which have already been validated
+            for ad in ads:
+                ad_object = Advertisement(
+                    flight=self.flight,
+                    name=ad["name"],
+                    slug=Advertisement.generate_slug(ad["name"]),
+                    image=ImageFile(
+                        default_storage.open(ad["image_path"]), name=ad["image_name"]
+                    ),
+                    live=ad["live"],
+                    link=ad["link"],
+                    headline=ad["headline"],
+                    content=ad["content"],
+                    cta=ad["cta"],
+                )
+                ad_object.save()
+                ad_object.ad_types.set(
+                    self.flight.campaign.allowed_ad_types(exclude_deprecated=True)
+                )
+
+            messages.success(
+                self.request,
+                _("Successfully uploaded %(num_ads)s ads") % {"num_ads": len(ads)},
+            )
+            return redirect(self.get_success_url())
+        else:
+            return redirect(self.get_error_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flight": self.flight,
+            }
+        )
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        return kwargs
+
+    def get_signer(self):
+        return signing.TimestampSigner()
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+    def get_error_url(self):
+        return reverse(
+            "advertisement_bulk_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+
+class AdvertisementCopyView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, FormView
+):
     """Create a copy of an existing ad."""
 
     form_class = AdvertisementCopyForm
@@ -1544,8 +1705,8 @@ class AdvertiserAuthorizedUsersView(
 ):
     """Authorized users for an advertiser."""
 
-    context_object_name = "users"
-    model = get_user_model()
+    context_object_name = "members"
+    model = UserAdvertiserMember
     template_name = "adserver/advertiser/users.html"
 
     def get_context_data(self, **kwargs):
@@ -1557,11 +1718,15 @@ class AdvertiserAuthorizedUsersView(
         self.advertiser = get_object_or_404(
             Advertiser, slug=self.kwargs.get("advertiser_slug", "")
         )
-        return self.advertiser.user_set.all()
+        return (
+            UserAdvertiserMember.objects.filter(advertiser=self.advertiser)
+            .select_related()
+            .all()
+        )
 
 
 class AdvertiserAuthorizedUsersInviteView(
-    AdvertiserAccessMixin, UserPassesTestMixin, CreateView
+    AdvertiserAdminAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Invite additional authorized users for an advertiser."""
 
@@ -1577,7 +1742,15 @@ class AdvertiserAuthorizedUsersInviteView(
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        self.object.advertisers.add(self.advertiser)
+
+        # Add m2m and role
+        role = form.cleaned_data["role"]
+        UserAdvertiserMember.objects.create(
+            advertiser=self.advertiser,
+            user=self.object,
+            role=role,
+        )
+
         messages.success(
             self.request,
             _("Successfully invited %(user)s to %(advertiser)s")
@@ -1597,7 +1770,7 @@ class AdvertiserAuthorizedUsersInviteView(
 
 
 class AdvertiserAuthorizedUsersRemoveView(
-    AdvertiserAccessMixin, UserPassesTestMixin, TemplateView
+    AdvertiserAdminAccessMixin, UserPassesTestMixin, TemplateView
 ):
     """
     Remove authorized users for an advertiser.
@@ -1999,7 +2172,7 @@ class PublisherFallbackAdsDetailView(
 
 
 class PublisherFallbackAdsUpdateView(
-    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, UpdateView
+    FallbackAdsMixin, PublisherManagerAccessMixin, UserPassesTestMixin, UpdateView
 ):
     """Update a fallback ad."""
 
@@ -2042,7 +2215,7 @@ class PublisherFallbackAdsUpdateView(
 
 
 class PublisherFallbackAdsCreateView(
-    FallbackAdsMixin, PublisherAccessMixin, UserPassesTestMixin, CreateView
+    FallbackAdsMixin, PublisherManagerAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Create a fallback ad."""
 
@@ -2088,7 +2261,7 @@ class PublisherFallbackAdsCreateView(
         )
 
 
-class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateView):
+class PublisherSettingsView(PublisherAdminAccessMixin, UserPassesTestMixin, UpdateView):
     """Settings configuration for a publisher."""
 
     form_class = PublisherSettingsForm
@@ -2119,7 +2292,7 @@ class PublisherSettingsView(PublisherAccessMixin, UserPassesTestMixin, UpdateVie
 
 
 class PublisherStripeOauthConnectView(
-    PublisherAccessMixin, UserPassesTestMixin, RedirectView
+    PublisherAdminAccessMixin, UserPassesTestMixin, RedirectView
 ):
     """Redirect the user to the correct Stripe connect URL for the publisher."""
 
@@ -2408,7 +2581,7 @@ class StaffPublisherReportView(BaseReportView):
 class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, ListView):
     """Authorized users for a publisher."""
 
-    context_object_name = "users"
+    context_object_name = "members"
     model = get_user_model()
     template_name = "adserver/publisher/users.html"
 
@@ -2421,11 +2594,15 @@ class PublisherAuthorizedUsersView(PublisherAccessMixin, UserPassesTestMixin, Li
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs.get("publisher_slug", "")
         )
-        return self.publisher.user_set.all()
+        return (
+            UserPublisherMember.objects.filter(publisher=self.publisher)
+            .select_related()
+            .all()
+        )
 
 
 class PublisherAuthorizedUsersInviteView(
-    PublisherAccessMixin, UserPassesTestMixin, CreateView
+    PublisherAdminAccessMixin, UserPassesTestMixin, CreateView
 ):
     """Invite additional authorized users for a publisher."""
 
@@ -2441,7 +2618,15 @@ class PublisherAuthorizedUsersInviteView(
 
     def form_valid(self, form):
         result = super().form_valid(form)
-        self.object.publishers.add(self.publisher)
+
+        # Add m2m and role
+        role = form.cleaned_data["role"]
+        UserPublisherMember.objects.create(
+            publisher=self.publisher,
+            user=self.object,
+            role=role,
+        )
+
         messages.success(
             self.request,
             _("Successfully invited %(user)s to %(publisher)s")
@@ -2461,7 +2646,7 @@ class PublisherAuthorizedUsersInviteView(
 
 
 class PublisherAuthorizedUsersRemoveView(
-    PublisherAccessMixin, UserPassesTestMixin, TemplateView
+    PublisherAdminAccessMixin, UserPassesTestMixin, TemplateView
 ):
     """
     Remove authorized users for a publisher.

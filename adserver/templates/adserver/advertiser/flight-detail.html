@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load humanize %}
+{% load ad_extras %}
 
 
 {% block title %}{{ flight.name }}{% endblock %}
@@ -15,6 +16,8 @@
 
 
 {% block content_container %}
+
+{% advertiser_manager_role request.user advertiser as has_advertiser_edit_permission %}
 
 <h1>{% block heading %}{% trans 'Flight' %}: {{ flight.name }}{% endblock heading %}</h1>
 
@@ -30,10 +33,12 @@
       <span class="fa fa-bar-chart mr-1" aria-hidden="true"></span>
       <span>{% trans 'See full report' %}</span>
     </a>
+    {% if has_advertiser_edit_permission %}
     <a title="{% if flight.auto_renew %}{% trans 'Your flight will renew when complete.' %}{% else %}{% trans 'Flights that automatically renew receive an additional 10% discount' %}{% endif %}" data-toggle="tooltip" data-placement="left" href="{% url 'flight_auto_renew' advertiser.slug flight.slug %}" class="btn btn-sm  btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-refresh mr-1" aria-hidden="true"></span>
       <span>{% if flight.auto_renew %}{% trans 'Renewing' %}{% else %}{% trans 'Automatically renew' %}{% endif %}</span>
     </a>
+    {% endif %}
     {% if "adserver.change_flight" in perms %}
     <a href="{% url 'flight_update' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-lock mr-1" aria-hidden="true"></span>
@@ -51,18 +56,24 @@
 <section class="mt-5">
 
   <div class="row">
-    <h5 class="col-md-8">{% trans 'Live ads' %}</h5>
+    <h5 class="col-md-6">{% trans 'Live ads' %}</h5>
 
-    <aside class="col-md-4 text-right">
+    {% if has_advertiser_edit_permission %}
+    <aside class="col-md-6 text-right">
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
+      </a>
+      <a href="{% url 'advertisement_bulk_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
+        <span class="fa fa-plus-circle mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Bulk create' %}</span>
       </a>
       <a href="{% url 'advertisement_copy' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-clone mr-1" aria-hidden="true"></span>
         <span>{% trans 'Copy existing ads' %}</span>
       </a>
     </aside>
+    {% endif %}
   </div>
 
   {% if live_ads %}
@@ -73,7 +84,14 @@
     </div>
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
-    <p class="text-center">{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a>.{% endblocktrans %}</p>
+    {% url 'advertisement_bulk_create' advertiser.slug flight.slug as bulk_create_ad_url %}
+    <p class="text-center">
+      {% if has_advertiser_edit_permission %}
+      <span>{% blocktrans %}There are no live ads in this flight yet but you can <a href="{{ create_ad_url }}">create one</a> or create them in <a href="{{ bulk_create_ad_url }}">bulk</a>.{% endblocktrans %}</span>
+      {% else %}
+      <span>{% blocktrans %}There are no live ads in this flight yet.{% endblocktrans %}</span>
+      {% endif %}
+    </p>
   {% endif %}
 
 
