@@ -16,5 +16,6 @@ django-redis
 django-storages[azure]
 
 # Logging and monitoring
-newrelic
+# https://github.com/newrelic/newrelic-python-agent/issues/1253
+newrelic<10.3.0
 sentry-sdk
