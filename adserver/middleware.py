@@ -180,9 +180,12 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
     COUNTRY_HEADER = "CF-IPCountry"
 
     # These fields will require a custom transform rule
-    # https://developers.cloudflare.com/rules/transform/
+    # https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
     REGION_HEADER = "X-Cloudflare-Geo-Region"  # ip.src.region_code
     METRO_HEADER = "X-Cloudflare-Geo-Metro"  # ip.src.metro_code
+    CONTINENT_HEADER = "X-Cloudflare-Geo-Continent"  # ip.src.continent
+    LATITUDE_HEADER = "X-Cloudflare-Geo-Lat"  # ip.src.lat
+    LONGITUDE_HEADER = "X-Cloudflare-Geo-Lon"  # ip.src.lon
 
     def get_geoip(self, request):
         geo = super().get_geoip(request)
@@ -194,8 +197,13 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
             country_code = None
 
         geo.country = country_code
+        # Region is the state/province within a country (not wider region like EU)
+        # See "continent"
         geo.region = request.headers.get(self.REGION_HEADER, None)
         geo.metro = request.headers.get(self.METRO_HEADER, None)
+        geo.continent = request.headers.get(self.CONTINENT_HEADER, None)
+        geo.lat = request.headers.get(self.LATITUDE_HEADER, None)
+        geo.lng = request.headers.get(self.LONGITUDE_HEADER, None)
 
         return geo
 

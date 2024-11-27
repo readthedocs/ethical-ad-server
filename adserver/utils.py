@@ -53,6 +53,7 @@ class GeolocationData:
     metro: int = None
     lat: float = None
     lng: float = None
+    continent: str = None
 
 
 def get_ad_day():

@@ -57,5 +57,8 @@ class GeoIpMixin:
             response["X-Adserver-Country"] = str(request.geo.country)
             response["X-Adserver-Region"] = str(request.geo.region)
             response["X-Adserver-Metro"] = str(request.geo.metro)
+            response["X-Adserver-Continent"] = str(request.geo.continent)
+            response["X-Adserver-Latitude"] = str(request.geo.lat)
+            response["X-Adserver-Longitude"] = str(request.geo.lng)
 
         return response
