@@ -1207,6 +1207,11 @@ class AdClickProxyView(BaseProxyView):
             advertisement=advertisement.slug,
             advertisement_slug=advertisement.slug,
             advertisement_name=advertisement.name,
+            flight=advertisement.flight.slug,
+            # For privacy, don't reveal more than country/continent to advertisers
+            country=str(request.geo.country) if request.geo else "None",
+            # request.geo.region is a state/province/region inside a country
+            continent=str(request.geo.continent) if request.geo else "None",
         )
 
         # Append a query string param ?ea-publisher=${publisher}

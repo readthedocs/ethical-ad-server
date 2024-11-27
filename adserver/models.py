@@ -1613,7 +1613,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         help_text=_(
             "URL of your landing page. "
             "This may contain UTM parameters so you know the traffic came from us. "
-            "The publisher will be added in the 'ea-publisher' query parameter."
+            "The publisher will be added in the 'ea-publisher' query parameter. "
+            "Additional variable substitutions are available. "
+            "See the <a href='https://www.ethicalads.io/advertiser-guide/#measuring-conversions'>advertiser guide</a>. "
         ),
     )
     image = models.ImageField(
