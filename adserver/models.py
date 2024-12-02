@@ -1775,6 +1775,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         parsed_ua = parse(user_agent)
         country = get_client_country(request)
         url = url or request.headers.get("referer")
+        domain = get_domain_from_url(url)
 
         if (
             model != Click
@@ -1799,6 +1800,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             client_id=client_id,
             country=country,
             url=url,
+            domain=domain,
             paid_eligible=paid_eligible,
             rotations=rotations,
             # Derived user agent data
@@ -2588,6 +2590,10 @@ class AdBase(TimeStampedModel, IndestructibleModel):
     client_id = models.CharField(_("Client ID"), max_length=1000, blank=True, null=True)
     country = CountryField(null=True)
     url = models.CharField(_("Page URL"), max_length=10000, blank=True, null=True)
+
+    # Domain of the URL or None if the URL is not available
+    # Should not include http or any characters after the TLD
+    domain = models.CharField(_("Domain"), max_length=10000, blank=True, null=True)
 
     # Fields derived from the user agent - these should not be user identifiable
     browser_family = models.CharField(
