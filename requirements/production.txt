@@ -152,7 +152,7 @@ psycopg2-binary==2.9.10
     # via -r production.in
 pycparser==2.22
     # via cffi
-pyjwt==2.10.0
+pyjwt==2.10.1
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery
