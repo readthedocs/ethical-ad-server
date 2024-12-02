@@ -1790,7 +1790,7 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited view impression")
 
     def test_click_tracking_variable_expansion(self):
-        self.ad.link = "http://example.com?utm_source=${publisher}"
+        self.ad.link = "http://example.com?utm_source=${publisher}&ad=${advertisement}"
         self.ad.save()
 
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)
@@ -1799,7 +1799,7 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(
             resp["Location"],
-            "http://example.com?utm_source=test-publisher&ea-publisher=test-publisher",
+            "http://example.com?utm_source=test-publisher&ad=ad-slug&ea-publisher=test-publisher",
         )
 
         # invalid string replacement template
