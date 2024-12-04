@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.11.0
+---------------
+
+Begin collecting domain on Offer creation (migration).
+Add additional UTM substitution variables.
+
+:Date: December 4, 2024
+
+ * @davidfischer: Collect the domain on offer creation (#954)
+ * @davidfischer: Add two additional flight substitution variables (#953)
+ * @davidfischer: Link parameter substitutions (#950)
+ * @ericholscher: Run pip-tools monthly (#949)
+
+
 Version v5.10.1
 ---------------
 
