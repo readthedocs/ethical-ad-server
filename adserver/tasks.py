@@ -29,6 +29,7 @@ from .models import AdImpression
 from .models import Advertisement
 from .models import Advertiser
 from .models import AdvertiserImpression
+from .models import DomainImpression
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -510,6 +511,55 @@ def daily_update_uplift(day=None):
 
 
 @app.task()
+def daily_update_domains(day=None):
+    """
+    Generate the daily index of DomainImpressions.
+
+    :arg day: An optional datetime object representing a day
+    """
+    start_date, end_date = get_day(day)
+
+    log.info("Updating domains for %s-%s", start_date, end_date)
+
+    queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
+        date__gte=start_date,
+        date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
+    )
+
+    for values in (
+        queryset.values("advertisement", "domain")
+        .annotate(
+            total_decisions=Count("publisher"),
+            total_offers=Count("domain", filter=Q(advertisement__isnull=False)),
+            total_views=Count("domain", filter=Q(viewed=True)),
+            total_clicks=Count("domain", filter=Q(clicked=True)),
+        )
+        .exclude(domain__isnull=True)
+        .order_by("-total_decisions")
+        .values(
+            "advertisement",
+            "domain",
+            "total_decisions",
+            "total_offers",
+            "total_views",
+            "total_clicks",
+        )
+        .iterator()
+    ):
+        impression, _ = DomainImpression.objects.using("default").get_or_create(
+            advertisement_id=values["advertisement"],
+            domain=values["domain"],
+            date=start_date,
+        )
+        DomainImpression.objects.using("default").filter(pk=impression.pk).update(
+            decisions=values["total_decisions"],
+            offers=values["total_offers"],
+            views=values["total_views"],
+            clicks=values["total_clicks"],
+        )
+
+
+@app.task()
 def daily_update_rotations(day=None):
     """
     Generate the daily index of RotationImpressions.
@@ -698,6 +748,7 @@ def update_previous_day_reports(day=None):
     daily_update_publishers(start_date)  # Important: after daily_update_impressions
     daily_update_keywords(start_date)
     daily_update_uplift(start_date)
+    daily_update_domains(start_date)
     daily_update_rotations(start_date)
     daily_update_regiontopic(start_date)
 
