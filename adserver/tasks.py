@@ -529,7 +529,7 @@ def daily_update_domains(day=None):
     for values in (
         queryset.values("advertisement", "domain")
         .annotate(
-            total_decisions=Count("publisher"),
+            total_decisions=Count("domain"),
             total_offers=Count("domain", filter=Q(advertisement__isnull=False)),
             total_views=Count("domain", filter=Q(viewed=True)),
             total_clicks=Count("domain", filter=Q(clicked=True)),
