@@ -633,6 +633,7 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertEqual(offer.advertisement, self.ad1)
         self.assertEqual(offer.div_id, div_id)
         self.assertEqual(offer.url, url)
+        self.assertEqual(offer.domain, "example.com")
         self.assertEqual(offer.ip, "1.1.0.0")  # anonymized
         self.assertEqual(offer.os_family, "Linux")
         self.assertEqual(offer.browser_family, "Chrome")
