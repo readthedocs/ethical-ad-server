@@ -2498,6 +2498,30 @@ class UpliftImpression(BaseImpression):
         return "Uplift of %s on %s" % (self.advertisement, self.date)
 
 
+class DomainImpression(BaseImpression):
+    """
+    Create an index of domains for each advertisement
+
+    Indexed one per ad/domain per day.
+    """
+
+    domain = models.CharField(_("Domain"), max_length=1000)
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="domain_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("advertisement", "date", "domain")
+
+    def __str__(self):
+        """Simple override."""
+        return "Domain %s of %s on %s" % (self.domain, self.advertisement, self.date)
+
+
 class RotationImpression(BaseImpression):
     """
     Create an index of ads that were rotated.
