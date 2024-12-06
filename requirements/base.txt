@@ -119,7 +119,7 @@ propcache==0.2.0
     # via
     #   aiohttp
     #   yarl
-pyjwt==2.10.0
+pyjwt==2.10.1
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery

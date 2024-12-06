@@ -232,7 +232,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   sphinx
-pyjwt==2.10.0
+pyjwt==2.10.1
     # via -r base.in
 pytest==8.3.3
     # via
