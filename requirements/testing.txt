@@ -20,13 +20,13 @@ pluggy==1.5.0
     # via tox
 py==1.11.0
     # via tox
-six==1.16.0
+six==1.17.0
     # via tox
 soupsieve==2.6
     # via beautifulsoup4
-tomli==2.1.0
+tomli==2.2.1
     # via tox
 tox==3.28.0
     # via -r testing.in
-virtualenv==20.27.1
+virtualenv==20.28.0
     # via tox
