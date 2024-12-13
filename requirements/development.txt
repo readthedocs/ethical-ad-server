@@ -4,9 +4,9 @@
 #
 #    pip-compile development.in
 #
-aiohappyeyeballs==2.4.3
+aiohappyeyeballs==2.4.4
     # via aiohttp
-aiohttp==3.11.6
+aiohttp==3.11.9
     # via geoip2
 aiosignal==1.3.1
     # via aiohttp
@@ -24,7 +24,7 @@ asgiref==3.8.1
     #   django-allauth
     #   django-cors-headers
     #   django-countries
-asttokens==2.4.1
+asttokens==3.0.0
     # via stack-data
 async-timeout==5.0.1
     # via
@@ -68,7 +68,7 @@ click-repl==0.3.0
     # via celery
 colorama==0.4.6
     # via sphinx-autobuild
-coverage==7.6.7
+coverage==7.6.8
     # via
     #   -r development.in
     #   django-coverage-plugin
@@ -96,7 +96,7 @@ django==5.0.10
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth==65.2.0
+django-allauth==65.3.0
     # via -r base.in
 django-cors-headers==4.6.0
     # via -r base.in
@@ -124,7 +124,7 @@ django-simple-history==3.7.0
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
-django-upgrade==1.22.1
+django-upgrade==1.22.2
     # via -r development.in
 djangorestframework==3.15.2
     # via -r base.in
@@ -154,7 +154,7 @@ geoip2==4.8.1
     # via -r base.in
 h11==0.14.0
     # via uvicorn
-identify==2.6.2
+identify==2.6.3
     # via pre-commit
 idna==3.10
     # via
@@ -169,7 +169,7 @@ ip2proxy==3.4.2
     # via -r base.in
 ipdb==0.13.13
     # via -r development.in
-ipython==8.29.0
+ipython==8.30.0
     # via
     #   -r development.in
     #   ipdb
@@ -218,7 +218,7 @@ prompt-toolkit==3.0.48
     # via
     #   click-repl
     #   ipython
-propcache==0.2.0
+propcache==0.2.1
     # via
     #   aiohttp
     #   yarl
@@ -232,9 +232,9 @@ pygments==2.18.0
     # via
     #   ipython
     #   sphinx
-pyjwt==2.10.0
+pyjwt==2.10.1
     # via -r base.in
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r development.in
     #   pytest-django
@@ -264,9 +264,8 @@ responses==0.25.3
     # via -r development.in
 ruff==0.5.2
     # via -r development.in
-six==1.16.0
+six==1.17.0
     # via
-    #   asttokens
     #   python-dateutil
     #   sphinxcontrib-httpdomain
     #   tox
@@ -318,7 +317,7 @@ stripe==4.2.0
     #   dj-stripe
 tokenize-rt==6.1.0
     # via django-upgrade
-tomli==2.1.0
+tomli==2.2.1
     # via
     #   ipdb
     #   pytest
@@ -340,8 +339,12 @@ typing-extensions==4.12.2
     #   uvicorn
 tzdata==2024.2
     # via kombu
-ua-parser==0.18.0
-    # via user-agents
+ua-parser==1.0.0
+    # via
+    #   ua-parser-builtins
+    #   user-agents
+ua-parser-builtins==0.18.0
+    # via ua-parser
 url-normalize==1.4.3
     # via requests-cache
 urllib3==2.2.3
@@ -359,11 +362,11 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.27.1
+virtualenv==20.28.0
     # via
     #   pre-commit
     #   tox
-watchfiles==0.24.0
+watchfiles==1.0.0
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
@@ -373,5 +376,5 @@ websockets==14.1
     # via sphinx-autobuild
 whitenoise==6.8.2
     # via -r base.in
-yarl==1.17.2
+yarl==1.18.3
     # via aiohttp
