@@ -27,6 +27,7 @@ from .models import AdvertiserImpression
 from .models import Campaign
 from .models import Click
 from .models import CountryRegion
+from .models import DomainImpression
 from .models import Flight
 from .models import GeoImpression
 from .models import Keyword
@@ -880,6 +881,28 @@ class UpliftImpressionAdmin(ImpressionsAdmin):
     pass
 
 
+@admin.register(DomainImpression)
+class DomainImpressionAdmin(ImpressionsAdmin):
+    date_hierarchy = "date"
+    readonly_fields = (
+        "date",
+        "domain",
+        "advertisement",
+        "views",
+        "clicks",
+        "offers",
+        "decisions",
+        "click_to_offer_rate",
+        "view_to_offer_rate",
+        "modified",
+        "created",
+    )
+    list_display = readonly_fields
+    list_filter = ("advertisement__flight__campaign__advertiser",)
+    list_select_related = ("advertisement",)
+    search_fields = ("advertisement__slug", "advertisement__name", "domain")
+
+
 @admin.register(RotationImpression)
 class RotationImpressionAdmin(ImpressionsAdmin):
     date_hierarchy = "date"
@@ -910,7 +933,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "date",
         "advertisement",
         "publisher",
-        "page_url",
+        "domain",
         "keywords",
         "country",
         "browser_family",
@@ -922,6 +945,7 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
         "ip",
         "div_id",
         "ad_type_slug",
+        "url",
         "client_id",
         "modified",
         "created",
@@ -938,22 +962,13 @@ class AdBaseAdmin(RemoveDeleteMixin, admin.ModelAdmin):
     paginator = EstimatedCountPaginator
     search_fields = (
         "advertisement__name",
-        "url",
+        "domain",
         "ip",
         "country",
         "user_agent",
         "client_id",
     )
     show_full_result_count = False
-
-    def page_url(self, instance):
-        if instance.url:
-            return format_html(
-                '<a href="{}">{}</a>',
-                instance.url,
-                instance.url,
-            )
-        return None
 
     def has_add_permission(self, request):
         """Clicks and views cannot be added through the admin."""

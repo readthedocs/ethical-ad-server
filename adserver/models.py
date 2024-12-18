@@ -1065,6 +1065,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def get_days_display(self):
         return [day.capitalize() for day in self.days]
 
+    def get_analyzed_urls_display(self):
+        if "adserver.analyzer" not in settings.INSTALLED_APPS:
+            return []
+        return [aau.url for aau in self.analyzedadvertiserurl_set.all()]
+
     def show_to_geo(self, geo_data):
         """
         Check if a flight is valid for a given country code.
@@ -2496,6 +2501,30 @@ class UpliftImpression(BaseImpression):
     def __str__(self):
         """Simple override."""
         return "Uplift of %s on %s" % (self.advertisement, self.date)
+
+
+class DomainImpression(BaseImpression):
+    """
+    Create an index of domains for each advertisement
+
+    Indexed one per ad/domain per day.
+    """
+
+    domain = models.CharField(_("Domain"), max_length=1000)
+    advertisement = models.ForeignKey(
+        Advertisement,
+        related_name="domain_impressions",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ("-date",)
+        unique_together = ("advertisement", "date", "domain")
+
+    def __str__(self):
+        """Simple override."""
+        return "Domain %s of %s on %s" % (self.domain, self.advertisement, self.date)
 
 
 class RotationImpression(BaseImpression):

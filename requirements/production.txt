@@ -4,9 +4,9 @@
 #
 #    pip-compile production.in
 #
-aiohappyeyeballs==2.4.3
+aiohappyeyeballs==2.4.4
     # via aiohttp
-aiohttp==3.11.6
+aiohttp==3.11.9
     # via geoip2
 aiosignal==1.3.1
     # via aiohttp
@@ -58,11 +58,11 @@ click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2024.10
     # via -r base.in
-cryptography==43.0.3
+cryptography==44.0.0
     # via azure-storage-blob
 dj-stripe==2.8.4
     # via -r base.in
-django==5.0.9
+django==5.0.10
     # via
     #   -r base.in
     #   crispy-bootstrap4
@@ -78,7 +78,7 @@ django==5.0.9
     #   django-storages
     #   djangorestframework
     #   jsonfield
-django-allauth==65.2.0
+django-allauth==65.3.0
     # via -r base.in
 django-anymail==12.0
     # via -r production.in
@@ -136,7 +136,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-newrelic==10.3.0
+newrelic==10.3.1
     # via -r production.in
 packaging==24.2
     # via gunicorn
@@ -144,7 +144,7 @@ pillow==11.0.0
     # via -r base.in
 prompt-toolkit==3.0.48
     # via click-repl
-propcache==0.2.0
+propcache==0.2.1
     # via
     #   aiohttp
     #   yarl
@@ -152,7 +152,7 @@ psycopg2-binary==2.9.10
     # via -r production.in
 pycparser==2.22
     # via cffi
-pyjwt==2.10.0
+pyjwt==2.10.1
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery
@@ -169,9 +169,9 @@ requests==2.32.3
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.18.0
+sentry-sdk==2.19.0
     # via -r production.in
-six==1.16.0
+six==1.17.0
     # via
     #   azure-core
     #   python-dateutil
@@ -190,8 +190,12 @@ typing-extensions==4.12.2
     #   multidict
 tzdata==2024.2
     # via kombu
-ua-parser==0.18.0
-    # via user-agents
+ua-parser==1.0.0
+    # via
+    #   ua-parser-builtins
+    #   user-agents
+ua-parser-builtins==0.18.0
+    # via ua-parser
 urllib3==2.2.3
     # via
     #   django-anymail
@@ -210,5 +214,5 @@ webencodings==0.5.1
     # via bleach
 whitenoise==6.8.2
     # via -r base.in
-yarl==1.17.2
+yarl==1.18.3
     # via aiohttp

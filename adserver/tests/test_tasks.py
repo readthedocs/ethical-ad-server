@@ -10,6 +10,7 @@ from django_slack.utils import get_backend
 from ..constants import HOUSE_CAMPAIGN
 from ..models import AdImpression
 from ..models import AdvertiserImpression
+from ..models import DomainImpression
 from ..models import Flight
 from ..models import GeoImpression
 from ..models import KeywordImpression
@@ -23,6 +24,7 @@ from ..models import UpliftImpression
 from ..tasks import calculate_ad_ctrs
 from ..tasks import calculate_publisher_ctrs
 from ..tasks import daily_update_advertisers
+from ..tasks import daily_update_domains
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
@@ -464,6 +466,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["backend"],
             div_id="id_1",
             ad_type_slug=self.text_ad_type.slug,
+            domain="example.com",
         )
         get(
             Offer,
@@ -475,6 +478,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["backend"],
             div_id="id_1",
             ad_type_slug=self.text_ad_type.slug,
+            domain="example.com",
         )
         get(
             Offer,
@@ -488,6 +492,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["backend"],
             div_id="id_1",
             ad_type_slug=self.text_ad_type.slug,
+            domain="example.com",
         )
         get(
             Offer,
@@ -499,6 +504,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["backend"],
             div_id="id_2",
             ad_type_slug=self.text_ad_type.slug,
+            domain="sub.example.com",
         )
         get(
             Offer,
@@ -511,6 +517,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["security"],
             div_id="id_2",
             ad_type_slug=self.text_ad_type.slug,
+            domain="example.com",
         )
         get(
             Offer,
@@ -523,6 +530,7 @@ class AggregationTaskTests(BaseAdModelsTestCase):
             keywords=["security"],
             div_id="id_2",
             ad_type_slug=self.text_ad_type.slug,
+            domain="sub.example.com",
         )
 
     def test_daily_update_impressions(self):
@@ -762,6 +770,21 @@ class AggregationTaskTests(BaseAdModelsTestCase):
         self.assertEqual(uplift2.offers, 2)
         self.assertEqual(uplift2.views, 2)
         self.assertEqual(uplift2.clicks, 0)
+
+    def test_daily_update_domains(self):
+        daily_update_domains()
+
+        imp1 = DomainImpression.objects.filter(advertisement=self.ad1, domain="example.com").first()
+        self.assertIsNotNone(imp1)
+        self.assertEqual(imp1.offers, 3)
+        self.assertEqual(imp1.views, 2)
+        self.assertEqual(imp1.clicks, 1)
+
+        imp2 = DomainImpression.objects.filter(advertisement=self.ad2, domain="sub.example.com").first()
+        self.assertIsNotNone(imp2)
+        self.assertEqual(imp2.offers, 1)
+        self.assertEqual(imp2.views, 1)
+        self.assertEqual(imp2.clicks, 0)
 
     def test_daily_update_placements(self):
         # Ad1/id_1 - offered/decision=3, views=2, clicks=1

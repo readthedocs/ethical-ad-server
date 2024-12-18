@@ -51,7 +51,7 @@
         {% if payout.status == 'emailed' and payout.publisher.payout_url %}
           {% if payout.method == "stripe" %}
             <div class="form-group form-check">
-              <input type="checkbox" class="form-check-input" id="stripe-payout-confirm" name="stripe-payout-confirm">
+              <input type="checkbox" class="form-check-input" id="stripe-payout-confirm" name="stripe-payout-confirm" checked="checked">
               <label class="form-check-label" for="stripe-payout-confirm">
                 <span>{% blocktrans with amount=payout.amount|floatformat:2|intcomma %}Send ${{ amount }} via Stripe Connect{% endblocktrans %}</span>
               </label>
