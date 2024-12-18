@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.12.0
+---------------
+
+This release adds the ability to start reporting on ad campaigns at the domain level.
+The report itself is not yet in this release, but the data is going to start being aggregated
+for an upcoming report.
+There were some dependency updates including a New Relic related dependency fix.
+
+:Date: December 18, 2024
+
+ * @davidfischer: Niche targeting flight status (#965)
+ * @davidfischer: Make paying out via stripe the default (#964)
+ * @davidfischer: Add a 429 template and handler for dev (#963)
+ * @dependabot[bot]: Bump django from 5.0.9 to 5.0.10 in /requirements (#958)
+ * @davidfischer: Update requirements (#957)
+ * @davidfischer: Domain aggregation (#955)
+ * @dependabot[bot]: Bump pyjwt from 2.10.0 to 2.10.1 in /requirements (#952)
+ * @davidfischer: Pin New Relic (#947)
+
+
 Version v5.11.0
 ---------------
 
