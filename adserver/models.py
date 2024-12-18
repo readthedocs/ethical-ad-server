@@ -1065,6 +1065,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
     def get_days_display(self):
         return [day.capitalize() for day in self.days]
 
+    def get_analyzed_urls_display(self):
+        if "adserver.analyzer" not in settings.INSTALLED_APPS:
+            return []
+        return [aau.url for aau in self.analyzedadvertiserurl_set.all()]
+
     def show_to_geo(self, geo_data):
         """
         Check if a flight is valid for a given country code.
