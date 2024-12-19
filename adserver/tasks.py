@@ -535,6 +535,7 @@ def daily_update_domains(day=None):
             total_clicks=Count("domain", filter=Q(clicked=True)),
         )
         .exclude(domain__isnull=True)
+        .filter(total_views__gt=0)
         .order_by("-total_decisions")
         .values(
             "advertisement",
