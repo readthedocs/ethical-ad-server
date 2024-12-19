@@ -8,6 +8,7 @@ import operator
 from .constants import PAID_CAMPAIGN
 from .models import AdImpression
 from .models import AdvertiserImpression
+from .models import DomainImpression
 from .models import GeoImpression
 from .models import KeywordImpression
 from .models import PlacementImpression
@@ -85,6 +86,9 @@ class BaseReport:
     def get_index_display(self, index):
         """Used to add display logic the index field."""
         return index
+
+    def get_index_header(self):
+        return "Day (UTC)"
 
     def generate(self):
         raise NotImplementedError("Subclasses implement this method")
@@ -186,6 +190,18 @@ class AdvertiserPublisherReport(AdvertiserReport):
     index = "publisher"
     order = "-views"
     select_related_fields = ("advertisement", "advertisement__flight", "publisher")
+
+
+class AdvertiserDomainReport(AdvertiserReport):
+    """Report to breakdown advertiser performance by domain where the ad appears."""
+
+    model = DomainImpression
+    index = "domain"
+    order = "-views"
+    select_related_fields = ("advertisement", "advertisement__flight")
+
+    def get_index_header(self):
+        return self.index.title()
 
 
 class PublisherReport(BaseReport):

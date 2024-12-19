@@ -15,6 +15,7 @@ from .views import AdvertisementUpdateView
 from .views import AdvertiserAuthorizedUsersInviteView
 from .views import AdvertiserAuthorizedUsersRemoveView
 from .views import AdvertiserAuthorizedUsersView
+from .views import AdvertiserDomainReportView
 from .views import AdvertiserFlightReportView
 from .views import AdvertiserGeoReportView
 from .views import AdvertiserKeywordReportView
@@ -193,6 +194,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/report/topics/",
         AdvertiserTopicReportView.as_view(),
         name="advertiser_topic_report",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/report/domains/",
+        AdvertiserDomainReportView.as_view(),
+        name="advertiser_domain_report",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/",
