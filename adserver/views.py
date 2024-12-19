@@ -93,6 +93,7 @@ from .models import Advertisement
 from .models import Advertiser
 from .models import AdvertiserImpression
 from .models import Campaign
+from .models import DomainImpression
 from .models import Flight
 from .models import GeoImpression
 from .models import KeywordImpression
@@ -107,6 +108,7 @@ from .models import RegionImpression
 from .models import RegionTopicImpression
 from .models import Topic
 from .models import UpliftImpression
+from .reports import AdvertiserDomainReport
 from .reports import AdvertiserPublisherReport
 from .reports import AdvertiserReport
 from .reports import OptimizedAdvertiserReport
@@ -1633,6 +1635,61 @@ class AdvertiserTopicReportView(AdvertiserAccessMixin, BaseReportView):
                 "metabase_advertiser_topics": settings.METABASE_QUESTIONS.get(
                     "ADVERTISER_TOPIC_PERFORMANCE"
                 ),
+            }
+        )
+
+        return context
+
+
+class AdvertiserDomainReportView(AdvertiserAccessMixin, BaseReportView):
+    LIMIT = 50
+    DATA_COLLECTION_START_DATE = datetime(
+        year=2024, month=12, day=1, tzinfo=timezone.get_current_timezone()
+    )
+
+    impression_model = DomainImpression
+    template_name = "adserver/reports/advertiser-domain.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        advertiser_slug = kwargs.get("advertiser_slug", "")
+        advertiser = get_object_or_404(Advertiser, slug=advertiser_slug)
+
+        flight_slug = self.request.GET.get("flight", "")
+        flight = Flight.objects.filter(
+            campaign__advertiser=advertiser, slug=flight_slug
+        ).first()
+
+        if context["start_date"] < self.DATA_COLLECTION_START_DATE:
+            messages.info(
+                self.request,
+                _(
+                    "Data for the domain report started being collected in %s. Data for this date range may be incomplete."
+                )
+                % (self.DATA_COLLECTION_START_DATE.strftime("%B %Y")),
+            )
+
+        queryset = self.get_queryset(
+            advertiser=advertiser,
+            flight=flight,
+            start_date=context["start_date"],
+            end_date=context["end_date"],
+        )
+
+        report = AdvertiserDomainReport(
+            queryset,
+            max_results=self.LIMIT,
+        )
+        report.generate()
+
+        context.update(
+            {
+                "advertiser": advertiser,
+                "report": report,
+                "flights": Flight.objects.filter(
+                    campaign__advertiser=advertiser
+                ).order_by("-start_date"),
             }
         )
 

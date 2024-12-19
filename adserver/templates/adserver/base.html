@@ -127,6 +127,16 @@
               </li>
 
               <li class="nav-item">
+                <a
+                  class="nav-link"
+                  href="{% url 'advertiser_domain_report' advertiser.slug %}"
+                >
+                  <span class="fa fa-laptop fa-fw ml-4 text-muted" aria-hidden="true"></span>
+                  <span>{% trans 'Domains' %}</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
                 <a class="nav-link" href="{% url 'advertiser_users' advertiser.slug %}">
                   <span class="fa fa-users fa-fw mr-2 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Authorized users' %}</span>
