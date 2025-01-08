@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.13.0
+---------------
+
+This release has some minor bug fixes.
+The main difference is to add a per-domain report for advertisers
+to show more visibility on where their ads are appearing.
+We are also switching to UUID7s from UUID4s for the few places we use UUIDs.
+
+:Date: January 8, 2025
+
+ * @davidfischer: Fix typo in publisher-placement report (#973)
+ * @davidfischer: Switch to UUID7s (#971)
+ * @davidfischer: Advertiser domain report (#968)
+ * @davidfischer: Only report on domains with 1 view (#967)
+ * @JasonBarnabe: Geo report should include revenue per country (#962)
+
+
 Version v5.12.0
 ---------------
 
