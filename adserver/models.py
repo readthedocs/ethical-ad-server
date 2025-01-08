@@ -5,12 +5,12 @@ import html
 import logging
 import math
 import re
-import uuid
 from collections import Counter
 
 import bleach
 import djstripe.models as djstripe_models
 import pytz
+import uuid_utils.compat as uuid
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache import caches
@@ -2689,7 +2689,7 @@ class Offer(AdBase):
     MAX_VIEW_TIME = 5 * 60  # seconds
 
     # Use an ok user-facing pk value
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
 
     advertisement = models.ForeignKey(
         Advertisement,
@@ -2777,7 +2777,7 @@ class Offer(AdBase):
 class PublisherPayout(TimeStampedModel):
     """Details on historical publisher payouts."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     publisher = models.ForeignKey(
         Publisher, related_name="payouts", on_delete=models.PROTECT
     )
