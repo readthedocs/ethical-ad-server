@@ -89,6 +89,15 @@ def analyze_url(url, publisher_slug, force=False):
 
         url_obj.save()
 
+    # If available, also analyze this URL with embeddings
+    if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
+        from ethicalads_ext.embedding.tasks import analyze_publisher_url
+
+        analyze_publisher_url.apply_async(
+            args=[url, publisher_slug, True],
+            queue="analyzer",
+        )
+
 
 @app.task
 def daily_visited_urls_aggregation(day=None):
