@@ -43,7 +43,12 @@
 
             <div class="col-xl-3 col-md-6 col-12 mb-3">
               <label class="col-form-label" for="id_payout_method">{% trans 'Payout Method' %}</label>
-              <input type="text" id="id_payout_method" class="form-control text-monospace" name="payout_method" value="{{ payout_method|default_if_none:"" }}"><br><br>
+              <select class="form-control" name="payout_method" id="id_payout_method">
+                <option value="">---</option>
+                {% for method, name in payout_method_options %}
+                  <option value="{{ method }}"{% if payout_method == method %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
             </div>
 
           </div>

@@ -24,6 +24,7 @@ from adserver.utils import generate_publisher_payout_data
 
 from ..constants import PAID
 from ..constants import PAYOUT_STRIPE
+from ..constants import PUBLISHER_PAYOUT_METHODS
 from ..mixins import StaffUserMixin
 from ..models import Advertiser
 from ..models import Publisher
@@ -110,7 +111,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
         if payout_method:
-            queryset = queryset.filter(payout_method__icontains=payout_method)
+            queryset = queryset.filter(payout_method=payout_method)
 
         payouts = {}
 
@@ -195,6 +196,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["publisher_slug"] = publisher_slug
         context["payout_method"] = payout_method
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
+        context["payout_method_options"] = list(PUBLISHER_PAYOUT_METHODS)
         return context
 
 
