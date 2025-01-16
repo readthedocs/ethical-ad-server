@@ -24,6 +24,7 @@ from adserver.utils import generate_publisher_payout_data
 
 from ..constants import PAID
 from ..constants import PAYOUT_STRIPE
+from ..constants import PUBLISHER_PAYOUT_METHODS
 from ..mixins import StaffUserMixin
 from ..models import Advertiser
 from ..models import Publisher
@@ -91,6 +92,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     * first: Show only payouts for the first time
     * paid: Show only payouts that have already been paid
     * publisher: Filter to a specific publisher
+    * payout_method: Filter to a specific payout method
     """
 
     template_name = "adserver/staff/publisher-payout-list.html"
@@ -103,10 +105,13 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         publisher_slug = self.request.GET.get("publisher")
         first = self.request.GET.get("first", "")
         paid = self.request.GET.get("paid", "")
+        payout_method = self.request.GET.get("payout_method", "")
 
         queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
+        if payout_method:
+            queryset = queryset.filter(payout_method=payout_method)
 
         payouts = {}
 
@@ -189,7 +194,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["first"] = first
         context["paid"] = paid
         context["publisher_slug"] = publisher_slug
+        context["payout_method"] = payout_method
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
+        context["payout_method_options"] = list(PUBLISHER_PAYOUT_METHODS)
         return context
 
 
