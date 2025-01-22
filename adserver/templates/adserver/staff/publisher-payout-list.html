@@ -41,6 +41,16 @@
               <input type="text" id="id_publisher" class="form-control text-monospace" name="publisher" value="{{ publisher_slug|default_if_none:"" }}"><br><br>
             </div>
 
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_payout_method">{% trans 'Payout Method' %}</label>
+              <select class="form-control" name="payout_method" id="id_payout_method">
+                <option value="">---</option>
+                {% for method, name in payout_method_options %}
+                  <option value="{{ method }}"{% if payout_method == method %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
           </div>
 
           <button class="btn btn-primary" type="submit">{% trans 'Filter report' %}</button>
@@ -61,6 +71,7 @@
           <th><strong>{% trans '% Change' %}</strong></th>
           <th><strong>{% trans 'CTR' %}</strong></th>
           <th><strong>{% trans 'Status' %}</strong></th>
+          <th><strong>{% trans 'Payout Method' %}</strong></th>
           <th><strong>{% trans 'Action' %}</strong></th>
         </tr>
       </thead>
@@ -90,6 +101,7 @@
             {% trans "Not started" %}
             {% endif %}
             </td>
+            <td>{{ publisher.get_payout_method_display }}</td>
             <td>
             {% if payout_data.payout and payout_data.payout.status == "paid" %}
             No action required
@@ -101,7 +113,7 @@
             </td>
           </tr>
         {% empty %}
-          <td colspan="7">{% trans 'No pending payouts' %}</td>
+          <td colspan="8">{% trans 'No pending payouts' %}</td>
         {% endfor %}
       </tbody>
     </table>
