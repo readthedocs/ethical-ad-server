@@ -200,6 +200,11 @@ if "ethicalads_ext.embedding" in INSTALLED_APPS:
         "task": "ethicalads_ext.embedding.tasks.daily_analyze_advertiser_urls",
         "schedule": crontab(hour="4", minute="30"),
     }
+if "ethicalads_ext.etl" in INSTALLED_APPS:
+    CELERY_BEAT_SCHEDULE["every-day-etl-pipeline"] = {
+        "task": "ethicalads_ext.etl.tasks.daily_etl_pipeline",
+        "schedule": crontab(hour="0", minute="30"),
+    }
 
 
 # Sentry settings for error monitoring
