@@ -493,6 +493,7 @@ METABASE_QUESTIONS = {
     "PUBLISHER_GEO_REPORT": 319,
     "ADVERTISER_TOPIC_PERFORMANCE": 366,
     "ADVERTISER_PER_AD_TABLE": 966,
+    "ADVERTISER_DOMAIN_REPORT": 1098,
 }
 METABASE_DASHBOARDS = {
     "ADVERTISER_FIGURES": 80,
@@ -537,6 +538,7 @@ if ADSERVER_ANALYZER_BACKEND:
 if ADSERVER_ANALYZER_BACKEND and ADSERVER_EXT:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
 if ADSERVER_EXT:
+    INSTALLED_APPS.append("ethicalads_ext.etl")
     INSTALLED_APPS.append("ethicalads_ext.support")
 
 # Whether Do Not Track is enabled for the ad server

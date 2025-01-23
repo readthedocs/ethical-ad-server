@@ -4,13 +4,36 @@
 #
 #    pip-compile analyzer.in
 #
+adlfs==2024.12.0
+    # via -r analyzer.in
+aiohappyeyeballs==2.4.4
+    # via aiohttp
+aiohttp==3.11.11
+    # via adlfs
+aiosignal==1.3.2
+    # via aiohttp
+async-timeout==5.0.1
+    # via aiohttp
+attrs==24.3.0
+    # via aiohttp
+azure-core==1.32.0
+    # via
+    #   adlfs
+    #   azure-identity
+    #   azure-storage-blob
+azure-datalake-store==0.0.53
+    # via adlfs
+azure-identity==1.19.0
+    # via adlfs
+azure-storage-blob==12.24.1
+    # via adlfs
 babel==2.16.0
     # via courlan
 beautifulsoup4==4.12.3
     # via -r analyzer.in
 blis==0.7.11
     # via thinc
-cachetools==5.5.0
+cachetools==5.5.1
     # via textacy
 catalogue==2.0.10
     # via
@@ -22,6 +45,10 @@ certifi==2024.12.14
     # via
     #   requests
     #   trafilatura
+cffi==1.17.1
+    # via
+    #   azure-datalake-store
+    #   cryptography
 charset-normalizer==3.4.1
     # via
     #   htmldate
@@ -37,7 +64,13 @@ confection==0.1.5
     #   weasel
 courlan==1.3.2
     # via trafilatura
-cymem==2.0.10
+cryptography==44.0.0
+    # via
+    #   azure-identity
+    #   azure-storage-blob
+    #   msal
+    #   pyjwt
+cymem==2.0.11
     # via
     #   preshed
     #   spacy
@@ -46,17 +79,24 @@ cytoolz==1.0.1
     # via textacy
 dateparser==1.2.0
     # via htmldate
+duckdb==1.1.3
+    # via -r analyzer.in
 en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
     # via -r analyzer.in
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   huggingface-hub
     #   torch
     #   transformers
 floret==0.10.5
     # via textacy
+frozenlist==1.5.0
+    # via
+    #   aiohttp
+    #   aiosignal
 fsspec==2024.12.0
     # via
+    #   adlfs
     #   huggingface-hub
     #   torch
 htmldate==1.9.3
@@ -67,7 +107,11 @@ huggingface-hub==0.24.7
     #   sentence-transformers
     #   transformers
 idna==3.10
-    # via requests
+    # via
+    #   requests
+    #   yarl
+isodate==0.7.2
+    # via azure-storage-blob
 jellyfish==1.1.3
     # via textacy
 jinja2==3.1.5
@@ -102,7 +146,18 @@ markupsafe==3.0.2
     # via jinja2
 mpmath==1.3.0
     # via sympy
-murmurhash==1.0.11
+msal==1.31.1
+    # via
+    #   azure-datalake-store
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.2.0
+    # via azure-identity
+multidict==6.1.0
+    # via
+    #   aiohttp
+    #   yarl
+murmurhash==1.0.12
     # via
     #   preshed
     #   spacy
@@ -175,17 +230,29 @@ pgvector==0.3.6
     # via -r analyzer.in
 pillow==11.1.0
     # via torchvision
+portalocker==2.10.1
+    # via msal-extensions
 preshed==3.0.9
     # via
     #   spacy
     #   thinc
-pydantic==1.10.19
+propcache==0.2.1
+    # via
+    #   aiohttp
+    #   yarl
+pycparser==2.22
+    # via cffi
+pydantic==1.10.21
     # via
     #   confection
     #   spacy
     #   thinc
     #   weasel
-pyphen==0.17.0
+pyjwt[crypto]==2.10.1
+    # via
+    #   msal
+    #   pyjwt
+pyphen==0.17.2
     # via textacy
 python-dateutil==2.9.0.post0
     # via
@@ -204,16 +271,19 @@ regex==2024.11.6
     #   transformers
 requests==2.32.3
     # via
+    #   azure-core
+    #   azure-datalake-store
     #   huggingface-hub
+    #   msal
     #   spacy
     #   textacy
     #   transformers
     #   weasel
-scikit-learn==1.6.0
+scikit-learn==1.6.1
     # via
     #   sentence-transformers
     #   textacy
-scipy==1.14.1
+scipy==1.15.1
     # via
     #   scikit-learn
     #   sentence-transformers
@@ -224,6 +294,7 @@ sentencepiece==0.2.0
     # via sentence-transformers
 six==1.17.0
     # via
+    #   azure-core
     #   langdetect
     #   python-dateutil
 smart-open==6.4.0
@@ -247,7 +318,7 @@ spacy-loggers==1.0.5
     # via spacy
 spacy-transformers==1.1.9
     # via -r analyzer.in
-srsly==2.5.0
+srsly==2.5.1
     # via
     #   confection
     #   spacy
@@ -298,8 +369,12 @@ typer==0.7.0
     #   weasel
 typing-extensions==4.12.2
     # via
+    #   azure-core
+    #   azure-identity
+    #   azure-storage-blob
     #   cloudpathlib
     #   huggingface-hub
+    #   multidict
     #   pydantic
     #   torch
 tzlocal==5.2
@@ -315,6 +390,8 @@ wasabi==0.10.1
     #   spacy
     #   thinc
     #   weasel
+yarl==1.18.3
+    # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

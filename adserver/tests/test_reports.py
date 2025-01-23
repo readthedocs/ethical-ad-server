@@ -20,19 +20,16 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import AdvertiserImpression
 from ..models import Campaign
-from ..models import DomainImpression
 from ..models import Flight
 from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherPaidImpression
-from ..reports import AdvertiserDomainReport
 from ..reports import AdvertiserReport
 from ..reports import OptimizedAdvertiserReport
 from ..reports import OptimizedPublisherPaidReport
 from ..reports import PublisherGeoReport
 from ..reports import PublisherReport
 from ..tasks import daily_update_advertisers
-from ..tasks import daily_update_domains
 from ..tasks import daily_update_geos
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_keywords
@@ -468,33 +465,6 @@ class TestReportViews(TestReportsBase):
         self.assertContains(response, "Total,3")
 
     def test_advertiser_domain_report_contents(self):
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher1,
-            viewed=True,
-            domain="example.com",
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher2,
-            viewed=True,
-            clicked=True,
-            domain="example.com",
-        )
-        get(
-            Offer,
-            advertisement=self.ad1,
-            publisher=self.publisher2,
-            viewed=True,
-            clicked=False,
-            domain="example2.com",
-        )
-
-        # Update reporting
-        daily_update_domains()
-
         url = reverse("advertiser_domain_report", args=[self.advertiser1.slug])
 
         # Anonymous
@@ -504,17 +474,9 @@ class TestReportViews(TestReportsBase):
 
         self.client.force_login(self.staff_user)
 
-        response = self.client.get(url)
-        self.assertContains(response, "example.com")
-        self.assertContains(response, "example2.com")
-
-        report = AdvertiserDomainReport(DomainImpression.objects.filter(advertisement=self.ad1))
-        report.generate()
-
-        # Check the actual data
-        self.assertEqual(len(report.results), 2)
-        self.assertAlmostEqual(report.total["views"], 3)
-        self.assertAlmostEqual(report.total["clicks"], 1)
+        # Handled by metabase
+        resp = self.client.get(url)
+        self.assertContains(resp, "Advertiser Domain Report")
 
     def test_advertiser_keyword_report(self):
         url = reverse("advertiser_keyword_report", args=[self.advertiser1.slug])

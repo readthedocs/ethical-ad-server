@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.14.0
+---------------
+
+Minor fixes related to reports and filtering.
+Added some ETL pipeline code that can be enabled from a private repo.
+
+:Date: January 23, 2025
+
+ * @davidfischer: Enable ETL pipeline if available (#980)
+ * @ericholscher: Add publisher payout filter and sorting (#979)
+ * @davidfischer: When analyzing URLs nightly, also do embeddings (#977)
+ * @dependabot[bot]: Bump django from 5.0.10 to 5.0.11 in /requirements (#976)
+ * @davidfischer: Move the domain report to metabase (#975)
+
+
 Version v5.13.0
 ---------------
 
