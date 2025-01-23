@@ -538,6 +538,7 @@ if ADSERVER_ANALYZER_BACKEND:
 if ADSERVER_ANALYZER_BACKEND and ADSERVER_EXT:
     INSTALLED_APPS.append("ethicalads_ext.embedding")
 if ADSERVER_EXT:
+    INSTALLED_APPS.append("ethicalads_ext.etl")
     INSTALLED_APPS.append("ethicalads_ext.support")
 
 # Whether Do Not Track is enabled for the ad server
