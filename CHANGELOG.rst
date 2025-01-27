@@ -6,6 +6,14 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.14.1
+---------------
+
+This was a packaging and private code only release.
+
+:Date: January 27, 2025
+
+
 Version v5.14.0
 ---------------
 
