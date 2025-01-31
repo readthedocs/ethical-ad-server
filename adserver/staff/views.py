@@ -1,8 +1,10 @@
 """Views for the administrator actions."""
 
 import datetime
+import json
 import logging
 
+import requests
 import stripe
 from django.conf import settings
 from django.contrib import messages
@@ -23,6 +25,7 @@ from djstripe.models import Transfer
 from adserver.utils import generate_publisher_payout_data
 
 from ..constants import PAID
+from ..constants import PAYOUT_PAYPAL
 from ..constants import PAYOUT_STRIPE
 from ..constants import PUBLISHER_PAYOUT_METHODS
 from ..mixins import StaffUserMixin
@@ -293,6 +296,12 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             transfer = self.pay_via_stripe_connect(self.payout)
             self.payout.note = f"Stripe Transfer: { transfer.id }"
             messages.success(self.request, _("Successfully paid via Stripe Connect"))
+        elif self.payout.method == PAYOUT_PAYPAL and self.request.POST.get(
+            "paypal-payout-confirm"
+        ):
+            transfer_id = self.pay_via_paypal(self.payout)
+            self.payout.note = f"Paypal Transfer: { transfer_id }"
+            messages.success(self.request, _("Successfully paid via PayPal"))
 
         self.payout.status = PAID
         self.payout.save()
@@ -314,3 +323,65 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             transfer_group=f"PublisherPayout-{ self.payout.id }",
         )
         return Transfer.sync_from_stripe_data(xfer)
+
+    def pay_via_paypal(self, payout):
+        """
+        Perform a PayPal payout.
+
+        See: https://developer.paypal.com/docs/api/payments.payouts-batch/v1/
+        """
+        publisher = payout.publisher
+        paypal_email = publisher.paypal_email
+        amount = str(round(payout.amount, 2))  # PayPal wants the amount as a string
+
+        if settings.DEBUG:
+            paypal_api_root = "https://api.sandbox.paypal.com"
+        else:
+            paypal_api_root = "https://api.paypal.com"
+
+        # https://developer.paypal.com/api/rest/authentication/
+        oauth_url = f"{paypal_api_root}/v1/oauth2/token"
+        payload = "grant_type=client_credentials"
+        headers = {
+            "accept": "application/json",
+            "accept-language": "en_US",
+            "content-type": "application/x-www-form-urlencoded",
+        }
+        auth = (settings.PAYPAL_CLIENT_ID, settings.PAYPAL_SECRET_KEY)
+
+        # Get an OAuth token
+        # Raises an error on a PayPal failure
+        resp = requests.post(oauth_url, data=payload, headers=headers, auth=auth)
+        resp.raise_for_status()
+        access_token = resp.json()["access_token"]
+
+        # Make the actual payout
+        # https://developer.paypal.com/docs/api/payments.payouts-batch/v1/
+        payout_url = "{paypal_api_root}/v1/payments/payouts"
+        headers = {
+            "accept": "application/json",
+            "authorization": f"Bearer {access_token}",
+            "content-type": "application/json",
+        }
+        payload = {
+            "sender_batch_header": {
+                "email_subject": f"EthicalAds Payout - {publisher}",
+                "sender_batch_id": f"payout-{str(payout.id)}",
+            },
+            "items": [
+                {
+                    "recipient_type": "EMAIL",
+                    "amount": {
+                        "value": amount,
+                        "currency": "USD",
+                    },
+                    "receiver": paypal_email,
+                    "note": f"EthicalAds Payout - {publisher}",
+                    "purpose": "SERVICES",
+                },
+            ],
+        }
+        resp = requests.post(payout_url, data=json.dumps(payload), headers=headers)
+        resp.raise_for_status()
+
+        return resp.json()["batch_header"]["payout_batch_id"]
