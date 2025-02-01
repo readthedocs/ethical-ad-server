@@ -22,7 +22,7 @@ async-timeout==5.0.1
     # via
     #   aiohttp
     #   redis
-attrs==24.3.0
+attrs==25.1.0
     # via aiohttp
 billiard==4.2.1
     # via celery
@@ -30,7 +30,7 @@ bleach==6.2.0
     # via -r base.in
 celery[redis]==5.5.0rc1
     # via -r base.in
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
@@ -75,13 +75,13 @@ django-crispy-forms==2.3
     #   crispy-bootstrap4
 django-enforce-host==1.1.0
     # via -r base.in
-django-environ==0.11.2
+django-environ==0.12.0
     # via -r base.in
 django-extensions==3.2.3
     # via -r base.in
 django-ratelimit==3.0.1
     # via -r base.in
-django-simple-history==3.7.0
+django-simple-history==3.8.0
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
@@ -93,7 +93,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-geoip2==4.8.1
+geoip2==5.0.1
     # via -r base.in
 idna==3.10
     # via
@@ -105,7 +105,7 @@ jsonfield==3.1.0
     # via -r base.in
 kombu==5.4.2
     # via celery
-maxminddb==2.6.2
+maxminddb==2.6.3
     # via geoip2
 multidict==6.1.0
     # via
@@ -113,7 +113,7 @@ multidict==6.1.0
     #   yarl
 pillow==11.1.0
     # via -r base.in
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via click-repl
 propcache==0.2.1
     # via
@@ -123,7 +123,7 @@ pyjwt==2.10.1
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery
-pytz==2024.2
+pytz==2025.1
     # via -r base.in
 redis==5.2.1
     # via celery
@@ -145,7 +145,7 @@ typing-extensions==4.12.2
     #   asgiref
     #   django-countries
     #   multidict
-tzdata==2024.2
+tzdata==2025.1
     # via kombu
 ua-parser==1.0.0
     # via user-agents
