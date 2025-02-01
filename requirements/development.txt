@@ -14,7 +14,7 @@ alabaster==0.7.16
     # via sphinx
 amqp==5.3.1
     # via kombu
-anyio==4.7.0
+anyio==4.8.0
     # via
     #   starlette
     #   watchfiles
@@ -30,7 +30,7 @@ async-timeout==5.0.1
     # via
     #   aiohttp
     #   redis
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   aiohttp
     #   cattrs
@@ -38,16 +38,16 @@ attrs==24.3.0
 babel==2.16.0
     # via sphinx
 beautifulsoup4==4.12.3
-    # via -r testing.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/testing.in
 billiard==4.2.1
     # via celery
 bleach==6.2.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 cattrs==24.1.2
     # via requests-cache
 celery[redis]==5.5.0rc1
-    # via -r base.in
-certifi==2024.12.14
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
+certifi==2025.1.31
     # via requests
 cfgv==3.4.0
     # via pre-commit
@@ -73,7 +73,7 @@ coverage==7.6.10
     #   -r development.in
     #   django-coverage-plugin
 crispy-bootstrap4==2024.10
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 decorator==5.1.1
     # via
     #   ipdb
@@ -81,10 +81,10 @@ decorator==5.1.1
 distlib==0.3.9
     # via virtualenv
 dj-stripe==2.8.4
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django==5.0.11
     # via
-    #   -r base.in
+    #   -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
     #   crispy-bootstrap4
     #   dj-stripe
     #   django-allauth
@@ -97,39 +97,39 @@ django==5.0.11
     #   djangorestframework
     #   jsonfield
 django-allauth==65.3.1
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-cors-headers==4.6.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-countries==7.6.1
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-coverage-plugin==3.1.0
     # via -r development.in
 django-crispy-forms==2.3
     # via
-    #   -r base.in
+    #   -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
     #   crispy-bootstrap4
 django-debug-toolbar==3.8.1
     # via -r development.in
 django-dynamic-fixture==4.0.1
     # via -r development.in
 django-enforce-host==1.1.0
-    # via -r base.in
-django-environ==0.11.2
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
+django-environ==0.12.0
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-extensions==3.2.3
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-ratelimit==3.0.1
-    # via -r base.in
-django-simple-history==3.7.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
+django-simple-history==3.8.0
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-slack==5.19.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 django-upgrade==1.22.2
     # via -r development.in
 djangorestframework==3.15.2
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 djangorestframework-jsonp==1.0.2
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 docutils==0.19
     # via
     #   sphinx
@@ -140,9 +140,9 @@ exceptiongroup==1.2.2
     #   cattrs
     #   ipython
     #   pytest
-executing==2.1.0
+executing==2.2.0
     # via stack-data
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   tox
     #   virtualenv
@@ -150,11 +150,11 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-geoip2==4.8.1
-    # via -r base.in
+geoip2==5.0.1
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 h11==0.14.0
     # via uvicorn
-identify==2.6.4
+identify==2.6.6
     # via pre-commit
 idna==3.10
     # via
@@ -166,10 +166,10 @@ imagesize==1.4.1
 iniconfig==2.0.0
     # via pytest
 ip2proxy==3.4.2
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 ipdb==0.13.13
     # via -r development.in
-ipython==8.31.0
+ipython==8.32.0
     # via
     #   -r development.in
     #   ipdb
@@ -178,14 +178,14 @@ jedi==0.19.2
 jinja2==3.1.5
     # via sphinx
 jsonfield==3.1.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 kombu==5.4.2
     # via celery
 markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
-maxminddb==2.6.2
+maxminddb==2.6.3
     # via geoip2
 multidict==6.1.0
     # via
@@ -203,7 +203,7 @@ parso==0.8.4
 pexpect==4.9.0
     # via ipython
 pillow==11.1.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 platformdirs==4.3.6
     # via
     #   requests-cache
@@ -212,9 +212,9 @@ pluggy==1.5.0
     # via
     #   pytest
     #   tox
-pre-commit==4.0.1
+pre-commit==4.1.0
     # via -r development.in
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via
     #   click-repl
     #   ipython
@@ -228,12 +228,12 @@ pure-eval==0.2.3
     # via stack-data
 py==1.11.0
     # via tox
-pygments==2.18.0
+pygments==2.19.1
     # via
     #   ipython
     #   sphinx
 pyjwt==2.10.1
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 pytest==8.3.4
     # via
     #   -r development.in
@@ -242,8 +242,8 @@ pytest-django==4.9.0
     # via -r development.in
 python-dateutil==2.9.0.post0
     # via celery
-pytz==2024.2
-    # via -r base.in
+pytz==2025.1
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 pyyaml==6.0.2
     # via
     #   pre-commit
@@ -260,7 +260,7 @@ requests==2.32.3
     #   stripe
 requests-cache==1.2.1
     # via -r development.in
-responses==0.25.3
+responses==0.25.6
     # via -r development.in
 ruff==0.5.2
     # via -r development.in
@@ -309,11 +309,11 @@ sqlparse==0.5.3
     #   django-debug-toolbar
 stack-data==0.6.3
     # via ipython
-starlette==0.45.1
+starlette==0.45.3
     # via sphinx-autobuild
 stripe==4.2.0
     # via
-    #   -r base.in
+    #   -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
     #   dj-stripe
 tokenize-rt==6.1.0
     # via django-upgrade
@@ -323,7 +323,7 @@ tomli==2.2.1
     #   pytest
     #   tox
 tox==3.28.0
-    # via -r testing.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/testing.in
 traitlets==5.14.3
     # via
     #   ipython
@@ -337,7 +337,7 @@ typing-extensions==4.12.2
     #   ipython
     #   multidict
     #   uvicorn
-tzdata==2024.2
+tzdata==2025.1
     # via kombu
 ua-parser==1.0.0
     # via user-agents
@@ -352,9 +352,9 @@ urllib3==2.3.0
     #   requests-cache
     #   responses
 user-agents==2.2.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 uuid-utils==0.10.0
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 uvicorn==0.34.0
     # via sphinx-autobuild
 vine==5.1.0
@@ -362,19 +362,19 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.28.0
+virtualenv==20.29.1
     # via
     #   pre-commit
     #   tox
-watchfiles==1.0.3
+watchfiles==1.0.4
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit
 webencodings==0.5.1
     # via bleach
-websockets==14.1
+websockets==14.2
     # via sphinx-autobuild
 whitenoise==6.8.2
-    # via -r base.in
+    # via -r /home/runner/work/ethical-ad-server/ethical-ad-server/requirements/base.in
 yarl==1.18.3
     # via aiohttp
