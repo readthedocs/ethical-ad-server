@@ -454,6 +454,12 @@ else:
     stripe.api_key = None
 stripe.api_version = "2020-08-27"
 
+# PayPal
+# Used for automated PayPal payouts only
+# --------------------------------------------------------------------------
+PAYPAL_CLIENT_ID = env("PAYPAL_CLIENT_ID", default=None)
+PAYPAL_SECRET_KEY = env("PAYPAL_SECRET_KEY", default=None)
+
 
 # Slack
 # Sending slack notifications
