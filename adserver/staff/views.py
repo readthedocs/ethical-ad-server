@@ -334,10 +334,11 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         paypal_email = publisher.paypal_email
         amount = str(round(payout.amount, 2))  # PayPal wants the amount as a string
 
+        # https://developer.paypal.com/api/rest/requests/
         if settings.DEBUG:
-            paypal_api_root = "https://api.sandbox.paypal.com"
+            paypal_api_root = "https://api-m.sandbox.paypal.com"
         else:
-            paypal_api_root = "https://api.paypal.com"
+            paypal_api_root = "https://api-m.paypal.com"
 
         # https://developer.paypal.com/api/rest/authentication/
         oauth_url = f"{paypal_api_root}/v1/oauth2/token"
