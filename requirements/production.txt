@@ -58,7 +58,7 @@ click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2024.10
     # via -r base.in
-cryptography==44.0.0
+cryptography==44.0.1
     # via azure-storage-blob
 dj-stripe==2.8.4
     # via -r base.in
