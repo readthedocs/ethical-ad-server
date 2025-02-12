@@ -58,6 +58,15 @@
             </div>
 
             <a href="{{ payout.publisher.payout_url }}" class="btn btn-sm btn-outline-secondary">{% trans "Or Send Manually" %}</a>
+          {% elif payout.method == "paypal" %}
+            <div class="form-group form-check">
+              <input type="checkbox" class="form-check-input" id="paypal-payout-confirm" name="paypal-payout-confirm">
+              <label class="form-check-label" for="paypal-payout-confirm">
+                <span>{% blocktrans with amount=payout.amount|floatformat:2|intcomma %}Send ${{ amount }} via PayPal ($0.25 fee){% endblocktrans %}</span>
+              </label>
+            </div>
+
+            <a href="{{ payout.publisher.payout_url }}" class="btn btn-sm btn-outline-secondary">{% trans "Or Send Manually" %}</a>
           {% else %}
             <a href="{{ payout.publisher.payout_url }}" class="btn btn-sm btn-outline-secondary">{% trans "Send Money" %}</a>
           {% endif %}
