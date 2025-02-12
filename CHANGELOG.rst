@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.15.0
+---------------
+
+This release contained code to automate PayPal payouts with their API.
+Requires setting app specific PayPal keys.
+
+:Date: February 12, 2025
+
+ * @dependabot[bot]: Bump cryptography from 44.0.0 to 44.0.1 in /requirements (#986)
+ * @davidfischer: Automated PayPal payouts (#985)
+
+
 Version v5.14.2
 ---------------
 
