@@ -358,7 +358,7 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
 
         # Make the actual payout
         # https://developer.paypal.com/docs/api/payments.payouts-batch/v1/
-        payout_url = "{paypal_api_root}/v1/payments/payouts"
+        payout_url = f"{paypal_api_root}/v1/payments/payouts"
         headers = {
             "accept": "application/json",
             "authorization": f"Bearer {access_token}",
