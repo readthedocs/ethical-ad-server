@@ -4,11 +4,11 @@
 #
 #    pip-compile testing.in
 #
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.3
     # via -r testing.in
 distlib==0.3.9
     # via virtualenv
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   tox
     #   virtualenv
@@ -28,5 +28,7 @@ tomli==2.2.1
     # via tox
 tox==3.28.0
     # via -r testing.in
-virtualenv==20.28.0
+typing-extensions==4.12.2
+    # via beautifulsoup4
+virtualenv==20.29.2
     # via tox
