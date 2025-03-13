@@ -1080,7 +1080,7 @@ class BaseProxyView(View):
             reason = "Ratelimited view impression"
         elif offer and offer.os_family != parsed_ua.os.family:
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "Mismatched OS between offer and impression. Publisher: [%s], Offer OS: [%s], User agent: [%s]",
                 offer.publisher,
                 offer.os_family,
@@ -1089,7 +1089,7 @@ class BaseProxyView(View):
             reason = "Mismatched OS"
         elif offer and offer.browser_family != parsed_ua.browser.family:
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "Mismatched browser between offer and impression. Publisher: [%s], Offer Browser: [%s], User agent: [%s]",
                 offer.publisher,
                 offer.browser_family,
