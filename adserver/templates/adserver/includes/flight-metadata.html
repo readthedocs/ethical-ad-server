@@ -144,7 +144,7 @@
   {% endif %}
   <p class='form-text small text-muted'>
     {% url 'support' as support_url %}
-    {% blocktrans with flight_name=flight.name|urlencode %}Flight targeting information can only be changed by your account manager. Please <a href="{{ support_url }}?subject=Flight+change&body=Flight+'{{ flight_name }}'+needs+a+change:">contact our team</a>.{% endblocktrans %}
+    {% blocktrans with flight_name=flight.name|urlencode %}Flight targeting information can only be changed by your account manager. Please <a href="{{ support_url }}?subject=Flight+change+request&body=Flight+'{{ flight_name }}'+needs+a+change:">contact our team</a>.{% endblocktrans %}
   </p>
 </dl>
 

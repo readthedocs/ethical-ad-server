@@ -6,6 +6,23 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.16.0
+---------------
+
+There were some small bugfixes and minor text improvements.
+The larger changes were upgrading dependencies including Node to v20.
+
+:Date: March 13, 2025
+
+ * @davidfischer: Flight change -> flight change request (#993)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#992)
+ * @davidfischer: Update Node and Node deps (#991)
+ * @davidfischer: Update Python requirements - Feb 2025 (#990)
+ * @davidfischer: Make sure Niche URLs are used on renewed flights (#989)
+ * @ericholscher: Fix f-string (#988)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#984)
+
+
 Version v5.15.0
 ---------------
 
