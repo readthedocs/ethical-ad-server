@@ -1,0 +1,25 @@
+{% extends "account/base_reauthenticate.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/account/reauthenticate.html #}
+
+{% load blocktrans trans from i18n %}
+{% load crispy from crispy_forms_tags %}
+
+
+{% block reauthenticate_content %}
+  <h1>{% trans 'Confirm Access' %}</h1>
+
+  <p>
+    {% blocktrans trimmed %}
+      Enter your account password to confirm access.
+    {% endblocktrans %}
+  </p>
+
+  {% url 'account_reauthenticate' as action_url %}
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ redirect_field }}
+    <input class="btn btn-primary" type="submit" value="{% trans 'Confirm ' %}">
+  </form>
+{% endblock reauthenticate_content %}

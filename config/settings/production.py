@@ -89,7 +89,6 @@ if env.bool("ADSERVER_HTTPS", default=False):
     if not socket.gethostname().startswith("ethicalads-extra"):
         ENFORCE_HOST = env("ENFORCE_HOST", default=None)
 
-
 # Email settings
 # See: https://anymail.readthedocs.io
 # --------------------------------------------------------------------------

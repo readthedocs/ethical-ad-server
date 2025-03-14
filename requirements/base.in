@@ -24,7 +24,7 @@ crispy-bootstrap4
 django-crispy-forms
 
 # Authentication
-django-allauth
+django-allauth[mfa]
 
 # Reading Django settings environment variables
 django-environ

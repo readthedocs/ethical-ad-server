@@ -18,7 +18,12 @@ omit =
 
     */migrations/*.py
     templates/admin/*.html
-    templates/account/*.html
+
+    # Skip allauth templates
+    templates/allauth/*
+    templates/account/*
+    templates/mfa/*
+
     templates/includes/*.html
     adserver/templatetags/metabase.py
     adserver/regiontopics.py # Just data/constants

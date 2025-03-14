@@ -96,7 +96,7 @@ django==5.0.12
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth==65.4.1
+django-allauth[mfa]==65.4.1
     # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
 django-cors-headers==4.7.0
     # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in

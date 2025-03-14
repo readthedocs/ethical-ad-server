@@ -42,6 +42,10 @@
               <span class="fa fa-key fa-fw mr-2 text-muted" aria-hidden="true"></span>
               <span>{% trans 'Change password' %}</span>
             </a>
+            <a class="dropdown-item" href="{% url 'mfa_index' %}">
+              <span class="fa fa-unlock-alt fa-fw mr-2 text-muted" aria-hidden="true"></span>
+              <span>{% trans 'MFA' %}</span>
+            </a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="{% url 'support' %}">
               <span class="fa fa-envelope fa-fw mr-2 text-muted" aria-hidden="true"></span>

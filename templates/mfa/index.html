@@ -1,0 +1,69 @@
+{% extends "mfa/base_manage.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/index.html #}
+
+
+{% load allauth %}
+{% load i18n %}
+
+
+{% block content %}
+
+  <h1>{% block heading %}{% trans "MFA" %}{% endblock heading %}</h1>
+
+  <p>{% trans 'Configure or update your multi-factor authentication settings.' %}</p>
+
+
+  {% if "totp" in MFA_SUPPORTED_TYPES %}
+
+  <section class="my-5" id="mfa-totp">
+    <h3>{% trans "Authenticator App" %}</h3>
+
+    {% url 'mfa_deactivate_totp' as deactivate_url %}
+    {% url 'mfa_activate_totp' as activate_url %}
+
+    {% if authenticators.totp %}
+      <p>
+        {% blocktrans trimmed %}
+          Two-factor authentication using an authenticator app is enabled.
+        {% endblocktrans %}
+      </p>
+      <p class="mb-0"><a href="{{ deactivate_url }}" class="btn btn-sm btn-danger">{% trans 'Deactivate MFA' %}</a></p>
+      <p class="small text-muted">{% trans '(You will have a chance to confirm)' %}</p>
+    {% else %}
+      <p>
+        {% blocktrans trimmed %}
+          Two-factor authentication using an authenticator app is not enabled.
+        {% endblocktrans %}
+      </p>
+      <p><a href="{{ activate_url }}" class="btn btn-sm btn-outline-primary">{% trans 'Activate MFA' %}</a></p>
+    {% endif %}
+  </section>
+
+  {% endif %}
+
+  {% block mfa_webauthn %}
+    {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+      {# TODO if we end up supporting webauthn/passkeys this in the future, this section will need ported #}
+    {% endif %}
+  {% endblock mfa_webauthn %}
+
+  {% block mfa_recovery %}
+    {% if is_mfa_enabled and "recovery_codes" in MFA_SUPPORTED_TYPES %}
+
+      <section class="my-5" id="mfa-codes">
+        <h3>{% translate "Recovery Codes" %}</h3>
+
+        <p>
+          {% blocktrans trimmed %}
+            Recovery codes are one-time use codes that can be used as backup two-factor authentication codes.
+          {% endblocktrans %}
+        </p>
+
+        {% url 'mfa_view_recovery_codes' as view_url %}
+        <a href="{{ view_url }}" class="btn btn-sm btn-outline-primary">{% trans "Manage recovery codes" %}</a>
+      </section>
+
+    {% endif %}
+  {% endblock mfa_recovery %}
+{% endblock content %}

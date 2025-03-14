@@ -1,0 +1,27 @@
+{% extends "account/base_entrance.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/account/base_reauthenticate.html #}
+
+
+{% load allauth %}
+{% load i18n %}
+
+
+{% block title %}{% trans 'Confirm Access' %}{% endblock title %}
+
+
+{% block content %}
+
+  {% block reauthenticate_content %}
+  {% endblock reauthenticate_content %}
+
+  {% if reauthentication_alternatives %}
+    <hr>
+
+    <h3>{% translate "Alternative options" %}</h3>
+
+    {% for alt in reauthentication_alternatives %}
+      <a href="{{ alt.url }}">{{ alt.description }}</a>
+    {% endfor %}
+  {% endif %}
+{% endblock content %}
