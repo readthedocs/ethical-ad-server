@@ -55,6 +55,11 @@ if "ethicalads_ext.support" in settings.INSTALLED_APPS:
         path(r"support/", include("ethicalads_ext.support.urls")),
     ]
 
+if "ethicalads_ext.etl" in settings.INSTALLED_APPS:
+    urlpatterns += [
+        path(r"etl/", include("ethicalads_ext.etl.urls")),
+    ]
+
 urlpatterns += [
     path(r"accounts/", include("allauth.urls")),
     path(r"stripe/", include("djstripe.urls", namespace="djstripe")),

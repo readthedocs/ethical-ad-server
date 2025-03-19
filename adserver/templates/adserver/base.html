@@ -277,6 +277,15 @@
                 </a>
               </li>
 
+              {% if adserver_etl %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'etl-staff-audience-estimator' %}">
+                    <span class="fa fa-bullhorn fa-fw mr-2 text-muted" aria-hidden="true"></span>
+                    <span>{% trans 'Audience Estimator' %}</span>
+                  </a>
+                </li>
+              {% endif %}
+
             </ul>
           {% endif %}
         </nav>

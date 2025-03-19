@@ -9,5 +9,6 @@ def settings_processor(request):
         "adserver_privacy_policy": settings.ADSERVER_PRIVACY_POLICY_URL,
         "adserver_publisher_policy": settings.ADSERVER_PUBLISHER_POLICY_URL,
         "adserver_version": settings.ADSERVER_VERSION,
+        "adserver_etl": "ethicalads_ext.etl" in settings.INSTALLED_APPS,
         "plausible_domain": settings.PLAUSIBLE_DOMAIN,
     }
