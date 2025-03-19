@@ -9,9 +9,9 @@
 
 {% block content %}
 
-  <h1>{% block heading %}{% trans "MFA" %}{% endblock heading %}</h1>
+  <h1>{% block heading %}{% trans "Two-factor Authentication" %}{% endblock heading %}</h1>
 
-  <p>{% trans 'Configure or update your multi-factor authentication settings.' %}</p>
+  <p>{% trans 'Configure or update your two-factor authentication (2FA) settings.' %}</p>
 
 
   {% if "totp" in MFA_SUPPORTED_TYPES %}
@@ -28,7 +28,7 @@
           Two-factor authentication using an authenticator app is enabled.
         {% endblocktrans %}
       </p>
-      <p class="mb-0"><a href="{{ deactivate_url }}" class="btn btn-sm btn-danger">{% trans 'Deactivate MFA' %}</a></p>
+      <p class="mb-0"><a href="{{ deactivate_url }}" class="btn btn-sm btn-danger">{% trans 'Deactivate 2FA' %}</a></p>
       <p class="small text-muted">{% trans '(You will have a chance to confirm)' %}</p>
     {% else %}
       <p>
@@ -36,7 +36,7 @@
           Two-factor authentication using an authenticator app is not enabled.
         {% endblocktrans %}
       </p>
-      <p><a href="{{ activate_url }}" class="btn btn-sm btn-outline-primary">{% trans 'Activate MFA' %}</a></p>
+      <p><a href="{{ activate_url }}" class="btn btn-sm btn-outline-primary">{% trans 'Activate 2FA' %}</a></p>
     {% endif %}
   </section>
 

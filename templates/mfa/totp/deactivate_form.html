@@ -9,7 +9,7 @@
 
 
 {% block content %}
-  <h1>{% trans 'Deactivate Authenticator App' %}</h1>
+  <h1>{% trans 'Deactivate Two-factor Auth' %}</h1>
 
 
   <p>
@@ -21,6 +21,6 @@
     {% csrf_token %}
     {{ form|crispy }}
     {{ redirect_field }}
-    <input type="submit" class="btn btn-danger" value="{% trans 'Deactivate MFA' %}">
+    <input type="submit" class="btn btn-danger" value="{% trans 'Deactivate 2FA' %}">
   </form>
 {% endblock content %}

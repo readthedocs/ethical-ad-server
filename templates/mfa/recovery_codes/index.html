@@ -7,7 +7,7 @@
 
 
 {% block content %}
-  <h1>{% translate "MFA Recovery Codes" %}</h1>
+  <h1>{% translate "2FA Recovery Codes" %}</h1>
 
   <p>
     {% blocktranslate count unused_count=unused_codes|length %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
