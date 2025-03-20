@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.17.0
+---------------
+
+The main feature in this release is the addition of two-factor auth (totp).
+There's no mandate but it is now an option.
+
+:Date: March 20, 2025
+
+ * @davidfischer: Add public code for the audience estimator (#1002)
+ * @davidfischer: Allauth added the forgot password link - remove ours (#1001)
+ * @davidfischer: Use Node v20 in docker development (#1000)
+ * @davidfischer: Verbiage improvement on PW reset/account invite (#999)
+ * @davidfischer: Add 2FA using allauth (#998)
+ * @davidfischer: Lower log level on some proxy mismatches (#997)
+
+
 Version v5.16.0
 ---------------
 
