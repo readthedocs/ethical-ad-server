@@ -1,0 +1,35 @@
+{% extends "adserver/dashboard.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/base_manage.html #}
+
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}{% trans "Two-factor Auth" %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
+</li>
+<li class="breadcrumb-item">
+  <a href="{% url 'account' %}">{% trans 'Account' %}</a>
+</li>
+<li class="breadcrumb-item active">{% trans 'Two-factor Auth' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<div class="row">
+  <div class="col">
+
+    {% block content %}{% endblock content %}
+
+  </div>
+</div>
+
+{% endblock content_container %}

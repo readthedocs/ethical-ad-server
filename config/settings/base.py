@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "allauth",
     "allauth.account",
-    "allauth.socialaccount",
+    "allauth.mfa",
     "crispy_forms",
     "crispy_bootstrap4",
     "rest_framework",
@@ -382,14 +382,18 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 
 # Django allauth
-# https://django-allauth.readthedocs.io
+# https://docs.allauth.org
+# https://docs.allauth.org/en/latest/account/advanced.html#custom-user-models
+# https://docs.allauth.org/en/latest/mfa/introduction.html
 # --------------------------------------------------------------------------
 ACCOUNT_ADAPTER = "adserver.auth.adapters.AdServerAccountAdapter"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+ACCOUNT_MAX_EMAIL_ADDRESSES = 1
+ACCOUNT_LOGIN_METHODS = {"email"}
+
 
 # Celery settings for asynchronous tasks
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html

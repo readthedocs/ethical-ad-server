@@ -1,0 +1,43 @@
+{% extends "mfa/totp/base.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/totp/activate_form.html #}
+
+
+{% load allauth i18n %}
+{% load crispy from crispy_forms_tags %}
+
+
+{% block title %}{% translate "Activate Authenticator App" %}{% endblock title %}
+
+
+{% block content %}
+  <h1>{% trans "Activate Authenticator App" %}</h1>
+
+  <p>
+    {% blocktrans trimmed %}
+      To protect your account with two-factor authentication,
+      set up your authenticator using the QR code or authenticator secret below
+      and input the generated verification code.
+    {% endblocktrans %}
+  </p>
+
+
+  <div>
+    <img src="{{ totp_svg_data_uri }}" alt="{{ form.secret }}" />
+  </div>
+
+  <p>{% trans "You can store this secret and use it to reinstall your authenticator app at a later time." %}</p>
+  <details class="mb-5">
+    <summary>{% trans 'View authenticator secret' %}</summary>
+    <p class="text-monospace">{{ form.secret }}</p>
+  </details>
+
+
+  {% url 'mfa_activate_totp' as action_url %}
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <input class="btn btn-primary" type="submit" value="{% trans 'Activate' %}">
+  </form>
+
+{% endblock content %}

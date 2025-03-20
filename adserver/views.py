@@ -2889,6 +2889,11 @@ class AccountOverviewView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
+
 
 class AccountSupportView(LoginRequiredMixin, FormView):
     """

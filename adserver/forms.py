@@ -9,6 +9,7 @@ from io import TextIOWrapper
 import bleach
 import requests
 import stripe
+from allauth.mfa.utils import is_mfa_enabled
 from crispy_forms.bootstrap import PrependedText
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML
@@ -1536,6 +1537,7 @@ class AccountForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         """Set up the form helper for the account."""
+        self.request = kwargs.pop("request")
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
@@ -1543,6 +1545,12 @@ class AccountForm(forms.ModelForm):
             Fieldset(
                 "",
                 "name",
+                HTML(
+                    render_to_string(
+                        "adserver/accounts/includes/2fa-account-form.html",
+                        {"mfa_enabled": is_mfa_enabled(self.request.user)},
+                    )
+                ),
                 css_class="my-3",
             ),
             Fieldset(
