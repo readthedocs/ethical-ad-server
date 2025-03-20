@@ -1,0 +1,31 @@
+{% extends "mfa/recovery_codes/base.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/recovery_codes/generate.html #}
+
+
+{% load i18n %}
+{% load allauth %}
+{% load crispy from crispy_forms_tags %}
+
+
+{% block content %}
+  <h1>{% translate "Recovery Codes" %}</h1>
+
+  <p>
+    {% blocktranslate %}You are about to generate a new set of recovery codes for your account.{% endblocktranslate %}
+    {% if unused_code_count %}
+      {% blocktranslate %}This action will invalidate your existing codes.{% endblocktranslate %}
+    {% endif %}
+    {% blocktranslate %}Are you sure?{% endblocktranslate %}
+  </p>
+
+
+  {% url 'mfa_generate_recovery_codes' as action_url %}
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ redirect_field }}
+    <input type="submit" class="btn btn-danger" value="{% trans 'Generate' %}">
+  </form>
+
+{% endblock content %}

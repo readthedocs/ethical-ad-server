@@ -1,0 +1,10 @@
+{% load i18n %}
+
+
+<div class="form-group">
+  <label>{% trans 'Two-factor Auth (2FA)' %}</label>
+  <p>{% if mfa_enabled %}{% trans '2FA is enabled' %}{% else %}{% trans '2FA is not enabled' %}{% endif %}</p>
+  <p>
+    <a href="{% url 'mfa_index' %}" class="btn btn-sm btn-outline-info">{% trans '2FA Settings' %}</a>
+  </p>
+</div>

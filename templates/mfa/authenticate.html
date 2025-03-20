@@ -1,0 +1,35 @@
+{% extends "mfa/base_entrance.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/authenticate.html #}
+
+{% load blocktrans trans from i18n %}
+{% load crispy from crispy_forms_tags %}
+
+{% block title %}
+  {% trans "Verify sign in" %}
+{% endblock title %}
+
+{% block content %}
+
+  <h1 class="card-title">{% trans 'Verify sign in' %}</h1>
+
+  <p>
+    {% blocktrans trimmed %}
+      Your account is protected by two-factor authentication (2FA).
+      Enter a two-factor authentication code to verify this sign in.
+    {% endblocktrans %}
+  </p>
+
+  {% url 'mfa_authenticate' as action_url %}
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ redirect_field }}
+
+    <input type="submit" value="{% trans 'Verify' %}" class="btn btn-primary" />
+  </form>
+
+  {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+    {# WebAuthn (Passkeys) will require additional work to support #}
+  {% endif %}
+{% endblock content %}

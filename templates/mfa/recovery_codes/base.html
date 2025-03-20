@@ -1,0 +1,23 @@
+
+{% extends "mfa/base_manage.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/recovery_codes/base.html #}
+
+{% load i18n %}
+
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">
+  <a href="{% url 'dashboard-home' %}">{% trans 'Home' %}</a>
+</li>
+<li class="breadcrumb-item">
+  <a href="{% url 'account' %}">{% trans 'Account' %}</a>
+</li>
+<li class="breadcrumb-item">
+  <a href="{% url 'mfa_index' %}">{% trans 'Two-factor Auth' %}</a>
+</li>
+<li class="breadcrumb-item active">{% trans 'Recovery Codes' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block title %}{% trans '2FA Recovery Codes' %}{% endblock title %}

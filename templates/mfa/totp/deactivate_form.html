@@ -1,0 +1,26 @@
+{% extends "mfa/totp/base.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/totp/deactivate_form.html #}
+
+
+{% load i18n %}
+{% load allauth %}
+{% load crispy from crispy_forms_tags %}
+
+
+{% block content %}
+  <h1>{% trans 'Deactivate Two-factor Auth' %}</h1>
+
+
+  <p>
+    {% blocktranslate %}You are about to deactivate authenticator app based authentication. Are you sure?{% endblocktranslate %}
+  </p>
+
+  {% url 'mfa_deactivate_totp' as action_url %}
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ redirect_field }}
+    <input type="submit" class="btn btn-danger" value="{% trans 'Deactivate 2FA' %}">
+  </form>
+{% endblock content %}

@@ -1,0 +1,29 @@
+{% extends "mfa/recovery_codes/base.html" %}
+
+{# https://github.com/pennersr/django-allauth/blob/main/allauth/templates/mfa/recovery_codes/index.html #}
+
+{% load i18n %}
+{% load allauth %}
+
+
+{% block content %}
+  <h1>{% translate "2FA Recovery Codes" %}</h1>
+
+  <p>
+    {% blocktranslate count unused_count=unused_codes|length %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
+  </p>
+
+  <details class="mb-5">
+    <summary>{% trans 'View recovery codes' %}</summary>
+    <p class="text-monospace">{% for code in unused_codes %}{{ code }} {% endfor %}</p>
+  </details>
+
+  {% if unused_codes %}
+  {% url 'mfa_download_recovery_codes' as download_url %}
+  <a href="{{ download_url }}" class="btn btn-sm btn-outline-primary">{% trans 'Download codes' %}</a>
+  {% endif %}
+
+  {% url 'mfa_generate_recovery_codes' as generate_url %}
+  <a href="{{ generate_url }}" class="btn btn-sm btn-outline-primary">{% trans 'Generate new codes' %}</a>
+
+{% endblock content %}

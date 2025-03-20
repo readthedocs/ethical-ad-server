@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
+from django.views.generic import RedirectView
 
 
 urlpatterns = []
@@ -55,7 +56,18 @@ if "ethicalads_ext.support" in settings.INSTALLED_APPS:
         path(r"support/", include("ethicalads_ext.support.urls")),
     ]
 
+if "ethicalads_ext.etl" in settings.INSTALLED_APPS:
+    urlpatterns += [
+        path(r"etl/", include("ethicalads_ext.etl.urls")),
+    ]
+
 urlpatterns += [
+    # Allauth overrides
+    # Disable managing emails for now
+    path(
+        r"accounts/email/",
+        RedirectView.as_view(pattern_name="dashboard-home", permanent=False),
+    ),
     path(r"accounts/", include("allauth.urls")),
     path(r"stripe/", include("djstripe.urls", namespace="djstripe")),
     path(r"", include("adserver.urls")),
