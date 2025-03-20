@@ -38,17 +38,19 @@ attrs==25.1.0
 babel==2.17.0
     # via sphinx
 beautifulsoup4==4.13.3
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/testing.in
+    # via -r testing.in
 billiard==4.2.1
     # via celery
 bleach==6.2.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 cattrs==24.1.2
     # via requests-cache
 celery[redis]==5.5.0rc1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 certifi==2025.1.31
     # via requests
+cffi==1.17.1
+    # via cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.4.1
@@ -73,7 +75,9 @@ coverage==7.6.12
     #   -r development.in
     #   django-coverage-plugin
 crispy-bootstrap4==2024.10
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
+cryptography==44.0.2
+    # via fido2
 decorator==5.2.1
     # via
     #   ipdb
@@ -81,10 +85,10 @@ decorator==5.2.1
 distlib==0.3.9
     # via virtualenv
 dj-stripe==2.8.4
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django==5.0.12
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   crispy-bootstrap4
     #   dj-stripe
     #   django-allauth
@@ -97,39 +101,39 @@ django==5.0.12
     #   djangorestframework
     #   jsonfield
 django-allauth[mfa]==65.4.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-cors-headers==4.7.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-countries==7.6.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-coverage-plugin==3.1.0
     # via -r development.in
 django-crispy-forms==2.3
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   crispy-bootstrap4
 django-debug-toolbar==3.8.1
     # via -r development.in
 django-dynamic-fixture==4.0.1
     # via -r development.in
 django-enforce-host==1.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-environ==0.12.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-extensions==3.2.3
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-ratelimit==3.0.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-simple-history==3.8.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-slack==5.19.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-upgrade==1.23.1
     # via -r development.in
 djangorestframework==3.15.2
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 djangorestframework-jsonp==1.0.2
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 docutils==0.19
     # via
     #   sphinx
@@ -142,6 +146,8 @@ exceptiongroup==1.2.2
     #   pytest
 executing==2.2.0
     # via stack-data
+fido2==1.2.0
+    # via django-allauth
 filelock==3.17.0
     # via
     #   tox
@@ -151,7 +157,7 @@ frozenlist==1.5.0
     #   aiohttp
     #   aiosignal
 geoip2==5.0.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 h11==0.14.0
     # via uvicorn
 identify==2.6.8
@@ -166,7 +172,7 @@ imagesize==1.4.1
 iniconfig==2.0.0
     # via pytest
 ip2proxy==3.5.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 ipdb==0.13.13
     # via -r development.in
 ipython==8.32.0
@@ -175,10 +181,10 @@ ipython==8.32.0
     #   ipdb
 jedi==0.19.2
     # via ipython
-jinja2==3.1.5
+jinja2==3.1.6
     # via sphinx
 jsonfield==3.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 kombu==5.4.2
     # via celery
 markupsafe==3.0.2
@@ -203,7 +209,7 @@ parso==0.8.4
 pexpect==4.9.0
     # via ipython
 pillow==11.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 platformdirs==4.3.6
     # via
     #   requests-cache
@@ -228,12 +234,14 @@ pure-eval==0.2.3
     # via stack-data
 py==1.11.0
     # via tox
+pycparser==2.22
+    # via cffi
 pygments==2.19.1
     # via
     #   ipython
     #   sphinx
 pyjwt==2.10.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 pytest==8.3.4
     # via
     #   -r development.in
@@ -243,11 +251,13 @@ pytest-django==4.10.0
 python-dateutil==2.9.0.post0
     # via celery
 pytz==2025.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 pyyaml==6.0.2
     # via
     #   pre-commit
     #   responses
+qrcode==8.0
+    # via django-allauth
 redis==5.2.1
     # via celery
 requests==2.32.3
@@ -313,7 +323,7 @@ starlette==0.46.0
     # via sphinx-autobuild
 stripe==4.2.0
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   dj-stripe
 tokenize-rt==6.1.0
     # via django-upgrade
@@ -323,7 +333,7 @@ tomli==2.2.1
     #   pytest
     #   tox
 tox==3.28.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/testing.in
+    # via -r testing.in
 traitlets==5.14.3
     # via
     #   ipython
@@ -353,9 +363,9 @@ urllib3==2.3.0
     #   requests-cache
     #   responses
 user-agents==2.2.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 uuid-utils==0.10.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 uvicorn==0.34.0
     # via sphinx-autobuild
 vine==5.1.0
@@ -376,6 +386,6 @@ webencodings==0.5.1
 websockets==15.0
     # via sphinx-autobuild
 whitenoise==6.9.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 yarl==1.18.3
     # via aiohttp
