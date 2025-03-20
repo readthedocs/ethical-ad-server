@@ -516,6 +516,16 @@ METABASE_DASHBOARDS = {
 PLAUSIBLE_DOMAIN = env("PLAUSIBLE_DOMAIN", default="server.ethicalads.io")
 
 
+# Django countries
+# https://github.com/SmileyChris/django-countries/
+# --------------------------------------------------------------------------
+COUNTRIES_OVERRIDE = {
+    # Cloudflare uses this country code for Tor
+    # By adding it here, it will be displayed correctly when countries are shown
+    "T1": "Tor Network",
+}
+
+
 # Ad server specific settings
 # https://ethical-ad-server.readthedocs.io/en/latest/install/configuration.html
 # --------------------------------------------------------------------------

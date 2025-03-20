@@ -39,7 +39,6 @@ log = logging.getLogger(__name__)  # noqa
 
 # Put this here so we don't reload it on each call
 COUNTRY_DICT = dict(countries)
-COUNTRY_DICT["T1"] = "Tor"
 
 
 @dataclass
