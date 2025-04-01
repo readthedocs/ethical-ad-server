@@ -6,15 +6,15 @@
 #
 adlfs==2024.12.0
     # via -r analyzer.in
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.13
+aiohttp==3.11.12
     # via adlfs
 aiosignal==1.3.2
     # via aiohttp
 async-timeout==5.0.1
     # via aiohttp
-attrs==25.1.0
+attrs==25.3.0
     # via aiohttp
 azure-core==1.32.0
     # via
@@ -23,9 +23,9 @@ azure-core==1.32.0
     #   azure-storage-blob
 azure-datalake-store==0.0.53
     # via adlfs
-azure-identity==1.20.0
+azure-identity==1.21.0
     # via adlfs
-azure-storage-blob==12.24.1
+azure-storage-blob==12.25.1
     # via adlfs
 babel==2.17.0
     # via courlan
@@ -64,7 +64,7 @@ confection==0.1.5
     #   weasel
 courlan==1.3.2
     # via trafilatura
-cryptography==44.0.1
+cryptography==44.0.2
     # via
     #   azure-identity
     #   azure-storage-blob
@@ -83,7 +83,7 @@ duckdb==1.1.3
     # via -r analyzer.in
 en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.0/en_core_web_md-3.4.0-py3-none-any.whl
     # via -r analyzer.in
-filelock==3.17.0
+filelock==3.18.0
     # via
     #   huggingface-hub
     #   torch
@@ -94,7 +94,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.2.0
+fsspec==2025.3.2
     # via
     #   adlfs
     #   huggingface-hub
@@ -112,9 +112,9 @@ idna==3.10
     #   yarl
 isodate==0.7.2
     # via azure-storage-blob
-jellyfish==1.1.3
+jellyfish==1.2.0
     # via textacy
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   spacy
     #   torch
@@ -146,14 +146,14 @@ markupsafe==3.0.2
     # via jinja2
 mpmath==1.3.0
     # via sympy
-msal==1.31.1
+msal==1.32.0
     # via
     #   azure-datalake-store
     #   azure-identity
     #   msal-extensions
-msal-extensions==1.2.0
+msal-extensions==1.3.1
     # via azure-identity
-multidict==6.1.0
+multidict==6.3.0
     # via
     #   aiohttp
     #   yarl
@@ -228,17 +228,15 @@ pathlib-abc==0.1.1
     # via pathy
 pathy==0.11.0
     # via spacy
-pgvector==0.3.6
+pgvector==0.4.0
     # via -r analyzer.in
 pillow==11.1.0
     # via torchvision
-portalocker==2.10.1
-    # via msal-extensions
 preshed==3.0.9
     # via
     #   spacy
     #   thinc
-propcache==0.3.0
+propcache==0.3.1
     # via
     #   aiohttp
     #   yarl
@@ -260,7 +258,7 @@ python-dateutil==2.9.0.post0
     # via
     #   dateparser
     #   htmldate
-pytz==2025.1
+pytz==2025.2
     # via dateparser
 pyyaml==6.0.2
     # via
@@ -333,7 +331,7 @@ textacy==0.13.0
     # via -r analyzer.in
 thinc==8.1.12
     # via spacy
-threadpoolctl==3.5.0
+threadpoolctl==3.6.0
     # via scikit-learn
 tld==0.13
     # via courlan
@@ -369,7 +367,7 @@ typer==0.7.0
     #   pathy
     #   spacy
     #   weasel
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   azure-core
     #   azure-identity
@@ -380,7 +378,7 @@ typing-extensions==4.12.2
     #   multidict
     #   pydantic
     #   torch
-tzlocal==5.3
+tzlocal==5.3.1
     # via dateparser
 urllib3==2.3.0
     # via

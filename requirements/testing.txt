@@ -8,13 +8,13 @@ beautifulsoup4==4.13.3
     # via -r testing.in
 distlib==0.3.9
     # via virtualenv
-filelock==3.17.0
+filelock==3.18.0
     # via
     #   tox
     #   virtualenv
 packaging==24.2
     # via tox
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via virtualenv
 pluggy==1.5.0
     # via tox
@@ -28,7 +28,7 @@ tomli==2.2.1
     # via tox
 tox==3.28.0
     # via -r testing.in
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via beautifulsoup4
-virtualenv==20.29.2
+virtualenv==20.30.0
     # via tox
