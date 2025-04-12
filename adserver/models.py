@@ -1713,14 +1713,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def advertiser(self):
         return self.flight.campaign.advertiser
 
-    def incr(self, impression_type, publisher):
+    def incr(self, impression_type, publisher, offer=None):
         """
         Add to the number of times this action has been performed, stored in the DB.
 
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
-        day = get_ad_day().date()
+        if offer:
+            # For views/clicks, use the date of the existing offer
+            day = offer.date.date()
+        else:
+            # If we don't have an offer (the offer is about to be created),
+            # we use the current date
+            day = get_ad_day().date()
 
         if isinstance(impression_type, str):
             impression_types = (impression_type,)
@@ -1834,7 +1840,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def track_click(self, request, publisher, offer):
         """Store click data in the DB."""
-        self.incr(impression_type=CLICKS, publisher=publisher)
+        self.incr(impression_type=CLICKS, publisher=publisher, offer=offer)
         return self._record_base(
             request=request,
             model=Click,
@@ -1856,7 +1862,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(impression_type=VIEWS, publisher=publisher)
+        self.incr(impression_type=VIEWS, publisher=publisher, offer=offer)
 
         if request.GET.get("uplift"):
             # Don't overwrite Offer object here, since it might have changed prior to our writing
@@ -1916,7 +1922,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1928,6 +1933,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             paid_eligible=paid_eligible,
             rotations=rotations,
         )
+        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher, offer=offer)
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
             # Ad offers forced to a specific ad or campaign should never be billed.
@@ -2007,8 +2013,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Without this, when we don't offer an ad and a user doesn't have house ads on,
         we don't have any way to track how many requests for an ad there have been.
         """
-        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher)
-        cls._record_base(
+        offer = cls._record_base(
             self=None,
             request=request,
             model=Offer,
@@ -2019,6 +2024,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=ad_type_slug,
             paid_eligible=paid_eligible,
         )
+        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher, offer=offer)
 
     def is_valid_offer(self, impression_type, offer):
         """
