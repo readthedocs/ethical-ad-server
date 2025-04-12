@@ -14,9 +14,11 @@ LOGGING["loggers"][""]["level"] = "CRITICAL"
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 LOGGING["loggers"]["ethicalads_ext"]["level"] = "CRITICAL"
 
-# Skip the embedding app in testing
+# Skip the ext apps in testing
 if "ethicalads_ext.embedding" in INSTALLED_APPS:
     INSTALLED_APPS.remove("ethicalads_ext.embedding")
+if "ethicalads_ext.etl" in INSTALLED_APPS:
+    INSTALLED_APPS.remove("ethicalads_ext.etl")
 
 # Set the analyzer explicitly in testing
 ADSERVER_ANALYZER_BACKEND = [
