@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.18.0
+---------------
+
+The main change here was a small fix to 2FA rolled out in 5.17.0
+which caused that feature to not be enabled yet.
+Specifically, 2FA requires emails to be "verified".
+
+:Date: April 16, 2025
+
+ * @ericholscher: Only show "Month to date overview" when there is an overview (#1007)
+ * @dependabot[bot]: Bump django from 5.0.12 to 5.0.14 in /requirements (#1006)
+ * @davidfischer: User email verification (#1004)
+ * @dependabot[bot]: Bump django from 5.0.11 to 5.0.13 in /requirements (#995)
+
+
 Version v5.17.0
 ---------------
 

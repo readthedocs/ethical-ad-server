@@ -23,7 +23,6 @@
 {% block content_container %}
   <section>
     <h1>{% blocktrans with month=start_date|date:"F" %}{{ month }} {{ publisher }} overview{% endblocktrans %}</h1>
-    <p><small>Month to date overview for {{ publisher }}.</small></p>
 
     {% if publisher_new %}
       {# Publisher onboarding workflow #}
@@ -70,6 +69,7 @@
         </div>
       </div>
     {% else %}
+    <p><small>Month to date overview for {{ publisher }}.</small></p>
       <div class="row">
         <div class="col min-vh-75">
           {% metabase_dashboard_embed metabase_publisher_dashboard publisher_slug=publisher.slug start_date=start_date end_date=end_date %}

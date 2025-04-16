@@ -32,6 +32,8 @@ celery[redis]==5.5.0rc1
     # via -r base.in
 certifi==2025.1.31
     # via requests
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.4.1
     # via requests
 click==8.1.8
@@ -48,9 +50,11 @@ click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2024.10
     # via -r base.in
+cryptography==44.0.2
+    # via fido2
 dj-stripe==2.8.4
     # via -r base.in
-django==5.0.12
+django==5.0.14
     # via
     #   -r base.in
     #   crispy-bootstrap4
@@ -89,6 +93,8 @@ djangorestframework==3.15.2
     # via -r base.in
 djangorestframework-jsonp==1.0.2
     # via -r base.in
+fido2==1.2.0
+    # via django-allauth
 frozenlist==1.5.0
     # via
     #   aiohttp
@@ -119,12 +125,16 @@ propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
+pycparser==2.22
+    # via cffi
 pyjwt==2.10.1
     # via -r base.in
 python-dateutil==2.9.0.post0
     # via celery
 pytz==2025.1
     # via -r base.in
+qrcode==8.1
+    # via django-allauth
 redis==5.2.1
     # via celery
 requests==2.32.3
