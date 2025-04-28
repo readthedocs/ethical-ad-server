@@ -1,5 +1,9 @@
 FROM ubuntu:22.04
 
+ARG SENTENCE_TRANSFORMERS_HOME
+ARG SENTENCE_TRANSFORMERS_MODEL
+
+
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
@@ -55,7 +59,7 @@ RUN chmod +x /start-celerybeat
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Load model
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('multi-qa-MiniLM-L6-cos-v1', cache_folder='/tmp/sentence_transformers')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('$SENTENCE_TRANSFORMERS_MODEL', cache_folder='$SENTENCE_TRANSFORMERS_HOME', trust_remote_code=True)"
 
 # Setup the locale
 RUN locale-gen en_US.UTF-8
