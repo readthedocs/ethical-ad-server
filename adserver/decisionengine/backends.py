@@ -312,6 +312,10 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_to_niche_targeting(self.niche_weights):
             return False
 
+        # Skip if the flight has reached its daily cap
+        if flight.daily_cap_exceeded():
+            return False
+
         return True
 
     def select_flight(self):
