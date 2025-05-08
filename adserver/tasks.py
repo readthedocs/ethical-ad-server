@@ -50,6 +50,7 @@ from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_day
+from .utils import offers_dump_exists
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -521,6 +522,13 @@ def daily_update_domains(day=None):
 
     log.info("Updating domains for %s-%s", start_date, end_date)
 
+    if offers_dump_exists(start_date):
+        # Use the optimized aggregation that requires a daily dump of offers to cloud storage
+        from ethicalads_ext.etl.aggregations import domains_aggregation
+
+        domains_aggregation(start_date, end_date)
+        return
+
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
@@ -740,6 +748,12 @@ def update_previous_day_reports(day=None):
         # If not specified,
         # do the previous day now that the day is complete
         start_date -= datetime.timedelta(days=1)
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": f"Started aggregating report data for yesterday ({start_date:%Y-%m-%d})."
+            },
+        )
 
     # Do all reports
     daily_update_geos(start_date)

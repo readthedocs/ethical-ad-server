@@ -532,6 +532,17 @@ def generate_publisher_payout_data(
     )
 
 
+def offers_dump_exists(day):
+    if settings.ADSERVER_EXT and "ethicalads_ext.etl" in settings.INSTALLED_APPS:
+        from ethicalads_ext.etl.utils import offers_dump_exists
+
+        return offers_dump_exists(day)
+    else:
+        # This is a placeholder function to avoid breaking the code
+        # when the ethicalads_ext.etl module is not available.
+        return False
+
+
 # Compile these regular expressions at startup time for performance purposes
 BLOCKLISTED_UA_REGEXES = [
     re.compile(s) for s in settings.ADSERVER_BLOCKLISTED_USER_AGENTS

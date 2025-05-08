@@ -2768,8 +2768,8 @@ class Offer(AdBase):
 
     def is_old(self):
         """Checks if this offer is "old" meaning not for a currently running ad."""
-        four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
-        if four_hours_ago > self.date:
+        old_threshold = timezone.now() - datetime.timedelta(hours=2)
+        if old_threshold > self.date:
             return True
         return False
 
