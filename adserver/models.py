@@ -1309,6 +1309,17 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # The aggregation can be `None` if there are no impressions
         return aggregation or 0
 
+    def spend_today(self):
+        """Get the total spend for this flight today."""
+        total = 0.0
+
+        if self.cpm > 0:
+            total += self.views_today() * self.cpm / 1000.0
+        if self.cpc > 0:
+            total += self.clicks_today() * self.cpc
+
+        return total
+
     def views_needed_this_interval(self):
         today = get_ad_day().date()
         if (
@@ -1436,9 +1447,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if not self.daily_cap or self.daily_cap <= 0.0:
             return False
 
-        if self.cpm > 0 and (self.views_today() * self.cpm / 1000.0) > self.daily_cap:
-            return True
-        if self.cpc > 0 and (self.clicks_today() * self.cpc) > self.daily_cap:
+        if self.spend_today() > self.daily_cap:
             return True
 
         return False
