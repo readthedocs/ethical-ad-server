@@ -850,6 +850,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             "at a higher rate than ads with lower CTRs."
         ),
     )
+    daily_cap = models.DecimalField(
+        _("Daily maximum spend cap"),
+        max_digits=8,
+        decimal_places=2,
+        default=None,
+        blank=True,
+        null=True,
+        help_text=_("A daily maximum this flight can spend."),
+    )
 
     # Denormalized fields
     total_views = models.PositiveIntegerField(
@@ -1300,6 +1309,17 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # The aggregation can be `None` if there are no impressions
         return aggregation or 0
 
+    def spend_today(self):
+        """Get the total spend for this flight today."""
+        total = 0.0
+
+        if self.cpm > 0:
+            total += self.views_today() * self.cpm / 1000.0
+        if self.cpc > 0:
+            total += self.clicks_today() * self.cpc
+
+        return total
+
     def views_needed_this_interval(self):
         today = get_ad_day().date()
         if (
@@ -1416,6 +1436,21 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if projected_total > 0:
             return self.total_value() / projected_total * 100
         return 0
+
+    def daily_cap_exceeded(self):
+        """
+        Check if the daily cap for a given flight has been exceeded.
+
+        When the daily cap is enabled (>0), then an extra query may be performed
+        for this check causing a slight performance degradation.
+        """
+        if not self.daily_cap or self.daily_cap <= 0.0:
+            return False
+
+        if self.spend_today() > self.daily_cap:
+            return True
+
+        return False
 
     def ctr(self):
         clicks = self.total_clicks
