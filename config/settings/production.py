@@ -131,7 +131,7 @@ CELERY_BEAT_SCHEDULE = {
     # Run the previous days reports
     "every-day-generate-indexes-all-reports": {
         "task": "adserver.tasks.update_previous_day_reports",
-        "schedule": crontab(hour="2", minute="0"),
+        "schedule": crontab(hour="2", minute="30"),
     },
     "every-day-calculate-publisher-ctrs": {
         "task": "adserver.tasks.calculate_publisher_ctrs",
@@ -202,7 +202,7 @@ if "ethicalads_ext.embedding" in INSTALLED_APPS:
 if "ethicalads_ext.etl" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-etl-pipeline"] = {
         "task": "ethicalads_ext.etl.tasks.daily_etl_pipeline",
-        "schedule": crontab(hour="0", minute="30"),
+        "schedule": crontab(hour="2", minute="0"),
     }
 
 
