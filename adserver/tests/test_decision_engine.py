@@ -201,6 +201,43 @@ class DecisionEngineTests(TestCase):
         self.cpm_flight.save()
         self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
+    def test_flight_daily_cap(self):
+        self.assertTrue(self.backend.filter_flight(self.include_flight))
+
+        # Set a daily cap of $2.50 while each click is $2.00
+        # This means we can only show 2 clicks per day before the cap is exceeded
+        self.include_flight.daily_cap = 2.5
+        self.include_flight.save()
+
+        # Simulate 2 clicks
+        self.advertisement1.incr(CLICKS, self.publisher)
+        self.advertisement1.incr(CLICKS, self.publisher)
+
+        # Daily cap exceeded
+        self.assertFalse(self.backend.filter_flight(self.include_flight))
+
+        self.advertisement2.flight = self.cpm_flight
+        self.advertisement2.save()
+        self.cpm_flight.cpm = 150.0  # $150 CPM => $0.15 per view
+        self.cpm_flight.save()
+
+        # Without the daily cap, this flight is still valid
+        self.assertTrue(self.backend.filter_flight(self.cpm_flight))
+
+        self.cpm_flight.daily_cap = 1.0
+        self.cpm_flight.save()
+
+        # Simulate 6 views - daily cap not exceeded (6 * 0.15 = 0.90)
+        views_to_simulate = 6
+        for _ in range(views_to_simulate):
+            self.advertisement2.incr(VIEWS, self.publisher)
+
+        self.assertTrue(self.backend.filter_flight(self.cpm_flight))
+
+        # 7th view exceeds the daily cap
+        self.advertisement2.incr(VIEWS, self.publisher)
+        self.assertFalse(self.backend.filter_flight(self.cpm_flight))
+
     def test_custom_interval(self):
         now = get_ad_day()
 
