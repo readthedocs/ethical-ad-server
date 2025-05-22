@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.19.0
+---------------
+
+The main changes in this release is to use some much faster optimized aggregations
+to aggregate daily report data for advertisers and publishers.
+There was also a feature to add a daily cap for advertisers.
+While campaigns are already capped by default to spread the campaign out over the duration,
+when a campaign is paused for a while, the cap is useful in making sure too much budget isn't spent too fast.
+The MFA TOTP tolerance was also added to allow for a small time difference (~30s).
+
+ * @davidfischer: Use optimized aggregations (#1017)
+ * @davidfischer: Aggregation Optimizations (#1016)
+ * @davidfischer: MFA TOTP tolerance (#1014)
+ * @davidfischer: Add an optional advertiser daily cap (#1012)
+ * @davidfischer: Don't unit test private code by default (#1009)
+ * @davidfischer: Fix view/click date to date to offer (#1008)
+
+
 Version v5.18.0
 ---------------
 
