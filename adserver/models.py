@@ -850,6 +850,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             "at a higher rate than ads with lower CTRs."
         ),
     )
+    daily_cap = models.DecimalField(
+        _("Daily maximum spend cap"),
+        max_digits=8,
+        decimal_places=2,
+        default=None,
+        blank=True,
+        null=True,
+        help_text=_("A daily maximum this flight can spend."),
+    )
 
     # Denormalized fields
     total_views = models.PositiveIntegerField(
@@ -1300,6 +1309,17 @@ class Flight(TimeStampedModel, IndestructibleModel):
         # The aggregation can be `None` if there are no impressions
         return aggregation or 0
 
+    def spend_today(self):
+        """Get the total spend for this flight today."""
+        total = 0.0
+
+        if self.cpm > 0:
+            total += self.views_today() * self.cpm / 1000.0
+        if self.cpc > 0:
+            total += self.clicks_today() * self.cpc
+
+        return total
+
     def views_needed_this_interval(self):
         today = get_ad_day().date()
         if (
@@ -1416,6 +1436,21 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if projected_total > 0:
             return self.total_value() / projected_total * 100
         return 0
+
+    def daily_cap_exceeded(self):
+        """
+        Check if the daily cap for a given flight has been exceeded.
+
+        When the daily cap is enabled (>0), then an extra query may be performed
+        for this check causing a slight performance degradation.
+        """
+        if not self.daily_cap or self.daily_cap <= 0.0:
+            return False
+
+        if self.spend_today() > self.daily_cap:
+            return True
+
+        return False
 
     def ctr(self):
         clicks = self.total_clicks
@@ -1713,14 +1748,20 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def advertiser(self):
         return self.flight.campaign.advertiser
 
-    def incr(self, impression_type, publisher):
+    def incr(self, impression_type, publisher, offer=None):
         """
         Add to the number of times this action has been performed, stored in the DB.
 
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
-        day = get_ad_day().date()
+        if offer:
+            # For views/clicks, use the date of the existing offer
+            day = offer.date.date()
+        else:
+            # If we don't have an offer (the offer is about to be created),
+            # we use the current date
+            day = get_ad_day().date()
 
         if isinstance(impression_type, str):
             impression_types = (impression_type,)
@@ -1834,7 +1875,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def track_click(self, request, publisher, offer):
         """Store click data in the DB."""
-        self.incr(impression_type=CLICKS, publisher=publisher)
+        self.incr(impression_type=CLICKS, publisher=publisher, offer=offer)
         return self._record_base(
             request=request,
             model=Click,
@@ -1856,7 +1897,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         For a large scale ad server, writing a database record per ad view
         is not feasible
         """
-        self.incr(impression_type=VIEWS, publisher=publisher)
+        self.incr(impression_type=VIEWS, publisher=publisher, offer=offer)
 
         if request.GET.get("uplift"):
             # Don't overwrite Offer object here, since it might have changed prior to our writing
@@ -1916,7 +1957,6 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         ad_type = AdType.objects.filter(slug=ad_type_slug).first()
 
-        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher)
         offer = self._record_base(
             request=request,
             model=Offer,
@@ -1928,6 +1968,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             paid_eligible=paid_eligible,
             rotations=rotations,
         )
+        self.incr(impression_type=(OFFERS, DECISIONS), publisher=publisher, offer=offer)
 
         if forced and self.flight.campaign.campaign_type == PAID_CAMPAIGN:
             # Ad offers forced to a specific ad or campaign should never be billed.
@@ -2007,8 +2048,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         Without this, when we don't offer an ad and a user doesn't have house ads on,
         we don't have any way to track how many requests for an ad there have been.
         """
-        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher)
-        cls._record_base(
+        offer = cls._record_base(
             self=None,
             request=request,
             model=Offer,
@@ -2019,6 +2059,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             ad_type_slug=ad_type_slug,
             paid_eligible=paid_eligible,
         )
+        cls.incr(self=None, impression_type=DECISIONS, publisher=publisher, offer=offer)
 
     def is_valid_offer(self, impression_type, offer):
         """
@@ -2762,8 +2803,8 @@ class Offer(AdBase):
 
     def is_old(self):
         """Checks if this offer is "old" meaning not for a currently running ad."""
-        four_hours_ago = timezone.now() - datetime.timedelta(hours=4)
-        if four_hours_ago > self.date:
+        old_threshold = timezone.now() - datetime.timedelta(hours=2)
+        if old_threshold > self.date:
             return True
         return False
 

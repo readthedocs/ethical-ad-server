@@ -50,6 +50,7 @@ from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_day
+from .utils import offers_dump_exists
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -68,12 +69,26 @@ def daily_update_geos(day=None, geo=True, region=True):
         log.error("geo or region required, please pass one as True")
         return
 
-    # TODO: Delete the GeoImpression, once we're happy with RegionImpression's
-    if geo:
-        log.info("Updating GeoImpressions for %s-%s", start_date, end_date)
+    log.info(
+        "Updating RegionImpressions and/or GeoImpressions for %s-%s",
+        start_date,
+        end_date,
+    )
+
+    if offers_dump_exists(start_date):
+        # Use the optimized aggregation that requires a daily dump of offers to cloud storage
+        from ethicalads_ext.etl.aggregations import GeoAggregation
+        from ethicalads_ext.etl.aggregations import RegionAggregation
+
+        if geo:
+            agg = GeoAggregation(start_date, end_date)
+            agg.aggregate()
+        if region:
+            agg = RegionAggregation(start_date, end_date)
+            agg.aggregate()
+        return
 
     if region:
-        log.info("Updating RegionImpressions for %s-%s", start_date, end_date)
         # Delete all previous Region impressions
         RegionImpression.objects.using("default").filter(
             date__gte=start_date,
@@ -472,6 +487,14 @@ def daily_update_uplift(day=None):
 
     log.info("Updating uplift for %s-%s", start_date, end_date)
 
+    if offers_dump_exists(start_date):
+        # Use the optimized aggregation that requires a daily dump of offers to cloud storage
+        from ethicalads_ext.etl.aggregations import UpliftAggregation
+
+        agg = UpliftAggregation(start_date, end_date)
+        agg.aggregate()
+        return
+
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
         date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
@@ -520,6 +543,14 @@ def daily_update_domains(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating domains for %s-%s", start_date, end_date)
+
+    if offers_dump_exists(start_date):
+        # Use the optimized aggregation that requires a daily dump of offers to cloud storage
+        from ethicalads_ext.etl.aggregations import DomainAggregation
+
+        agg = DomainAggregation(start_date, end_date)
+        agg.aggregate()
+        return
 
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
@@ -570,6 +601,14 @@ def daily_update_rotations(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating rotation data for %s-%s", start_date, end_date)
+
+    if offers_dump_exists(start_date):
+        # Use the optimized aggregation that requires a daily dump of offers to cloud storage
+        from ethicalads_ext.etl.aggregations import RotationAggregation
+
+        agg = RotationAggregation(start_date, end_date)
+        agg.aggregate()
+        return
 
     queryset = Offer.objects.using(settings.REPLICA_SLUG).filter(
         date__gte=start_date,
@@ -740,6 +779,12 @@ def update_previous_day_reports(day=None):
         # If not specified,
         # do the previous day now that the day is complete
         start_date -= datetime.timedelta(days=1)
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": f"Started aggregating report data for yesterday ({start_date:%Y-%m-%d})."
+            },
+        )
 
     # Do all reports
     daily_update_geos(start_date)
