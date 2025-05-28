@@ -20,7 +20,7 @@
 {% if flight.auto_renew_payment_method %}
 <p>
   {% blocktrans with payment_method=flight.auto_renew_payment_method|lower %}
-  For your new flight we will {{ payment_method }}.
+  Payment method: {{ payment_method }}.
   {% endblocktrans %}
 </p>
 {% endif %}
