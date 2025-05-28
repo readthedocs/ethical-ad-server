@@ -153,7 +153,7 @@ class AdModelAdminTests(BaseAdModelsTestCase):
                 resp = self.client.post(url, data, follow=True)
                 self.assertContains(
                     resp,
-                    "All selected flights must be from a single advertiser",
+                    "All flights must must be from a single advertiser",
                 )
 
                 campaign2.advertiser = self.advertiser
@@ -161,7 +161,7 @@ class AdModelAdminTests(BaseAdModelsTestCase):
 
                 # No Stripe ID for this advertiser
                 resp = self.client.post(url, data, follow=True)
-                self.assertContains(resp, "No Stripe customer ID")
+                self.assertContains(resp, "Advertiser does not have an associated Stripe customer")
 
                 self.advertiser.djstripe_customer = self.stripe_customer
                 self.advertiser.save()

@@ -17,6 +17,14 @@
   {% endblocktrans %}
 </p>
 
+{% if flight.auto_renew_payment_method %}
+<p>
+  {% blocktrans with payment_method=flight.auto_renew_payment_method|lower %}
+  For your new flight we will {{ payment_method }}.
+  {% endblocktrans %}
+</p>
+{% endif %}
+
 <p>{% blocktrans with site_name=site.name %}Thanks again for advertising with {{ site_name }}!{% endblocktrans %}</p>
 
 {% endblock content %}

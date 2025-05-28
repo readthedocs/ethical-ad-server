@@ -1114,12 +1114,28 @@ def notify_of_completed_flights():
                 new_ad.live = True
                 new_ad.save()  # Automatically gets a new slug
 
+            # Create the draft invoice
+            try:
+                invoice = Flight.create_invoice([new_flight])
+            except ValueError:
+                # Can't create invoice for this advertiser (no stripe customer attached)
+                log.warning(
+                    "Could not create invoice for flight %s.",
+                    new_flight,
+                    exc_info=True,
+                )
+                invoice = None
+
             # Send a message about the auto-renewal
             new_flight_url = generate_absolute_url(new_flight.get_absolute_url())
+            msg = f"Flight {flight.name} was automatically renewed as { new_flight.name }: {new_flight_url}"
+            if invoice:
+                invoice_url = invoice.get_stripe_dashboard_url()
+                msg += f". Send the invoice {invoice_url}."
             slack_message(
                 "adserver/slack/generic-message.slack",
                 {
-                    "text": f"Flight {flight.name} was automatically renewed as { new_flight.name }! {new_flight_url}"
+                    "text": msg,
                 },
             )
 
