@@ -301,11 +301,16 @@ def daily_update_keywords(day=None):
     for values in (
         queryset.values("publisher", "advertisement", "keywords", "viewed", "clicked")
         .annotate(
+            # NOTE: decisions and offers will be wrong on this table (they'll match views)
+            #       because the table is already joined against advertisement/flight
             total_decisions=Count("keywords"),
             total_offers=Count("keywords", filter=Q(advertisement__isnull=False)),
             total_views=Count("keywords", filter=Q(viewed=True)),
             total_clicks=Count("keywords", filter=Q(clicked=True)),
         )
+        .exclude(advertisement__isnull=True)
+        # We don't record empty keyword lists in the DB - just NULLs
+        .exclude(keywords__isnull=True)
         .order_by("-total_decisions")
         .values(
             "publisher",
@@ -350,23 +355,24 @@ def daily_update_keywords(day=None):
             keyword_mapping[index]["views"] += values["total_views"]
             keyword_mapping[index]["clicks"] += values["total_clicks"]
 
+    keyword_imps = []
     for data, value in keyword_mapping.items():
         ad, publisher, keyword = data.split(":")
-        if ad == "None":
-            ad = None
+        keyword_imps.append(
+            KeywordImpression(
+                date=start_date,
+                publisher_id=publisher,
+                advertisement_id=ad,
+                keyword=keyword,
+                decisions=value["decisions"],
+                offers=value["offers"],
+                views=value["views"],
+                clicks=value["clicks"],
+            )
+        )
 
-        impression, _ = KeywordImpression.objects.using("default").get_or_create(
-            date=start_date,
-            publisher_id=publisher,
-            advertisement_id=ad,
-            keyword=keyword,
-        )
-        KeywordImpression.objects.using("default").filter(pk=impression.pk).update(
-            decisions=F("decisions") + value["decisions"],
-            offers=F("offers") + value["offers"],
-            views=F("views") + value["views"],
-            clicks=F("clicks") + value["clicks"],
-        )
+    # Create all the keyword impressions in single batch
+    KeywordImpression.objects.bulk_create(keyword_imps)
 
 
 @app.task()
