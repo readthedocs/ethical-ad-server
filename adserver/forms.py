@@ -447,6 +447,7 @@ class FlightAutoRenewForm(forms.ModelForm):
             Fieldset(
                 "",
                 Field("auto_renew"),
+                Field("auto_renew_payment_method"),
                 css_class="my-3",
             ),
             Submit("submit", _("Update flight auto-renewal")),
@@ -464,7 +465,7 @@ class FlightAutoRenewForm(forms.ModelForm):
     class Meta:
         model = Flight
 
-        fields = ("auto_renew",)
+        fields = ("auto_renew", "auto_renew_payment_method")
 
 
 class FlightRenewForm(FlightMixin, FlightCreateForm):
