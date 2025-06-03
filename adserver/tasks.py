@@ -75,6 +75,19 @@ def daily_update_geos(day=None, geo=True, region=True):
         end_date,
     )
 
+    if region:
+        # Delete all previous Region impressions
+        RegionImpression.objects.using("default").filter(
+            date__gte=start_date,
+            date__lt=end_date,
+        ).delete()
+    if geo:
+        # Delete all previous Geo impressions
+        GeoImpression.objects.using("default").filter(
+            date__gte=start_date,
+            date__lt=end_date,
+        ).delete()
+
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
         from ethicalads_ext.etl.aggregations import GeoAggregation
@@ -87,13 +100,6 @@ def daily_update_geos(day=None, geo=True, region=True):
             agg = RegionAggregation(start_date, end_date)
             agg.aggregate()
         return
-
-    if region:
-        # Delete all previous Region impressions
-        RegionImpression.objects.using("default").filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        ).delete()
 
     topic_mapping = defaultdict(
         lambda: {
@@ -487,6 +493,12 @@ def daily_update_uplift(day=None):
 
     log.info("Updating uplift for %s-%s", start_date, end_date)
 
+    # Delete any previous uplift data for this day
+    UpliftImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
+
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
         from ethicalads_ext.etl.aggregations import UpliftAggregation
@@ -543,6 +555,12 @@ def daily_update_domains(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating domains for %s-%s", start_date, end_date)
+
+    # Delete any previous domain data for this day
+    DomainImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
@@ -601,6 +619,12 @@ def daily_update_rotations(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating rotation data for %s-%s", start_date, end_date)
+
+    # Delete any previous rotations for this day
+    RotationImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
