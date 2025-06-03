@@ -16,6 +16,8 @@ While campaigns are already capped by default to spread the campaign out over th
 when a campaign is paused for a while, the cap is useful in making sure too much budget isn't spent too fast.
 The MFA TOTP tolerance was also added to allow for a small time difference (~30s).
 
+:Date: May 22, 2025
+
  * @davidfischer: Use optimized aggregations (#1017)
  * @davidfischer: Aggregation Optimizations (#1016)
  * @davidfischer: MFA TOTP tolerance (#1014)
