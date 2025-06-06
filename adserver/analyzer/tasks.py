@@ -15,6 +15,8 @@ from ..constants import PAID
 from ..models import Offer
 from ..models import Publisher
 from ..utils import get_day
+from .constants import ANALYZER_MIN_VISITS
+from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backends
 from .utils import normalize_url
@@ -165,7 +167,9 @@ def daily_visited_urls_aggregation(day=None):
 
 
 @app.task
-def daily_analyze_urls(days=30, min_visits=100):
+def daily_analyze_urls(
+    days=ANALYZER_REANALYZE_DATE_THRESHOLD, min_visits=ANALYZER_MIN_VISITS
+):
     """Analyze URLs that have been visited `min_visits` times but not analyzed since `days` number of days."""
     dt_cutoff = timezone.now() - datetime.timedelta(days=days)
 
