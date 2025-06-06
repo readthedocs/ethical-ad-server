@@ -24,7 +24,8 @@ crispy-bootstrap4
 django-crispy-forms
 
 # Authentication
-django-allauth[mfa]
+# Versions < 65.9 have slightly different ways of handling ratelimit 429s
+django-allauth[mfa] >= 65.9.0
 
 # Reading Django settings environment variables
 django-environ
