@@ -1,6 +1,8 @@
 # Used by the keyword/topic analyzer
 beautifulsoup4
 textacy
+
+# Must pin to a version compatible with the spacy-model below
 spacy[transformers] >=3.8.7,< 4.0
 
 # Spacy transformers is listed in the production requirements
@@ -8,17 +10,14 @@ spacy[transformers] >=3.8.7,< 4.0
 langdetect
 
 # Used to query OpenAI embedding models
-llm==0.26
-
-# Our use of textacy has an incompatibility with networkx v3
-#networkx<3.0
+llm >= 0.26
 
 # Has to be downloaded directly like this (~30MB)
 # https://github.com/explosion/spacy-models/releases/tag/en_core_web_md-3.8.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl
 
 # Used to parse web pages and get the "main section" of the page
-trafilatura >= 2.0.0,<3.0
+trafilatura >= 2.0.0
 
 # Used as a transitive dependency
 # but we need to make sure lxml.html.clean is installed too
