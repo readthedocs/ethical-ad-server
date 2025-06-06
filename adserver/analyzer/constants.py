@@ -15,3 +15,6 @@ IGNORED_QUERY_PARAMS = (
     "utm_id",
     "ref",
 )
+
+ANALYZER_REANALYZE_DATE_THRESHOLD = 90  # days
+ANALYZER_MIN_VISITS = 100  # visits
