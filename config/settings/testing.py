@@ -1,5 +1,6 @@
 """Settings used in testing."""
 
+import os
 import warnings
 
 from .development import *  # noqa
@@ -14,10 +15,12 @@ LOGGING["loggers"][""]["level"] = "CRITICAL"
 LOGGING["loggers"]["adserver"]["level"] = "CRITICAL"
 LOGGING["loggers"]["ethicalads_ext"]["level"] = "CRITICAL"
 
-# Skip the ext apps in testing
-if "ethicalads_ext.embedding" in INSTALLED_APPS:
+# Skip the ext apps in testing unless explicitly enabled
+TESTING_EXT = bool(os.getenv("TESTING_EXT", default=False))
+if "ethicalads_ext.embedding" in INSTALLED_APPS and not TESTING_EXT:
+    print("Skipping ethicalads_ext.embedding in testing")
     INSTALLED_APPS.remove("ethicalads_ext.embedding")
-if "ethicalads_ext.etl" in INSTALLED_APPS:
+if "ethicalads_ext.etl" in INSTALLED_APPS and not TESTING_EXT:
     INSTALLED_APPS.remove("ethicalads_ext.etl")
 
 # Set the analyzer explicitly in testing
