@@ -14,7 +14,7 @@ urlpatterns = []
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit
     # these url in browser to see how these error pages look like.
-    from allauth.core.ratelimit import _handler429 as handle_429  # noqa
+    from allauth.core.ratelimit import respond_429  # noqa
 
     urlpatterns += [
         path(
@@ -32,7 +32,7 @@ if settings.DEBUG:
             default_views.page_not_found,
             kwargs={"exception": Exception("Page not Found")},
         ),
-        path("429/", handle_429),
+        path("429/", respond_429),
         path("500/", default_views.server_error),
     ]
 
