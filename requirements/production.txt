@@ -33,9 +33,9 @@ azure-storage-blob==12.25.1
 billiard==4.2.1
     # via celery
 bleach==6.2.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 celery[redis]==5.5.0rc1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 certifi==2025.4.26
     # via
     #   requests
@@ -57,16 +57,16 @@ click-plugins==1.1.1
 click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2024.10
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 cryptography==45.0.3
     # via
     #   azure-storage-blob
     #   fido2
 dj-stripe==2.8.4
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django==5.0.14
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   crispy-bootstrap4
     #   dj-stripe
     #   django-allauth
@@ -81,37 +81,37 @@ django==5.0.14
     #   djangorestframework
     #   jsonfield
 django-allauth[mfa]==65.9.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-anymail==13.0
     # via -r production.in
 django-cors-headers==4.7.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-countries==7.6.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-crispy-forms==2.4
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   crispy-bootstrap4
 django-enforce-host==1.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-environ==0.12.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-extensions==4.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-ratelimit==3.0.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-redis==5.4.0
     # via -r production.in
 django-simple-history==3.8.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-slack==5.19.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 django-storages[azure]==1.14.6
     # via -r production.in
 djangorestframework==3.16.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 djangorestframework-jsonp==1.0.2
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 fido2==2.0.0
     # via django-allauth
 frozenlist==1.6.2
@@ -119,7 +119,7 @@ frozenlist==1.6.2
     #   aiohttp
     #   aiosignal
 geoip2==5.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 gunicorn==23.0.0
     # via -r production.in
 idna==3.10
@@ -127,11 +127,11 @@ idna==3.10
     #   requests
     #   yarl
 ip2proxy==3.5.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 isodate==0.7.2
     # via azure-storage-blob
 jsonfield==3.1.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 kombu==5.5.4
     # via celery
 maxminddb==2.7.0
@@ -147,7 +147,7 @@ packaging==25.0
     #   gunicorn
     #   kombu
 pillow==11.2.1
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 prompt-toolkit==3.0.51
     # via click-repl
 propcache==0.3.1
@@ -160,19 +160,19 @@ pycparser==2.22
     # via cffi
 pyjwt==2.9.0
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   redis
 python-dateutil==2.9.0.post0
     # via celery
 pytz==2025.2
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 qrcode==8.2
     # via django-allauth
 redis==5.3.0
     # via
     #   celery
     #   django-redis
-requests==2.32.3
+requests==2.32.4
     # via
     #   azure-core
     #   django-anymail
@@ -189,7 +189,7 @@ sqlparse==0.5.3
     # via django
 stripe==4.2.0
     # via
-    #   -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    #   -r base.in
     #   dj-stripe
 typing-extensions==4.14.0
     # via
@@ -210,9 +210,9 @@ urllib3==2.4.0
     #   requests
     #   sentry-sdk
 user-agents==2.2.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 uuid-utils==0.11.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 vine==5.1.0
     # via
     #   amqp
@@ -223,6 +223,6 @@ wcwidth==0.2.13
 webencodings==0.5.1
     # via bleach
 whitenoise==6.9.0
-    # via -r /home/david/ReadTheDocs/ethical-ad-server/requirements/base.in
+    # via -r base.in
 yarl==1.20.0
     # via aiohttp
