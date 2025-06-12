@@ -230,7 +230,11 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
 
     @admin.action(description=_("Create a draft invoice for this customer"))
     def action_create_draft_invoice(self, request, queryset):
-        """Create a draft invoice for this customer with metadata attached."""
+        """
+        Create a draft invoice for this advertiser with metadata attached.
+
+        CONSIDER: removing this action in favor of creating invoices attached to flights.
+        """
         if not settings.STRIPE_ENABLED:
             messages.add_message(
                 request,
@@ -597,116 +601,22 @@ class FlightAdmin(RemoveDeleteMixin, FlightMixin, SimpleHistoryAdmin):
 
         This fails with a message if the flights aren't all from the same advertiser.
         """
-        if not settings.STRIPE_ENABLED:
-            messages.add_message(
-                request,
-                messages.ERROR,
-                _("Stripe is not configured. Please set the envvar STRIPE_SECRET_KEY."),
-            )
-            return
 
         flights = list(queryset.select_related("campaign", "campaign__advertiser"))
-
-        if not flights:
-            # Django actually doesn't take this path and instead shows its own error message
-            return  # pragma: no cover
-        if len({f.campaign.advertiser_id for f in flights}) > 1:
+        try:
+            invoice = Flight.create_invoice(flights)
+        except ValueError as e:
             messages.add_message(
                 request,
                 messages.ERROR,
-                _("All selected flights must be from a single advertiser."),
+                str(e),
             )
             return
-
-        earliest_start_date = min([f.start_date for f in flights])
-        latest_end_date = max([f.end_date for f in flights])
-        advertiser = [f.campaign.advertiser for f in flights][0]
-
-        if not advertiser.djstripe_customer:
-            messages.add_message(
-                request,
-                messages.ERROR,
-                _("No Stripe customer ID for {}".format(advertiser)),
-            )
-            return
-
-        # Any flight with the discount will result in the discount being in the memo
-        invoice_discount = None
-        total_cost = 0  # In US cents
-
-        for flight in flights:
-            message_components = ["Advertising", flight.name]
-            unit_amount = 0
-            quantity = 1
-
-            if flight.cpc:
-                message_components.append("per click")
-                unit_amount = flight.cpc * 100  # Convert to US cents
-                quantity = flight.sold_clicks
-            elif flight.cpm:
-                # Convert CPM to US cents (eg. $4.25 CPM -> 0.425 cents)
-                unit_amount = flight.cpm / 10
-                message_components.append("${:.2f} CPM".format(flight.cpm))
-                quantity = flight.sold_impressions
-
-            if flight.discount:
-                invoice_discount = flight.discount
-
-            total_cost += unit_amount * quantity
-
-            # Amounts, prices, and description can be customized before sending
-            stripe.InvoiceItem.create(
-                customer=advertiser.djstripe_customer.id,
-                description=" - ".join(message_components),
-                quantity=quantity,
-                unit_amount_decimal=unit_amount,  # in US cents
-                currency="USD",
-                metadata={
-                    "Advertiser": advertiser.slug[:30],
-                    "Flight": flight.slug[:30],
-                    "Flight Start": flight.start_date.strftime("%Y-%m-%d"),
-                    "Flight End": flight.end_date.strftime("%Y-%m-%d"),
-                },
-            )
-
-        # https://stripe.com/docs/api/invoices/create
-        description = "Thanks for your business!"
-        if invoice_discount:
-            description = f"Includes {invoice_discount} discount. " + description
-        inv = stripe.Invoice.create(
-            customer=advertiser.djstripe_customer.id,
-            auto_advance=False,  # Draft invoice
-            collection_method="send_invoice",
-            description=description,
-            custom_fields=[
-                {"name": "Advertiser", "value": advertiser.slug[:30]},
-                {
-                    "name": "Estimated Start",
-                    "value": earliest_start_date.strftime("%Y-%m-%d"),
-                },
-                {
-                    "name": "Estimated End",
-                    "value": latest_end_date.strftime("%Y-%m-%d"),
-                },
-            ],
-            days_until_due=30,
-        )
-        invoice = Invoice.sync_from_stripe_data(inv)
-
-        # Attach Stripe invoices to flights
-        # There isn't a good way to mock invoices for tests so this check is to mock the invoice
-        if invoice.pk:
-            for flight in flights:
-                flight.invoices.add(invoice)
 
         messages.add_message(
             request,
             messages.SUCCESS,
-            _(
-                "New Stripe invoice for {}: {}".format(
-                    advertiser, invoice.get_stripe_dashboard_url()
-                )
-            ),
+            _("New Stripe invoice: {}".format(invoice.get_stripe_dashboard_url())),
         )
 
     def get_queryset(self, request):

@@ -75,6 +75,19 @@ def daily_update_geos(day=None, geo=True, region=True):
         end_date,
     )
 
+    if region:
+        # Delete all previous Region impressions
+        RegionImpression.objects.using("default").filter(
+            date__gte=start_date,
+            date__lt=end_date,
+        ).delete()
+    if geo:
+        # Delete all previous Geo impressions
+        GeoImpression.objects.using("default").filter(
+            date__gte=start_date,
+            date__lt=end_date,
+        ).delete()
+
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
         from ethicalads_ext.etl.aggregations import GeoAggregation
@@ -87,13 +100,6 @@ def daily_update_geos(day=None, geo=True, region=True):
             agg = RegionAggregation(start_date, end_date)
             agg.aggregate()
         return
-
-    if region:
-        # Delete all previous Region impressions
-        RegionImpression.objects.using("default").filter(
-            date__gte=start_date,
-            date__lt=end_date,  # Things at UTC midnight should count towards tomorrow
-        ).delete()
 
     topic_mapping = defaultdict(
         lambda: {
@@ -301,11 +307,16 @@ def daily_update_keywords(day=None):
     for values in (
         queryset.values("publisher", "advertisement", "keywords", "viewed", "clicked")
         .annotate(
+            # NOTE: decisions and offers will be wrong on this table (they'll match views)
+            #       because the table is already joined against advertisement/flight
             total_decisions=Count("keywords"),
             total_offers=Count("keywords", filter=Q(advertisement__isnull=False)),
             total_views=Count("keywords", filter=Q(viewed=True)),
             total_clicks=Count("keywords", filter=Q(clicked=True)),
         )
+        .exclude(advertisement__isnull=True)
+        # We don't record empty keyword lists in the DB - just NULLs
+        .exclude(keywords__isnull=True)
         .order_by("-total_decisions")
         .values(
             "publisher",
@@ -350,23 +361,24 @@ def daily_update_keywords(day=None):
             keyword_mapping[index]["views"] += values["total_views"]
             keyword_mapping[index]["clicks"] += values["total_clicks"]
 
+    keyword_imps = []
     for data, value in keyword_mapping.items():
         ad, publisher, keyword = data.split(":")
-        if ad == "None":
-            ad = None
+        keyword_imps.append(
+            KeywordImpression(
+                date=start_date,
+                publisher_id=publisher,
+                advertisement_id=ad,
+                keyword=keyword,
+                decisions=value["decisions"],
+                offers=value["offers"],
+                views=value["views"],
+                clicks=value["clicks"],
+            )
+        )
 
-        impression, _ = KeywordImpression.objects.using("default").get_or_create(
-            date=start_date,
-            publisher_id=publisher,
-            advertisement_id=ad,
-            keyword=keyword,
-        )
-        KeywordImpression.objects.using("default").filter(pk=impression.pk).update(
-            decisions=F("decisions") + value["decisions"],
-            offers=F("offers") + value["offers"],
-            views=F("views") + value["views"],
-            clicks=F("clicks") + value["clicks"],
-        )
+    # Create all the keyword impressions in single batch
+    KeywordImpression.objects.bulk_create(keyword_imps)
 
 
 @app.task()
@@ -487,6 +499,12 @@ def daily_update_uplift(day=None):
 
     log.info("Updating uplift for %s-%s", start_date, end_date)
 
+    # Delete any previous uplift data for this day
+    UpliftImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
+
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
         from ethicalads_ext.etl.aggregations import UpliftAggregation
@@ -543,6 +561,12 @@ def daily_update_domains(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating domains for %s-%s", start_date, end_date)
+
+    # Delete any previous domain data for this day
+    DomainImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
@@ -601,6 +625,12 @@ def daily_update_rotations(day=None):
     start_date, end_date = get_day(day)
 
     log.info("Updating rotation data for %s-%s", start_date, end_date)
+
+    # Delete any previous rotations for this day
+    RotationImpression.objects.using("default").filter(
+        date__gte=start_date,
+        date__lt=end_date,
+    ).delete()
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
@@ -1114,12 +1144,28 @@ def notify_of_completed_flights():
                 new_ad.live = True
                 new_ad.save()  # Automatically gets a new slug
 
+            # Create the draft invoice
+            try:
+                invoice = Flight.create_invoice([new_flight])
+            except ValueError:
+                # Can't create invoice for this advertiser (no stripe customer attached)
+                log.warning(
+                    "Could not create invoice for flight %s.",
+                    new_flight,
+                    exc_info=True,
+                )
+                invoice = None
+
             # Send a message about the auto-renewal
             new_flight_url = generate_absolute_url(new_flight.get_absolute_url())
+            msg = f"Flight {flight.name} was automatically renewed as { new_flight.name }: {new_flight_url}"
+            if invoice:
+                invoice_url = invoice.get_stripe_dashboard_url()
+                msg += f". Send the invoice {invoice_url}."
             slack_message(
                 "adserver/slack/generic-message.slack",
                 {
-                    "text": f"Flight {flight.name} was automatically renewed as { new_flight.name }! {new_flight_url}"
+                    "text": msg,
                 },
             )
 
