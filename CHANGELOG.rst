@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.21.1
+---------------
+
+v5.20.0 removed the pin to Numpy<2 which caused issues building the release
+but oddly not the local docker image.
+
+:Date: June 12, 2025
+
+ * @davidfischer: Pin Numpy<2 (#1031)
+
+
 Version v5.21.0
 ---------------
 
