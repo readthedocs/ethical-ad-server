@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.20.0
+---------------
+
+This release contained a number of Python dependency updates
+as well as optimizations to aggregations and periodic analysis tasks.
+
+:Date: June 12, 2025
+
+ * @dependabot[bot]: Bump requests from 2.32.3 to 2.32.4 in /requirements (#1028)
+ * @davidfischer: Change reanalyzing threshold (#1027)
+ * @davidfischer: Improve testing for private code (#1026)
+ * @davidfischer: June 2025 Python Dependency update (#1024)
+ * @davidfischer: Add missing date to changelog (#1023)
+ * @davidfischer: Keyword impression aggregation optimization (#1021)
+ * @davidfischer: Remove old aggregation data before aggregating (#1020)
+ * @davidfischer: Create draft invoice for auto-renewals (#1019)
+ * @dependabot[bot]: Bump h11 from 0.14.0 to 0.16.0 in /requirements (#1013)
+ * @dependabot[bot]: Bump jinja2 from 3.1.5 to 3.1.6 in /requirements (#994)
+
+
 Version v5.19.0
 ---------------
 
