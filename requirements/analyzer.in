@@ -38,6 +38,10 @@ adlfs==2024.12.0
 # Postgres & Postgres vector support
 pgvector
 
+# Numpy v2 has some breaking changes (for now)
+# https://github.com/explosion/thinc/issues/939
+numpy <2
+
 # For the ST backend
 sentence-transformers >= 4.1,<5.0
 
