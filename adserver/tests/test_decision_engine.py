@@ -208,6 +208,9 @@ class DecisionEngineTests(TestCase):
         # This means we can only show 2 clicks per day before the cap is exceeded
         self.include_flight.daily_cap = 2.5
         self.include_flight.save()
+        # Before save, the daily_cap is a float, after saving, it is a decimal
+        # This is important because in Python decimals throw when compared to floats
+        self.include_flight.refresh_from_db()
 
         # Simulate 2 clicks
         self.advertisement1.incr(CLICKS, self.publisher)

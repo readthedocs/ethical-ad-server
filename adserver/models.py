@@ -1325,9 +1325,9 @@ class Flight(TimeStampedModel, IndestructibleModel):
         total = 0.0
 
         if self.cpm > 0:
-            total += self.views_today() * self.cpm / 1000.0
+            total += self.views_today() * float(self.cpm) / 1000.0
         if self.cpc > 0:
-            total += self.clicks_today() * self.cpc
+            total += self.clicks_today() * float(self.cpc)
 
         return total
 
@@ -1458,7 +1458,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if not self.daily_cap or self.daily_cap <= 0.0:
             return False
 
-        if self.spend_today() > self.daily_cap:
+        if self.spend_today() > float(self.daily_cap):
             return True
 
         return False
