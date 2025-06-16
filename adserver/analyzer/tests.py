@@ -102,7 +102,7 @@ class TestModels(TestCase):
 
     def test_str(self):
         self.assertEqual(
-            str(self.analyzed_url), "['python', 'django'] on https://example.com"
+            str(self.analyzed_url), "https://example.com"
         )
 
     def test_validation(self):
