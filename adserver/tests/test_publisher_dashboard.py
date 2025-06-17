@@ -269,6 +269,9 @@ class TestPublisherDashboardViews(TestCase):
         self.ad1.incr(VIEWS, self.publisher1)
         self.ad1.incr(CLICKS, self.publisher1)
 
+        # Run the daily aggregation task
+        daily_update_publishers()
+
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Balance for this month")
