@@ -51,7 +51,7 @@ class BaseAnalyzedUrl(TimeStampedModel):
 
     def __str__(self):
         """Simple override."""
-        return f"{self.keywords} on {self.url}"
+        return self.url
 
     def save(self, *args, **kwargs):
         self.full_clean()
