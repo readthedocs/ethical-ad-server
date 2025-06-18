@@ -96,7 +96,7 @@ def analyze_url(url, publisher_slug, force=False):
         from ethicalads_ext.embedding.tasks import analyze_publisher_url
 
         analyze_publisher_url.apply_async(
-            args=[url, publisher_slug, True],
+            args=[url, publisher_slug],
             queue="analyzer",
         )
 
