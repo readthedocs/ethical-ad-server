@@ -50,7 +50,8 @@ def analyze_url(url, publisher_slug, force=False):
         existing_record
         and not force
         and existing_record.last_analyzed_date
-        > (timezone.now() - datetime.timedelta(days=7))
+        and existing_record.last_analyzed_date
+        > (timezone.now() - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD))
     ):
         log.warning("URL recently analyzed. Skipping.")
         return
