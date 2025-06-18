@@ -33,7 +33,6 @@ def analyze_url(url, publisher_slug, force=False):
     - Creates or updates an entry in AnalyzedUrls table
     - Discovers keywords and topics for a URL
     """
-    skip_renanalyze_days_threshold = 30
     normalized_url = normalize_url(url)
 
     publisher = Publisher.objects.filter(slug=publisher_slug).first()
@@ -52,7 +51,7 @@ def analyze_url(url, publisher_slug, force=False):
         and not force
         and existing_record.last_analyzed_date
         and existing_record.last_analyzed_date
-        > (timezone.now() - datetime.timedelta(days=skip_renanalyze_days_threshold))
+        > (timezone.now() - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD))
     ):
         log.warning("URL recently analyzed. Skipping.")
         return
