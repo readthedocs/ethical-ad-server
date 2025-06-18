@@ -168,17 +168,24 @@ def daily_visited_urls_aggregation(day=None):
 
 @app.task
 def daily_analyze_urls(
-    days=ANALYZER_REANALYZE_DATE_THRESHOLD, min_visits=ANALYZER_MIN_VISITS
+    days=ANALYZER_REANALYZE_DATE_THRESHOLD,
+    min_visits=ANALYZER_MIN_VISITS,
+    max_urls_to_analyze=10_000,
 ):
     """Analyze URLs that have been visited `min_visits` times but not analyzed since `days` number of days."""
     dt_cutoff = timezone.now() - datetime.timedelta(days=days)
 
-    analyzed_urls = AnalyzedUrl.objects.filter(
-        last_analyzed_date__lt=dt_cutoff, visits_since_last_analyzed__gte=min_visits
-    ).select_related()
+    # Analyze URLs that either have never been analyzed or haven't been since the cutoff date
+    # and have been visited at least `min_visits` times
+    analyzed_urls = (
+        AnalyzedUrl.objects.filter(visits_since_last_analyzed__gte=min_visits)
+        .exclude(last_analyzed_date__gte=dt_cutoff)
+        .select_related()
+    )
 
-    log.debug("URLs to analyze: %s", analyzed_urls.count())
-    for analyzed_url in analyzed_urls:
+    # We don't analyze more URLs than the max to not overload our queue and workers
+    log.debug("URLs to analyze: %s", min(analyzed_urls.count(), max_urls_to_analyze))
+    for analyzed_url in analyzed_urls[:max_urls_to_analyze]:
         analyze_url.apply_async(
             args=[analyzed_url.url, analyzed_url.publisher.slug], queue="analyzer"
         )
