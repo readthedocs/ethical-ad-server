@@ -430,8 +430,9 @@ def generate_publisher_payout_data(
     """
     # pylint: disable=cyclic-import
     # pylint: disable=import-outside-toplevel
-    from .reports import PublisherReport
+    from .reports import OptimizedPublisherPaidReport
 
+    # Today in UTC - time is not important as PublisherPaidImpressions only store date, not datetime
     today = timezone.now()
     end_date = today.replace(day=1) - timedelta(days=1)
     last_payout = publisher.payouts.filter(status=PAID).last()
@@ -456,12 +457,11 @@ def generate_publisher_payout_data(
     due_report_url = None
 
     if include_current_report:
-        current_queryset = publisher.adimpression_set.filter(
+        current_queryset = publisher.publisher_paid_impressions.filter(
             date__gte=today.replace(day=1),
             date__lte=today,
-            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
         )
-        current_report = PublisherReport(current_queryset)
+        current_report = OptimizedPublisherPaidReport(current_queryset)
         current_report.generate()
 
         current_report_url = (
@@ -480,12 +480,11 @@ def generate_publisher_payout_data(
     if include_due_report and start_date < today.replace(
         day=1, hour=0, minute=0, second=0, microsecond=0
     ):
-        due_queryset = publisher.adimpression_set.filter(
+        due_queryset = publisher.publisher_paid_impressions.filter(
             date__gte=start_date,
             date__lte=end_date,
-            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
         )
-        due_report = PublisherReport(due_queryset)
+        due_report = OptimizedPublisherPaidReport(due_queryset)
         due_report.generate()
 
         due_report_url = (

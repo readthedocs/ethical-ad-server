@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.22.0
+---------------
+
+This release contains a few bugfixes as well as a number of tweaks to our analyzer
+which scans pages where ads appear for keywords, topics, and for other targeting.
+
+:Date: June 19, 2025
+
+ * @davidfischer: Update analyzer requirements (#1040)
+ * @davidfischer: Add setting for embedding model (#1039)
+ * @davidfischer: Admin analyzer actions use the analyzer celery queue (#1038)
+ * @davidfischer: Analyze URLs that have never been analyzed (#1037)
+ * @davidfischer: Bugfix last analyzed date on analyzer (#1036)
+ * @davidfischer: Publisher payouts performance fix (#1035)
+ * @davidfischer: Remove keywords from string repr of Analyzer (#1034)
+ * @davidfischer: Fix for comparing decimal to float with daily cap (#1033)
+
+
 Version v5.21.1
 ---------------
 

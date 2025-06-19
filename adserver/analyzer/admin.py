@@ -64,7 +64,11 @@ if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
     @admin.action(description="Re-analyze the selected URLs")
     def reanalyze_publisher_url(self, request, queryset):
         for purl in queryset:
-            analyze_publisher_url.delay(purl.url, purl.publisher.slug, force=True)
+            analyze_publisher_url.apply_async(
+                args=[purl.url, purl.publisher.slug],
+                queue="analyzer",
+            )
+
         self.message_user(request, "Re-analyzed selected URLs.")
 
     AnalyzedUrlAdmin.actions = [reanalyze_publisher_url]
@@ -82,7 +86,10 @@ if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
     def reanalyze_advertiser_url(self, request, queryset):
         """Re-analyze the selected URLs."""
         for aaurl in queryset:
-            analyze_advertiser_url.delay(aaurl.url, aaurl.advertiser.slug, force=True)
+            analyze_advertiser_url.apply_async(
+                args=[aaurl.url, aaurl.advertiser.slug],
+                queue="analyzer",
+            )
         self.message_user(request, "Re-analyzed selected URLs.")
 
     AnalyzedAdvertiserUrlAdmin.actions = [reanalyze_advertiser_url]

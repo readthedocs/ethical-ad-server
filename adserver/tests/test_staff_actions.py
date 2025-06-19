@@ -20,6 +20,7 @@ from ..models import PublisherPayout
 from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
 from ..tasks import daily_update_impressions
+from ..tasks import daily_update_publishers
 
 User = get_user_model()
 
@@ -250,6 +251,7 @@ class PublisherPayoutTests(TestCase):
 
         # Index data into proper table
         daily_update_impressions(day=last_month)
+        daily_update_publishers(day=last_month)
 
     def test_list_view(self):
         url = reverse("staff-publisher-payouts")

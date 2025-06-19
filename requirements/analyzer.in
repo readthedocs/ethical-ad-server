@@ -10,7 +10,8 @@ spacy[transformers] >=3.8.7,< 4.0
 langdetect
 
 # Used to query OpenAI embedding models
-llm >= 0.26
+openai >= 1.84.0
+tiktoken >= 0.9.0
 
 # Has to be downloaded directly like this (~30MB)
 # https://github.com/explosion/spacy-models/releases/tag/en_core_web_md-3.8.0
