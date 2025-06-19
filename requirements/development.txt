@@ -361,7 +361,7 @@ ua-parser-builtins==0.18.0.post1
     # via ua-parser
 url-normalize==2.2.1
     # via requests-cache
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -r development.in
     #   requests
