@@ -6,6 +6,14 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.22.1
+---------------
+
+This release only contained minor fixes to private analyzer code.
+
+:Date: June 26, 2025
+
+
 Version v5.22.0
 ---------------
 
