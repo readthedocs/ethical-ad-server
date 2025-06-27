@@ -6,6 +6,14 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.22.2
+---------------
+
+This release only involved a private data migration and no code changes.
+
+:Date: June 27, 2025
+
+
 Version v5.22.1
 ---------------
 
