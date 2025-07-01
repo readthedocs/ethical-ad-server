@@ -41,6 +41,9 @@ INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL not set
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
 
+if "replica" in DATABASES:
+    DATABASES["replica"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
+
 
 # Logging changes
 # --------------------------------------------------------------------------
