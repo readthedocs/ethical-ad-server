@@ -146,7 +146,7 @@ packaging==25.0
     # via
     #   gunicorn
     #   kombu
-pillow==11.2.1
+pillow==11.3.0
     # via -r base.in
 prompt-toolkit==3.0.51
     # via click-repl
