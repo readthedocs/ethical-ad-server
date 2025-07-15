@@ -111,6 +111,7 @@ AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
 AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
 AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
 BACKUPS_STORAGE = env("BACKUPS_STORAGE", default="config.storage.AzureBackupsStorage")
+STORAGES["backups"] = {"BACKEND": BACKUPS_STORAGE}
 
 
 # Celery settings for asynchronous tasks

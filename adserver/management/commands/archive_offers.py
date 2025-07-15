@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import get_storage_class
+from django.core.files.storage import storages
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import connections
@@ -135,7 +135,7 @@ class Command(BaseCommand):
 
     def copy_offer_dump(self, archive_filepath):
         """Copy offer CSV files to settings.BACKUPS_STORAGE."""
-        if not hasattr(settings, "BACKUPS_STORAGE"):
+        if "backups" not in settings.STORAGES:
             self.stdout.write(
                 self.style.WARNING(
                     _(
@@ -145,7 +145,7 @@ class Command(BaseCommand):
             )
             return
 
-        storage = get_storage_class(settings.BACKUPS_STORAGE)()
+        storage = storages.create_storage(storages.backends["backups"])
 
         storage_path = self.storage_output_dir + archive_filepath.name
         self.stdout.write(_("Copying offers (%s) to backups...") % archive_filepath)
@@ -164,7 +164,7 @@ class Command(BaseCommand):
 
     def delete_offers(self, day):
         """Deletes offers from the database (requires them to be copied to settings.BACKUPS_STORAGE)."""
-        if not hasattr(settings, "BACKUPS_STORAGE"):
+        if "backups" not in settings.STORAGES:
             self.stdout.write(
                 self.style.WARNING(
                     _("Skipping deleting archived offers (backups weren't copied)...")

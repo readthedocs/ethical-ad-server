@@ -1814,7 +1814,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         # Fix up names/slugs of ads that have been copied before
         # Remove dates and (" Copy") from the end of the name/slug
-        new_name = re.sub(" \d{4}-\d{2}-\d{2}$", "", new_name)
+        new_name = re.sub(r" \d{4}-\d{2}-\d{2}$", "", new_name)
         while new_name.endswith(" Copy"):
             new_name = new_name[:-5]
 
