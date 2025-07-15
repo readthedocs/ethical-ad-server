@@ -6,9 +6,9 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.12.14
     # via geoip2
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 alabaster==0.7.16
     # via sphinx
@@ -38,15 +38,15 @@ attrs==25.3.0
 babel==2.17.0
     # via sphinx
 beautifulsoup4==4.13.4
-    # via -r testing.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/testing.in
 billiard==4.2.1
     # via celery
 bleach==6.2.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 cattrs==25.1.1
     # via requests-cache
 celery[redis]==5.5.0rc1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 certifi==2025.4.26
     # via requests
 cffi==1.17.1
@@ -75,7 +75,7 @@ coverage==7.9.0
     #   -r development.in
     #   django-coverage-plugin
 crispy-bootstrap4==2025.6
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 cryptography==45.0.4
     # via fido2
 decorator==5.2.1
@@ -85,10 +85,10 @@ decorator==5.2.1
 distlib==0.3.9
     # via virtualenv
 dj-stripe==2.8.4
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django==5.0.14
     # via
-    #   -r base.in
+    #   -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
     #   crispy-bootstrap4
     #   dj-stripe
     #   django-allauth
@@ -101,39 +101,39 @@ django==5.0.14
     #   djangorestframework
     #   jsonfield
 django-allauth[mfa]==65.9.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-cors-headers==4.7.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-countries==7.6.1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-coverage-plugin==3.1.0
     # via -r development.in
 django-crispy-forms==2.4
     # via
-    #   -r base.in
+    #   -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
     #   crispy-bootstrap4
 django-debug-toolbar==3.8.1
     # via -r development.in
 django-dynamic-fixture==4.0.1
     # via -r development.in
 django-enforce-host==1.1.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-environ==0.12.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-extensions==4.1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-ratelimit==3.0.1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-simple-history==3.8.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-slack==5.19.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 django-upgrade==1.25.0
     # via -r development.in
 djangorestframework==3.16.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 djangorestframework-jsonp==1.0.2
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 docutils==0.19
     # via
     #   sphinx
@@ -157,7 +157,7 @@ frozenlist==1.7.0
     #   aiohttp
     #   aiosignal
 geoip2==5.1.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 h11==0.16.0
     # via uvicorn
 identify==2.6.12
@@ -173,7 +173,7 @@ imagesize==1.4.1
 iniconfig==2.1.0
     # via pytest
 ip2proxy==3.5.1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 ipdb==0.13.13
     # via -r development.in
 ipython==8.37.0
@@ -185,7 +185,7 @@ jedi==0.19.2
 jinja2==3.1.6
     # via sphinx
 jsonfield==3.1.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 kombu==5.5.4
     # via celery
 markupsafe==3.0.2
@@ -211,7 +211,7 @@ parso==0.8.4
 pexpect==4.9.0
     # via ipython
 pillow==11.2.1
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 platformdirs==4.3.8
     # via
     #   requests-cache
@@ -245,7 +245,7 @@ pygments==2.19.1
     #   sphinx
 pyjwt==2.9.0
     # via
-    #   -r base.in
+    #   -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
     #   redis
 pytest==8.4.0
     # via
@@ -256,7 +256,7 @@ pytest-django==4.11.1
 python-dateutil==2.9.0.post0
     # via celery
 pytz==2025.2
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 pyyaml==6.0.2
     # via
     #   pre-commit
@@ -327,7 +327,7 @@ starlette==0.47.0
     # via sphinx-autobuild
 stripe==4.2.0
     # via
-    #   -r base.in
+    #   -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
     #   dj-stripe
 tokenize-rt==6.2.0
     # via django-upgrade
@@ -337,13 +337,14 @@ tomli==2.2.1
     #   pytest
     #   tox
 tox==3.28.0
-    # via -r testing.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/testing.in
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
 typing-extensions==4.14.0
     # via
+    #   aiosignal
     #   anyio
     #   asgiref
     #   beautifulsoup4
@@ -368,9 +369,9 @@ urllib3==2.4.0
     #   requests-cache
     #   responses
 user-agents==2.2.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 uuid-utils==0.11.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 uvicorn==0.34.3
     # via sphinx-autobuild
 vine==5.1.0
@@ -391,6 +392,6 @@ webencodings==0.5.1
 websockets==15.0.1
     # via sphinx-autobuild
 whitenoise==6.9.0
-    # via -r base.in
+    # via -r /home/dependabot/dependabot-updater/tmp/20250714-1352-rq2fxw/dependabot_20250714-1352-mhmku0/base.in
 yarl==1.20.1
     # via aiohttp
