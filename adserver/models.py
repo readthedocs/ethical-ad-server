@@ -1475,6 +1475,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return value_delivered / clicks
         return 0
 
+    def copy_niche_targeting_urls(self, other_flight):
+        """Copy niche targeting URLs from another flight."""
+        if "adserver.analyzer" in settings.INSTALLED_APPS:
+            for aaurl in other_flight.analyzedadvertiserurl_set.all():
+                aaurl.flights.add(self)
+
     @cached_property
     def active_invoices(self):
         """Get invoices excluding drafts, void, and uncollectable ones."""
