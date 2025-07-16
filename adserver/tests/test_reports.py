@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 from django_dynamic_fixture import get
 
 from ..constants import CLICKS
@@ -630,7 +631,7 @@ class TestReportViews(TestReportsBase):
         get(Offer, publisher=self.publisher1, div_id="ad_23453464", viewed=True)
 
         # Update reporting
-        daily_update_placements(day=datetime.datetime.utcnow().isoformat())
+        daily_update_placements(day=timezone.now().isoformat())
 
         # All reports
         response = self.client.get(url)
@@ -1110,7 +1111,7 @@ class TestReportViews(TestReportsBase):
         # 2 filters lead to a date-based view
         response = self.client.get(url, {"topic": "frontend-web", "region": "us-ca"})
         self.assertContains(
-            response, "<td>%s" % datetime.datetime.utcnow().strftime("%b")
+            response, "<td>%s" % timezone.now().strftime("%b")
         )
         self.assertNotContains(response, "<td>us-ca:frontend-web")
 

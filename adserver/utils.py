@@ -13,7 +13,6 @@ from datetime import timezone as dttimezone
 from urllib.parse import urlparse
 
 import IP2Proxy
-from celery.utils.iso8601 import parse_iso8601
 from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
@@ -67,12 +66,12 @@ def get_day(day=None):
     Always return two datetimes with timezone.
     If `day` is `None`, use today.
     If `day` is a datetime or date object, use that day but remove any time data.
-    Otherwise, attempt to convert from iso8601.
+    Otherwise, attempt to convert from iso8601 with `datetime.fromisoformat`.
     """
     start_date = get_ad_day()
     if day:
         if not isinstance(day, (datetime, date)):
-            day = parse_iso8601(day)
+            day = datetime.fromisoformat(day)
         start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
         if is_naive(start_date):
             start_date = start_date.replace(tzinfo=dttimezone.utc)

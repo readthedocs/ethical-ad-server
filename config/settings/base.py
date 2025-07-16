@@ -388,11 +388,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 # https://docs.allauth.org/en/latest/mfa/configuration.html
 # --------------------------------------------------------------------------
 ACCOUNT_ADAPTER = "adserver.auth.adapters.AdServerAccountAdapter"
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1
+# https://docs.allauth.org/en/dev/account/advanced.html#custom-user-models
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_LOGIN_METHODS = {"email"}
 # Allow this many codes before or after to be valid.
 # MFA_TOTP_PERIOD (30s) of clock drift in either direction allowed.

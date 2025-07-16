@@ -134,7 +134,17 @@ class TestArchiveOffers(TestCase):
         output = self.out.getvalue()
         self.assertTrue("Skipping deleting archived offers" in output)
 
-    @override_settings(BACKUPS_STORAGE="django.core.files.storage.FileSystemStorage")
+    @override_settings(STORAGES={
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+        "backups": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        }
+    })
     @patch("django.db.connections")
     def test_archive_offers_storage(self, conn_mock):
         management.call_command(
