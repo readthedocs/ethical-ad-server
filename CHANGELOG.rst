@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.23.0
+---------------
+
+This release contained minor bug fixes and analyzer improvements.
+
+:Date: July 24, 2025
+
+ * @davidfischer: Fix a number of warnings (#1052)
+ * @davidfischer: Ensure niche campaigns target same URLs after auto-renew (#1051)
+ * @davidfischer: Add a base analyzer for Trafilatura (#1044)
+
+
 Version v5.22.2
 ---------------
 
