@@ -866,7 +866,7 @@ class TestAdvertiserDashboardViews(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertContains(resp, "Preview and save your ads")
 
-            soup = bs4.BeautifulSoup(resp.content)
+            soup = bs4.BeautifulSoup(resp.content, features="html.parser")
             elem = soup.find("input", attrs={"name": "signed_advertisements"})
             self.assertIsNotNone(elem)
 

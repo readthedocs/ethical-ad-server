@@ -1137,6 +1137,9 @@ def notify_of_completed_flights():
 
             new_flight.save()
 
+            # Copy niche targeting URLs from previous flight
+            new_flight.copy_niche_targeting_urls(flight)
+
             # Duplicate the active ads into the new flight
             for ad in flight.advertisements.filter(live=True):
                 new_ad = ad.__copy__()

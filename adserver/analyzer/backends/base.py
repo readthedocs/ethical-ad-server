@@ -147,3 +147,72 @@ class BaseAnalyzerBackend:
         """
         log.warning("No embedding configured for %s", self.__class__.__name__)
         return []
+
+
+class BaseTrafilaturaBackend(BaseAnalyzerBackend):
+    """Use Trafilatura's fetch backend instead of requests."""
+
+    def fetch(self, **kwargs):
+        """Performs a URL fetch on the analyzed URL."""
+        import trafilatura  # noqa
+
+        kwargs.setdefault("allow_redirects", False)
+        kwargs.setdefault("timeout", 5)  # seconds
+
+        # Options must be strings
+        # https://trafilatura.readthedocs.io/en/latest/settings.html
+        config = trafilatura.settings.use_config()
+
+        # Technically, this is the download timeout, not the connect timeout
+        # There's no connect timeout option
+        config.set("DEFAULT", "DOWNLOAD_TIMEOUT", str(kwargs["timeout"]))
+        config.set("DEFAULT", "USER_AGENTS", self.user_agent)
+        if not kwargs["allow_redirects"]:
+            config.set("DEFAULT", "MAX_REDIRECTS", "0")
+
+        # Returns None on 40x response. Retries on 50x response a few times
+        # https://trafilatura.readthedocs.io/en/latest/usage-python.html#choice-of-html-elements
+        return trafilatura.fetch_url(self.url, config=config)
+
+    def get_content(self, resp, *args):
+        import trafilatura  # noqa
+
+        if resp:
+            self.metadata = trafilatura.extract_metadata(resp)
+
+            # https://trafilatura.readthedocs.io/en/latest/usage-python.html#choice-of-html-elements
+            result = trafilatura.extract(
+                resp, include_comments=False, include_tables=False
+            )
+
+            return self.preprocess_text(result)
+        return None
+
+    def analyze(self, resp):
+        """
+        Parse response for keywords.
+
+        :returns list: a list of keywords or `None` if the URL doesn't respond.
+        """
+
+        if resp:
+            return self.analyze_response(resp)
+        else:
+            log.debug("Failed to connect. Url=%s", self.url)
+
+        # A failed request results in `None`.
+        return None
+
+    def embedding(self, resp):
+        """
+        Parse the response for embeddings.
+
+        :returns vector: A 384-dimensional vector or `None` if the URL doesn't respond.
+        """
+
+        if resp:
+            return self.embed_response(resp)
+        else:
+            log.debug("Failed to connect. Url=%s", self.url)
+
+        return None

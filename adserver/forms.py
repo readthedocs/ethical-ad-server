@@ -604,9 +604,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
             new_ad.save()  # Automatically gets a new slug
 
         # If the old flight was niche targeted, target the new flight to the same URLs
-        if "adserver.analyzer" in settings.INSTALLED_APPS:
-            for aaurl in self.old_flight.analyzedadvertiserurl_set.all():
-                aaurl.flights.add(instance)
+        instance.copy_niche_targeting_urls(self.old_flight)
 
         return instance
 

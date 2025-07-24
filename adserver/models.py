@@ -1475,6 +1475,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return value_delivered / clicks
         return 0
 
+    def copy_niche_targeting_urls(self, other_flight):
+        """Copy niche targeting URLs from another flight."""
+        if "adserver.analyzer" in settings.INSTALLED_APPS:
+            for aaurl in other_flight.analyzedadvertiserurl_set.all():
+                aaurl.flights.add(self)
+
     @cached_property
     def active_invoices(self):
         """Get invoices excluding drafts, void, and uncollectable ones."""
@@ -1814,7 +1820,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         # Fix up names/slugs of ads that have been copied before
         # Remove dates and (" Copy") from the end of the name/slug
-        new_name = re.sub(" \d{4}-\d{2}-\d{2}$", "", new_name)
+        new_name = re.sub(r" \d{4}-\d{2}-\d{2}$", "", new_name)
         while new_name.endswith(" Copy"):
             new_name = new_name[:-5]
 
