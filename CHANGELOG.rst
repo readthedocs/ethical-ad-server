@@ -9,6 +9,18 @@ CHANGELOG
 Version v5.22.2
 ---------------
 
+This release contained minor bug fixes and analyzer improvements.
+
+:Date: July 24, 2025
+
+ * @davidfischer: Fix a number of warnings (#1052)
+ * @davidfischer: Ensure niche campaigns target same URLs after auto-renew (#1051)
+ * @davidfischer: Add a base analyzer for Trafilatura (#1044)
+
+
+Version v5.22.2
+---------------
+
 This release only involved a private data migration and no code changes.
 
 :Date: June 27, 2025
