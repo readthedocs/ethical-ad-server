@@ -6,7 +6,7 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
-Version v5.22.2
+Version v5.23.0
 ---------------
 
 This release contained minor bug fixes and analyzer improvements.
