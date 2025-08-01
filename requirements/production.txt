@@ -6,13 +6,13 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.12.15
     # via geoip2
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 amqp==5.3.1
     # via kombu
-asgiref==3.8.1
+asgiref==3.9.1
     # via
     #   django
     #   django-allauth
@@ -24,11 +24,11 @@ async-timeout==5.0.1
     #   redis
 attrs==25.3.0
     # via aiohttp
-azure-core==1.34.0
+azure-core==1.35.0
     # via
     #   azure-storage-blob
     #   django-storages
-azure-storage-blob==12.25.1
+azure-storage-blob==12.26.0
     # via django-storages
 billiard==4.2.1
     # via celery
@@ -36,7 +36,7 @@ bleach==6.2.0
     # via -r base.in
 celery[redis]==5.5.0rc1
     # via -r base.in
-certifi==2025.4.26
+certifi==2025.7.14
     # via
     #   requests
     #   sentry-sdk
@@ -52,13 +52,13 @@ click==8.2.1
     #   click-repl
 click-didyoumean==0.3.1
     # via celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
 crispy-bootstrap4==2025.6
     # via -r base.in
-cryptography==45.0.4
+cryptography==45.0.5
     # via
     #   azure-storage-blob
     #   fido2
@@ -80,9 +80,9 @@ django==5.0.14
     #   django-storages
     #   djangorestframework
     #   jsonfield
-django-allauth[mfa]==65.9.0
+django-allauth[mfa]==65.10.0
     # via -r base.in
-django-anymail==13.0
+django-anymail==13.0.1
     # via -r production.in
 django-cors-headers==4.7.0
     # via -r base.in
@@ -100,9 +100,9 @@ django-extensions==4.1
     # via -r base.in
 django-ratelimit==3.0.1
     # via -r base.in
-django-redis==5.4.0
+django-redis==6.0.0
     # via -r production.in
-django-simple-history==3.8.0
+django-simple-history==3.10.1
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
@@ -130,23 +130,23 @@ ip2proxy==3.5.1
     # via -r base.in
 isodate==0.7.2
     # via azure-storage-blob
-jsonfield==3.1.0
+jsonfield==3.2.0
     # via -r base.in
 kombu==5.5.4
     # via celery
-maxminddb==2.7.0
+maxminddb==2.8.2
     # via geoip2
-multidict==6.4.4
+multidict==6.6.3
     # via
     #   aiohttp
     #   yarl
-newrelic==10.13.0
+newrelic==10.15.0
     # via -r production.in
 packaging==25.0
     # via
     #   gunicorn
     #   kombu
-pillow==11.2.1
+pillow==11.3.0
     # via -r base.in
 prompt-toolkit==3.0.51
     # via click-repl
@@ -158,7 +158,7 @@ psycopg2-binary==2.9.10
     # via -r production.in
 pycparser==2.22
     # via cffi
-pyjwt==2.9.0
+pyjwt==2.10.1
     # via
     #   -r base.in
     #   redis
@@ -168,7 +168,7 @@ pytz==2025.2
     # via -r base.in
 qrcode==8.2
     # via django-allauth
-redis==5.3.0
+redis==5.3.1
     # via
     #   celery
     #   django-redis
@@ -179,7 +179,7 @@ requests==2.32.4
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.30.0
+sentry-sdk==2.34.1
     # via -r production.in
 six==1.17.0
     # via
@@ -191,8 +191,9 @@ stripe==4.2.0
     # via
     #   -r base.in
     #   dj-stripe
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
+    #   aiosignal
     #   asgiref
     #   azure-core
     #   azure-storage-blob
@@ -204,7 +205,7 @@ ua-parser==1.0.1
     # via user-agents
 ua-parser-builtins==0.18.0.post1
     # via ua-parser
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   django-anymail
     #   requests
