@@ -103,10 +103,15 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 # User upload storage
 # https://docs.djangoproject.com/en/4.2/topics/files/
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
-STORAGES["default"]["BACKEND"] = "storages.backends.azure_storage.AzureStorage"
+STORAGES["default"]["BACKEND"] = env(
+    "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"
+)
+STORAGES["default"]["OPTIONS"] = {}
+custom_domain = env("DEFAULT_FILE_STORAGE_HOSTNAME", default=None)
+if custom_domain:
+    STORAGES["default"]["OPTIONS"]["custom_domain"] = custom_domain
 MEDIA_URL = env("MEDIA_URL", default="")
 MEDIA_ROOT = env("MEDIA_ROOT", default="")
-DEFAULT_FILE_STORAGE_HOSTNAME = env("DEFAULT_FILE_STORAGE_HOSTNAME", default=None)
 AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
 AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
 AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
