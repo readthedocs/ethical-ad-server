@@ -6,7 +6,7 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.12.13
     # via geoip2
 aiosignal==1.3.2
     # via aiohttp
@@ -30,7 +30,7 @@ bleach==6.2.0
     # via -r base.in
 celery[redis]==5.5.0rc1
     # via -r base.in
-certifi==2025.4.26
+certifi==2025.6.15
     # via requests
 cffi==1.17.1
     # via cryptography
@@ -44,7 +44,7 @@ click==8.2.1
     #   click-repl
 click-didyoumean==0.3.1
     # via celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
@@ -85,7 +85,7 @@ django-extensions==4.1
     # via -r base.in
 django-ratelimit==3.0.1
     # via -r base.in
-django-simple-history==3.8.0
+django-simple-history==3.10.1
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
@@ -113,7 +113,7 @@ kombu==5.5.4
     # via celery
 maxminddb==2.7.0
     # via geoip2
-multidict==6.4.4
+multidict==6.6.3
     # via
     #   aiohttp
     #   yarl
@@ -165,7 +165,7 @@ ua-parser==1.0.1
     # via user-agents
 ua-parser-builtins==0.18.0.post1
     # via ua-parser
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
 user-agents==2.2.0
     # via -r base.in
