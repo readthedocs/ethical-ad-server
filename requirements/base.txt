@@ -119,7 +119,7 @@ multidict==6.4.4
     #   yarl
 packaging==25.0
     # via kombu
-pillow==11.2.1
+pillow==11.3.0
     # via -r base.in
 prompt-toolkit==3.0.51
     # via click-repl
