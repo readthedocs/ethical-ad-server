@@ -6,9 +6,9 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.12
+aiohttp==3.12.15
     # via geoip2
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 alabaster==0.7.16
     # via sphinx
@@ -18,7 +18,7 @@ anyio==4.9.0
     # via
     #   starlette
     #   watchfiles
-asgiref==3.8.1
+asgiref==3.9.1
     # via
     #   django
     #   django-allauth
@@ -47,7 +47,7 @@ cattrs==25.1.1
     # via requests-cache
 celery[redis]==5.5.0rc1
     # via -r base.in
-certifi==2025.4.26
+certifi==2025.7.14
     # via requests
 cffi==1.17.1
     # via cryptography
@@ -64,25 +64,25 @@ click==8.2.1
     #   uvicorn
 click-didyoumean==0.3.1
     # via celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
 colorama==0.4.6
     # via sphinx-autobuild
-coverage==7.9.0
+coverage==7.10.1
     # via
     #   -r development.in
     #   django-coverage-plugin
 crispy-bootstrap4==2025.6
     # via -r base.in
-cryptography==45.0.4
+cryptography==45.0.5
     # via fido2
 decorator==5.2.1
     # via
     #   ipdb
     #   ipython
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
 dj-stripe==2.8.4
     # via -r base.in
@@ -100,13 +100,13 @@ django==5.0.14
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth[mfa]==65.9.0
+django-allauth[mfa]==65.10.0
     # via -r base.in
 django-cors-headers==4.7.0
     # via -r base.in
 django-countries==7.6.1
     # via -r base.in
-django-coverage-plugin==3.1.0
+django-coverage-plugin==3.1.1
     # via -r development.in
 django-crispy-forms==2.4
     # via
@@ -124,7 +124,7 @@ django-extensions==4.1
     # via -r base.in
 django-ratelimit==3.0.1
     # via -r base.in
-django-simple-history==3.8.0
+django-simple-history==3.10.1
     # via -r base.in
 django-slack==5.19.0
     # via -r base.in
@@ -184,7 +184,7 @@ jedi==0.19.2
     # via ipython
 jinja2==3.1.6
     # via sphinx
-jsonfield==3.1.0
+jsonfield==3.2.0
     # via -r base.in
 kombu==5.5.4
     # via celery
@@ -192,9 +192,9 @@ markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
-maxminddb==2.7.0
+maxminddb==2.8.2
     # via geoip2
-multidict==6.4.4
+multidict==6.6.3
     # via
     #   aiohttp
     #   yarl
@@ -210,7 +210,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.2.1
+pillow==11.3.0
     # via -r base.in
 platformdirs==4.3.8
     # via
@@ -238,16 +238,16 @@ py==1.11.0
     # via tox
 pycparser==2.22
     # via cffi
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   ipython
     #   pytest
     #   sphinx
-pyjwt==2.9.0
+pyjwt==2.10.1
     # via
     #   -r base.in
     #   redis
-pytest==8.4.0
+pytest==8.4.1
     # via
     #   -r development.in
     #   pytest-django
@@ -263,7 +263,7 @@ pyyaml==6.0.2
     #   responses
 qrcode==8.2
     # via django-allauth
-redis==5.3.0
+redis==5.3.1
     # via celery
 requests==2.32.4
     # via
@@ -323,7 +323,7 @@ sqlparse==0.5.3
     #   django-debug-toolbar
 stack-data==0.6.3
     # via ipython
-starlette==0.47.0
+starlette==0.47.2
     # via sphinx-autobuild
 stripe==4.2.0
     # via
@@ -342,8 +342,9 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
+    #   aiosignal
     #   anyio
     #   asgiref
     #   beautifulsoup4
@@ -352,6 +353,7 @@ typing-extensions==4.14.0
     #   exceptiongroup
     #   ipython
     #   multidict
+    #   starlette
     #   uvicorn
 tzdata==2025.2
     # via kombu
@@ -361,7 +363,7 @@ ua-parser-builtins==0.18.0.post1
     # via ua-parser
 url-normalize==2.2.1
     # via requests-cache
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -r development.in
     #   requests
@@ -371,18 +373,18 @@ user-agents==2.2.0
     # via -r base.in
 uuid-utils==0.11.0
     # via -r base.in
-uvicorn==0.34.3
+uvicorn==0.35.0
     # via sphinx-autobuild
 vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.31.2
+virtualenv==20.32.0
     # via
     #   pre-commit
     #   tox
-watchfiles==1.0.5
+watchfiles==1.1.0
     # via sphinx-autobuild
 wcwidth==0.2.13
     # via prompt-toolkit

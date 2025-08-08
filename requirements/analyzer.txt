@@ -8,9 +8,9 @@ adlfs==2024.12.0
     # via -r analyzer.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.13
+aiohttp==3.12.15
     # via adlfs
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 annotated-types==0.7.0
     # via pydantic
@@ -22,16 +22,16 @@ async-timeout==5.0.1
     # via aiohttp
 attrs==25.3.0
     # via aiohttp
-azure-core==1.34.0
+azure-core==1.35.0
     # via
     #   adlfs
     #   azure-identity
     #   azure-storage-blob
 azure-datalake-store==0.0.53
     # via adlfs
-azure-identity==1.23.0
+azure-identity==1.23.1
     # via adlfs
-azure-storage-blob==12.25.1
+azure-storage-blob==12.26.0
     # via adlfs
 babel==2.17.0
     # via courlan
@@ -47,7 +47,7 @@ catalogue==2.0.10
     #   srsly
     #   textacy
     #   thinc
-certifi==2025.6.15
+certifi==2025.7.14
     # via
     #   httpcore
     #   httpx
@@ -72,7 +72,7 @@ confection==0.1.5
     #   weasel
 courlan==1.3.2
     # via trafilatura
-cryptography==45.0.4
+cryptography==45.0.5
     # via
     #   azure-identity
     #   azure-storage-blob
@@ -85,7 +85,7 @@ cymem==2.0.11
     #   thinc
 cytoolz==1.0.1
     # via textacy
-dateparser==1.2.1
+dateparser==1.2.2
     # via htmldate
 distro==1.9.0
     # via openai
@@ -106,7 +106,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.5.1
+fsspec==2025.7.0
     # via
     #   adlfs
     #   huggingface-hub
@@ -153,7 +153,7 @@ langdetect==1.0.9
     # via -r analyzer.in
 language-data==1.3.0
     # via langcodes
-lxml[html-clean,html_clean]==5.4.0
+lxml[html-clean]==5.4.0
     # via
     #   -r analyzer.in
     #   htmldate
@@ -172,14 +172,14 @@ mdurl==0.1.2
     # via markdown-it-py
 mpmath==1.3.0
     # via sympy
-msal==1.32.3
+msal==1.33.0
     # via
     #   azure-datalake-store
     #   azure-identity
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-multidict==6.5.0
+multidict==6.6.3
     # via
     #   aiohttp
     #   yarl
@@ -242,7 +242,7 @@ nvidia-nvjitlink-cu12==12.6.85
     #   torch
 nvidia-nvtx-cu12==12.6.77
     # via torch
-openai==1.88.0
+openai==1.98.0
     # via -r analyzer.in
 packaging==25.0
     # via
@@ -253,7 +253,7 @@ packaging==25.0
     #   weasel
 pgvector==0.4.1
     # via -r analyzer.in
-pillow==11.2.1
+pillow==11.3.0
     # via sentence-transformers
 preshed==3.0.10
     # via
@@ -274,7 +274,7 @@ pydantic==2.11.7
     #   weasel
 pydantic-core==2.33.2
     # via pydantic
-pygments==2.19.1
+pygments==2.19.2
     # via rich
 pyjwt[crypto]==2.10.1
     # via
@@ -292,7 +292,7 @@ pyyaml==6.0.2
     # via
     #   huggingface-hub
     #   transformers
-regex==2024.11.6
+regex==2025.7.34
     # via
     #   dateparser
     #   tiktoken
@@ -308,11 +308,11 @@ requests==2.32.4
     #   tiktoken
     #   transformers
     #   weasel
-rich==14.0.0
+rich==14.1.0
     # via typer
 safetensors==0.5.3
     # via transformers
-scikit-learn==1.7.0
+scikit-learn==1.7.1
     # via
     #   sentence-transformers
     #   textacy
@@ -330,7 +330,7 @@ six==1.17.0
     #   azure-core
     #   langdetect
     #   python-dateutil
-smart-open==7.1.0
+smart-open==7.3.0.post1
     # via weasel
 sniffio==1.3.1
     # via
@@ -370,7 +370,7 @@ tiktoken==0.9.0
     # via -r analyzer.in
 tld==0.13.1
     # via courlan
-tokenizers==0.21.1
+tokenizers==0.21.4
     # via transformers
 toolz==1.0.0
     # via cytoolz
@@ -398,8 +398,9 @@ typer==0.16.0
     # via
     #   spacy
     #   weasel
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
+    #   aiosignal
     #   anyio
     #   azure-core
     #   azure-identity
@@ -412,7 +413,6 @@ typing-extensions==4.14.0
     #   openai
     #   pydantic
     #   pydantic-core
-    #   rich
     #   sentence-transformers
     #   torch
     #   typer
