@@ -624,7 +624,7 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Request a new flight")
+        self.assertContains(resp, "Renew or request a new flight")
 
         # Not modeled on an old flight
         resp = self.client.get(url + "?old_flight=&next=step-2")
