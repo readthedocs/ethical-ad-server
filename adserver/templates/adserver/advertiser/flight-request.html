@@ -5,19 +5,19 @@
 {% load crispy_forms_tags %}
 
 
-{% block title %}{% trans 'Renew or request a new flight' %}{% endblock %}
+{% block title %}{% trans 'Request a new flight' %}{% endblock %}
 
 
 {% block breadcrumbs %}
   {{ block.super }}
   <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
-  <li class="breadcrumb-item active">{% trans 'Renew or request a new flight' %}</li>
+  <li class="breadcrumb-item active">{% trans 'Request a new flight' %}</li>
 {% endblock breadcrumbs %}
 
 
 {% block content_container %}
 
-<h1>{% block heading %}{% trans 'Renew or request a new flight' %}{% endblock heading %}</h1>
+<h1>{% block heading %}{% trans 'Request a new flight' %}{% endblock heading %}</h1>
 
 {% if not next %}
 <p>{% trans 'You can base your new flight on a previous one (a renewal) or set up something completely different.' %}</p>
