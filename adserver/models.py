@@ -1418,6 +1418,21 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return int(prioritized_impressions_needed * overdue_factor)
 
+    def is_complete(self):
+        """
+        Check if this flight is complete.
+
+        A flight is considered complete if all sold clicks and impressions have been delivered
+        and the end date is today or in the past.
+        """
+        return all(
+            (
+                self.clicks_remaining() <= 0,
+                self.views_remaining() <= 0,
+                self.days_remaining() <= 0,
+            )
+        )
+
     def clicks_remaining(self):
         return max(0, self.sold_clicks - self.total_clicks)
 

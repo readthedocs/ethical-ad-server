@@ -46,7 +46,7 @@
     </a>
     <a href="{% url 'flight_renew' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-info" role="button" aria-pressed="true">
       <span class="fa fa-lock mr-1" aria-hidden="true"></span>
-      <span>{% trans 'Renew flight' %}</span>
+      <span>{% trans 'Staff renewal' %}</span>
     </a>
     {% endif %}
   </p>
@@ -60,6 +60,8 @@
 
     {% if has_advertiser_edit_permission %}
     <aside class="col-md-6 text-right">
+
+      {% if not flight.is_complete %}
       <a href="{% url 'advertisement_create' advertiser.slug flight.slug %}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
         <span class="fa fa-plus mr-1" aria-hidden="true"></span>
         <span>{% trans 'Create advertisement' %}</span>
@@ -72,6 +74,12 @@
         <span class="fa fa-clone mr-1" aria-hidden="true"></span>
         <span>{% trans 'Copy existing ads' %}</span>
       </a>
+      {% else %}
+      <a href="{% url 'flight_request' advertiser.slug %}?next=step-2&amp;old_flight={{ flight.slug }}" class="btn btn-sm btn-outline-primary mb-3" role="button" aria-pressed="true">
+        <span class="fa fa-plus mr-1" aria-hidden="true"></span>
+        <span>{% trans 'Renew flight' %}</span>
+      </a>
+      {% endif %}
     </aside>
     {% endif %}
   </div>
