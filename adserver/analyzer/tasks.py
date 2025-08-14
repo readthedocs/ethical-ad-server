@@ -15,6 +15,7 @@ from ..constants import PAID
 from ..models import Offer
 from ..models import Publisher
 from ..utils import get_day
+from ..utils import get_domain_from_url
 from .constants import ANALYZER_MIN_VISITS
 from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
 from .models import AnalyzedUrl
@@ -34,6 +35,7 @@ def analyze_url(url, publisher_slug, force=False):
     - Discovers keywords and topics for a URL
     """
     normalized_url = normalize_url(url)
+    domain = get_domain_from_url(url)
 
     publisher = Publisher.objects.filter(slug=publisher_slug).first()
     if not publisher:
@@ -80,6 +82,7 @@ def analyze_url(url, publisher_slug, force=False):
         url=normalized_url,
         publisher=publisher,
         defaults={
+            "domain": domain,
             "keywords": keywords,
             "last_analyzed_date": timezone.now(),
         },
@@ -129,6 +132,7 @@ def daily_visited_urls_aggregation(day=None):
         .iterator()
     ):
         url = obj["url"]
+        domain = get_domain_from_url(url)
         publisher_id = obj["publisher_id"]
         visits = obj["visits"]
 
@@ -153,6 +157,7 @@ def daily_visited_urls_aggregation(day=None):
             url=normalized_url,
             publisher_id=publisher_id,
             defaults={
+                "domain": domain,
                 "last_ad_served_date": timezone.now(),
                 "visits_since_last_analyzed": visits,
             },

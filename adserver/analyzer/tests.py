@@ -280,6 +280,7 @@ class TestTasks(BaseAdModelsTestCase):
         self.url = "https://example.com"
         self.analyzed_url = AnalyzedUrl.objects.create(
             url=self.url,
+            domain="example.com",
             publisher=self.publisher,
             keywords=["python", "django"],
             visits_since_last_analyzed=10,

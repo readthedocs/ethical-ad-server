@@ -18,6 +18,14 @@ class BaseAnalyzedUrl(TimeStampedModel):
             "URL of the page being analyzed after certain query parameters are stripped away"
         ),
     )
+    domain = models.CharField(
+        _("Domain"),
+        db_index=True,
+        max_length=1024,
+        null=True,
+        blank=True,
+        default=None,
+    )
 
     # Fields below are updated by the analyzer
     keywords = models.JSONField(
