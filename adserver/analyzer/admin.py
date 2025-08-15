@@ -14,6 +14,7 @@ class AnalyzedUrlAdmin(SimpleHistoryAdmin):
 
     list_display = (
         "url",
+        "domain",
         "publisher",
         "keywords",
         "last_analyzed_date",
@@ -23,7 +24,7 @@ class AnalyzedUrlAdmin(SimpleHistoryAdmin):
     list_filter = ("last_analyzed_date", "last_ad_served_date", "publisher")
     list_select_related = ("publisher",)
     raw_id_fields = ("publisher",)
-    search_fields = ("url", "keywords")
+    search_fields = ("url", "domain", "keywords")
 
     # Note: may need to use the estimated count paginator if this gets large
 
@@ -34,6 +35,7 @@ class AnalyzedAdvertiserUrlAdmin(SimpleHistoryAdmin):
 
     list_display = (
         "url",
+        "domain",
         "advertiser",
         "keywords",
         "last_analyzed_date",
@@ -42,7 +44,7 @@ class AnalyzedAdvertiserUrlAdmin(SimpleHistoryAdmin):
     list_filter = ("last_analyzed_date", "advertiser")
     list_select_related = ("advertiser",)
     raw_id_fields = ("advertiser", "flights")
-    search_fields = ("url", "keywords")
+    search_fields = ("url", "domain", "keywords")
 
     # Note: may need to use the estimated count paginator if this gets large
 
