@@ -328,7 +328,7 @@ class PublisherPayoutTests(TestCase):
         )
         start_response = self.client.get(start_url)
         self.assertEqual(start_response.status_code, 200)
-        self.assertContains(start_response, 'value="EthicalAds by Read the Docs"')
+        self.assertContains(start_response, 'value="EthicalAds"')
         self.assertContains(
             start_response, f"EthicalAds Payout - {self.publisher1.name}"
         )
