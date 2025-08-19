@@ -406,6 +406,11 @@ class TestAdvertiserDashboardViews(TestCase):
             "include_countries": "US  ,  CN",
             "exclude_countries": "",
             "include_keywords": "python, django",
+            "niche_distance": 0.5,
+            "niche_urls": "\n".join([
+                "https://example.com/niche1/",
+                "https://example.com/niche2/",
+            ]),
         }
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, 302)
@@ -419,6 +424,15 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(self.flight.included_countries, ["US", "CN"])
         self.assertEqual(self.flight.excluded_countries, [])
         self.assertEqual(self.flight.included_keywords, ["python", "django"])
+        self.assertEqual(self.flight.niche_targeting, 0.5)
+
+        # Analyzer is always running in testing - no need to check installed apps here
+        # However, we are going to import it in the function just in case
+        from adserver.analyzer.models import AnalyzedAdvertiserUrl  # noqa
+        self.assertEqual(
+            AnalyzedAdvertiserUrl.objects.filter(advertiser=self.advertiser, flights=self.flight).count(),
+            2,
+        )
 
         # Ensure we didn't overwrite the metro and state/province targeting
         self.assertEqual(self.flight.included_state_provinces, ["CA", "NY"])
@@ -432,6 +446,57 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.flight.refresh_from_db()
         self.assertEqual(self.flight.included_countries, ["US", "CA"])
+
+    def test_flight_update_invalid(self):
+        url = reverse(
+            "flight_update",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.client.force_login(self.staff_user)
+        self.staff_user.user_permissions.add(
+            Permission.objects.get(
+                codename="change_flight",
+                content_type=ContentType.objects.get_for_model(Flight),
+            )
+        )
+
+        self.flight.targeting_parameters = {
+            "niche_targeting": 0.35,
+        }
+        self.flight.save()
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Niche: Similarity 0.35 to")
+
+        data = {
+            "name": "New Name",
+            "cpc": 2.5,
+            "cpm": 0,
+            "sold_clicks": 250,
+            "sold_impressions": 0,
+            "live": False,
+            "start_date": get_ad_day().date(),
+            "end_date": get_ad_day().date() + datetime.timedelta(days=2),
+            "priority_multiplier": 1,
+            "include_countries": "ABC",
+            "exclude_countries": "",
+            "include_keywords": "python, django",
+            "niche_distance": 0.25,
+            "niche_urls": "\n".join([
+                "https://example.com/niche1/",
+                "invalid-url",
+            ]),
+        }
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertContains(resp, "&#x27;invalid-url&#x27; is an invalid URL")
+        self.assertContains(resp, "ABC is not a valid country code")
 
     def test_flight_autorenew_view(self):
         """Check that automatic renewals are working."""
