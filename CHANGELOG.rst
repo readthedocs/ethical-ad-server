@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.24.0
+---------------
+
+This release added some more features to help with niche targeted campaigns
+as well as a bugfix for CDN serving images correctly.
+
+:Date: August 20, 2025
+
+ * @davidfischer: Manage niche targeting in the normal flight edit screen (#1060)
+ * @davidfischer: Analyzed URL domain migrations (#1059)
+ * @ericholscher: Remove last RTD co-branding (#1058)
+ * @davidfischer: Improve UX around renewing flights (#1057)
+ * @davidfischer: Ad images not going through CDN/custom domain (#1056)
+
+
 Version v5.23.0
 ---------------
 
