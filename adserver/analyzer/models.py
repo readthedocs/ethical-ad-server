@@ -7,6 +7,8 @@ from django_extensions.db.models import TimeStampedModel
 from ..models import Advertiser
 from ..models import Flight
 from ..models import Publisher
+from ..utils import get_domain_from_url
+from .utils import normalize_url
 from .validators import KeywordsValidator
 
 
@@ -17,6 +19,14 @@ class BaseAnalyzedUrl(TimeStampedModel):
         help_text=_(
             "URL of the page being analyzed after certain query parameters are stripped away"
         ),
+    )
+    domain = models.CharField(
+        _("Domain"),
+        db_index=True,
+        max_length=1024,
+        null=True,
+        blank=True,
+        default=None,
     )
 
     # Fields below are updated by the analyzer
@@ -106,3 +116,31 @@ class AnalyzedAdvertiserUrl(BaseAnalyzedUrl):
 
     class Meta:
         unique_together = ("url", "advertiser")
+
+    @classmethod
+    def set_urls_on_flight(cls, flight, urls):
+        """
+        Set the URLs for a flight.
+
+        This will create new AnalyzedAdvertiserUrl objects if applicable for each URL
+        and associate them with the flight.
+        Any URLs that are no longer associated with the flight will be removed.
+        """
+        urls = [normalize_url(url) for url in urls]
+
+        # Remove any URLs that are no longer associated with the flight
+        for analyzed_url in cls.objects.filter(
+            advertiser=flight.campaign.advertiser,
+        ).exclude(url__in=urls):
+            analyzed_url.flights.remove(flight)
+
+        for url in urls:
+            domain = get_domain_from_url(url)
+            analyzed_url, _ = cls.objects.get_or_create(
+                url=url,
+                advertiser=flight.campaign.advertiser,
+                defaults={
+                    "domain": domain,
+                },
+            )
+            analyzed_url.flights.add(flight)

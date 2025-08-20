@@ -19,7 +19,11 @@
 
 <h1>{% block heading %}{% trans 'Request a new flight' %}{% endblock heading %}</h1>
 
-<p>{% trans 'You can base your new flight on a previous one or set up something completely different.' %}</p>
+{% if not next %}
+<p>{% trans 'You can base your new flight on a previous one (a renewal) or set up something completely different.' %}</p>
+{% elif old_flight %}
+<p>{% blocktrans with flight_url=old_flight.get_absolute_url flight_name=old_flight.name %}Renewing previous flight <a href="{{ flight_url }}">{{ flight_name }}</a>.{% endblocktrans %}</p>
+{% endif %}
 
 <section>
   <div class="row">

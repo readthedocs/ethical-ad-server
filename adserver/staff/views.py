@@ -220,7 +220,7 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
             .render(self.data)
             .replace("\n\n", "\n")
         ).strip()
-        initial["sender"] = "EthicalAds by Read the Docs"
+        initial["sender"] = "EthicalAds"
         initial["subject"] = f"EthicalAds Payout - {self.publisher.name}"
         initial["body"] = email_html
         initial["amount"] = "%.2f" % self.get_amount(self.data["due_report"])

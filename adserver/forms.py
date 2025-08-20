@@ -157,6 +157,26 @@ class FlightForm(FlightMixin, forms.ModelForm):
         required=False,
         help_text=_("A comma separated list of keywords"),
     )
+    niche_distance = forms.FloatField(
+        min_value=0.0,
+        max_value=1.0,
+        step_size=0.01,
+        required=False,
+        help_text=_(
+            "Distance to target URLs for niche targeting [0.0, 1.0]. Lower means more finely targeted."
+        ),
+    )
+    niche_urls = forms.CharField(
+        label=_("Niche URLs"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "https://example.com/\nhttps://example.org/",
+            }
+        ),
+        help_text=_("URLs to use for niche targeting, one per line."),
+    )
 
     def __init__(self, *args, **kwargs):
         """Set the flight form helper and initial data."""
@@ -179,6 +199,20 @@ class FlightForm(FlightMixin, forms.ModelForm):
             self.fields["include_keywords"].initial = ", ".join(
                 self.instance.included_keywords
             )
+
+            if (
+                self.instance.niche_targeting
+                and "adserver.analyzer" in settings.INSTALLED_APPS
+            ):
+                from adserver.analyzer.models import AnalyzedAdvertiserUrl  # noqa
+
+                self.fields["niche_distance"].initial = self.instance.niche_targeting
+                self.fields["niche_urls"].initial = "\n".join(
+                    analyzed_url.url
+                    for analyzed_url in AnalyzedAdvertiserUrl.objects.filter(
+                        flights=self.instance
+                    ).order_by("url")
+                )
 
         self.fields["include_regions"].choices = [
             (r.slug, r.name) for r in self.regions
@@ -268,6 +302,8 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 Div("include_countries"),
                 Div("exclude_countries"),
                 Div("include_keywords"),
+                Div("niche_distance"),
+                Div("niche_urls"),
                 css_class="my-3",
             ),
             Submit("submit", _("Update flight")),
@@ -296,6 +332,20 @@ class FlightForm(FlightMixin, forms.ModelForm):
         include_keywords = [kw.strip() for kw in data.split(",") if len(kw.strip()) > 0]
         if include_keywords:
             TargetingParametersValidator()({"include_keywords": include_keywords})
+        return data
+
+    def clean_niche_urls(self):
+        data = self.cleaned_data["niche_urls"]
+        niche_urls = [url.strip() for url in data.split("\n") if len(url.strip()) > 0]
+        if niche_urls:
+            url_validator = URLValidator(schemes=("http", "https"))
+            for url in niche_urls:
+                try:
+                    url_validator(url)
+                except ValidationError:
+                    raise forms.ValidationError(
+                        _("'%(url)s' is an invalid URL."), params={"url": url}
+                    )
         return data
 
     def save(self, commit=True):
@@ -327,6 +377,9 @@ class FlightForm(FlightMixin, forms.ModelForm):
             for kw in self.cleaned_data["include_keywords"].split(",")
             if len(kw.strip()) > 0
         ]
+        self.instance.targeting_parameters["niche_targeting"] = self.cleaned_data.get(
+            "niche_distance", 0.0
+        )
 
         # TODO: handle rare targeting options (state/provinces, metro codes, exclude keywords, mobile traffic)
         # If a flight has one of these rare targeting options already, saving the form won't affect it
@@ -339,11 +392,24 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "include_regions",
             "exclude_regions",
             "include_topics",
+            "niche_targeting",
         ):
             if not self.instance.targeting_parameters[key]:
                 del self.instance.targeting_parameters[key]
 
-        return super().save(commit)
+        flight = super().save(commit)
+
+        # If the flight has niche URLs, normalize and set them
+        if (
+            self.cleaned_data["niche_urls"]
+            and "adserver.analyzer" in settings.INSTALLED_APPS
+        ):
+            from adserver.analyzer.models import AnalyzedAdvertiserUrl  # noqa
+
+            urls = self.cleaned_data["niche_urls"].split("\n")
+            AnalyzedAdvertiserUrl.set_urls_on_flight(flight, urls)
+
+        return flight
 
     class Meta:
         model = Flight
