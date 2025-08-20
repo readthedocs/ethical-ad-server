@@ -21,15 +21,32 @@ def forwards(apps, schema_editor):
     AnalyzedUrl = apps.get_model("adserver_analyzer", "AnalyzedUrl")
     AnalyzedAdvertiserUrl = apps.get_model("adserver_analyzer", "AnalyzedAdvertiserUrl")
 
-    for analyzed_url in AnalyzedUrl.objects.all():
+    # Update AnalyzedUrls domain field
+    urls = []
+    batch_size = 1000
+    for analyzed_url in AnalyzedUrl.objects.all().order_by("pk").iterator():
         if not analyzed_url.domain:
             analyzed_url.domain = get_domain_from_url(analyzed_url.url)
-            analyzed_url.save(update_fields=["domain"])
+            urls.append(analyzed_url)
+        if len(urls) >= batch_size:
+            AnalyzedUrl.objects.bulk_update(urls, ["domain"])
+            urls = []
+    if len(urls) >= 0:
+        AnalyzedUrl.objects.bulk_update(urls, ["domain"])
+        urls = []
 
-    for analyzed_advertiser_url in AnalyzedAdvertiserUrl.objects.all():
+    # Do the same for AnalyzedAdvertiserUrls
+    urls = []
+    for analyzed_advertiser_url in AnalyzedAdvertiserUrl.objects.all().order_by("pk").iterator():
         if not analyzed_advertiser_url.domain:
             analyzed_advertiser_url.domain = get_domain_from_url(analyzed_advertiser_url.url)
-            analyzed_advertiser_url.save(update_fields=["domain"])
+            urls.append(analyzed_advertiser_url)
+        if len(urls) >= batch_size:
+            AnalyzedAdvertiserUrl.objects.bulk_update(urls, ["domain"])
+            urls = []
+    if len(urls) >= 0:
+        AnalyzedAdvertiserUrl.objects.bulk_update(urls, ["domain"])
+        urls = []
 
 
 class Migration(migrations.Migration):
