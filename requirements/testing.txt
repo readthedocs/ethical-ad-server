@@ -6,9 +6,9 @@
 #
 beautifulsoup4==4.13.4
     # via -r testing.in
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-filelock==3.18.0
+filelock==3.19.1
     # via
     #   tox
     #   virtualenv
@@ -28,7 +28,9 @@ tomli==2.2.1
     # via tox
 tox==3.28.0
     # via -r testing.in
-typing-extensions==4.14.0
-    # via beautifulsoup4
-virtualenv==20.31.2
+typing-extensions==4.14.1
+    # via
+    #   beautifulsoup4
+    #   virtualenv
+virtualenv==20.34.0
     # via tox
