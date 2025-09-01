@@ -8,13 +8,13 @@ adlfs==2024.12.0
     # via -r analyzer.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.13
+aiohttp==3.12.15
     # via adlfs
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 annotated-types==0.7.0
     # via pydantic
-anyio==4.9.0
+anyio==4.10.0
     # via
     #   httpx
     #   openai
@@ -22,24 +22,24 @@ async-timeout==5.0.1
     # via aiohttp
 attrs==25.3.0
     # via aiohttp
-azure-core==1.34.0
+azure-core==1.35.0
     # via
     #   adlfs
     #   azure-identity
     #   azure-storage-blob
 azure-datalake-store==0.0.53
     # via adlfs
-azure-identity==1.23.0
+azure-identity==1.24.0
     # via adlfs
-azure-storage-blob==12.25.1
+azure-storage-blob==12.26.0
     # via adlfs
 babel==2.17.0
     # via courlan
-beautifulsoup4==4.13.4
+beautifulsoup4==4.13.5
     # via -r analyzer.in
 blis==1.2.1
     # via thinc
-cachetools==6.1.0
+cachetools==6.2.0
     # via textacy
 catalogue==2.0.10
     # via
@@ -47,7 +47,7 @@ catalogue==2.0.10
     #   srsly
     #   textacy
     #   thinc
-certifi==2025.6.15
+certifi==2025.8.3
     # via
     #   httpcore
     #   httpx
@@ -57,14 +57,14 @@ cffi==1.17.1
     # via
     #   azure-datalake-store
     #   cryptography
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via
     #   htmldate
     #   requests
     #   trafilatura
 click==8.2.1
     # via typer
-cloudpathlib==0.21.1
+cloudpathlib==0.22.0
     # via weasel
 confection==0.1.5
     # via
@@ -72,7 +72,7 @@ confection==0.1.5
     #   weasel
 courlan==1.3.2
     # via trafilatura
-cryptography==45.0.4
+cryptography==45.0.6
     # via
     #   azure-identity
     #   azure-storage-blob
@@ -85,7 +85,7 @@ cymem==2.0.11
     #   thinc
 cytoolz==1.0.1
     # via textacy
-dateparser==1.2.1
+dateparser==1.2.2
     # via htmldate
 distro==1.9.0
     # via openai
@@ -95,7 +95,7 @@ en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_
     # via -r analyzer.in
 exceptiongroup==1.3.0
     # via anyio
-filelock==3.18.0
+filelock==3.19.1
     # via
     #   huggingface-hub
     #   torch
@@ -106,7 +106,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.5.1
+fsspec==2025.7.0
     # via
     #   adlfs
     #   huggingface-hub
@@ -141,7 +141,7 @@ jinja2==3.1.6
     #   torch
 jiter==0.10.0
     # via openai
-joblib==1.5.1
+joblib==1.5.2
     # via
     #   scikit-learn
     #   textacy
@@ -153,7 +153,7 @@ langdetect==1.0.9
     # via -r analyzer.in
 language-data==1.3.0
     # via langcodes
-lxml[html-clean,html_clean]==5.4.0
+lxml[html-clean]==5.4.0
     # via
     #   -r analyzer.in
     #   htmldate
@@ -162,9 +162,9 @@ lxml[html-clean,html_clean]==5.4.0
     #   trafilatura
 lxml-html-clean==0.4.2
     # via lxml
-marisa-trie==1.2.1
+marisa-trie==1.3.1
     # via language-data
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
@@ -172,14 +172,14 @@ mdurl==0.1.2
     # via markdown-it-py
 mpmath==1.3.0
     # via sympy
-msal==1.32.3
+msal==1.33.0
     # via
     #   azure-datalake-store
     #   azure-identity
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-multidict==6.5.0
+multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
@@ -205,44 +205,44 @@ numpy==1.26.4
     #   textacy
     #   thinc
     #   transformers
-nvidia-cublas-cu12==12.6.4.1
+nvidia-cublas-cu12==12.8.4.1
     # via
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.6.80
+nvidia-cuda-cupti-cu12==12.8.90
     # via torch
-nvidia-cuda-nvrtc-cu12==12.6.77
+nvidia-cuda-nvrtc-cu12==12.8.93
     # via torch
-nvidia-cuda-runtime-cu12==12.6.77
+nvidia-cuda-runtime-cu12==12.8.90
     # via torch
-nvidia-cudnn-cu12==9.5.1.17
+nvidia-cudnn-cu12==9.10.2.21
     # via torch
-nvidia-cufft-cu12==11.3.0.4
+nvidia-cufft-cu12==11.3.3.83
     # via torch
-nvidia-cufile-cu12==1.11.1.6
+nvidia-cufile-cu12==1.13.1.3
     # via torch
-nvidia-curand-cu12==10.3.7.77
+nvidia-curand-cu12==10.3.9.90
     # via torch
-nvidia-cusolver-cu12==11.7.1.2
+nvidia-cusolver-cu12==11.7.3.90
     # via torch
-nvidia-cusparse-cu12==12.5.4.2
+nvidia-cusparse-cu12==12.5.8.93
     # via
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cusparselt-cu12==0.6.3
+nvidia-cusparselt-cu12==0.7.1
     # via torch
-nvidia-nccl-cu12==2.26.2
+nvidia-nccl-cu12==2.27.3
     # via torch
-nvidia-nvjitlink-cu12==12.6.85
+nvidia-nvjitlink-cu12==12.8.93
     # via
     #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
     #   torch
-nvidia-nvtx-cu12==12.6.77
+nvidia-nvtx-cu12==12.8.90
     # via torch
-openai==1.88.0
+openai==1.102.0
     # via -r analyzer.in
 packaging==25.0
     # via
@@ -253,7 +253,7 @@ packaging==25.0
     #   weasel
 pgvector==0.4.1
     # via -r analyzer.in
-pillow==11.2.1
+pillow==11.3.0
     # via sentence-transformers
 preshed==3.0.10
     # via
@@ -274,7 +274,7 @@ pydantic==2.11.7
     #   weasel
 pydantic-core==2.33.2
     # via pydantic
-pygments==2.19.1
+pygments==2.19.2
     # via rich
 pyjwt[crypto]==2.10.1
     # via
@@ -292,12 +292,12 @@ pyyaml==6.0.2
     # via
     #   huggingface-hub
     #   transformers
-regex==2024.11.6
+regex==2025.8.29
     # via
     #   dateparser
     #   tiktoken
     #   transformers
-requests==2.32.4
+requests==2.32.5
     # via
     #   azure-core
     #   azure-datalake-store
@@ -308,11 +308,11 @@ requests==2.32.4
     #   tiktoken
     #   transformers
     #   weasel
-rich==14.0.0
+rich==14.1.0
     # via typer
-safetensors==0.5.3
+safetensors==0.6.2
     # via transformers
-scikit-learn==1.7.0
+scikit-learn==1.7.1
     # via
     #   sentence-transformers
     #   textacy
@@ -330,13 +330,13 @@ six==1.17.0
     #   azure-core
     #   langdetect
     #   python-dateutil
-smart-open==7.1.0
+smart-open==7.3.0.post1
     # via weasel
 sniffio==1.3.1
     # via
     #   anyio
     #   openai
-soupsieve==2.7
+soupsieve==2.8
     # via beautifulsoup4
 spacy[transformers]==3.8.7
     # via
@@ -366,15 +366,15 @@ thinc==8.3.4
     # via spacy
 threadpoolctl==3.6.0
     # via scikit-learn
-tiktoken==0.9.0
+tiktoken==0.11.0
     # via -r analyzer.in
 tld==0.13.1
     # via courlan
-tokenizers==0.21.1
+tokenizers==0.21.4
     # via transformers
 toolz==1.0.0
     # via cytoolz
-torch==2.7.1
+torch==2.8.0
     # via
     #   sentence-transformers
     #   spacy-transformers
@@ -392,14 +392,15 @@ transformers==4.48.3
     # via
     #   sentence-transformers
     #   spacy-transformers
-triton==3.3.1
+triton==3.4.0
     # via torch
-typer==0.16.0
+typer==0.17.3
     # via
     #   spacy
     #   weasel
-typing-extensions==4.14.0
+typing-extensions==4.15.0
     # via
+    #   aiosignal
     #   anyio
     #   azure-core
     #   azure-identity
@@ -412,7 +413,6 @@ typing-extensions==4.14.0
     #   openai
     #   pydantic
     #   pydantic-core
-    #   rich
     #   sentence-transformers
     #   torch
     #   typer
@@ -434,7 +434,7 @@ wasabi==1.1.3
     #   weasel
 weasel==0.4.1
     # via spacy
-wrapt==1.17.2
+wrapt==1.17.3
     # via smart-open
 yarl==1.20.1
     # via aiohttp

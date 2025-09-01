@@ -67,7 +67,7 @@ django==5.2.5
     #   django-slack
     #   djangorestframework
     #   jsonfield
-django-allauth[mfa]==65.11.0
+django-allauth[mfa]==65.11.1
     # via -r base.in
 django-cors-headers==4.7.0
     # via -r base.in
@@ -121,7 +121,7 @@ packaging==25.0
     # via kombu
 pillow==11.3.0
     # via -r base.in
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via click-repl
 propcache==0.3.2
     # via
@@ -154,7 +154,7 @@ stripe==4.2.0
     # via
     #   -r base.in
     #   dj-stripe
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   aiosignal
     #   asgiref
