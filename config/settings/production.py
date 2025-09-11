@@ -203,6 +203,10 @@ if "adserver.analyzer" in INSTALLED_APPS:
         "task": "adserver.analyzer.tasks.daily_analyze_urls",
         "schedule": crontab(hour="4", minute="0"),
     }
+    CELERY_BEAT_SCHEDULE["every-week-domain-centroids"] = {
+        "task": "adserver.analyzer.tasks.update_domain_centroids",
+        "schedule": crontab(day_of_week=6, hour="1", minute="10"),
+    }
 if "ethicalads_ext.embedding" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
         "task": "ethicalads_ext.embedding.tasks.daily_analyze_advertiser_urls",
