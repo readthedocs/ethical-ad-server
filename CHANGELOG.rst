@@ -6,6 +6,26 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.25.0
+---------------
+
+This release primarily upgraded dependencies.
+
+:Date: September 17, 2025
+
+ * @davidfischer: Add a periodic task to update domain centroids (#1067)
+ * @davidfischer: Minor updates to JS assets - Sept 2025 (#1066)
+ * @dependabot[bot]: Bump django from 5.2.5 to 5.2.6 in /requirements (#1065)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#1064)
+ * @davidfischer: Django 5.2 upgrade (#1063)
+ * @davidfischer: Commit the optimized migration (#1062)
+ * @dependabot[bot]: Bump starlette from 0.47.0 to 0.47.2 in /requirements (#1054)
+ * @dependabot[bot]: Bump aiohttp from 3.12.12 to 3.12.14 in /requirements (#1050)
+ * @dependabot[bot]: Bump pillow from 11.2.1 to 11.3.0 in /requirements (#1047)
+ * @dependabot[bot]: Bump urllib3 from 2.4.0 to 2.5.0 in /requirements (#1041)
+ * @dependabot[bot]: Bump webpack from 5.90.1 to 5.95.0 (#923)
+
+
 Version v5.24.0
 ---------------
 

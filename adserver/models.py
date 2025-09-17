@@ -1827,7 +1827,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
     def __copy__(self):
         """Duplicate an ad."""
-        # https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
+        # https://docs.djangoproject.com/en/dev/topics/db/queries/#copying-model-instances
         # Get a fresh reference so that "self" doesn't become the new copy
         ad = Advertisement.objects.get(pk=self.pk)
 

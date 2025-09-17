@@ -23,7 +23,7 @@ from .base import env
 
 
 # Django Settings
-# https://docs.djangoproject.com/en/4.2/ref/settings/
+# https://docs.djangoproject.com/en/dev/ref/settings/
 # --------------------------------------------------------------------------
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
@@ -36,7 +36,7 @@ INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # --------------------------------------------------------------------------
 DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL not set
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=3600)
@@ -55,7 +55,7 @@ LOGGING["loggers"]["django.security.DisallowedHost"] = {
 
 
 # Cache
-# https://docs.djangoproject.com/en/4.2/topics/cache/
+# https://docs.djangoproject.com/en/dev/topics/cache/
 # https://niwinz.github.io/django-redis/
 # --------------------------------------------------------------------------
 CACHES["default"] = env.cache("REDIS_URL")
@@ -69,9 +69,9 @@ if env.bool("REDIS_SSL", default=False):
 
 
 # Security
-# https://docs.djangoproject.com/en/4.2/topics/security/
-# https://docs.djangoproject.com/en/4.2/ref/middleware/#django.middleware.security.SecurityMiddleware
-# https://docs.djangoproject.com/en/4.2/ref/clickjacking/
+# https://docs.djangoproject.com/en/dev/topics/security/
+# https://docs.djangoproject.com/en/dev/ref/middleware/#django.middleware.security.SecurityMiddleware
+# https://docs.djangoproject.com/en/dev/ref/clickjacking/
 # --------------------------------------------------------------------------
 if env.bool("ADSERVER_HTTPS", default=False):
     ADSERVER_HTTPS = True
@@ -101,7 +101,7 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 
 # User upload storage
-# https://docs.djangoproject.com/en/4.2/topics/files/
+# https://docs.djangoproject.com/en/dev/topics/files/
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
 STORAGES["default"]["BACKEND"] = env(
     "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"
@@ -202,6 +202,10 @@ if "adserver.analyzer" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-urls"] = {
         "task": "adserver.analyzer.tasks.daily_analyze_urls",
         "schedule": crontab(hour="4", minute="0"),
+    }
+    CELERY_BEAT_SCHEDULE["every-week-domain-centroids"] = {
+        "task": "adserver.analyzer.tasks.update_domain_centroids",
+        "schedule": crontab(day_of_week=6, hour="1", minute="10"),
     }
 if "ethicalads_ext.embedding" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
