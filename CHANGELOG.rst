@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.26.0
+---------------
+
+This release contained primarily dependency updates.
+
+:Date: September 26, 2025
+
+ * @davidfischer: Add boto3 to analyzer requirements (#1069)
+
+
 Version v5.25.0
 ---------------
 
