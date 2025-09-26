@@ -31,6 +31,8 @@ lxml[html_clean]
 duckdb >= 1.1.0,<1.2
 adlfs==2024.12.0
 
+boto3 >= 1.40
+
 
 #######################################################################
 # Machine learning production requirements
