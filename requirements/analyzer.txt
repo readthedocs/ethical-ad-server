@@ -39,9 +39,9 @@ beautifulsoup4==4.13.5
     # via -r analyzer.in
 blis==1.2.1
     # via thinc
-boto3==1.40.37
+boto3==1.40.39
     # via -r analyzer.in
-botocore==1.40.37
+botocore==1.40.39
     # via
     #   boto3
     #   s3transfer
@@ -214,6 +214,7 @@ numpy==1.26.4
     #   spacy-transformers
     #   textacy
     #   thinc
+    #   torchvision
     #   transformers
 nvidia-cublas-cu12==12.8.4.1
     # via
@@ -252,7 +253,7 @@ nvidia-nvjitlink-cu12==12.8.93
     #   torch
 nvidia-nvtx-cu12==12.8.90
     # via torch
-openai==1.109.0
+openai==1.109.1
     # via -r analyzer.in
 packaging==25.0
     # via
@@ -264,7 +265,9 @@ packaging==25.0
 pgvector==0.4.1
     # via -r analyzer.in
 pillow==11.3.0
-    # via sentence-transformers
+    # via
+    #   sentence-transformers
+    #   torchvision
 preshed==3.0.10
     # via
     #   spacy
@@ -299,7 +302,7 @@ python-dateutil==2.9.0.post0
     #   htmldate
 pytz==2025.2
     # via dateparser
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   huggingface-hub
     #   transformers
@@ -389,8 +392,12 @@ toolz==1.0.0
     # via cytoolz
 torch==2.8.0
     # via
+    #   -r analyzer.in
     #   sentence-transformers
     #   spacy-transformers
+    #   torchvision
+torchvision==0.23.0
+    # via -r analyzer.in
 tqdm==4.67.1
     # via
     #   huggingface-hub
