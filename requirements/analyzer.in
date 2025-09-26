@@ -13,6 +13,12 @@ langdetect
 openai >= 1.84.0
 tiktoken >= 0.9.0
 
+# IMPORTANT:
+# These need to be updated in tandem
+# See compatibility matrix: https://github.com/pytorch/vision?tab=readme-ov-file#installation
+torch >= 2.8 , < 2.9
+torchvision >= 0.23, < 0.24
+
 # Has to be downloaded directly like this (~30MB)
 # https://github.com/explosion/spacy-models/releases/tag/en_core_web_md-3.8.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl

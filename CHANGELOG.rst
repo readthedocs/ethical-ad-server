@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.26.1
+---------------
+
+This release strictly updated a dependency mismatch.
+
+:Date: September 26, 2025
+
+ * @davidfischer: Fix a pytorch/torchvision incompatibility (#1071)
+
+
 Version v5.26.0
 ---------------
 
