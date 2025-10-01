@@ -54,7 +54,8 @@ from .views import PublisherPayoutListView
 from .views import PublisherPlacementReportView
 from .views import PublisherReportView
 from .views import PublisherSettingsView
-from .views import PublisherStripeOauthConnectView
+from .views import PublisherStripeConnectView
+from .views import PublisherStripeReturnView
 from .views import StaffAdvertiserReportView
 from .views import StaffGeoReportView
 from .views import StaffKeywordReportView
@@ -65,7 +66,6 @@ from .views import StaffUpliftReportView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
-from .views import publisher_stripe_oauth_return
 
 
 urlpatterns = [
@@ -352,14 +352,14 @@ urlpatterns = [
         name="publisher_embed",
     ),
     path(
-        r"publisher/<slug:publisher_slug>/oauth/stripe/connect/",
-        PublisherStripeOauthConnectView.as_view(),
-        name="publisher_stripe_oauth_connect",
+        r"publisher/<slug:publisher_slug>/stripe/connect/",
+        PublisherStripeConnectView.as_view(),
+        name="publisher_stripe_connect",
     ),
     path(
-        r"publisher/oauth/stripe/return/",
-        publisher_stripe_oauth_return,
-        name="publisher_stripe_oauth_return",
+        r"publisher/<slug:publisher_slug>/stripe/return/",
+        PublisherStripeReturnView.as_view(),
+        name="publisher_stripe_return",
     ),
     path(
         r"publisher/<slug:publisher_slug>/fallback-ads/",

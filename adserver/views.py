@@ -35,7 +35,6 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView
@@ -2332,7 +2331,7 @@ class PublisherSettingsView(PublisherAdminAccessMixin, UserPassesTestMixin, Upda
         )
 
 
-class PublisherStripeOauthConnectView(
+class PublisherStripeConnectView(
     PublisherAdminAccessMixin, UserPassesTestMixin, RedirectView
 ):
     """Redirect the user to the correct Stripe connect URL for the publisher."""
@@ -2347,92 +2346,92 @@ class PublisherStripeOauthConnectView(
 
         publisher = self.get_object()
 
-        # Save a state nonce to verify that the Stripe oauth flow can't be replayed or forged
-        stripe_state = get_random_string(30)
-        self.request.session["stripe_state"] = stripe_state
-        self.request.session["stripe_connect_publisher"] = publisher.slug
+        # https://docs.stripe.com/api/accounts/create
+        account = stripe.Account.create(type="express")
 
-        params = {
-            "client_id": settings.STRIPE_CONNECT_CLIENT_ID,
-            # "suggested_capabilities[]": "transfers",
-            "stripe_user[email]": self.request.user.email,
-            "state": stripe_state,
-            "redirect_uri": self.request.build_absolute_uri(
-                reverse("publisher_stripe_oauth_return")
-            ),
-        }
-        return f"https://connect.stripe.com/express/oauth/authorize?{urllib.parse.urlencode(params)}"
+        # Users get redirected back to this page if the link expired, etc.
+        refresh_url = self.request.build_absolute_uri(
+            reverse("publisher_settings", args=[publisher.slug])
+        )
+        # Users get redirected back to this page after completing the Stripe onboarding flow
+        # This doesn’t mean that all information has been collected or that there are no outstanding requirements on the account.
+        # This only means the flow was entered and exited properly.
+        # The return URL is also used if the user clicks "back to EthicalAds" in the Stripe flow.
+        self.request.session["stripe_account_id"] = account.stripe_id
+        return_url = self.request.build_absolute_uri(
+            reverse("publisher_stripe_return", args=[publisher.slug])
+        )
+
+        account_link = stripe.AccountLink.create(
+            account=account.stripe_id,
+            refresh_url=refresh_url,
+            return_url=return_url,
+            type="account_onboarding",
+        )
+
+        return account_link.url
 
     def get_object(self, queryset=None):  # pylint: disable=unused-argument
         return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
 
-@login_required
-def publisher_stripe_oauth_return(request):
-    """Handle the oauth return flow from Stripe - save the account on the publisher."""
-    # A stripe token we passed when setup started - needs to be double checked
-    state = request.GET.get("state", "")
-    oauth_code = request.GET.get("code", "")
+class PublisherStripeReturnView(
+    PublisherAdminAccessMixin, UserPassesTestMixin, RedirectView
+):
+    """
+    Stripe redirects to here after a publisher goes through the connect flow.
 
-    if request.user.is_staff:
-        publishers = Publisher.objects.all()
-    else:
-        publishers = request.user.publishers.all()
+    Just a note that we still need to check that the user completed the flow successfully.
+    See: https://docs.stripe.com/connect/express-accounts#return-user
+    """
 
-    publisher = publishers.filter(
-        slug=request.session.get("stripe_connect_publisher", "")
-    ).first()
+    model = Publisher
+    permanent = False
 
-    if state == request.session.get("stripe_state") and publisher:
-        response = None
-        log.debug(
-            "Using stripe auth code to connect publisher account. Publisher = [%s]",
-            publisher,
-        )
-        try:
-            response = stripe.OAuth.token(
-                grant_type="authorization_code", code=oauth_code
+    def get_redirect_url(self, *args, **kwargs):
+        if not settings.STRIPE_CONNECT_CLIENT_ID:
+            messages.error(self.request, _("Stripe is not configured"))
+            return reverse("dashboard-home")
+
+        publisher = self.get_object()
+        account_id = self.request.session.get("stripe_account_id", "")
+
+        if not account_id:
+            messages.error(
+                self.request, _("There was a problem connecting your Stripe account")
             )
-        except stripe.oauth_error.OAuthError:
-            log.error("Invalid Stripe authorization code: %s", oauth_code)
-        except Exception:
-            log.error("An unknown Stripe error occurred.")
+            log.error("No account returned from Stripe.")
+            return reverse("dashboard-home")
 
-        if response:
-            connected_account_id = response["stripe_user_id"]
+        # Get the account from Stripe to verify the connect workflow completed
+        account = stripe.Account.retrieve(account_id)
 
-            try:
-                # Retrieve the Stripe connected account and save it on the publisher
-                publisher.djstripe_account = Account.sync_from_stripe_data(
-                    stripe.Account.retrieve(connected_account_id)
-                )
-            except stripe.error.StripeError:
-                log.exception(
-                    "Stripe returned a connected account, but it could not be retrieved."
-                )
+        # This is the field we need to check to see if the account is fully set up
+        # https://docs.stripe.com/connect/express-accounts#return-user
+        if account.details_submitted:
+            publisher.djstripe_account = Account.sync_from_stripe_data(account)
 
             # Deprecated field
-            publisher.stripe_connected_account_id = connected_account_id
+            publisher.stripe_connected_account_id = account_id
 
             publisher.payout_method = PAYOUT_STRIPE
             publisher.save()
-            messages.success(request, _("Successfully connected your Stripe account"))
+            messages.success(
+                self.request, _("Successfully connected your Stripe account")
+            )
+        else:
+            messages.warning(
+                self.request,
+                _(
+                    "The Stripe setup wasn't completed. "
+                    "You can resume the process at any time or try a different payout method."
+                ),
+            )
 
-            # Delete saved stripe state
-            del request.session["stripe_state"]
-            del request.session["stripe_connect_publisher"]
+        return reverse("publisher_settings", args=[publisher.slug])
 
-            return redirect(reverse("publisher_main", args=[publisher.slug]))
-    else:
-        log.warning(
-            "Stripe state or publisher do not check out. State = [%s], Publisher = [%s]",
-            state,
-            publisher,
-        )
-
-    messages.error(request, _("There was a problem connecting your Stripe account"))
-    log.error("There was a problem connecting a Stripe account.")
-    return redirect(reverse("dashboard-home"))
+    def get_object(self, queryset=None):  # pylint: disable=unused-argument
+        return get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
 
 
 class PublisherPayoutListView(PublisherAccessMixin, UserPassesTestMixin, ListView):

@@ -1439,9 +1439,7 @@ class PublisherSettingsForm(forms.ModelForm):
                 )
             )
         elif settings.STRIPE_CONNECT_CLIENT_ID:
-            connect_url = reverse(
-                "publisher_stripe_oauth_connect", args=[self.instance.slug]
-            )
+            connect_url = reverse("publisher_stripe_connect", args=[self.instance.slug])
             stripe_block = HTML(
                 format_html(
                     "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
