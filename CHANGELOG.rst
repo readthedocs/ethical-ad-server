@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.27.0
+---------------
+
+This release fixed an error preventing new Publishers from connecting with Stripe for payouts.
+
+:Date: October 2, 2025
+
+ * @dependabot[bot]: Bump django from 5.2.6 to 5.2.7 in /requirements (#1075)
+ * @davidfischer: Update the publisher stripe connect workflow (#1073)
+
+
 Version v5.26.1
 ---------------
 
