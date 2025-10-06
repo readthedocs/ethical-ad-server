@@ -15,24 +15,24 @@ log = logging.getLogger(__name__)
 
 def run_csv_import(csv_path, image_dir, advertiser_slug, flight_slug, sync=False):
     """
-    Import advertisements from a CSV file and a directory of images.
+        Import advertisements from a CSV file and a directory of images.
 
-    :param csv_path: Path to the CSV file containing ad data.
-    :param image_dir: Path to the directory containing ad images.
-    :param advertiser_slug: Slug of the advertiser.
-    :param flight_slug: Slug of the flight.
-    :param sync: Whether to write data to the database.
+        :param csv_path: Path to the CSV file containing ad data.
+        :param image_dir: Path to the directory containing ad images.
+        :param advertiser_slug: Slug of the advertiser.
+        :param flight_slug: Slug of the flight.
+        :param sync: Whether to write data to the database.
 
-    Example usage:
-        from adserver.importers.csv_importer import run_csv_import
+        Example usage:
+            from adserver.importers.csv_importer import run_csv_import
 
-        run_csv_import(
-            csv_path="ads.csv",
-            image_dir="images",
-            advertiser_slug="ethicalads-community",
-            flight_slug="ethicalads-community-open-source-pledge",
-            sync=True
-        )
+    run_csv_import(
+        csv_path="ad-data.txt",
+        image_dir="photos",
+        advertiser_slug="ethicalads-community",
+        flight_slug="ethicalads-community-open-source-pledge",
+        sync=False
+    )
     """
     # Resolve relative paths to absolute paths
     csv_path = os.path.abspath(csv_path)
@@ -52,7 +52,7 @@ def run_csv_import(csv_path, image_dir, advertiser_slug, flight_slug, sync=False
     # State
     valid_ads = set()
     # Ad types
-    default_ad_type = AdType.objects.get(slug="default")
+    default_ad_type = AdType.objects.get(slug="image-v1")
 
     # Fetch the advertiser and flight for the given slugs
     try:
@@ -106,13 +106,3 @@ def run_csv_import(csv_path, image_dir, advertiser_slug, flight_slug, sync=False
                 log.error(f"Missing required column in CSV: {e}")
             except Exception:
                 log.exception(f"Error processing row: {row}")
-
-    # Disable ads no longer in the CSV
-    for ad in Advertisement.objects.filter(live=True):
-        if ad.slug not in valid_ads:
-            if sync:
-                log.info(f"Deactivating ad: {ad.name}")
-                ad.live = False
-                ad.save()
-            else:
-                log.info(f"DRY RUN: Would deactivate ad: {ad.name}")
