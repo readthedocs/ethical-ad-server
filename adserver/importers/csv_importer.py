@@ -1,6 +1,7 @@
 import csv
 import logging
 import os
+from io import BytesIO
 
 from django.core.files import File
 from django.utils.text import slugify
@@ -13,25 +14,26 @@ from adserver.models import Flight
 log = logging.getLogger(__name__)
 
 
-def run_csv_import(csv_path, image_dir, advertiser_slug, flight_slug, sync=False):
+def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync=False):
     """
-        Import advertisements from a CSV file and a directory of images.
+            Import advertisements from a CSV file and a directory of images.
 
-        :param csv_path: Path to the CSV file containing ad data.
-        :param image_dir: Path to the directory containing ad images.
-        :param advertiser_slug: Slug of the advertiser.
-        :param flight_slug: Slug of the flight.
-        :param sync: Whether to write data to the database.
+            :param csv_path: Path to the CSV file containing ad data.
+            :param image_dir: Path to the directory containing ad images.
+            :param advertiser_slug: Slug of the advertiser.
+            :param flight_slug: Slug of the flight.
+            :param sync: Whether to write data to the database.
 
-        Example usage:
-            from adserver.importers.csv_importer import run_csv_import
+            Example usage:
+                from adserver.importers.csv_importer import run_csv_import
 
     run_csv_import(
         csv_path="ad-data.txt",
         image_dir="photos",
+        link="https://opensourcepledge.com/?ref=ethicalads-community",
         advertiser_slug="ethicalads-community",
         flight_slug="ethicalads-community-open-source-pledge",
-        sync=False
+        sync=True
     )
     """
     # Resolve relative paths to absolute paths
@@ -76,29 +78,30 @@ def run_csv_import(csv_path, image_dir, advertiser_slug, flight_slug, sync=False
                     log.warning(f"Image not found for ad: {name} ({image_filename})")
                     continue
 
+                # Open the image file using BytesIO for consistency
                 with open(image_path, "rb") as image_file:
-                    image = File(image_file, name=image_filename)
+                    image = File(BytesIO(image_file.read()), name=image_filename)
+                    slug = slugify(name)
+                    if sync:
+                        ad, created = Advertisement.objects.get_or_create(
+                            slug=slug, flight=flight
+                        )
+                        if created:
+                            log.info(f"NEW AD: Created new ad {name}")
 
-                slug = slugify(name)
-                if sync:
-                    ad, created = Advertisement.objects.get_or_create(
-                        slug=slug, flight=flight
-                    )
-                    if created:
-                        log.info(f"NEW AD: Created new ad {name}")
-
-                    # Update fields
-                    ad.name = name
-                    ad.image.save(image_filename, image, save=False)
-                    ad.text = text
-                    ad.live = True
-                    ad.ad_types.add(default_ad_type)
-                    try:
-                        ad.save()
-                    except Exception:
-                        log.exception(f"Failed to save ad: {name}")
-                else:
-                    log.info(f"DRY RUN: Would process ad {name}")
+                        # Update fields
+                        ad.name = name
+                        ad.image.save(image_filename, image, save=False)
+                        ad.link = link
+                        ad.text = text
+                        ad.live = True
+                        ad.ad_types.add(default_ad_type)
+                        try:
+                            ad.save()
+                        except Exception:
+                            log.exception(f"Failed to save ad: {name}")
+                    else:
+                        log.info(f"DRY RUN: Would process ad {name}")
 
                 valid_ads.add(slug)
 
