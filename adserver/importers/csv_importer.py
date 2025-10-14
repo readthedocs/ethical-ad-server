@@ -16,15 +16,15 @@ log = logging.getLogger(__name__)
 
 def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync=False):
     """
-                Import advertisements from a CSV file and a directory of images.
+                    Import advertisements from a CSV file and a directory of images.
 
-                :param csv_path: Path to the CSV file containing ad data.
-                :param image_dir: Path to the directory containing ad images.
-                :param advertiser_slug: Slug of the advertiser.
-                :param flight_slug: Slug of the flight.
-                :param sync: Whether to write data to the database.
+                    :param csv_path: Path to the CSV file containing ad data.
+                    :param image_dir: Path to the directory containing ad images.
+                    :param advertiser_slug: Slug of the advertiser.
+                    :param flight_slug: Slug of the flight.
+                    :param sync: Whether to write data to the database.
 
-                Example usage:
+                    Example usage:
     from adserver.importers.csv_importer import run_csv_import
 
     run_csv_import(
@@ -86,8 +86,7 @@ def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync
                     slug = slugify(name)
                     if sync:
                         ad, created = Advertisement.objects.get_or_create(
-                            slug=slug,
-                            flight=flight,  # Use ad ID for uniqueness
+                            slug=slug, flight=flight
                         )
                         if created:
                             log.info(f"NEW AD: Created new ad {name}")
@@ -99,8 +98,12 @@ def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync
                             ad.headline = headline
                             ad.content = text
                             ad.cta = cta
+                            ad.text = ""
                         else:
                             ad.text = text
+                            ad.headline = ""
+                            ad.cta = ""
+                            ad.content = ""
                         ad.live = True
                         ad.ad_types.add(default_ad_type)
                         try:
