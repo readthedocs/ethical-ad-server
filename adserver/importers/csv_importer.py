@@ -16,16 +16,16 @@ log = logging.getLogger(__name__)
 
 def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync=False):
     """
-            Import advertisements from a CSV file and a directory of images.
+                Import advertisements from a CSV file and a directory of images.
 
-            :param csv_path: Path to the CSV file containing ad data.
-            :param image_dir: Path to the directory containing ad images.
-            :param advertiser_slug: Slug of the advertiser.
-            :param flight_slug: Slug of the flight.
-            :param sync: Whether to write data to the database.
+                :param csv_path: Path to the CSV file containing ad data.
+                :param image_dir: Path to the directory containing ad images.
+                :param advertiser_slug: Slug of the advertiser.
+                :param flight_slug: Slug of the flight.
+                :param sync: Whether to write data to the database.
 
-            Example usage:
-                from adserver.importers.csv_importer import run_csv_import
+                Example usage:
+    from adserver.importers.csv_importer import run_csv_import
 
     run_csv_import(
         csv_path="ad-data.txt",
@@ -71,7 +71,9 @@ def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync
             try:
                 name = row["name"]
                 image_filename = row["image"]
+                headline = row.get("headline", "")  # Extract headline, default to empty
                 text = row["text"]
+                cta = row.get("cta", "")  # Extract call-to-action, default to empty
 
                 image_path = os.path.join(image_dir, image_filename)
                 if not os.path.exists(image_path):
@@ -84,7 +86,8 @@ def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync
                     slug = slugify(name)
                     if sync:
                         ad, created = Advertisement.objects.get_or_create(
-                            slug=slug, flight=flight
+                            slug=slug,
+                            flight=flight,  # Use ad ID for uniqueness
                         )
                         if created:
                             log.info(f"NEW AD: Created new ad {name}")
@@ -92,8 +95,12 @@ def run_csv_import(csv_path, image_dir, link, advertiser_slug, flight_slug, sync
                         # Update fields
                         ad.name = name
                         ad.image.save(image_filename, image, save=False)
-                        ad.link = link
-                        ad.text = text
+                        if headline or cta:
+                            ad.headline = headline
+                            ad.content = text
+                            ad.cta = cta
+                        else:
+                            ad.text = text
                         ad.live = True
                         ad.ad_types.add(default_ad_type)
                         try:
