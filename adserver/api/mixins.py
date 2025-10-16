@@ -31,7 +31,14 @@ class GeoIpMixin:
 
         # Get the actual client IP address and UA (the user who will view the ad)
         if self.ip_field in request.data and request.data[self.ip_field]:
-            request.ip_address = request.data[self.ip_field]
+            ip = request.data[self.ip_field]
+            if ip and "," in ip:
+                # If there are multiple IPs, take the first one
+                # The client has probably sent the X-Forwarded-For header
+                # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For
+                ip = ip.split(",")[0].strip()
+
+            request.ip_address = ip
 
             # Geolocate the actual IP address (not the requestor's IP)
             # This is needed for the case of a server requesting ads on a user's behalf
