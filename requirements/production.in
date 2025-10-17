@@ -4,7 +4,8 @@
 gunicorn
 
 # Database driver
-psycopg2-binary
+# https://www.psycopg.org/psycopg3/docs/basic/install.html
+psycopg[binary,pool]
 
 # Email sending
 django-anymail
