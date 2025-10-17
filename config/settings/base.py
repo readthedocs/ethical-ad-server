@@ -142,6 +142,7 @@ DATABASES = {
         default=f"sqlite:///{DB_PATH_SQLITE}",
     )
 }
+# https://docs.djangoproject.com/en/dev/topics/db/transactions/#tying-transactions-to-http-requests
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
