@@ -64,7 +64,7 @@ LOGGING["loggers"]["django.security.DisallowedHost"] = {
 
 # Cache
 # https://docs.djangoproject.com/en/dev/topics/cache/
-# https://niwinz.github.io/django-redis/
+# https://github.com/jazzband/django-redis
 # --------------------------------------------------------------------------
 CACHES["default"] = env.cache("REDIS_URL")
 
