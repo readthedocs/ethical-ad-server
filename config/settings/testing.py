@@ -42,6 +42,12 @@ STORAGES = {
     },
 }
 
+# Always use in-memory cache for testing
+CACHES["default"] = {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    "LOCATION": "",
+}
+
 # Celery should be always eager - there's no distributed celery workers in test
 CELERY_TASK_ALWAYS_EAGER = True
 

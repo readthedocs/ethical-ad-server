@@ -32,6 +32,15 @@ LOGGING["loggers"]["adserver"]["level"] = "DEBUG"
 LOGGING["loggers"]["ethicalads_ext"]["level"] = "DEBUG"
 
 
+# Cache
+# https://docs.djangoproject.com/en/dev/topics/cache/
+# https://github.com/jazzband/django-redis
+# --------------------------------------------------------------------------
+# Use the Redis cache in development if the REDIS_URL env var is set
+if env("REDIS_URL", default=None):
+    CACHES["default"] = env.cache("REDIS_URL")
+
+
 # Celery settings for asynchronous tasks
 # http://docs.celeryproject.org
 # --------------------------------------------------------------------------
