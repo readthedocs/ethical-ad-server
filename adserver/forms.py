@@ -346,7 +346,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                     raise forms.ValidationError(
                         _("'%(url)s' is an invalid URL."), params={"url": url}
                     )
-        return data
+        return "\n".join(niche_urls)
 
     def save(self, commit=True):
         if not self.instance.targeting_parameters:

@@ -30,6 +30,7 @@ def normalize_url(url):
     Currently, this means:
     - Removing ignored query paramters
     """
+    url = url.strip()
     parts = urlparse.urlparse(url)
 
     query_params = urlparse.parse_qs(parts.query, keep_blank_values=True)
