@@ -11,7 +11,9 @@ psycopg[binary,pool]
 django-anymail
 
 # Redis (cache)
-django-redis
+# Hiredis is a faster Redis client implementation in C
+# https://github.com/jazzband/django-redis?tab=readme-ov-file#pluggable-parsers
+django-redis[hiredis]
 
 # Upload files to cloud storage (Azure)
 django-storages[azure]

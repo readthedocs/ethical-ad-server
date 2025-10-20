@@ -100,7 +100,7 @@ django-extensions==4.1
     # via -r base.in
 django-ratelimit==3.0.1
     # via -r base.in
-django-redis==6.0.0
+django-redis[hiredis]==6.0.0
     # via -r production.in
 django-simple-history==3.10.1
     # via -r base.in
@@ -122,6 +122,8 @@ geoip2==5.1.0
     # via -r base.in
 gunicorn==23.0.0
     # via -r production.in
+hiredis==3.3.0
+    # via redis
 idna==3.11
     # via
     #   requests
@@ -172,7 +174,7 @@ pytz==2025.2
     # via -r base.in
 qrcode==8.2
     # via django-allauth
-redis==5.3.1
+redis[hiredis]==5.3.1
     # via
     #   celery
     #   django-redis
