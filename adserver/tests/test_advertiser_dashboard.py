@@ -408,7 +408,8 @@ class TestAdvertiserDashboardViews(TestCase):
             "include_keywords": "python, django",
             "niche_distance": 0.5,
             "niche_urls": "\n".join([
-                "https://example.com/niche1/",
+                # Make sure comments are stripped properly
+                "https://example.com/niche1/ ",
                 "https://example.com/niche2/",
             ]),
         }
