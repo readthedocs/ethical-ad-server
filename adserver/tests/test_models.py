@@ -28,9 +28,21 @@ class TestProtectedModels(BaseAdModelsTestCase):
     """Test that models extending IndestructibleModel can't be deleted"""
 
     def test_delete_model(self):
-        self.assertRaises(IntegrityError, self.ad1.delete)
+        self.ad1.delete()  # Shouldn't raise because ads without impressions can be deleted
         self.assertRaises(IntegrityError, self.campaign.delete)
         self.assertRaises(IntegrityError, self.flight.delete)
+
+        request = self.factory.get("/")
+        self.ad2.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.text_ad_type,
+            div_id="foo",
+            keywords=None,
+        )
+
+        # Now that ad2 has an offer, it can't be deleted
+        self.assertRaises(IntegrityError, self.ad2.delete)
 
     def test_queryset(self):
         self.assertRaises(IntegrityError, Advertisement.objects.all().delete)

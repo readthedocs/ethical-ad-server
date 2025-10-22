@@ -1,0 +1,44 @@
+{% extends "adserver/advertiser/overview.html" %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+
+{% block title %}{% trans 'Remove advertisement' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item"><a href="{% url 'flight_list' advertiser.slug %}">{% trans 'Flights' %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'advertisement_detail' advertiser.slug flight.slug advertisement.slug %}">{{ advertisement.name }}</a></li>
+  <li class="breadcrumb-item active">{% trans 'Remove advertisement' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+
+<section>
+
+  <h1>{% block heading %}{% blocktrans with ad_name=advertisement.name %}Remove {{ ad_name }}?{% endblocktrans %}{% endblock heading %}</h1>
+  <p>{% blocktrans %}Only ads that have never been shown can be deleted.{% endblocktrans %}</p>
+
+  <div class="row">
+
+    <div class="col-md">
+
+      {% for ad_type in advertisement.ad_types.all %}
+        {% include "adserver/includes/ad-preview.html" %}
+      {% endfor %}
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="submit" class="btn btn-danger" value="{% trans "Remove advertisement" %}">
+      </form>
+    </div>
+
+  </div>
+
+</section>
+
+{% endblock content_container %}

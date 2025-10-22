@@ -778,6 +778,63 @@ class AdvertisementCreateView(
         )
 
 
+class AdvertisementRemoveView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, DeleteView
+):
+    """View to delete an ad that has *never* been used."""
+
+    model = Advertisement
+    template_name = "adserver/advertiser/advertisement-delete.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        self.advertisement = get_object_or_404(
+            Advertisement,
+            flight=self.flight,
+            slug=self.kwargs["advertisement_slug"],
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        messages.info(self.request, _("Successfully removed advertisement"))
+        return result
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+    def get_object(self, queryset=None):
+        # can_be_deleted checks if there are any impressions or clicks for this ad
+        if not self.advertisement or not self.advertisement.can_be_deleted():
+            log.warning("Ad isn't eligible for deletion: %s", self.advertisement)
+            raise Http404
+        return self.advertisement
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flight": self.flight,
+                "advertisement": self.advertisement,
+            }
+        )
+        return context
+
+
 class AdvertisementBulkCreateView(
     AdvertiserManagerAccessMixin,
     UserPassesTestMixin,

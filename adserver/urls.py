@@ -11,6 +11,7 @@ from .views import AdvertisementBulkCreateView
 from .views import AdvertisementCopyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
+from .views import AdvertisementRemoveView
 from .views import AdvertisementUpdateView
 from .views import AdvertiserAuthorizedUsersInviteView
 from .views import AdvertiserAuthorizedUsersRemoveView
@@ -269,6 +270,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/update/",
         AdvertisementUpdateView.as_view(),
         name="advertisement_update",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/remove/",
+        AdvertisementRemoveView.as_view(),
+        name="advertisement_remove",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/users/",
