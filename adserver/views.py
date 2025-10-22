@@ -929,6 +929,13 @@ class AdvertisementCopyView(
 ):
     """Create a copy of an existing ad."""
 
+    ORDERING_OPTIONS = (
+        ("-modified", "Most recent"),
+        ("-flight__start_date", "By flight start date"),
+        ("-sampled_ctr", "Top performing"),
+        ("name", "By name"),
+    )
+
     form_class = AdvertisementCopyForm
     model = Advertisement
     template_name = "adserver/advertiser/advertisement-copy.html"
@@ -963,6 +970,8 @@ class AdvertisementCopyView(
             {
                 "advertiser": self.advertiser,
                 "flight": self.flight,
+                "order": self.get_order(),
+                "ordering_options": self.ORDERING_OPTIONS,
             }
         )
         return context
@@ -970,7 +979,14 @@ class AdvertisementCopyView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["flight"] = self.flight
+        kwargs["order"] = self.get_order()
         return kwargs
+
+    def get_order(self):
+        order = self.request.GET.get("order")
+        if not order or order not in [o[0] for o in self.ORDERING_OPTIONS]:
+            order = self.ORDERING_OPTIONS[0][0]
+        return order
 
     def get_success_url(self):
         return reverse(

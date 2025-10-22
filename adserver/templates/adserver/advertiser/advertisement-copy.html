@@ -29,6 +29,23 @@
   <div class="row">
 
     <div class="col-md-8">
+
+      <form method="get">
+        <div class="form-row">
+          <div class="col-4">
+            <select class="form-control form-control-sm" name="order">
+              {% for ordering, display in ordering_options %}
+                <option value="{{ ordering }}" {% if ordering == order %}selected{% endif %}>{{ display }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-2">
+            <button class="btn btn-sm btn-outline-secondary" type="submit">{% trans 'Filter and order' %}</button>
+          </div>
+        </div> <!-- /form-row -->
+      </form>
+
       {% crispy form form.helper %}
     </div>
 
