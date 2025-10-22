@@ -1304,6 +1304,44 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Country"], "US")
         self.assertEqual(resp["X-Adserver-Region"], "NY")
 
+    def test_multiple_passed_ip(self):
+        first_ip = "255.255.255.255"
+        new_ip = f"{first_ip},1.1.1.1,8.8.8.8"
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "url": self.page_url,
+            "user_ip": new_ip,
+            "user_ua": self.user_agent,
+        }
+        with mock.patch("adserver.utils.get_geoipdb_geolocation") as get_geo:
+            get_geo.return_value = GeolocationData("US", "NY")
+
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Check that the first IP was used
+        self.assertEqual(resp["X-Adserver-RealIP"], first_ip)
+
+    def test_invalid_ip(self):
+        ip = "255.255.256.255"
+        data = {
+            "placements": self.placements,
+            "publisher": self.publisher1.slug,
+            "url": self.page_url,
+            "user_ip": ip,
+            "user_ua": self.user_agent,
+        }
+        with mock.patch("adserver.utils.get_geoipdb_geolocation") as get_geo:
+            get_geo.return_value = GeolocationData(None, None)
+
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+        self.assertEqual(resp.status_code, 400)
+
     @override_settings(ADSERVER_RECORD_VIEWS=False)
     def test_record_views_false(self):
         self.publisher1.record_views = False

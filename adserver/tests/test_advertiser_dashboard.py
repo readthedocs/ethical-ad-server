@@ -408,7 +408,8 @@ class TestAdvertiserDashboardViews(TestCase):
             "include_keywords": "python, django",
             "niche_distance": 0.5,
             "niche_urls": "\n".join([
-                "https://example.com/niche1/",
+                # Make sure comments are stripped properly
+                "https://example.com/niche1/ ",
                 "https://example.com/niche2/",
             ]),
         }
@@ -983,11 +984,22 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(response, "Re-use your previous ads")
         self.assertContains(response, self.ad1.name)
 
-        # Perform the copy
+        # Perform the copy - new ad isn't live by default
         count_ads = Advertisement.objects.all().count()
-        response = self.client.post(url, data={"advertisements": [self.ad1.pk]})
-        self.assertEqual(response.status_code, 302)
+        live_ads = Advertisement.objects.filter(live=True).count()
+        response = self.client.post(url, data={"advertisements": [self.ad1.pk]}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully copied 1 ads to flight")
+        # Ads is +1 but live ads is the same
         self.assertEqual(Advertisement.objects.all().count(), count_ads + 1)
+        self.assertEqual(Advertisement.objects.filter(live=True).count(), live_ads)
+
+        # Copy again - new ad is live
+        live_ads = Advertisement.objects.filter(live=True).count()
+        response = self.client.post(url, data={"advertisements": [self.ad1.pk], "live_after_copy": True}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully copied 1 ads to flight")
+        self.assertEqual(Advertisement.objects.filter(live=True).count(), live_ads + 1)
 
     def test_deprecated_ad_type(self):
         url = reverse(

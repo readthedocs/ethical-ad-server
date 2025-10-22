@@ -346,7 +346,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                     raise forms.ValidationError(
                         _("'%(url)s' is an invalid URL."), params={"url": url}
                     )
-        return data
+        return "\n".join(niche_urls)
 
     def save(self, commit=True):
         if not self.instance.targeting_parameters:
@@ -1371,10 +1371,19 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
 class AdvertisementCopyForm(forms.Form):
     """Used by advertisers to re-use their ads."""
 
+    MAXIMUM_ADS = 100
+    DEFAULT_ORDER = "-modified"
+
     advertisements = AdvertisementMultipleChoiceField(
         queryset=Advertisement.objects.none(),
         required=False,
         help_text=_("Copy the following advertisements"),
+    )
+    live_after_copy = forms.BooleanField(
+        required=False,
+        initial=False,
+        label=_("Make copied ads live"),
+        help_text=_("If checked, the copied ads will be live immediately"),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1384,14 +1393,24 @@ class AdvertisementCopyForm(forms.Form):
         else:
             raise RuntimeError("'flight' is required for the ad form")
 
+        if "order" in kwargs:
+            order = kwargs.pop("order")
+        else:
+            order = self.DEFAULT_ORDER
+
         super().__init__(*args, **kwargs)
 
+        # Use the passed order to sort the ads on the form
         self.fields["advertisements"].queryset = (
             Advertisement.objects.filter(flight__campaign=self.flight.campaign)
-            .order_by("-flight__start_date", "slug")
+            .order_by(order, "slug")
             .select_related()
             .prefetch_related("ad_types")
         )
+        # Limit the choices so the form isn't *too* long
+        self.fields["advertisements"].choices = self.fields["advertisements"].choices[
+            : self.MAXIMUM_ADS
+        ]
 
         self.helper = FormHelper()
         self.helper.attrs = {"id": "advertisements-copy"}
@@ -1403,6 +1422,10 @@ class AdvertisementCopyForm(forms.Form):
                     "advertisements",
                     template="adserver/includes/widgets/advertisement-form-option.html",
                 ),
+                Fieldset(
+                    _("Options"),
+                    Field("live_after_copy"),
+                ),
                 css_class="my-3",
             ),
             Submit("submit", _("Copy existing ads")),
@@ -1413,6 +1436,8 @@ class AdvertisementCopyForm(forms.Form):
         for ad in self.cleaned_data["advertisements"]:
             new_ad = ad.__copy__()
             new_ad.flight = self.flight
+            if self.cleaned_data["live_after_copy"]:
+                new_ad.live = True
             new_ad.save()
 
         return len(self.cleaned_data["advertisements"])

@@ -4,6 +4,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.core.validators import validate_ipv46_address
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -73,7 +74,9 @@ class AdDecisionSerializer(serializers.Serializer):
     )
 
     # Used to pass the actual ad viewer's data for targeting purposes
-    user_ip = serializers.IPAddressField(required=False)
+    # The IP field purposefully isn't an IPAddressField so we can handle some invalid values
+    # instead of rejecting them outright
+    user_ip = serializers.CharField(required=False)
     user_ua = serializers.CharField(required=False)
 
     # Used to specify a specific ad or campaign to show (used for debugging mostly)
@@ -123,6 +126,22 @@ class AdDecisionSerializer(serializers.Serializer):
         except ValidationError:
             log.warning("Invalid ad decision referring URL: %s", url)
             return None
+
+    def validate_user_ip(self, ip):
+        if ip and "," in ip:
+            # If there are multiple IPs, take the first one
+            # The client has probably sent the X-Forwarded-For header
+            # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For
+            ip = ip.split(",")[0].strip()
+
+        # Perform basic validation of the IP address (after splitting if necessary)
+        try:
+            validate_ipv46_address(ip)
+        except ValidationError:
+            log.warning("Invalid ad decision user IP address: %s", ip)
+            raise serializers.ValidationError("Invalid IPv4 or IPv6 address")
+
+        return ip
 
 
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
