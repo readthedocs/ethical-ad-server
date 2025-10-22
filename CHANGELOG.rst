@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.28.0
+---------------
+
+This release contains an improvement to the copy ads screen that includes filtering and sorting
+as well as other options. It also turns on a few Postgres and Redis performance improvements
+notably using connection pooling on Postgres.
+
+:Date: October 22, 2025
+
+ * @davidfischer: Improve the copy ads screen (#1083)
+ * @davidfischer: Fix a bug with niche URL handling (#1082)
+ * @davidfischer: Use Hiredis client for performance (#1081)
+ * @davidfischer: Upgrade psycopg and use connection pools (#1080)
+ * @davidfischer: Handle if clients send x-forwarded-for (#1079)
+
+
 Version v5.27.0
 ---------------
 
