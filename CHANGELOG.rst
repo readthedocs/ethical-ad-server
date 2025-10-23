@@ -6,6 +6,20 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.29.0
+---------------
+
+This release makes pgpool optional for Postgres connection pooling.
+We saw some instability with pgpool with Celery (but not on the webs)
+and also didn't really see any performance benefits from it.
+We also added a change to allow deleting ads that have never been shown.
+
+:Date: October 23, 2025
+
+ * @davidfischer: Make pgpool optional (#1086)
+ * @davidfischer: Allow ad deletion (restrictions apply) (#1084)
+
+
 Version v5.28.0
 ---------------
 
