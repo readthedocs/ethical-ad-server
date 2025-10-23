@@ -103,7 +103,9 @@ class IndestructibleModel(models.Model):
     objects = IndestructibleManager()
 
     def delete(self, using=None, keep_parents=False):
-        """Always raises ``IntegrityError``."""
+        """Raises `IntegrityError` unless the model also has a `can_be_deleted()` method and it returns True."""
+        if hasattr(self, "can_be_deleted") and self.can_be_deleted():
+            return super().delete(using=using, keep_parents=keep_parents)
         raise IntegrityError
 
     class Meta:
@@ -1853,6 +1855,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
     def __str__(self):
         """Simple override."""
         return self.name
+
+    def can_be_deleted(self):
+        """Check if this advertisement can be deleted."""
+        # An advertisement can be deleted if it has never been offered
+        return not AdImpression.objects.filter(advertisement=self).exists()
 
     def get_absolute_url(self):
         return reverse(

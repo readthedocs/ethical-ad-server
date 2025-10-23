@@ -40,13 +40,18 @@ INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 # --------------------------------------------------------------------------
 DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL not set
 
+# Enable database connection pooling
+# https://docs.djangoproject.com/en/dev/ref/databases/#connection-pool
+USE_DB_POOLING = env.bool("USE_DB_POOLING", default=False)
 for db in ("default", "replica"):
     if db in DATABASES:
-        # Enable database connection pooling
-        # https://docs.djangoproject.com/en/dev/ref/databases/#connection-pool
         if "OPTIONS" not in DATABASES[db]:
             DATABASES[db]["OPTIONS"] = {}
-        if DATABASES[db]["ENGINE"] == "django.db.backends.postgresql":
+
+        if (
+            DATABASES[db]["ENGINE"] == "django.db.backends.postgresql"
+            and USE_DB_POOLING
+        ):
             DATABASES[db]["OPTIONS"]["pool"] = True
         else:
             # CONN_MAX_AGE should be 0 when using connection pooling

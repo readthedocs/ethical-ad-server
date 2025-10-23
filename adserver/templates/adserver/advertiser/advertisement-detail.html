@@ -67,6 +67,9 @@
   {% if has_advertiser_edit_permission %}
   <div class="col">
     <a href="{% url 'advertisement_update' advertiser.slug advertisement.flight.slug advertisement.slug %}" class="btn btn-outline-primary" role="button" aria-pressed="true">{% trans 'Edit advertisement' %}</a>
+    {% if advertisement.can_be_deleted %}
+      <a href="{% url 'advertisement_remove' advertiser.slug advertisement.flight.slug advertisement.slug %}" class="btn btn-outline-danger" role="button" aria-pressed="true" title="{% trans 'Only advertisements that have never been shown can be removed. You will have an opportunity to confirm.' %}">{% trans 'Remove advertisement' %}</a>
+    {% endif %}
   </div>
   {% endif %}
 </div>

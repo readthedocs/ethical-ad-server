@@ -897,6 +897,87 @@ class TestAdvertiserDashboardViews(TestCase):
             Advertisement.objects.filter(flight=self.flight, name="New Name").exists()
         )
 
+    def test_ad_delete_view(self):
+        url = reverse(
+            "advertisement_remove",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad1.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # Make it a reporter who can't access
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+        member.role = UserAdvertiserMember.ROLE_MANAGER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Remove advertisement")
+
+        # Can remove ad1 - no impressions
+        response = self.client.post(url, data={}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully removed advertisement")
+
+        self.assertFalse(
+            Advertisement.objects.filter(pk=self.ad1.pk).exists()
+        )
+
+    def test_ad_delete_view_fail(self):
+        url = reverse(
+            "advertisement_remove",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad1.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member.role = UserAdvertiserMember.ROLE_MANAGER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Remove advertisement")
+
+        # Add an offer to ad1 so it can't be removed
+        request = self.factory.get("/")
+        self.ad1.offer_ad(
+            request=request,
+            publisher=self.publisher,
+            ad_type_slug=self.ad_type1,
+            div_id="foo",
+            keywords=None,
+        )
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        # Can't remove ad1 with a POST either
+        response = self.client.post(url, data={})
+        self.assertEqual(response.status_code, 404)
+
+        self.assertTrue(
+            Advertisement.objects.filter(pk=self.ad1.pk).exists()
+        )
+
     def test_ad_bulk_create_view(self):
         url = reverse(
             "advertisement_bulk_create",
