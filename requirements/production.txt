@@ -120,7 +120,11 @@ frozenlist==1.8.0
     #   aiosignal
 geoip2==5.1.0
     # via -r base.in
-gunicorn==23.0.0
+gevent==25.9.1
+    # via gunicorn
+greenlet==3.2.4
+    # via gevent
+gunicorn[gevent]==23.0.0
     # via -r production.in
 hiredis==3.3.0
     # via redis
@@ -156,9 +160,9 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-psycopg[binary,pool]==3.2.10
+psycopg[binary,pool]==3.2.11
     # via -r production.in
-psycopg-binary==3.2.10
+psycopg-binary==3.2.11
     # via psycopg
 psycopg-pool==3.2.6
     # via psycopg
@@ -185,7 +189,7 @@ requests==2.32.5
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.42.0
+sentry-sdk==2.42.1
     # via -r production.in
 six==1.17.0
     # via python-dateutil
@@ -234,3 +238,10 @@ whitenoise==6.11.0
     # via -r base.in
 yarl==1.22.0
     # via aiohttp
+zope-event==6.0
+    # via gevent
+zope-interface==8.0.1
+    # via gevent
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

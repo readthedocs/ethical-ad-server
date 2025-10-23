@@ -9,4 +9,10 @@ set -o nounset
 
 # Don't auto-migrate locally because this can cause weird issues when testing migrations
 # python manage.py migrate
-python manage.py runserver 0.0.0.0:5000
+#python manage.py runserver 0.0.0.0:5000
+
+# In production, we use gunicorn with gevent workers for better handling of I/O bound requests
+# This gets us close to that setting for development and testing
+# https://docs.gunicorn.org/en/stable/design.html#choosing-a-worker-type
+# https://docs.gunicorn.org/en/stable/settings.html#worker-class
+gunicorn config.wsgi --worker-class gevent --bind 0.0.0.0:5000 --reload --log-file - --access-logfile -
