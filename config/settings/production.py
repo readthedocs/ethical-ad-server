@@ -45,6 +45,9 @@ DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL n
 USE_DB_POOLING = env.bool("USE_DB_POOLING", default=False)
 for db in ("default", "replica"):
     if db in DATABASES:
+        # https://docs.djangoproject.com/en/dev/topics/db/transactions/#tying-transactions-to-http-requests
+        DATABASES[db]["ATOMIC_REQUESTS"] = True
+
         if "OPTIONS" not in DATABASES[db]:
             DATABASES[db]["OPTIONS"] = {}
 
