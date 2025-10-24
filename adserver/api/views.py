@@ -306,8 +306,7 @@ class AdDecisionView(GeoIpMixin, APIView):
                 keywords = []
 
             if rotations > 1:
-                # This is a temporary log record to see how frequently ads are rotated
-                log.warning(
+                log.info(
                     "Ad rotation. rotations=%s, publisher=%s, url=%s,",
                     rotations,
                     publisher.slug,
