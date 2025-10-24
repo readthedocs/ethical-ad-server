@@ -124,8 +124,7 @@ class AdDecisionSerializer(serializers.Serializer):
             validator(url)  # Throws ValidationError on invalid
             return url
         except ValidationError:
-            log.warning("Invalid ad decision referring URL: %s", url)
-            return None
+            raise serializers.ValidationError("Invalid ad referring URL")
 
     def validate_user_ip(self, ip):
         if ip and "," in ip:
