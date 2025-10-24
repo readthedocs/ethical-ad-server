@@ -10,3 +10,8 @@ set -o nounset
 # Don't auto-migrate locally because this can cause weird issues when testing migrations
 # python manage.py migrate
 python manage.py runserver 0.0.0.0:5000
+
+# In production, we use gunicorn
+# This gets us close to that setting for development and testing
+# https://docs.gunicorn.org/en/stable/settings.html
+#gunicorn config.wsgi --bind 0.0.0.0:5000 --reload --log-file - --access-logfile -
