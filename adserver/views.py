@@ -1122,11 +1122,12 @@ class BaseProxyView(View):
             log.log(self.log_level, "Ad impression for unknown publisher")
             reason = "Unknown publisher"
         elif not advertisement.flight.show_to_geo(geo_data):
-            # This is very rare but it is visible in ad reports
+            # Check again that the geo-targeting matches
             # I believe the most common cause for this is somebody uses a VPN and is served an ad
             # Then they turn off their VPN and click on the ad
+            # These should not be billed to advertisers and can be safely ignored.
             log.log(
-                self.log_security_level,
+                self.log_level,
                 "Invalid geo targeting for ad [%s]. Country: [%s], Region: [%s], Metro: [%s]",
                 advertisement,
                 geo_data.country,
