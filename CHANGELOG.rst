@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.29.1
+---------------
+
+This release contained only minor changes to dependencies and logging/validation.
+
+:Date: October 28, 2025
+
+ * @davidfischer: Adds gevent as a production option (#1090)
+ * @davidfischer: Minor changes to logging and validation (#1089)
+
+
 Version v5.29.0
 ---------------
 
