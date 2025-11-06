@@ -323,7 +323,7 @@ sqlparse==0.5.3
     #   django-debug-toolbar
 stack-data==0.6.3
     # via ipython
-starlette==0.47.2
+starlette==0.49.1
     # via sphinx-autobuild
 stripe==4.2.0
     # via
