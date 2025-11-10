@@ -255,6 +255,8 @@ class UserAdvertiserMember(models.Model):
         # To do that, we needed to start with the same table
         db_table = "adserver_auth_user_advertisers"
 
+        unique_together = ("user", "advertiser")
+
 
 class UserPublisherMember(models.Model):
     """User-Publisher 'through' model."""

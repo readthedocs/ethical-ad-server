@@ -1857,13 +1857,16 @@ class AdvertiserAuthorizedUsersInviteView(
     def form_valid(self, form):
         result = super().form_valid(form)
 
-        # Add m2m and role
-        role = form.cleaned_data["role"]
-        UserAdvertiserMember.objects.create(
-            advertiser=self.advertiser,
-            user=self.object,
-            role=role,
-        )
+        if not UserAdvertiserMember.objects.filter(
+            advertiser=self.advertiser, user=self.object
+        ).exists():
+            # Add m2m and role
+            role = form.cleaned_data["role"]
+            UserAdvertiserMember.objects.create(
+                advertiser=self.advertiser,
+                user=self.object,
+                role=role,
+            )
 
         messages.success(
             self.request,
