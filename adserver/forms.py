@@ -903,6 +903,16 @@ class FlightRequestForm(FlightCreateForm):
             for field in fields:
                 setattr(self.instance, field, getattr(self.old_flight, field))
 
+            # Set sold impressions/clicks appropriately based on supplied budget
+            if self.cleaned_data["budget"] > 0 and self.instance.cpm > 0:
+                self.instance.sold_impressions = int(
+                    self.cleaned_data["budget"] * 1000 / float(self.instance.cpm)
+                )
+            elif self.cleaned_data["budget"] > 0 and self.instance.cpc > 0:
+                self.instance.sold_clicks = int(
+                    self.cleaned_data["budget"] * 1000 / float(self.instance.cpc)
+                )
+
         # We must set the campaign
         self.instance.campaign = (
             self.old_flight.campaign
