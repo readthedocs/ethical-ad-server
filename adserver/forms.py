@@ -910,7 +910,7 @@ class FlightRequestForm(FlightCreateForm):
                 )
             elif self.cleaned_data["budget"] > 0 and self.instance.cpc > 0:
                 self.instance.sold_clicks = int(
-                    self.cleaned_data["budget"] * 1000 / float(self.instance.cpc)
+                    self.cleaned_data["budget"] / float(self.instance.cpc)
                 )
 
         # We must set the campaign
