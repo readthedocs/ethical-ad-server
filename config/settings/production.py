@@ -69,6 +69,16 @@ LOGGING["loggers"]["django.security.DisallowedHost"] = {
     "propagate": False,
 }
 
+# The analyzer can log very verbosely on error URLs
+LOGGING["loggers"]["trafilatura.downloads"] = {
+    "handlers": ["null"],
+    "propagate": False,
+}
+LOGGING["loggers"]["trafilatura.core"] = {
+    "handlers": ["null"],
+    "propagate": False,
+}
+
 
 # Cache
 # https://docs.djangoproject.com/en/dev/topics/cache/
