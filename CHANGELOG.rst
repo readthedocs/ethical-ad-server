@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.30.0
+---------------
+
+This release made some minor dependency updates and bug fixes.
+
+:Date: November 18, 2025
+
+ * @davidfischer: Add markdownify as a dependency (#1097)
+ * @davidfischer: Turn down trafilatura logging (#1096)
+ * @davidfischer: Calculate sold impressions/clicks based on supplied budget (#1095)
+ * @dependabot[bot]: Bump django from 5.2.7 to 5.2.8 in /requirements (#1094)
+ * @davidfischer: User advertiser member check and constraint (#1093)
+ * @davidfischer: Enable atomic requests (#1088)
+
+
 Version v5.29.1
 ---------------
 
