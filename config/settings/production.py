@@ -45,6 +45,9 @@ DATABASES["default"] = env.db()  # Raises ImproperlyConfigured if DATABASE_URL n
 USE_DB_POOLING = env.bool("USE_DB_POOLING", default=False)
 for db in ("default", "replica"):
     if db in DATABASES:
+        # https://docs.djangoproject.com/en/dev/topics/db/transactions/#tying-transactions-to-http-requests
+        DATABASES[db]["ATOMIC_REQUESTS"] = True
+
         if "OPTIONS" not in DATABASES[db]:
             DATABASES[db]["OPTIONS"] = {}
 
@@ -62,6 +65,16 @@ for db in ("default", "replica"):
 # --------------------------------------------------------------------------
 # Folks spam our site with random hosts all the time. Ignore these errors.
 LOGGING["loggers"]["django.security.DisallowedHost"] = {
+    "handlers": ["null"],
+    "propagate": False,
+}
+
+# The analyzer can log very verbosely on error URLs
+LOGGING["loggers"]["trafilatura.downloads"] = {
+    "handlers": ["null"],
+    "propagate": False,
+}
+LOGGING["loggers"]["trafilatura.core"] = {
     "handlers": ["null"],
     "propagate": False,
 }

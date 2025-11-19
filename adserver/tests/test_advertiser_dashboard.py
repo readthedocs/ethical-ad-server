@@ -1252,6 +1252,7 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(response, "Successfully invited")
         self.assertEqual(User.objects.filter(email=email).count(), 1)
         self.assertEqual(User.objects.filter(name=name).count(), 1)
+        self.assertEqual(UserAdvertiserMember.objects.filter(advertiser=self.advertiser, user__email=email).count(), 1)
 
         # The 2nd request didn't create a user or update the user's name
         self.assertEqual(User.objects.filter(name="Yet Another User").count(), 0)

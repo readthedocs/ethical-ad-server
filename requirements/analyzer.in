@@ -1,6 +1,7 @@
 # Used by the keyword/topic analyzer
 beautifulsoup4
 textacy
+markdownify >= 1.2.0
 
 # Must pin to a version compatible with the spacy-model below
 spacy[transformers] >=3.8.7,< 4.0
