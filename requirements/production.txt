@@ -6,13 +6,13 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.1
+aiohttp==3.13.2
     # via geoip2
 aiosignal==1.4.0
     # via aiohttp
 amqp==5.3.1
     # via kombu
-asgiref==3.10.0
+asgiref==3.11.0
     # via
     #   django
     #   django-allauth
@@ -28,15 +28,17 @@ azure-core==1.36.0
     # via
     #   azure-storage-blob
     #   django-storages
-azure-storage-blob==12.27.0
+azure-storage-blob==12.27.1
     # via django-storages
-billiard==4.2.2
+billiard==4.2.3
     # via celery
-bleach==6.2.0
+bleach==6.3.0
     # via -r base.in
 celery[redis]==5.5.0rc1
-    # via -r base.in
-certifi==2025.10.5
+    # via
+    #   -r base.in
+    #   sentry-sdk
+certifi==2025.11.12
     # via
     #   requests
     #   sentry-sdk
@@ -44,7 +46,7 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   celery
     #   click-didyoumean
@@ -80,15 +82,16 @@ django==5.2.8
     #   django-storages
     #   djangorestframework
     #   jsonfield
-django-allauth[mfa]==65.12.1
+    #   sentry-sdk
+django-allauth[mfa]==65.13.1
     # via -r base.in
 django-anymail==13.1
     # via -r production.in
 django-cors-headers==4.9.0
     # via -r base.in
-django-countries==7.6.1
+django-countries==8.1.1
     # via -r base.in
-django-crispy-forms==2.4
+django-crispy-forms==2.5
     # via
     #   -r base.in
     #   crispy-bootstrap4
@@ -132,13 +135,13 @@ idna==3.11
     # via
     #   requests
     #   yarl
-ip2proxy==3.5.2
+ip2proxy==3.6.0
     # via -r base.in
 isodate==0.7.2
     # via azure-storage-blob
 jsonfield==3.2.0
     # via -r base.in
-kombu==5.5.4
+kombu==5.6.0
     # via celery
 maxminddb==2.8.2
     # via geoip2
@@ -146,7 +149,7 @@ multidict==6.7.0
     # via
     #   aiohttp
     #   yarl
-newrelic==11.0.1
+newrelic==11.1.0
     # via -r production.in
 packaging==25.0
     # via
@@ -160,11 +163,11 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-psycopg[binary,pool]==3.2.11
+psycopg[binary,pool]==3.2.12
     # via -r production.in
-psycopg-binary==3.2.11
+psycopg-binary==3.2.12
     # via psycopg
-psycopg-pool==3.2.6
+psycopg-pool==3.2.7
     # via psycopg
 pycparser==2.23
     # via cffi
@@ -189,7 +192,7 @@ requests==2.32.5
     #   django-slack
     #   geoip2
     #   stripe
-sentry-sdk==2.42.1
+sentry-sdk[celery,django]==2.45.0
     # via -r production.in
 six==1.17.0
     # via python-dateutil
@@ -238,10 +241,7 @@ whitenoise==6.11.0
     # via -r base.in
 yarl==1.22.0
     # via aiohttp
-zope-event==6.0
+zope-event==6.1
     # via gevent
-zope-interface==8.0.1
+zope-interface==8.1.1
     # via gevent
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

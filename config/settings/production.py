@@ -252,16 +252,29 @@ SENTRY_DSN = env("SENTRY_DSN", default=None)
 if SENTRY_DSN:
     # pylint: disable=import-error
     import sentry_sdk
+    from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
     from sentry_sdk.integrations.logging import ignore_logger
+    from sentry_sdk.integrations.redis import RedisIntegration
 
     sentry_logging = LoggingIntegration(
         event_level=logging.WARNING  # Send warnings as events
     )
     ignore_logger("django.security.DisallowedHost")
 
-    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[sentry_logging, DjangoIntegration()])
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            sentry_logging,
+            # https://docs.sentry.io/platforms/python/integrations/django/#options
+            DjangoIntegration(),
+            # https://docs.sentry.io/platforms/python/integrations/celery/#options
+            CeleryIntegration(monitor_beat_tasks=True),
+            # https://docs.sentry.io/platforms/python/integrations/redis/#options
+            RedisIntegration(),
+        ],
+    )
 
 
 # Production ad server specific settings
