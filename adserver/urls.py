@@ -67,6 +67,7 @@ from .views import StaffUpliftReportView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
+from .views import flight_totals_health
 
 
 urlpatterns = [
@@ -82,6 +83,12 @@ urlpatterns = [
     # Do not Track
     path(r".well-known/dnt/", do_not_track, name="dnt-status"),
     path(r".well-known/dnt-policy.txt", do_not_track_policy, name="dnt-policy"),
+    # Health checks
+    path(
+        r"health/flight-totals/",
+        flight_totals_health,
+        name="health-flight-totals",
+    ),
     # Ad API
     path(r"api/v1/", include("adserver.api.urls")),
     # Staff interface

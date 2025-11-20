@@ -522,6 +522,8 @@ class TestAdModels(BaseAdModelsTestCase):
         self.ad1.incr(CLICKS, self.publisher)
         self.ad1.incr(CLICKS, self.publisher)
 
+        self.flight.refresh_denormalized_totals()
+
         self.assertAlmostEqual(self.campaign.total_value(), 4.0)
 
         cpm_flight = get(
@@ -551,6 +553,10 @@ class TestAdModels(BaseAdModelsTestCase):
         ad2.incr(VIEWS, self.publisher)
         ad2.incr(VIEWS, self.publisher)
 
+        # Refresh denormalized totals for both flights
+        self.flight.refresh_denormalized_totals()
+        cpm_flight.refresh_denormalized_totals()
+
         self.assertAlmostEqual(self.campaign.total_value(), 4.3)
 
     def test_flight_state(self):
@@ -576,12 +582,12 @@ class TestAdModels(BaseAdModelsTestCase):
         self.flight.save()
         self.assertAlmostEqual(self.flight.value_remaining(), 100 * 2)
 
-        # Each click is worth $2
+        # Each click is $2
         self.ad1.incr(CLICKS, self.publisher)
         self.ad1.incr(CLICKS, self.publisher)
         self.ad1.incr(CLICKS, self.publisher)
 
-        self.flight.refresh_from_db()
+        self.flight.refresh_denormalized_totals()
         self.assertAlmostEqual(self.flight.value_remaining(), 97 * 2)
 
         self.flight.cpm = 50.0
@@ -596,7 +602,7 @@ class TestAdModels(BaseAdModelsTestCase):
         for _ in range(25):
             self.ad1.incr(VIEWS, self.publisher)
 
-        self.flight.refresh_from_db()
+        self.flight.refresh_denormalized_totals()
         self.assertAlmostEqual(self.flight.value_remaining(), 5.0 - (25 * 0.05))
 
     def test_projected_total_value(self):
@@ -607,7 +613,7 @@ class TestAdModels(BaseAdModelsTestCase):
         self.ad1.incr(CLICKS, self.publisher)
         self.ad1.incr(CLICKS, self.publisher)
 
-        self.flight.refresh_from_db()
+        self.flight.refresh_denormalized_totals()
         self.assertAlmostEqual(self.flight.projected_total_value(), 1000 * 2)
 
         self.flight.cpm = 50.0
@@ -727,7 +733,7 @@ class TestAdModels(BaseAdModelsTestCase):
         for click in (click1, click2, click3):
             self.assertIsNotNone(click)
 
-        self.flight.refresh_from_db()
+        self.flight.refresh_denormalized_totals()
 
         self.assertEqual(self.flight.total_clicks, 3)
 
@@ -760,7 +766,7 @@ class TestAdModels(BaseAdModelsTestCase):
             self.assertTrue(offer.clicked)
 
         # Reload data from the DB
-        self.flight.refresh_from_db()
+        self.flight.refresh_denormalized_totals()
         impression.refresh_from_db()
 
         self.assertEqual(self.flight.total_clicks, 1)
