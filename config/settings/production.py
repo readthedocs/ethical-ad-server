@@ -274,6 +274,12 @@ if SENTRY_DSN:
             # https://docs.sentry.io/platforms/python/integrations/redis/#options
             RedisIntegration(),
         ],
+        # Enable tracing and profiling but with sampling
+        # Setting a value of 1.0 will send 100% of traces to Sentry
+        # https://docs.sentry.io/platforms/python/tracing/
+        traces_sample_rate=env.float("SENTRY_TRACING_SAMPLE_RATE", default=0.2),
+        # https://docs.sentry.io/platforms/python/profiling/
+        profiles_sample_rate=env.float("SENTRY_PROFILES_SAMPLE_RATE", default=0.05),
     )
 
 
