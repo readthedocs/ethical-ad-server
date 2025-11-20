@@ -25,6 +25,7 @@ from config.celery_app import app
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
+from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .importers import psf
 from .models import AdImpression
 from .models import Advertisement
@@ -937,7 +938,9 @@ def refresh_flight_denormalized_totals():
     log.info("Starting refresh of denormalized totals for live flights")
 
     # Only refresh active flights to avoid unnecessary work
-    flights = Flight.objects.filter(live=True)
+    flights = Flight.objects.filter(live=True).exclude(
+        campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN
+    )
     total_flights = flights.count()
 
     for flight in flights:
