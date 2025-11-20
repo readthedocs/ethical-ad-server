@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG en_US.UTF-8
@@ -24,23 +24,26 @@ RUN apt-get -y install \
         libfreetype6 \
         libjpeg-dev \
         sqlite \
-        netcat \
+        netcat-openbsd \
         telnet \
         lsb-release
+
+# Install uv for fast package management
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Requirements are installed here to ensure they will be cached.
 # https://docs.docker.com/build/cache/#use-the-dedicated-run-cache
 COPY ./requirements /requirements
-RUN pip install --upgrade pip
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/development.txt
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/production.txt
+RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/development.txt
+RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/production.txt
 
 # Comment this if you don't need the page/topic analyzer.
 # The analyzer is used to target ads better based on page content.
 # Its requirements are huge and include PyTorch and other ML tools.
 # If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
 # in your environment file `./envs/local/django`.
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/analyzer.txt
+RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/analyzer.txt
 
 COPY ./docker-compose/django/start /start
 RUN chmod +x /start
