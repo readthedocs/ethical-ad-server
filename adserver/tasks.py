@@ -939,30 +939,9 @@ def refresh_flight_denormalized_totals():
     # Only refresh active flights to avoid unnecessary work
     flights = Flight.objects.filter(live=True)
     total_flights = flights.count()
-    success_count = 0
-    error_count = 0
 
     for flight in flights:
-        try:
-            flight.refresh_denormalized_totals()
-            success_count += 1
-        except Exception as e:
-            error_count += 1
-            log.error(
-                "Failed to refresh denormalized totals for flight %s: %s",
-                flight.slug,
-                e,
-                exc_info=True,
-            )
-
-    duration = (timezone.now() - start_time).total_seconds()
-    log.info(
-        "Finished refreshing denormalized totals: %d/%d succeeded, %d failed, took %.2fs",
-        success_count,
-        total_flights,
-        error_count,
-        duration,
-    )
+        flight.refresh_denormalized_totals()
 
     # Update cache with last successful run timestamp
     cache.set(
@@ -971,14 +950,12 @@ def refresh_flight_denormalized_totals():
         timeout=None,  # Never expire
     )
 
-    # Alert if there are significant failures
-    if error_count > 0 and error_count / max(total_flights, 1) > 0.1:
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": f"⚠️ Flight denormalized total refresh had {error_count}/{total_flights} failures"
-            },
-        )
+    duration = (timezone.now() - start_time).total_seconds()
+    log.info(
+        "Finished refreshing denormalized totals: %d flights, took %.2fs",
+        total_flights,
+        duration,
+    )
 
 
 @app.task()

@@ -1506,6 +1506,12 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         self.total_views = aggregation["total_views"] or 0
         self.total_clicks = aggregation["total_clicks"] or 0
+
+        if self.sold_clicks > 0 and self.total_clicks > self.sold_clicks:
+            self.total_clicks = self.sold_clicks
+        if self.sold_impressions > 0 and self.total_views > self.sold_impressions:
+            self.total_views = self.sold_impressions
+
         self.save(update_fields=["total_views", "total_clicks"])
 
     def copy_niche_targeting_urls(self, other_flight):

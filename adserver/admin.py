@@ -928,9 +928,14 @@ class OfferAdmin(AdBaseAdmin):
         )
 
         count = 0
+        flights = set()
         for impression in queryset:
             if impression.refund():
                 count += 1
+                flights.add(impression.advertisement.flight)
+
+        for flight in flights:
+            flight.refresh_denormalized_totals()
 
         messages.add_message(
             request,
