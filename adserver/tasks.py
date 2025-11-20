@@ -925,6 +925,33 @@ def calculate_ad_ctrs(days=7, min_views=1_000):
 
 
 @app.task()
+def refresh_flight_denormalized_totals():
+    """
+    Refresh denormalized total_views and total_clicks fields for all live flights.
+
+    This task should be run periodically (e.g., hourly) to update the denormalized
+    fields without causing lock contention on the Flight table.
+    """
+    log.info("Refreshing denormalized totals for live flights")
+
+    # Only refresh active flights to avoid unnecessary work
+    flights = Flight.objects.filter(live=True)
+
+    for flight in flights:
+        try:
+            flight.refresh_denormalized_totals()
+        except Exception as e:
+            log.error(
+                "Failed to refresh denormalized totals for flight %s: %s",
+                flight.slug,
+                e,
+                exc_info=True,
+            )
+
+    log.info("Finished refreshing denormalized totals for %d flights", flights.count())
+
+
+@app.task()
 def notify_on_ad_image_change(advertisement_id):
     ad = Advertisement.objects.filter(id=advertisement_id).first()
     if not ad or not ad.image:

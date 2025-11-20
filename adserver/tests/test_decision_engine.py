@@ -300,8 +300,8 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.incr(CLICKS, self.publisher)
         self.advertisement1.incr(CLICKS, self.publisher)
 
-        # Refresh the data on the include_flight - gets the denormalized views
-        self.include_flight.refresh_from_db()
+        # Refresh the denormalized totals manually since they're no longer updated in real-time
+        self.include_flight.refresh_denormalized_totals()
 
         self.assertEqual(self.include_flight.clicks_remaining(), 998)
         self.assertEqual(self.include_flight.total_clicks, 2)
@@ -315,8 +315,8 @@ class DecisionEngineTests(TestCase):
         # Add 1 click for today
         self.advertisement1.incr(CLICKS, self.publisher)
 
-        # Refresh the data on the include_flight - gets the denormalized views
-        self.include_flight.refresh_from_db()
+        # Refresh the denormalized totals manually since they're no longer updated in real-time
+        self.include_flight.refresh_denormalized_totals()
 
         self.assertEqual(self.include_flight.clicks_remaining(), 997)
         self.assertEqual(self.include_flight.clicks_today(), 1)

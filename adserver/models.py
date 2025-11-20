@@ -1492,6 +1492,22 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return value_delivered / clicks
         return 0
 
+    def refresh_denormalized_totals(self):
+        """
+        Refresh the denormalized total_views and total_clicks fields from AdImpression.
+
+        This should be called periodically (e.g., hourly or daily) instead of updating
+        these fields in real-time to avoid lock contention.
+        """
+        aggregation = AdImpression.objects.filter(advertisement__flight=self).aggregate(
+            total_views=models.Sum("views"),
+            total_clicks=models.Sum("clicks"),
+        )
+
+        self.total_views = aggregation["total_views"] or 0
+        self.total_clicks = aggregation["total_clicks"] or 0
+        self.save(update_fields=["total_views", "total_clicks"])
+
     def copy_niche_targeting_urls(self, other_flight):
         """Copy niche targeting URLs from another flight."""
         if "adserver.analyzer" in settings.INSTALLED_APPS:
@@ -1909,15 +1925,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         for imp_type in impression_types:
             assert imp_type in IMPRESSION_TYPES
 
-            # Update the denormalized fields on the Flight
-            if imp_type == VIEWS:
-                Flight.objects.filter(pk=self.flight_id).update(
-                    total_views=models.F("total_views") + 1
-                )
-            elif imp_type == CLICKS:
-                Flight.objects.filter(pk=self.flight_id).update(
-                    total_clicks=models.F("total_clicks") + 1
-                )
+            # NOTE: We no longer update the denormalized total_views/total_clicks fields
+            # in real-time to avoid lock contention on the Flight table.
+            # These fields are now calculated on-demand from AdImpression or
+            # refreshed periodically by a background task.
+            # See: Flight.refresh_denormalized_totals()
 
         # Ensure that an impression object exists for today
         # and make sure to query the writable DB for this
@@ -2917,19 +2929,14 @@ class Offer(AdBase):
                 **{self.impression_type: models.F(self.impression_type) - 1}
             )
 
-            # Update the denormalized impressions on the Flight
-            # And the denormalized aggregate AdImpressions
+            # Update the denormalized aggregate AdImpressions
+            # Note: We no longer update Flight.total_views/total_clicks in real-time
+            # to avoid lock contention. These are refreshed periodically.
             if self.viewed:
-                Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                    total_views=models.F("total_views") - 1
-                )
                 AdImpression.objects.filter(pk=impression.pk).update(
                     **{VIEWS: models.F(VIEWS) - 1}
                 )
             if self.clicked:
-                Flight.objects.filter(pk=self.advertisement.flight_id).update(
-                    total_clicks=models.F("total_clicks") - 1
-                )
                 AdImpression.objects.filter(pk=impression.pk).update(
                     **{CLICKS: models.F(CLICKS) - 1}
                 )
