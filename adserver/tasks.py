@@ -7,6 +7,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
+from django.core.cache import cache
 from django.db.models import Count
 from django.db.models import F
 from django.db.models import FloatField
@@ -961,6 +962,13 @@ def refresh_flight_denormalized_totals():
         total_flights,
         error_count,
         duration,
+    )
+
+    # Update cache with last successful run timestamp
+    cache.set(
+        "flight_totals_last_refresh",
+        timezone.now().isoformat(),
+        timeout=None,  # Never expire
     )
 
     # Alert if there are significant failures
