@@ -70,6 +70,16 @@ uv run tox
 
 The `uv.lock` file is automatically kept in sync via pre-commit hooks. When you commit changes to `pyproject.toml`, the pre-commit hook will update `uv.lock` if needed.
 
+### Initial Setup
+
+**Important**: The current `uv.lock` file is a placeholder. To generate the actual lock file with all resolved dependencies, run:
+
+```bash
+uv lock
+```
+
+This command needs to be run in an environment where all system dependencies (like `libpq-dev` for PostgreSQL) are available. The CI/CD pipeline will handle this automatically.
+
 ### Legacy Files
 
 The old `requirements/*.in` and `requirements/*.txt` files are kept for reference during the migration period but are no longer used. They will be removed in a future cleanup.
