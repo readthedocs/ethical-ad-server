@@ -929,8 +929,8 @@ def refresh_flight_denormalized_totals():
     """
     Refresh denormalized total_views and total_clicks fields for all live flights.
 
-    This task should be run periodically (e.g., hourly) to update the denormalized
-    fields without causing lock contention on the Flight table.
+    This task should be run periodically (e.g., every 5-10 minutes) to update
+    the denormalized fields without causing lock contention on the Flight table.
     """
     log.info("Refreshing denormalized totals for live flights")
 

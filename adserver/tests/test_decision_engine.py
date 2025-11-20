@@ -271,13 +271,13 @@ class DecisionEngineTests(TestCase):
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             self.cpm_flight.total_views = 10_000 - pace - 1
-            self.cpm_flight.save()
+            self.cpm_flight.save(update_fields=['total_views'])
             self.assertEqual(self.cpm_flight.views_needed_this_interval(), 1)
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             # Don't show this flight anymore. It is above pace
             self.cpm_flight.total_views = 10_000 - pace
-            self.cpm_flight.save()
+            self.cpm_flight.save(update_fields=['total_views'])
             self.assertEqual(self.cpm_flight.views_needed_this_interval(), 0)
             self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
@@ -466,8 +466,8 @@ class DecisionEngineTests(TestCase):
         for _ in range(clicks_to_simulate):
             self.advertisement1.incr(CLICKS, self.publisher)
 
-        # Refresh the data on the include_flight - gets the denormalized views
-        self.include_flight.refresh_from_db()
+        # Refresh the denormalized totals manually since they're no longer updated in real-time
+        self.include_flight.refresh_denormalized_totals()
 
         self.assertEqual(self.include_flight.clicks_needed_this_interval(), 23)
 
@@ -491,8 +491,8 @@ class DecisionEngineTests(TestCase):
         for _ in range(views_to_simulate):
             self.advertisement1.incr(VIEWS, self.publisher)
 
-        # Refresh the data on the include_flight - gets the denormalized views
-        self.cpm_flight.refresh_from_db()
+        # Refresh the denormalized totals manually since they're no longer updated in real-time
+        self.cpm_flight.refresh_denormalized_totals()
 
         self.assertEqual(self.cpm_flight.views_needed_this_interval(), 313)
 
