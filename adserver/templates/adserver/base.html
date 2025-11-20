@@ -114,7 +114,7 @@
                 <a
                   class="nav-link"
                   href="{% url 'advertiser_keyword_report' advertiser.slug %}"
-                  {% if not advertiser.show_keyword_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}"{% endif %}
+                  {% if not advertiser.show_keyword_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers.' %}"{% endif %}
                 >
                   <span class="fa fa-bullseye fa-fw ml-4 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Keywords' %}</span>
@@ -124,7 +124,7 @@
                 <a
                   class="nav-link"
                   href="{% url 'advertiser_topic_report' advertiser.slug %}"
-                  {% if not advertiser.show_topic_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers. The link is only shown to staff.' %}"{% endif %}
+                  {% if not advertiser.show_topic_report %} data-toggle="tooltip" title="{% trans 'This report is not useful for all advertisers.' %}"{% endif %}
                 >
                   <span class="fa fa-dot-circle-o fa-fw ml-4 text-muted" aria-hidden="true"></span>
                   <span>{% trans 'Topics' %}</span>
