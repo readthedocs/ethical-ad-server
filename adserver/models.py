@@ -1496,7 +1496,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         """
         Refresh the denormalized total_views and total_clicks fields from AdImpression.
 
-        This should be called periodically (e.g., hourly or daily) instead of updating
+        This should be called every few minutes instead of updating
         these fields in real-time to avoid lock contention.
         """
         aggregation = AdImpression.objects.filter(advertisement__flight=self).aggregate(
