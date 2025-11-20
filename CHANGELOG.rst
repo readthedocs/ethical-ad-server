@@ -6,6 +6,21 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.31.0
+---------------
+
+This release added Redis and Celery monitoring to Sentry in production
+as well as Sentry profiling and tracing.
+There was also a change to fix some DB locking issues with the Flight denormalized fields
+which requires the Celery task queue to update these fields every few minutes
+(hence more monitoring of Celery).
+
+:Date: November 20, 2025
+
+ * @davidfischer: Add Redis and Celery to Sentry monitoring (#1101)
+ * @ericholscher: Fix Flight denormalized field locking issues (#1099)
+
+
 Version v5.30.0
 ---------------
 
