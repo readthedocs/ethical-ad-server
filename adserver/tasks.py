@@ -932,15 +932,21 @@ def refresh_flight_denormalized_totals():
     This task should be run periodically (e.g., every 5-10 minutes) to update
     the denormalized fields without causing lock contention on the Flight table.
     """
-    log.info("Refreshing denormalized totals for live flights")
+    start_time = timezone.now()
+    log.info("Starting refresh of denormalized totals for live flights")
 
     # Only refresh active flights to avoid unnecessary work
     flights = Flight.objects.filter(live=True)
+    total_flights = flights.count()
+    success_count = 0
+    error_count = 0
 
     for flight in flights:
         try:
             flight.refresh_denormalized_totals()
+            success_count += 1
         except Exception as e:
+            error_count += 1
             log.error(
                 "Failed to refresh denormalized totals for flight %s: %s",
                 flight.slug,
@@ -948,7 +954,23 @@ def refresh_flight_denormalized_totals():
                 exc_info=True,
             )
 
-    log.info("Finished refreshing denormalized totals for %d flights", flights.count())
+    duration = (timezone.now() - start_time).total_seconds()
+    log.info(
+        "Finished refreshing denormalized totals: %d/%d succeeded, %d failed, took %.2fs",
+        success_count,
+        total_flights,
+        error_count,
+        duration,
+    )
+
+    # Alert if there are significant failures
+    if error_count > 0 and error_count / max(total_flights, 1) > 0.1:
+        slack_message(
+            "adserver/slack/generic-message.slack",
+            {
+                "text": f"⚠️ Flight denormalized total refresh had {error_count}/{total_flights} failures"
+            },
+        )
 
 
 @app.task()

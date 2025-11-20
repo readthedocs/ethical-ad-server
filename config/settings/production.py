@@ -202,6 +202,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.daily_update_publishers",
         "schedule": crontab(minute="*/30"),
     },
+    "frequent-refresh-flight-totals": {
+        "task": "adserver.tasks.refresh_flight_denormalized_totals",
+        "schedule": crontab(minute="*/10"),  # Every 10 minutes
+    },
     # Run publisher importers daily
     "every-day-sync-publisher-data": {
         "task": "adserver.tasks.run_publisher_importers",
