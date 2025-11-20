@@ -1,10 +1,14 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV PYTHONUNBUFFERED 1
+
+# Pep668 prevents pip from modifying system packages
+# https://peps.python.org/pep-0668/
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 RUN apt-get -y update
 RUN apt-get -y install \
@@ -23,15 +27,13 @@ RUN apt-get -y install \
         libmysqlclient-dev \
         libfreetype6 \
         libjpeg-dev \
-        sqlite \
-        netcat \
+        sqlite3 \
         telnet \
         lsb-release
 
 # Requirements are installed here to ensure they will be cached.
 # https://docs.docker.com/build/cache/#use-the-dedicated-run-cache
 COPY ./requirements /requirements
-RUN pip install --upgrade pip
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/development.txt
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/production.txt
 
