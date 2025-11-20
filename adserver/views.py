@@ -159,6 +159,73 @@ def do_not_track(request):
     return JsonResponse(data, content_type="application/tracking-status+json")
 
 
+def flight_totals_health(request):
+    """
+    Health check endpoint for Flight denormalized totals refresh task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the periodic Celery task that refreshes denormalized totals
+    (total_views, total_clicks) on the Flight model.
+    """
+    from datetime import timedelta
+
+    from django.core.cache import cache
+    from django.utils.dateparse import parse_datetime
+
+    # Get the last time the task successfully ran from cache
+    last_refresh = cache.get("flight_totals_last_refresh")
+
+    if not last_refresh:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Task has never run or cache was cleared",
+            },
+            status=503,
+        )
+
+    # Parse the ISO timestamp
+    last_refresh_time = parse_datetime(last_refresh)
+    if not last_refresh_time:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Invalid timestamp in cache",
+            },
+            status=503,
+        )
+
+    now = timezone.now() if settings.USE_TZ else datetime.now()
+
+    # Calculate how long ago the task ran
+    time_since_refresh = now - last_refresh_time
+
+    # Task runs every 10 minutes, so alert if it hasn't run in 20 minutes
+    max_staleness = timedelta(minutes=20)
+
+    if time_since_refresh > max_staleness:
+        return JsonResponse(
+            {
+                "status": "error",
+                "last_refresh": last_refresh,
+                "minutes_since_refresh": int(time_since_refresh.total_seconds() / 60),
+                "max_minutes": int(max_staleness.total_seconds() / 60),
+            },
+            status=503,
+        )
+
+    return JsonResponse(
+        {
+            "status": "ok",
+            "last_refresh": last_refresh,
+            "minutes_since_refresh": int(time_since_refresh.total_seconds() / 60),
+        },
+        status=200,
+    )
+
+
 def do_not_track_policy(request):
     """
     Returns the Do Not Track policy.
