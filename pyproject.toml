@@ -1,3 +1,206 @@
+[project]
+name = "ethical-ad-server"
+version = "0.1.0"
+description = "Ethical Ad Server"
+requires-python = ">=3.12"
+dependencies = [
+    # Django itself and its requirements
+    "Django>=5.2,<5.3",
+    "pytz",
+    
+    # Asynchronous tasks
+    # Celery <5.5 has a stability issue the redis broker: https://github.com/celery/celery/issues/8030
+    "celery[redis]==5.5.0rc1",
+    
+    # Static files
+    "whitenoise",
+    
+    # Handling and processing uploaded images
+    "Pillow",
+    
+    # Our API
+    "djangorestframework",
+    "djangorestframework-jsonp",
+    
+    # Django helpers
+    "django-extensions",
+    
+    # Form helpers
+    "crispy-bootstrap4",
+    "django-crispy-forms",
+    
+    # Authentication
+    # Versions < 65.9 have slightly different ways of handling ratelimit 429s
+    "django-allauth[mfa]>=65.9.0",
+    
+    # Reading Django settings environment variables
+    "django-environ",
+    
+    # For rate limiting advertising clicks
+    "django-ratelimit<4",
+    
+    # For tracking historical changes
+    "django-simple-history",
+    
+    # Parsing browser user agents
+    "user-agents",
+    
+    # IP database libraries
+    "geoip2",
+    "IP2Proxy",
+    
+    # Countries helper used in ad targeting
+    "django-countries",
+    
+    "bleach",
+    
+    # Security features
+    "django-enforce-host",
+    
+    # For Slack notifications and possibly for logging errors to Slack
+    "django-slack",
+    
+    # Stripe for payments
+    "stripe<=5.0.0",
+    "dj-stripe",
+    
+    # JWT used by Metabase embedding
+    "PyJWT",
+    
+    # CORS headers
+    "django-cors-headers",
+    
+    # Deprecated, but still used in migrations
+    "jsonfield",
+    
+    # Used until UUID7 is in the Python stdlib (3.14 or 3.15)
+    # https://github.com/python/cpython/pull/121119
+    "uuid_utils>=0.9.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+# Production dependencies
+production = [
+    # Gunicorn is the WSGI server used to run Django
+    # For an app where the vast majority of requests are I/O bound API requests
+    # gevent may be a good choice for increased concurrency
+    "gunicorn[gevent]",
+    
+    # Database driver
+    # https://www.psycopg.org/psycopg3/docs/basic/install.html
+    "psycopg[binary,pool]",
+    
+    # Email sending
+    "django-anymail",
+    
+    # Redis (cache)
+    # Hiredis is a faster Redis client implementation in C
+    "django-redis[hiredis]",
+    
+    # Upload files to cloud storage (Azure)
+    "django-storages[azure]",
+    
+    # Logging and monitoring
+    "newrelic",
+    "sentry-sdk",
+]
+
+# Analyzer dependencies
+analyzer = [
+    # Used by the keyword/topic analyzer
+    "beautifulsoup4",
+    "textacy",
+    "markdownify>=1.2.0",
+    
+    # Must pin to a version compatible with the spacy-model below
+    "spacy[transformers]>=3.8.7,<4.0",
+    
+    # Spacy transformers is listed in the production requirements
+    # It installs PyTorch which is hundreds of MB
+    "langdetect",
+    
+    # Used to query OpenAI embedding models
+    "openai>=1.84.0",
+    "tiktoken>=0.9.0",
+    
+    # IMPORTANT:
+    # These need to be updated in tandem
+    # See compatibility matrix: https://github.com/pytorch/vision?tab=readme-ov-file#installation
+    "torch>=2.8,<2.9",
+    "torchvision>=0.23,<0.24",
+    
+    # Has to be downloaded directly like this (~30MB)
+    # https://github.com/explosion/spacy-models/releases/tag/en_core_web_md-3.8.0
+    "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
+    
+    # Used to parse web pages and get the "main section" of the page
+    "trafilatura>=2.0.0",
+    
+    # Used as a transitive dependency
+    # but we need to make sure lxml.html.clean is installed too
+    "lxml[html_clean]",
+    
+    # ETL Pipeline
+    "duckdb>=1.1.0,<1.2",
+    "adlfs==2024.12.0",
+    "boto3>=1.40",
+    
+    # Machine learning production requirements
+    # Postgres & Postgres vector support
+    "pgvector",
+    
+    # Numpy v2 has some breaking changes (for now)
+    # https://github.com/explosion/thinc/issues/939
+    "numpy<2",
+    
+    # For the ST backend
+    "sentence-transformers>=4.1,<5.0",
+    
+    # https://github.com/FunAudioLLM/CosyVoice/issues/516#issuecomment-2423324107
+    "huggingface_hub<0.25",
+]
+
+# Development dependencies
+dev = [
+    # Useful debugging tools
+    "django-debug-toolbar>=6.0",
+    "ipdb",
+    "ipython",
+    
+    # Code formatters
+    "ruff==0.5.2",
+    
+    # For running the black code formatter before commits and other checks
+    "pre-commit",
+    
+    # Sphinx for docs
+    "Sphinx>=6.0,<7.0",
+    "sphinx-autobuild",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-httpdomain",
+    
+    # Various testing tools
+    "pytest",
+    "pytest-django",
+    "django-dynamic-fixture",
+    "responses>=0.25.3,<1",
+    "urllib3>=2.2.2,<3",
+    
+    # Used to keep things up-to-date
+    "django-upgrade",
+    
+    # Coverage
+    "coverage",
+    "django_coverage_plugin",
+    
+    # Used to build the ML model
+    "requests-cache>=1.2.1,<2",
+    
+    # Testing dependencies
+    "tox<4.0",
+    "beautifulsoup4",
+]
+
 # https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 extend-include = ["*.ipynb"]

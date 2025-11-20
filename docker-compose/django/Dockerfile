@@ -32,18 +32,21 @@ RUN apt-get -y install \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Requirements are installed here to ensure they will be cached.
-# https://docs.docker.com/build/cache/#use-the-dedicated-run-cache
-COPY ./requirements /requirements
-RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/development.txt
-RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/production.txt
+# Copy project files for dependency resolution
+# uv.lock ensures reproducible builds
+COPY pyproject.toml uv.lock ./
 
-# Comment this if you don't need the page/topic analyzer.
-# The analyzer is used to target ads better based on page content.
-# Its requirements are huge and include PyTorch and other ML tools.
-# If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
-# in your environment file `./envs/local/django`.
-RUN --mount=type=cache,target=/root/.cache/uv uv pip install --system -r /requirements/analyzer.txt
+# Install dependencies using uv sync
+# This installs all dependencies from uv.lock, ensuring consistency
+# --frozen: Don't update the lockfile
+# --no-install-project: Don't install the project itself (we'll copy source later)
+# By default, installs base dependencies + dev group (for development container)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --all-extras
+
+# For production builds, you can use:
+# RUN --mount=type=cache,target=/root/.cache/uv \
+#     uv sync --frozen --no-install-project --no-dev --extra production --extra analyzer
 
 COPY ./docker-compose/django/start /start
 RUN chmod +x /start

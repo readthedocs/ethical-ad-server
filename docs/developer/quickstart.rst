@@ -57,9 +57,17 @@ To build the assets::
 Install Python dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+First, install uv if you haven't already:
+
 .. code-block:: bash
 
-   $ pip install -r requirements/development.txt
+   $ curl -LsSf https://astral.sh/uv/install.sh | sh
+
+Then install dependencies:
+
+.. code-block:: bash
+
+   $ uv sync --all-extras         # Install all dependencies including dev tools
    $ pre-commit install            # Install a code style pre-commit hook
 
 Run the server
@@ -69,19 +77,19 @@ Run migrations:
 
 .. code-block:: bash
 
-   $ python manage.py migrate
+   $ uv run python manage.py migrate
 
 Create a superuser:
 
 .. code-block:: bash
 
-   $ python manage.py createsuperuser
+   $ uv run python manage.py createsuperuser
 
 Run the server:
 
 .. code-block:: bash
 
-   $ python manage.py runserver
+   $ uv run python manage.py runserver
 
 Running the tests
 -----------------
@@ -90,7 +98,7 @@ To run the unit tests:
 
 .. code-block:: bash
 
-    $ pip install -r requirements/testing.txt
+    $ uv sync --all-extras  # If not already installed
     $ make test
 
 Run a specific test:
