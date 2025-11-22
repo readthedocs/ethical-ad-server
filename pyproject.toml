@@ -242,7 +242,8 @@ lines-after-imports = 2
 [tool.tox]
 # https://tox.wiki/en/latest/config.html#pyproject-toml-native
 requires = ["tox >= 4"]
-env_list = ["py3", "styles", "migrations", "docs"]
+# py3 isn't run by default. It's only used for specific tests.
+env_list = ["coverage", "styles", "migrations", "docs"]
 
 [tool.tox.env_run_base]
 description = "Run the full test suite under {base_python}"
@@ -252,33 +253,30 @@ extras = [
     "dev",
 ]
 setenv = { DJANGO_SETTINGS_MODULE = "config.settings.testing", DJANGO_SETTINGS_SKIP_LOCAL = "True" }
+
+[tool.tox.env.py3]
+description = "Run specific unit tests without coverage"
 commands = [
-    ["uv", "run", "coverage", "run", "-m", "pytest", "{posargs}"],
+    ["uv", "run", "pytest", "{posargs}"],
+]
+
+[tool.tox.env.coverage]
+description = "Run full unit test suite with coverage"
+commands = [
+    ["uv", "run", "coverage", "run", "-m", "pytest"],
     ["uv", "run", "coverage", "html"],
     ["uv", "run", "coverage", "report", "--show-missing", "--fail-under=90"],
 ]
 
 [tool.tox.env.styles]
 description = "Run type check on code base"
-runner = "uv-venv-lock-runner"
-extras = [
-    "dev",
-]
 commands = [["uv", "run", "pre-commit", "run", "--all-files"]]
 
 [tool.tox.env.migrations]
 description = "Check for missing migrations"
-runner = "uv-venv-lock-runner"
-extras = [
-    "dev",
-]
 commands = [["uv", "run", "python", "manage.py", "makemigrations", "--check", "--dry-run"]]
 
 [tool.tox.env.docs]
 description = "Run type check on code base"
-runner = "uv-venv-lock-runner"
 changedir = "{toxinidir}/docs"
-extras = [
-    "dev",
-]
 commands = [["uv", "run", "sphinx-build", "-W", "--keep-going", "-b", "html", "-d", "{envtmpdir}/doctrees", ".", "{envtmpdir}/html"]]
