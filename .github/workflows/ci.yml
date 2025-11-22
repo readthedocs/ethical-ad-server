@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --frozen --all-extras
+          uv sync --frozen --extra dev
           uv tool install tox --with tox-uv
 
       - name: Run CI
