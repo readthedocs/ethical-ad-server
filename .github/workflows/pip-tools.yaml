@@ -44,7 +44,7 @@ jobs:
             Dependencies: all packages updated via uv lock
           body: |
             Dependencies: all packages updated via uv lock
-            
+
             This PR updates the `uv.lock` file with the latest compatible versions
             of all dependencies specified in `pyproject.toml`.
           commit-message: |

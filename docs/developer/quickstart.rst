@@ -44,7 +44,7 @@ Requirements
 ~~~~~~~~~~~~
 
 - Python 3.12
-- Nodejs (tested with v14)
+- Nodejs (tested with v20)
 
 Front-end assets
 ~~~~~~~~~~~~~~~~
@@ -67,8 +67,8 @@ Then install dependencies:
 
 .. code-block:: bash
 
-   $ uv sync --all-extras         # Install all dependencies including dev tools
-   $ pre-commit install            # Install a code style pre-commit hook
+   $ uv sync --all-extras           # Install all dependencies including dev tools
+   $ uv run pre-commit install      # Install a code style pre-commit hook
 
 Run the server
 ~~~~~~~~~~~~~~
@@ -77,19 +77,19 @@ Run migrations:
 
 .. code-block:: bash
 
-   $ uv run python manage.py migrate
+   $ uv run ./manage.py migrate
 
 Create a superuser:
 
 .. code-block:: bash
 
-   $ uv run python manage.py createsuperuser
+   $ uv run ./manage.py createsuperuser
 
 Run the server:
 
 .. code-block:: bash
 
-   $ uv run python manage.py runserver
+   $ uv run ./manage.py runserver
 
 Running the tests
 -----------------
@@ -98,8 +98,8 @@ To run the unit tests:
 
 .. code-block:: bash
 
-    $ uv sync --all-extras  # If not already installed
-    $ make test
+    $ uv tool install tox --with tox-uv
+    $ tox
 
 Run a specific test:
 

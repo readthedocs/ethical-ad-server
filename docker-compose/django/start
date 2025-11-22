@@ -4,12 +4,13 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+
 # Reinstall dependencies without rebuilding docker image
 # pip install -r /app/requirements/development.txt
 
 # Don't auto-migrate locally because this can cause weird issues when testing migrations
 # python manage.py migrate
-python manage.py runserver 0.0.0.0:5000
+uv run ./manage.py runserver 0.0.0.0:5000
 
 # In production, we use gunicorn
 # This gets us close to that setting for development and testing
