@@ -102,7 +102,7 @@ production = [
 
     # Logging and monitoring
     "newrelic",
-    "sentry-sdk",
+    "sentry-sdk[celery,django]",
 ]
 
 # Analyzer dependencies

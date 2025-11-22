@@ -7,6 +7,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
+from django.core.cache import cache
 from django.db.models import Count
 from django.db.models import F
 from django.db.models import FloatField
@@ -24,6 +25,7 @@ from config.celery_app import app
 from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
+from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .importers import psf
 from .models import AdImpression
 from .models import Advertisement
@@ -922,6 +924,41 @@ def calculate_ad_ctrs(days=7, min_views=1_000):
         if total_views >= min_views:
             ad.sampled_ctr = calculate_ctr(total_clicks, total_views)
             ad.save()
+
+
+@app.task()
+def refresh_flight_denormalized_totals():
+    """
+    Refresh denormalized total_views and total_clicks fields for all live flights.
+
+    This task should be run periodically (e.g., every 5-10 minutes) to update
+    the denormalized fields without causing lock contention on the Flight table.
+    """
+    start_time = timezone.now()
+    log.info("Starting refresh of denormalized totals for live flights")
+
+    # Only refresh active flights to avoid unnecessary work
+    flights = Flight.objects.filter(live=True).exclude(
+        campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN
+    )
+    total_flights = flights.count()
+
+    for flight in flights:
+        flight.refresh_denormalized_totals()
+
+    # Update cache with last successful run timestamp
+    cache.set(
+        "flight_totals_last_refresh",
+        timezone.now().isoformat(),
+        timeout=None,  # Never expire
+    )
+
+    duration = (timezone.now() - start_time).total_seconds()
+    log.info(
+        "Finished refreshing denormalized totals: %d flights, took %.2fs",
+        total_flights,
+        duration,
+    )
 
 
 @app.task()

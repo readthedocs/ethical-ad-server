@@ -1056,7 +1056,7 @@ production = [
     { name = "gunicorn", extra = ["gevent"] },
     { name = "newrelic" },
     { name = "psycopg", extra = ["binary", "pool"] },
-    { name = "sentry-sdk" },
+    { name = "sentry-sdk", extra = ["celery", "django"] },
 ]
 
 [package.metadata]
@@ -1117,7 +1117,7 @@ requires-dist = [
     { name = "responses", marker = "extra == 'dev'", specifier = ">=0.25.3,<1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.5.2" },
     { name = "sentence-transformers", marker = "extra == 'analyzer'", specifier = ">=4.1,<5.0" },
-    { name = "sentry-sdk", marker = "extra == 'production'" },
+    { name = "sentry-sdk", extras = ["celery", "django"], marker = "extra == 'production'" },
     { name = "spacy", extras = ["transformers"], marker = "extra == 'analyzer'", specifier = ">=3.8.7,<4.0" },
     { name = "sphinx", marker = "extra == 'dev'", specifier = ">=6.0,<7.0" },
     { name = "sphinx-autobuild", marker = "extra == 'dev'" },
@@ -2583,6 +2583,14 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/61/89/1561b3dc8e28bf7978d031893297e89be266f53650c87bb14a29406a9791/sentry_sdk-2.45.0.tar.gz", hash = "sha256:e9bbfe69d5f6742f48bad22452beffb525bbc5b797d817c7f1b1f7d210cdd271", size = 373631, upload-time = "2025-11-18T13:23:22.475Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/c6/039121a0355bc1b5bcceef0dabf211b021fd435d0ee5c46393717bb1c09f/sentry_sdk-2.45.0-py2.py3-none-any.whl", hash = "sha256:86c8ab05dc3e8666aece77a5c747b45b25aa1d5f35f06cde250608f495d50f23", size = 404791, upload-time = "2025-11-18T13:23:20.533Z" },
+]
+
+[package.optional-dependencies]
+celery = [
+    { name = "celery" },
+]
+django = [
+    { name = "django" },
 ]
 
 [[package]]
