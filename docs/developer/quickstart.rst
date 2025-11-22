@@ -105,4 +105,4 @@ Run a specific test:
 
 .. code-block:: bash
 
-   $ tox -e py3 -- -k <test_name>
+   $ tox -e py3 -- adserver/auth/tests.py
