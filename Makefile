@@ -18,6 +18,8 @@ help:
 	@echo "  geoip          Download the GeoIP databases"
 	@echo "  ipproxy        Download proxy databases"
 
+# Run the full test suite
+# Run a specific test with tox -e py3 -- adserver/auth/tests.py
 test:
 	tox
 
@@ -46,11 +48,11 @@ dockerstop:
 # Use this command to inspect the container, run management commands,
 # or run anything else on the Django container
 dockershell:
-	docker compose -f $(DOCKER_CONFIG) run --rm django /bin/bash
+	docker compose -f $(DOCKER_CONFIG) run --rm django /shell
 
 # Get the GeoIP databases from DB-IP or Maxmind
 geoip:
-	python $(GEOIP_DOWNLOADER) --geoip-only --outdir=$(GEOIP_DIR)
+	uv run python $(GEOIP_DOWNLOADER) --geoip-only --outdir=$(GEOIP_DIR)
 
 ipproxy:
-	python $(GEOIP_DOWNLOADER) --ipproxy-only --outdir=$(GEOIP_DIR)
+	uv run python $(GEOIP_DOWNLOADER) --ipproxy-only --outdir=$(GEOIP_DIR)
