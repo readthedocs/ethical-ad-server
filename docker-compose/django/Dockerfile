@@ -10,7 +10,6 @@ ENV PYTHONUNBUFFERED 1
 # Copy (don't hardlink) files into /.venv. Avoid issues with Docker's FS
 # https://docs.astral.sh/uv/reference/environment/
 ENV UV_LINK_MODE=copy
-ENV UV_PYTHON_DOWNLOADS=never
 ENV UV_PROJECT_ENVIRONMENT=/.venv
 
 
@@ -25,8 +24,6 @@ RUN apt-get -y install \
         libxslt1-dev \
         locales \
         build-essential \
-        python3-pip \
-        python3-dev \
         postgresql-client \
         libmysqlclient-dev \
         libfreetype6 \
@@ -45,6 +42,10 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Copy project files for dependency resolution
 # uv.lock ensures reproducible builds
 COPY pyproject.toml uv.lock ./
+
+# Install Python through uv
+# Get the version pinned by pyproject.toml
+RUN uv python install
 
 # Install dependencies using uv sync
 # This creates a virtual environment at /.venv (not in /app)

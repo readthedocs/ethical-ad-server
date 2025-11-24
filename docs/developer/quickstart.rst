@@ -20,76 +20,75 @@ Start a local multi-container application with Postgres, Redis, Celery, and Djan
 
     $ make dockerserve
 
-To get a shell into the Django container where you can run ``./manage.py createsuperuser``,
+To get a shell into the Django container where you can run ``uv run ./manage.py createsuperuser``,
 get a Django shell, or run other commands:
 
 .. code-block:: bash
 
     $ make dockershell
     ...
-    /app # ./manage.py createsuperuser
+    /app    # uv run ./manage.py createsuperuser
 
 After setting up your super user account on your local development instance,
 you'll still need to set the :ref:`install/installation:Set the ad server URL`
 to something like ``localhost:5000``.
 
 
-Developing locally
-------------------
+Development tips
+----------------
 
 Docker compose is the recommended way to do development consistently.
-This section is more to document steps than to encourage you to develop outside of Docker.
+This step documents commands for code style, building static assets, and more.
+These commands can be run inside Docker (``make dockershell``).
 
 Requirements
 ~~~~~~~~~~~~
 
-- Python 3.12
+- `uv <https://docs.astral.sh/uv/getting-started/installation/>`_
 - Nodejs (tested with v20)
+
+
+Managing the ad server and setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run migrations:
+
+.. code-block:: bash
+
+    $ uv run ./manage.py migrate
+
+Create a superuser:
+
+.. code-block:: bash
+
+    $ uv run ./manage.py createsuperuser
 
 Front-end assets
 ~~~~~~~~~~~~~~~~
 
 To build the assets::
 
+.. code-block:: bash
+
     $ npm clean-install
     $ npm run build
 
-Install Python dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pre-commit and code style
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, install uv if you haven't already:
-
-.. code-block:: bash
-
-   $ curl -LsSf https://astral.sh/uv/install.sh | sh
-
-Then install dependencies:
+Setup pre-commit:
 
 .. code-block:: bash
 
-   $ uv sync --all-extras           # Install all dependencies including dev tools
-   $ uv run pre-commit install      # Install a code style pre-commit hook
+    $ uv tool install pre-commit --with pre-commit-uv
+    $ uvx pre-commit install         # Install a code style pre-commit hook
 
-Run the server
-~~~~~~~~~~~~~~
-
-Run migrations:
+You can run all code style checks with teh following:
 
 .. code-block:: bash
 
-   $ uv run ./manage.py migrate
+    $ uvx pre-commit run --all-files
 
-Create a superuser:
-
-.. code-block:: bash
-
-   $ uv run ./manage.py createsuperuser
-
-Run the server:
-
-.. code-block:: bash
-
-   $ uv run ./manage.py runserver
 
 Running the tests
 -----------------
@@ -105,4 +104,4 @@ Run a specific test:
 
 .. code-block:: bash
 
-   $ tox -e py3 -- adserver/auth/tests.py
+    $ tox -e py3 -- adserver/auth/tests.py
