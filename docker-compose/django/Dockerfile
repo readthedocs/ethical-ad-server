@@ -1,10 +1,10 @@
 FROM ubuntu:24.04
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-ENV PYTHONUNBUFFERED 1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV PYTHONUNBUFFERED=1
 
 # uv environment variables
 # Copy (don't hardlink) files into /.venv. Avoid issues with Docker's FS
