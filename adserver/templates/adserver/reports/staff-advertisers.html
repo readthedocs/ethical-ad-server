@@ -19,12 +19,14 @@
 {% block toc %}
 <section class="mb-5">
   {% if advertisers %}
-    <h2>{% trans 'Advertisers '%}</h2>
+    <h2>{% trans 'Advertisers '%} ({{ advertisers|length }})</h2>
+    <details>
     <ul>
     {% for advertiser in advertisers %}
       <li><a href="#{{ advertiser.slug }}">{{ advertiser }}</a></li>
     {% endfor %}
     </ul>
+    </details>
   {% endif %}
 </section>
 {% endblock toc %}
