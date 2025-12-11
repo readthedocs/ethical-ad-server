@@ -18,9 +18,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install test dependencies
         run: |
-          uv sync --frozen --extra dev
           uv tool install tox --with tox-uv
 
       - name: Run CI

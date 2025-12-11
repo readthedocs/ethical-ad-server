@@ -1027,6 +1027,17 @@ analyzer = [
     { name = "torchvision" },
     { name = "trafilatura" },
 ]
+production = [
+    { name = "django-anymail" },
+    { name = "django-redis", extra = ["hiredis"] },
+    { name = "django-storages", extra = ["azure"] },
+    { name = "gunicorn", extra = ["gevent"] },
+    { name = "newrelic" },
+    { name = "psycopg", extra = ["binary", "pool"] },
+    { name = "sentry-sdk", extra = ["celery", "django"] },
+]
+
+[package.dev-dependencies]
 dev = [
     { name = "beautifulsoup4" },
     { name = "coverage" },
@@ -1048,25 +1059,14 @@ dev = [
     { name = "sphinxcontrib-httpdomain" },
     { name = "urllib3" },
 ]
-production = [
-    { name = "django-anymail" },
-    { name = "django-redis", extra = ["hiredis"] },
-    { name = "django-storages", extra = ["azure"] },
-    { name = "gunicorn", extra = ["gevent"] },
-    { name = "newrelic" },
-    { name = "psycopg", extra = ["binary", "pool"] },
-    { name = "sentry-sdk", extra = ["celery", "django"] },
-]
 
 [package.metadata]
 requires-dist = [
     { name = "adlfs", marker = "extra == 'analyzer'", specifier = "==2024.12.0" },
     { name = "beautifulsoup4", marker = "extra == 'analyzer'" },
-    { name = "beautifulsoup4", marker = "extra == 'dev'" },
     { name = "bleach" },
     { name = "boto3", marker = "extra == 'analyzer'", specifier = ">=1.40" },
     { name = "celery", extras = ["redis"], specifier = "==5.5.0rc1" },
-    { name = "coverage", marker = "extra == 'dev'" },
     { name = "crispy-bootstrap4" },
     { name = "dj-stripe" },
     { name = "django", specifier = ">=5.2,<5.3" },
@@ -1074,10 +1074,7 @@ requires-dist = [
     { name = "django-anymail", marker = "extra == 'production'" },
     { name = "django-cors-headers" },
     { name = "django-countries" },
-    { name = "django-coverage-plugin", marker = "extra == 'dev'" },
     { name = "django-crispy-forms" },
-    { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = ">=6.0" },
-    { name = "django-dynamic-fixture", marker = "extra == 'dev'" },
     { name = "django-enforce-host" },
     { name = "django-environ" },
     { name = "django-extensions" },
@@ -1086,7 +1083,6 @@ requires-dist = [
     { name = "django-simple-history" },
     { name = "django-slack" },
     { name = "django-storages", extras = ["azure"], marker = "extra == 'production'" },
-    { name = "django-upgrade", marker = "extra == 'dev'" },
     { name = "djangorestframework" },
     { name = "djangorestframework-jsonp" },
     { name = "duckdb", marker = "extra == 'analyzer'", specifier = ">=1.1.0,<1.2" },
@@ -1095,8 +1091,6 @@ requires-dist = [
     { name = "gunicorn", extras = ["gevent"], marker = "extra == 'production'" },
     { name = "huggingface-hub", marker = "extra == 'analyzer'", specifier = "<0.25" },
     { name = "ip2proxy" },
-    { name = "ipdb", marker = "extra == 'dev'" },
-    { name = "ipython", marker = "extra == 'dev'" },
     { name = "jsonfield" },
     { name = "langdetect", marker = "extra == 'analyzer'" },
     { name = "lxml", extras = ["html-clean"], marker = "extra == 'analyzer'" },
@@ -1106,34 +1100,46 @@ requires-dist = [
     { name = "openai", marker = "extra == 'analyzer'", specifier = ">=1.84.0" },
     { name = "pgvector", marker = "extra == 'analyzer'" },
     { name = "pillow" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "psycopg", extras = ["binary", "pool"], marker = "extra == 'production'" },
     { name = "pyjwt" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-django", marker = "extra == 'dev'" },
     { name = "pytz" },
-    { name = "requests-cache", marker = "extra == 'dev'", specifier = ">=1.2.1,<2" },
-    { name = "responses", marker = "extra == 'dev'", specifier = ">=0.25.3,<1" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.5.2" },
     { name = "sentence-transformers", marker = "extra == 'analyzer'", specifier = ">=4.1,<5.0" },
     { name = "sentry-sdk", extras = ["celery", "django"], marker = "extra == 'production'" },
     { name = "spacy", extras = ["transformers"], marker = "extra == 'analyzer'", specifier = ">=3.8.7,<4.0" },
-    { name = "sphinx", marker = "extra == 'dev'", specifier = ">=6.0,<7.0" },
-    { name = "sphinx-autobuild", marker = "extra == 'dev'" },
-    { name = "sphinx-rtd-theme", marker = "extra == 'dev'" },
-    { name = "sphinxcontrib-httpdomain", marker = "extra == 'dev'" },
     { name = "stripe", specifier = "<=5.0.0" },
     { name = "textacy", marker = "extra == 'analyzer'" },
     { name = "tiktoken", marker = "extra == 'analyzer'", specifier = ">=0.9.0" },
     { name = "torch", marker = "extra == 'analyzer'", specifier = ">=2.8,<2.9" },
     { name = "torchvision", marker = "extra == 'analyzer'", specifier = ">=0.23,<0.24" },
     { name = "trafilatura", marker = "extra == 'analyzer'", specifier = ">=2.0.0" },
-    { name = "urllib3", marker = "extra == 'dev'", specifier = ">=2.2.2,<3" },
     { name = "user-agents" },
     { name = "uuid-utils", specifier = ">=0.9.0,<1.0.0" },
     { name = "whitenoise" },
 ]
-provides-extras = ["production", "analyzer", "dev"]
+provides-extras = ["production", "analyzer"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "beautifulsoup4" },
+    { name = "coverage" },
+    { name = "django-coverage-plugin" },
+    { name = "django-debug-toolbar", specifier = ">=6.0" },
+    { name = "django-dynamic-fixture" },
+    { name = "django-upgrade" },
+    { name = "ipdb" },
+    { name = "ipython" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-django" },
+    { name = "requests-cache", specifier = ">=1.2.1,<2" },
+    { name = "responses", specifier = ">=0.25.3,<1" },
+    { name = "ruff", specifier = "==0.5.2" },
+    { name = "sphinx", specifier = ">=6.0,<7.0" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-rtd-theme" },
+    { name = "sphinxcontrib-httpdomain" },
+    { name = "urllib3", specifier = ">=2.2.2,<3" },
+]
 
 [[package]]
 name = "executing"

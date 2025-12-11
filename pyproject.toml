@@ -160,6 +160,7 @@ analyzer = [
     "huggingface_hub<0.25",
 ]
 
+[dependency-groups]
 # Development dependencies
 dev = [
     # Useful debugging tools
@@ -249,9 +250,6 @@ env_list = ["coverage", "styles", "migrations", "docs"]
 description = "Run the full test suite under {base_python}"
 runner = "uv-venv-lock-runner"
 base_python = ["python3.12"]
-extras = [
-    "dev",
-]
 setenv = { DJANGO_SETTINGS_MODULE = "config.settings.testing", DJANGO_SETTINGS_SKIP_LOCAL = "True" }
 
 [tool.tox.env.py3]
