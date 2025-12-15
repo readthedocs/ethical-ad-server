@@ -95,6 +95,9 @@
 
 <script>
   (function() {
+    var COPIED_TEXT = '{% trans "Copied!" %}';
+    var RESET_TIMEOUT = 2000;
+
     document.getElementById('copy-payout-info').addEventListener('click', function() {
       // Get the payout information
       var amount = document.getElementById('payout-amount').textContent.trim();
@@ -109,17 +112,21 @@
       }
       textToCopy += 'Subject: ' + subject;
 
+      // Function to show success feedback
+      function showSuccessFeedback() {
+        var btnText = document.getElementById('copy-btn-text');
+        var originalText = btnText.textContent;
+        btnText.textContent = COPIED_TEXT;
+        
+        setTimeout(function() {
+          btnText.textContent = originalText;
+        }, RESET_TIMEOUT);
+      }
+
       // Copy to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(textToCopy).then(function() {
-          // Show success feedback
-          var btnText = document.getElementById('copy-btn-text');
-          var originalText = btnText.textContent;
-          btnText.textContent = '{% trans "Copied!" %}';
-          
-          setTimeout(function() {
-            btnText.textContent = originalText;
-          }, 2000);
+          showSuccessFeedback();
         }).catch(function(err) {
           console.error('Failed to copy text: ', err);
           alert('Failed to copy to clipboard');
@@ -134,13 +141,7 @@
         textArea.select();
         try {
           document.execCommand('copy');
-          var btnText = document.getElementById('copy-btn-text');
-          var originalText = btnText.textContent;
-          btnText.textContent = '{% trans "Copied!" %}';
-          
-          setTimeout(function() {
-            btnText.textContent = originalText;
-          }, 2000);
+          showSuccessFeedback();
         } catch (err) {
           console.error('Fallback: Failed to copy text: ', err);
           alert('Failed to copy to clipboard');
