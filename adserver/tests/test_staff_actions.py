@@ -383,6 +383,9 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(finish_response.status_code, 200)
         self.assertContains(finish_response, self.payout3.get_status_display())
         self.assertContains(finish_response, "$99")
+        # Verify copy button is present
+        self.assertContains(finish_response, 'id="copy-payout-info"')
+        self.assertContains(finish_response, 'Copy Info')
 
         post_response = self.client.post(finish_url)
         self.assertEqual(post_response.status_code, 302)

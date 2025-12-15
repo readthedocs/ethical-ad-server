@@ -19,6 +19,14 @@
 
 <form method="post">
 
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <h5 class="mb-0">{% trans 'Payout Details' %}</h5>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="copy-payout-info" title="{% trans 'Copy payout information' %}">
+      <span class="fa fa-copy mr-1" aria-hidden="true"></span>
+      <span id="copy-btn-text">{% trans 'Copy Info' %}</span>
+    </button>
+  </div>
+
   <dl>
     <dt>{% trans 'Publisher' %}</dt>
     <dd>{{ payout.publisher }}</dd>
@@ -30,7 +38,7 @@
 
     {% if payout.publisher.paypal_email %}
     <dt>{% trans 'User' %}</dt>
-    <dd>
+    <dd id="payout-email">
     {{ payout.publisher.paypal_email }}
     </dd>
     {% endif %}
@@ -39,10 +47,10 @@
     <dd>{{ payout.get_status_display }}</dd>
 
     <dt>{% trans 'Amount' %}</dt>
-    <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+    <dd id="payout-amount">${{ payout.amount|floatformat:2|intcomma }}</dd>
 
     <dt>{% trans 'Subject' %}</dt>
-    <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
+    <dd id="payout-subject">{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
 
     <dt>{% trans 'Action' %}</dt>
     <dd>
@@ -84,5 +92,63 @@
 </form>
 
 </div>
+
+<script>
+  (function() {
+    document.getElementById('copy-payout-info').addEventListener('click', function() {
+      // Get the payout information
+      var amount = document.getElementById('payout-amount').textContent.trim();
+      var subject = document.getElementById('payout-subject').textContent.trim();
+      var emailElement = document.getElementById('payout-email');
+      var email = emailElement ? emailElement.textContent.trim() : '';
+
+      // Format the text to copy
+      var textToCopy = 'Amount: ' + amount + '\n';
+      if (email) {
+        textToCopy += 'Email: ' + email + '\n';
+      }
+      textToCopy += 'Subject: ' + subject;
+
+      // Copy to clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(function() {
+          // Show success feedback
+          var btnText = document.getElementById('copy-btn-text');
+          var originalText = btnText.textContent;
+          btnText.textContent = '{% trans "Copied!" %}';
+          
+          setTimeout(function() {
+            btnText.textContent = originalText;
+          }, 2000);
+        }).catch(function(err) {
+          console.error('Failed to copy text: ', err);
+          alert('Failed to copy to clipboard');
+        });
+      } else {
+        // Fallback for older browsers
+        var textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          var btnText = document.getElementById('copy-btn-text');
+          var originalText = btnText.textContent;
+          btnText.textContent = '{% trans "Copied!" %}';
+          
+          setTimeout(function() {
+            btnText.textContent = originalText;
+          }, 2000);
+        } catch (err) {
+          console.error('Fallback: Failed to copy text: ', err);
+          alert('Failed to copy to clipboard');
+        }
+        document.body.removeChild(textArea);
+      }
+    });
+  })();
+</script>
 
 {% endblock content_container %}
