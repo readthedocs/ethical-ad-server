@@ -2355,6 +2355,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # we want to display a simple placeholder image.
             image_preview_url = static("image-placeholder.png")
 
+        # Render old style ads where HTML was allowed
+        # New style ads just use headline/content/CTA
+        text = self.render_links(click_url or self.link)
+        body = html.unescape(bleach.clean(text, tags=[], strip=True))
+
         return template.render(
             {
                 "ad": self,
@@ -2368,6 +2373,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 # to link the `Ads by EthicalAds` to.
                 "keywords": keywords,
                 "topics": topics,
+                # Pass headline, body, cta
+                # Newer ad formats can customize the display
+                "headline": self.headline,
+                "content": self.content or body,
+                "cta": self.cta,
             }
         ).strip()
 
