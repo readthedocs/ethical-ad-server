@@ -6,6 +6,27 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.32.0
+---------------
+
+This release had significant dependency updates including moving to Ubuntu 24, Python3.12,
+and using uv instead of pip for dependency management.
+There were also some minor improvements to ad styling for a new ad type.
+
+:Date: December 18, 2025
+
+ * @davidfischer: Add ad styles from client (#1110)
+ * @davidfischer: Pass headline/CTA to ad render (#1109)
+ * @davidfischer: Tweak to how dev dependencies are declared (#1106)
+ * @davidfischer: Handle no permission with ip2proxy (#1105)
+ * @ericholscher: Wrap staff advertisers nav in a details block (#1104)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1103)
+ * @Copilot: Upgrade to Ubuntu 24.04 LTS and Python 3.12 with modern uv dependency management (#1100)
+ * @dependabot[bot]: Bump starlette from 0.47.2 to 0.49.1 in /requirements (#1092)
+ * @ericholscher: Add CSV importer (#1077)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#1074)
+
+
 Version v5.31.0
 ---------------
 
