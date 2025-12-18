@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+# Use the venv created by `uv sync` in the Dockerfile
+source /.venv/bin/activate
+
+# Start shell with the venv activated
+/bin/bash

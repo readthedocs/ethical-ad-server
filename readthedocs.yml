@@ -5,14 +5,17 @@ version: 2
 
 # Set the OS & Python version
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.10"
-
-# Build documentation in the "docs/" directory with Sphinx
-sphinx:
-   configuration: docs/conf.py
-
-python:
-   install:
-   - requirements: requirements/development.txt
+    python: "3.12"
+  jobs:
+    pre_install:
+      # Install uv
+      - curl -LsSf https://astral.sh/uv/install.sh | sh
+      # Ensure uv is on PATH
+      - export PATH="$HOME/.local/bin:$PATH"
+    install:
+      # Sync regular and dev dependencies
+      - uv sync --locked
+    build:
+      - uv run sphinx-build -b html . _build -W

@@ -1,10 +1,17 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-ENV PYTHONUNBUFFERED 1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV PYTHONUNBUFFERED=1
+
+# uv environment variables
+# Copy (don't hardlink) files into /.venv. Avoid issues with Docker's FS
+# https://docs.astral.sh/uv/reference/environment/
+ENV UV_LINK_MODE=copy
+ENV UV_PROJECT_ENVIRONMENT=/.venv
+
 
 RUN apt-get -y update
 RUN apt-get -y install \
@@ -17,33 +24,46 @@ RUN apt-get -y install \
         libxslt1-dev \
         locales \
         build-essential \
-        python3-pip \
-        python3-dev \
         postgresql-client \
         libmysqlclient-dev \
         libfreetype6 \
         libjpeg-dev \
-        sqlite \
-        netcat \
+        sqlite3 \
+        netcat-openbsd \
         telnet \
         lsb-release
 
-# Requirements are installed here to ensure they will be cached.
-# https://docs.docker.com/build/cache/#use-the-dedicated-run-cache
-COPY ./requirements /requirements
-RUN pip install --upgrade pip
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/development.txt
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/production.txt
+# Install uv for fast package management
+# https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin/:$PATH"
 
-# Comment this if you don't need the page/topic analyzer.
-# The analyzer is used to target ads better based on page content.
-# Its requirements are huge and include PyTorch and other ML tools.
-# If not needed, make sure to set `ADSERVER_ANALYZER_BACKEND=` (empty string)
-# in your environment file `./envs/local/django`.
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r /requirements/analyzer.txt
+# Copy project files for dependency resolution
+# uv.lock ensures reproducible builds
+COPY pyproject.toml uv.lock ./
+
+# Install Python through uv
+# Get the version pinned by pyproject.toml
+RUN uv python install
+
+# Install dependencies using uv sync
+# This creates a virtual environment at /.venv (not in /app)
+# This installs all dependencies from uv.lock, ensuring consistency
+# --frozen: Don't update the lockfile
+# --no-install-project: Don't install the project itself
+# If you do not want the analyzer dependencies (which are LARGE), you can use:
+#  RUN --mount=type=cache,target=/root/.cache/uv \
+#      uv sync --frozen --no-install-project --extra dev --extra production
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --all-extras
 
 COPY ./docker-compose/django/start /start
 RUN chmod +x /start
+
+# Launch a shell within the container with this script
+COPY ./docker-compose/django/shell /shell
+RUN chmod +x /shell
 
 COPY ./docker-compose/django/celery/worker/start /start-celeryworker
 RUN chmod +x /start-celeryworker
@@ -51,11 +71,9 @@ RUN chmod +x /start-celeryworker
 COPY ./docker-compose/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
 
-# Ensure that ``python`` is in the PATH so that ``./manage.py`` works
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 # Load model
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('multi-qa-MiniLM-L6-cos-v1', cache_folder='/tmp/sentence_transformers')"
+# Not needed if you don't use the analyzer
+RUN uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('multi-qa-MiniLM-L6-cos-v1', cache_folder='/tmp/sentence_transformers')"
 
 # Setup the locale
 RUN locale-gen en_US.UTF-8

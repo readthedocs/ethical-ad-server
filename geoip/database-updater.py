@@ -85,6 +85,12 @@ def update_ipproxy_db(outdir):
             f"Failed to update IP2Proxy database: {url}. Status_code={resp.status_code}"
         )
 
+    # IP2Location returns a 200 with "NO PERMISSION" as the body on a failure
+    if len(resp.content) < 1024 and b"NO PERMISSION" in resp.content:
+        raise RuntimeError(
+            "Permission denied fetching updated IP2Proxy database. IP2LOCATION_TOKEN is likely expired/bad."
+        )
+
     with zipfile.ZipFile(io.BytesIO(resp.content), mode="r") as myzip:
         for member in myzip.infolist():
             if member.filename.lower().endswith(".bin"):

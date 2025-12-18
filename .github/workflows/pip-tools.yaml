@@ -1,10 +1,8 @@
-# Action to run pip-compile weekly and create a Pull Request with the changes.
-# Although GitHub says that pip-compile is supported by dependabot, we couldn't make it work together.
-# That's why this action exists.
-# If we ever find the proper configuration for dependabot+pip-compile,
-# we can delete this action.
+# Action to run uv lock monthly and create a Pull Request with the changes.
+# This keeps dependencies up-to-date by updating uv.lock with the latest
+# compatible versions from pyproject.toml.
 
-name: Update dependencies with pip-tools
+name: Update dependencies with uv
 
 on:
   schedule:
@@ -24,30 +22,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install "pg_config" requirement
         run: sudo apt-get install libpq-dev
 
-      - name: Install piptools
-        run: python -m pip install -U pip-tools
-
-      - name: Update dependencies from requirements/*.txt
-        run: ./requirements/update.sh
+      - name: Update dependencies with uv lock
+        run: uv lock --upgrade
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           add-paths: |
-            requirements/*.txt
+            uv.lock
           title: |
-            Dependencies: all packages updated via pip-tools
+            Dependencies: all packages updated via uv lock
           body: |
-            Dependencies: all packages updated via pip-tools
+            Dependencies: all packages updated via uv lock
+
+            This PR updates the `uv.lock` file with the latest compatible versions
+            of all dependencies specified in `pyproject.toml`.
           commit-message: |
-            Dependencies: all packages updated via pip-tools
+            Dependencies: all packages updated via uv lock
           delete-branch: true
-          branch: dependencies/pip-tools
+          branch: dependencies/uv-lock
           branch-suffix: short-commit-hash
