@@ -286,5 +286,53 @@ body {
       }
     }
 
+    // Old style RTD placement
+    .ethical-sidebar,
+    .ethical-footer {
+      padding: 0.5em;
+      margin: 1em 0;
+
+      background-color: #eee;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      color: #0a0a0a;
+      font-size: 14px;
+      line-height: 20px;
+
+      .ethical-callout {
+        text-align: center;
+        padding-top: 1em;
+      }
+
+      .ethical-text {
+        margin-top: 1em;
+      }
+
+      img {
+        width: 120px;
+        height: 90px;
+        display: inline-block;
+      }
+
+      a, a:visited, a:hover, a:active {
+        color: #0a0a0a;
+        text-decoration: none !important;
+        border-bottom: 0 !important;
+      }
+    }
+
+    .ethical-sidebar {
+      text-align: center;
+      max-width: 300px;
+    }
+    .ethical-footer {
+      text-align: left;
+
+      & img {
+        float: right;
+        margin-left: 25px;
+      }
+    }
+
   }
 }
