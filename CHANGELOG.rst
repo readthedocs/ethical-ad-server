@@ -1,3 +1,6 @@
+## Changes since 2025-12-18T22:46:02.485Z
+
+ * @davidfischer: Re-add missing RTD style ads (#1112)
 CHANGELOG
 =========
 
