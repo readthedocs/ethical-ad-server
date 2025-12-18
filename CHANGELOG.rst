@@ -1,9 +1,22 @@
+## Changes since 2025-12-18T22:46:02.485Z
+
+ * @davidfischer: Re-add missing RTD style ads (#1112)
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v5.32.1
+---------------
+
+Packaging issue with the release missing some styles.
+
+:Date: December 18, 2025
+
+ * @davidfischer: Re-add missing RTD style ads (#1112)
 
 
 Version v5.32.0
