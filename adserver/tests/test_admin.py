@@ -161,7 +161,9 @@ class AdModelAdminTests(BaseAdModelsTestCase):
 
                 # No Stripe ID for this advertiser
                 resp = self.client.post(url, data, follow=True)
-                self.assertContains(resp, "Advertiser does not have an associated Stripe customer")
+                self.assertContains(
+                    resp, "Advertiser does not have an associated Stripe customer"
+                )
 
                 self.advertiser.djstripe_customer = self.stripe_customer
                 self.advertiser.save()
