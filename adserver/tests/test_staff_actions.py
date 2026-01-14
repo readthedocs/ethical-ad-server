@@ -1,4 +1,6 @@
+from datetime import datetime as dt
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -392,9 +394,6 @@ class PublisherPayoutTests(TestCase):
 
     def test_percent_change_across_year_boundary(self):
         """Test that % change calculation works correctly when crossing year boundaries."""
-        from unittest.mock import patch
-        from datetime import datetime as dt
-
         self.client.force_login(self.staff_user)
 
         # Simulate being in January 2026
@@ -414,7 +413,8 @@ class PublisherPayoutTests(TestCase):
         # Create offers for January 2026 (current month) that should be paid out
         # We need to create offers for the period since the last payout
         # Create data from Dec 1 2025 to Dec 31 2025 for the "due" report
-        for day in range(1, 32):
+        # December has 31 days, so range(1, 32) gives us days 1-31
+        for day in range(1, 32):  # Days 1-31 of December
             offer_date = timezone.make_aware(dt(2025, 12, day, 12, 0, 0))
             for _ in range(5):  # 5 clicks per day = 155 clicks total
                 get(
@@ -446,4 +446,5 @@ class PublisherPayoutTests(TestCase):
             # Check that % change is displayed (not "N/A")
             # The new amount should be different from $100, so we should see a percentage
             # We're checking that it's not showing "N/A" which would indicate the bug
-            self.assertNotContains(response, '<td>\n            \n            N/A')
+            # Using a simpler assertion that doesn't depend on exact HTML formatting
+            self.assertNotContains(response, "N/A")
