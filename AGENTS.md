@@ -52,8 +52,8 @@ A single test file may contain multiple classes for logical sections (eg. `test_
 - **Migrations:** After modifying `models.py`, you must run `uv run python manage.py makemigrations` and include the migration files in the PR. Migrations should be named appropriately and include a description of the changes made.
 - **Logic Placement:** Keep views thin if possible. Place business logic in `services.py` or within Model methods where appropriate.
 - **Environment Variables:** Use a `.env` file for local development. Never hardcode secrets. `.envs/local/django.sample` is a sample environment file checked into source control. `.envs/local/django` is used for local development secrets and is gitignored.
-- **Translations:** Use Django's translation system for any text that should be translatable. Use the `gettext` function for any text that sho
-uld be translatable. Use the `gettext_lazy` function for any text that should be translatable in a lazy manner. These are usually imported as
+- **Translations:** Use Django's translation system for any text that should be translatable. Use the `gettext` function for any text that should be translatable.
+Use the `gettext_lazy` function for any text that should be translatable in a lazy manner. These are usually imported as
 follows: `from django.utils.translation import gettext as _`.
 
 
