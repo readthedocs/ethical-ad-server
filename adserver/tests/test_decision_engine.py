@@ -2,8 +2,8 @@ import datetime
 import unittest
 
 from django.conf import settings
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.test.client import RequestFactory
 from django_dynamic_fixture import get
 from user_agents import parse
@@ -271,13 +271,13 @@ class DecisionEngineTests(TestCase):
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             self.cpm_flight.total_views = 10_000 - pace - 1
-            self.cpm_flight.save(update_fields=['total_views'])
+            self.cpm_flight.save(update_fields=["total_views"])
             self.assertEqual(self.cpm_flight.views_needed_this_interval(), 1)
             self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
             # Don't show this flight anymore. It is above pace
             self.cpm_flight.total_views = 10_000 - pace
-            self.cpm_flight.save(update_fields=['total_views'])
+            self.cpm_flight.save(update_fields=["total_views"])
             self.assertEqual(self.cpm_flight.views_needed_this_interval(), 0)
             self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 

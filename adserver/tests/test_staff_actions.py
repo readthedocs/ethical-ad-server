@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
@@ -21,6 +21,7 @@ from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_publishers
+
 
 User = get_user_model()
 

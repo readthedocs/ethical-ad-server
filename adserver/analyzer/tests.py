@@ -10,17 +10,18 @@ from django.test import TestCase
 from django.utils import timezone
 from django_dynamic_fixture import get
 
-from . import tasks
 from ..models import Offer
 from ..models import Publisher
 from ..tests.common import BaseAdModelsTestCase
+from . import tasks
 from .backends.naive import NaiveKeywordAnalyzerBackend
+from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
 from .utils import normalize_title
 from .utils import normalize_url
 from .validators import KeywordsValidator
-from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
+
 
 try:
     from .backends.eatopics import EthicalAdsTopicsBackend
@@ -101,9 +102,7 @@ class TestModels(TestCase):
         )
 
     def test_str(self):
-        self.assertEqual(
-            str(self.analyzed_url), "https://example.com"
-        )
+        self.assertEqual(str(self.analyzed_url), "https://example.com")
 
     def test_validation(self):
         self.analyzed_url.keywords = ["Python", "Django"]
@@ -284,7 +283,8 @@ class TestTasks(BaseAdModelsTestCase):
             publisher=self.publisher,
             keywords=["python", "django"],
             visits_since_last_analyzed=10,
-            last_analyzed_date=timezone.now() - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD+1),
+            last_analyzed_date=timezone.now()
+            - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD + 1),
         )
 
         self.campaign.campaign_type = "paid"

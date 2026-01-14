@@ -709,9 +709,9 @@ class TestAdModels(BaseAdModelsTestCase):
         )
         offer3 = Offer.objects.get(pk=output["nonce"])
 
-        view1 = self.ad1.track_view(request, self.publisher, offer=offer1)
-        view2 = self.ad1.track_view(request, self.publisher, offer=offer2)
-        view3 = self.ad1.track_view(request, self.publisher, offer=offer3)
+        self.ad1.track_view(request, self.publisher, offer=offer1)
+        self.ad1.track_view(request, self.publisher, offer=offer2)
+        self.ad1.track_view(request, self.publisher, offer=offer3)
         self.ad1.invalidate_nonce(VIEWS, offer1.pk)
         self.ad1.invalidate_nonce(VIEWS, offer2.pk)
         self.ad1.invalidate_nonce(VIEWS, offer3.pk)

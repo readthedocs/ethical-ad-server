@@ -5,8 +5,8 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core import management
 from django.db import models
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 
 from ..models import AdImpression
 from ..models import Advertisement
@@ -134,17 +134,19 @@ class TestArchiveOffers(TestCase):
         output = self.out.getvalue()
         self.assertTrue("Skipping deleting archived offers" in output)
 
-    @override_settings(STORAGES={
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-        },
-        "backups": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
+    @override_settings(
+        STORAGES={
+            "default": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+            },
+            "backups": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
         }
-    })
+    )
     @patch("django.db.connections")
     def test_archive_offers_storage(self, conn_mock):
         management.call_command(
