@@ -774,13 +774,17 @@ class AggregationTaskTests(BaseAdModelsTestCase):
     def test_daily_update_domains(self):
         daily_update_domains()
 
-        imp1 = DomainImpression.objects.filter(advertisement=self.ad1, domain="example.com").first()
+        imp1 = DomainImpression.objects.filter(
+            advertisement=self.ad1, domain="example.com"
+        ).first()
         self.assertIsNotNone(imp1)
         self.assertEqual(imp1.offers, 3)
         self.assertEqual(imp1.views, 2)
         self.assertEqual(imp1.clicks, 1)
 
-        imp2 = DomainImpression.objects.filter(advertisement=self.ad2, domain="sub.example.com").first()
+        imp2 = DomainImpression.objects.filter(
+            advertisement=self.ad2, domain="sub.example.com"
+        ).first()
         self.assertIsNotNone(imp2)
         self.assertEqual(imp2.offers, 1)
         self.assertEqual(imp2.views, 1)

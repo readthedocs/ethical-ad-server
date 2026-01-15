@@ -71,11 +71,18 @@ class TestValidators(TestCase):
         self.assertRaises(ValidationError, validator, {"include_metro_codes": ["USA"]})
         self.assertRaises(ValidationError, validator, {"mobile_traffic": "unknown"})
         self.assertRaises(
-            ValidationError, validator, {"include_regions": ["invalid-region"]}
-        )
-        self.assertRaises(
             ValidationError, validator, {"include_topics": ["invalid-topic"]}
         )
+
+        # Niche targeting
+        validator({"niche_targeting": 0.5})
+        self.assertRaises(ValidationError, validator, {"niche_targeting": "invalid"})
+        self.assertRaises(ValidationError, validator, {"niche_targeting": 1.1})
+        self.assertRaises(ValidationError, validator, {"niche_targeting": -0.1})
+
+        # Days
+        validator({"days": ["monday", "tuesday"]})
+        self.assertRaises(ValidationError, validator, {"days": ["not-a-day"]})
 
     def test_traffic_cap_validator(self):
         validator = TrafficFillValidator(message="Test Message")
@@ -86,11 +93,31 @@ class TestValidators(TestCase):
         validator({"publishers": {"pub-slug": 0.1}})
 
         # Invalid
-        self.assertRaises(ValidationError, validator, {"countries": {"XXX": 0.1}})
-        self.assertRaises(ValidationError, validator, {"countries": {"US": "a"}})
         self.assertRaises(
             ValidationError, validator, {"regions": {"invalid-region": 0.1}}
         )
+
+        # Percentages
+        self.assertRaises(ValidationError, validator, {"countries": {"US": 1.1}})
+        self.assertRaises(ValidationError, validator, {"countries": {"US": -0.1}})
+        self.assertRaises(ValidationError, validator, {"countries": {"US": "invalid"}})
+
+    def test_region_validator_failures(self):
+        validator = TargetingParametersValidator()
+        self.assertRaises(
+            ValidationError, validator, {"include_regions": ["invalid-region"]}
+        )
+
+    def test_country_validator_failures(self):
+        validator = TrafficFillValidator()
+        self.assertRaises(ValidationError, validator, {"countries": {"ZZ": 0.1}})
+        self.assertRaises(ValidationError, validator, {"countries": {"US": 1.1}})
+        self.assertRaises(ValidationError, validator, {"countries": {"US": -0.1}})
+        self.assertRaises(ValidationError, validator, {"regions": {"us-ca": 1.1}})
+        self.assertRaises(ValidationError, validator, {"publishers": {"pub-slug": 1.1}})
+
+        # Types
+        self.assertRaises(ValidationError, validator, {"publishers": {123: 0.1}})
 
 
 class TestTopicPricingValidator(TestCase):

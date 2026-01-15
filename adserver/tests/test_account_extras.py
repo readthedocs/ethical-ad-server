@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.urls import reverse
 from django_dynamic_fixture import get
 from rest_framework.authtoken.models import Token
@@ -77,6 +77,10 @@ class TestApiTokenMangementViews(TestCase):
         self.assertContains(resp, "API token created successfully")
 
         self.assertTrue(Token.objects.filter(user=self.user).exists())
+
+        resp = self.client.post(self.create_view, data={}, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "API token created successfully")
 
     def test_delete_view(self):
         # Token doesn't exist yet
@@ -158,3 +162,15 @@ class TestSupportView(TestCase):
             resp = self.client.get(self.support_view)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, f'action="{form_action}"')
+
+    def test_support_success_param(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(self.support_view + "?success=true", follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Thanks, we got your message")
+
+    def test_support_error_param(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(self.support_view + "?error=true", follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "There was a problem sending your message.")

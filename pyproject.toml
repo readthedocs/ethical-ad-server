@@ -209,8 +209,6 @@ exclude = [
   "manage.py",
   "docs",
   "migrations",
-  "tests",
-  "tests.py",
 ]
 
 # Same as Black.
@@ -263,7 +261,7 @@ description = "Run full unit test suite with coverage"
 commands = [
     ["uv", "run", "coverage", "run", "-m", "pytest"],
     ["uv", "run", "coverage", "html"],
-    ["uv", "run", "coverage", "report", "--show-missing", "--fail-under=90"],
+    ["uv", "run", "coverage", "report", "--show-missing", "--fail-under=94"],
 ]
 
 [tool.tox.env.styles]

@@ -991,6 +991,7 @@ class PublisherGroupAdmin(SimpleHistoryAdmin):
     )
     model = PublisherGroup
     prepopulated_fields = {"slug": ("name",)}
+    raw_id_fields = ("publishers",)
     readonly_fields = ("modified", "created")
 
 

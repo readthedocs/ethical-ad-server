@@ -22,9 +22,11 @@ from ..models import Advertiser
 from ..models import AdvertiserImpression
 from ..models import Campaign
 from ..models import Flight
+from ..models import GeoImpression
 from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherPaidImpression
+from ..reports import AdvertiserGeoReport
 from ..reports import AdvertiserReport
 from ..reports import OptimizedAdvertiserReport
 from ..reports import OptimizedPublisherPaidReport
@@ -725,6 +727,67 @@ class TestReportViews(TestReportsBase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Keyword Report")
 
+    def test_advertiser_report_spend_hasattr(self):
+        # AdvertiserImpression has 'spend'
+        AdvertiserImpression.objects.create(
+            advertiser=self.advertiser1,
+            date=timezone.now().date(),
+            views=100,
+            clicks=10,
+            spend=5.0,
+        )
+        # Use OptimizedAdvertiserReport which uses AdvertiserImpression
+        report = OptimizedAdvertiserReport(
+            AdvertiserImpression.objects.filter(advertiser=self.advertiser1)
+        )
+        report.generate()
+        self.assertAlmostEqual(report.total["cost"], 5.0)
+
+    def test_advertiser_geo_report_index_display(self):
+        report = AdvertiserGeoReport(GeoImpression.objects.all())
+        # index is country code
+        self.assertEqual(report.get_index_display("US"), "United States of America")
+        self.assertEqual(report.get_index_display("UNKNOWN"), "UNKNOWN")
+
+    def test_publisher_report_export_index_display(self):
+        report = PublisherReport(AdImpression.objects.all())
+        report.export = True
+        # index is date
+        day = timezone.now().date()
+        # PublisherReport.get_index_display returns '%b %d, %Y'
+        self.assertEqual(report.get_index_display(day), day.strftime("%b %d, %Y"))
+
+    def test_staff_publisher_report_filters(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_publishers_report")
+
+        # Test sort=created
+        resp = self.client.get(url, {"sort": "created"})
+        self.assertEqual(resp.status_code, 200)
+
+        # Test revenue_share_percentage filter
+        resp = self.client.get(url, {"revenue_share_percentage": "70"})
+        self.assertEqual(resp.status_code, 200)
+
+        # Test invalid revenue_share_percentage
+        resp = self.client.get(url, {"revenue_share_percentage": "invalid"})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_base_report_view_invalid_dates(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("staff_advertisers_report")
+
+        # end_date < start_date
+        resp = self.client.get(
+            url, {"start_date": "2026-01-10", "end_date": "2026-01-01"}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("start_date", resp.context)
+
+        # no end_date
+        resp = self.client.get(url, {"start_date": "2026-01-10", "end_date": ""})
+        self.assertEqual(resp.status_code, 200)
+
     def test_publisher_uplift_report_contents(self):
         self.client.force_login(self.staff_user)
         url = reverse("publisher_uplift_report")
@@ -1110,9 +1173,7 @@ class TestReportViews(TestReportsBase):
 
         # 2 filters lead to a date-based view
         response = self.client.get(url, {"topic": "frontend-web", "region": "us-ca"})
-        self.assertContains(
-            response, "<td>%s" % timezone.now().strftime("%b")
-        )
+        self.assertContains(response, "<td>%s" % timezone.now().strftime("%b"))
         self.assertNotContains(response, "<td>us-ca:frontend-web")
 
         # Invalid country
