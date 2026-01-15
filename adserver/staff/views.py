@@ -175,13 +175,12 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             if current_payout:
                 payout_context["payout"] = current_payout
 
+            # Calculate last month's date (handles year boundaries correctly)
+            last_month_date = timezone.now().replace(day=1) - datetime.timedelta(days=1)
             last_payout = publisher.payouts.filter(
                 status=PAID,
-                # Janky way to find last month..
-                date__month=(
-                    timezone.now().replace(day=1) - datetime.timedelta(days=1)
-                ).month,
-                date__year=timezone.now().year,
+                date__month=last_month_date.month,
+                date__year=last_month_date.year,
             ).first()
             if last_payout:
                 change_percent = (
