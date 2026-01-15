@@ -1,9 +1,12 @@
+from datetime import datetime as dt
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
+from django.core.cache import cache
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -389,3 +392,60 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(post_response.status_code, 302)
         # requery to get new object
         self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")
+
+    def test_percent_change_across_year_boundary(self):
+        """Test that % change calculation works correctly when crossing year boundaries."""
+        self.client.force_login(self.staff_user)
+
+        # Simulate being in January 2026
+        # Mock the current time to be January 15, 2026
+        mock_now = timezone.make_aware(dt(2026, 1, 15, 12, 0, 0))
+
+        # Create a paid payout for December 2025 (last month)
+        december_2025 = timezone.make_aware(dt(2025, 12, 15, 12, 0, 0))
+        december_payout = get(
+            PublisherPayout,
+            status="paid",
+            publisher=self.publisher1,
+            amount=100.00,
+            date=december_2025,
+        )
+
+        # Create offers for January 2026 (current month) that should be paid out
+        # We need to create offers for the period since the last payout
+        # Create data from Dec 1 2025 to Dec 31 2025 for the "due" report
+        # December has 31 days, so range(1, 32) gives us days 1-31
+        for day in range(1, 32):  # Days 1-31 of December
+            offer_date = timezone.make_aware(dt(2025, 12, day, 12, 0, 0))
+            for _ in range(5):  # 5 clicks per day = 155 clicks total
+                get(
+                    Offer,
+                    advertisement=self.ad1,
+                    publisher=self.publisher1,
+                    viewed=True,
+                    clicked=True,
+                    date=offer_date,
+                )
+
+        # Index data for December 2025
+        daily_update_impressions(day=december_2025)
+        daily_update_publishers(day=december_2025)
+
+        url = reverse("staff-publisher-payouts")
+
+        with patch("django.utils.timezone.now", return_value=mock_now):
+            # Clear any cache that might interfere
+            cache.clear()
+
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+            # The view should find the December 2025 payout and calculate % change
+            # Check that the response contains the publisher
+            self.assertContains(response, f"<span>{self.publisher1.name}</span>")
+
+            # Check that % change is displayed (not "N/A")
+            # The new amount should be different from $100, so we should see a percentage
+            # We're checking that it's not showing "N/A" which would indicate the bug
+            # Using a simpler assertion that doesn't depend on exact HTML formatting
+            self.assertNotContains(response, "N/A")
