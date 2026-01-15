@@ -403,7 +403,7 @@ class PublisherPayoutTests(TestCase):
 
         # Create a paid payout for December 2025 (last month)
         december_2025 = timezone.make_aware(dt(2025, 12, 15, 12, 0, 0))
-        december_payout = get(
+        get(
             PublisherPayout,
             status="paid",
             publisher=self.publisher1,
