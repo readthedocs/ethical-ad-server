@@ -145,11 +145,8 @@ analyzer = [
     # https://github.com/explosion/thinc/issues/939
     "numpy<2",
 
-    # For the ST backend
-    "sentence-transformers>=4.1,<5.0",
-
-    # https://github.com/FunAudioLLM/CosyVoice/issues/516#issuecomment-2423324107
-    "huggingface_hub<0.25",
+    # Language detection for spam detection and other filtering
+    "langdetect",
 ]
 
 [dependency-groups]
