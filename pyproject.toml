@@ -112,26 +112,18 @@ analyzer = [
     "textacy",
     "markdownify>=1.2.0",
 
-    # Must pin to a version compatible with the spacy-model below
-    "spacy[transformers]>=3.8.7,<4.0",
-
-    # Spacy transformers is listed in the production requirements
-    # It installs PyTorch which is hundreds of MB
-    "langdetect",
-
-    # Used to query OpenAI embedding models
-    "openai>=1.84.0",
-    "tiktoken>=0.9.0",
-
-    # IMPORTANT:
-    # These need to be updated in tandem
-    # See compatibility matrix: https://github.com/pytorch/vision?tab=readme-ov-file#installation
-    "torch>=2.8,<2.9",
-    "torchvision>=0.23,<0.24",
+    # Spacy is used for keyword extraction and text processing
+    # Note: We use spacy WITHOUT transformers to avoid heavy pytorch dependencies
+    # The transformers extra was pulling in sentence-transformers and pytorch
+    "spacy>=3.8.7,<4.0",
 
     # Has to be downloaded directly like this (~30MB)
     # https://github.com/explosion/spacy-models/releases/tag/en_core_web_md-3.8.0
     "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
+
+    # Used to query OpenAI embedding models
+    "openai>=1.84.0",
+    "tiktoken>=0.9.0",
 
     # Used to parse web pages and get the "main section" of the page
     "trafilatura>=2.0.0",
@@ -153,11 +145,8 @@ analyzer = [
     # https://github.com/explosion/thinc/issues/939
     "numpy<2",
 
-    # For the ST backend
-    "sentence-transformers>=4.1,<5.0",
-
-    # https://github.com/FunAudioLLM/CosyVoice/issues/516#issuecomment-2423324107
-    "huggingface_hub<0.25",
+    # Language detection for spam detection and other filtering
+    "langdetect",
 ]
 
 [dependency-groups]

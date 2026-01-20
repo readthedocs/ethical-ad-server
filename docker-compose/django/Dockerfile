@@ -71,10 +71,6 @@ RUN chmod +x /start-celeryworker
 COPY ./docker-compose/django/celery/beat/start /start-celerybeat
 RUN chmod +x /start-celerybeat
 
-# Load model
-# Not needed if you don't use the analyzer
-RUN uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('multi-qa-MiniLM-L6-cos-v1', cache_folder='/tmp/sentence_transformers')"
-
 # Setup the locale
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
