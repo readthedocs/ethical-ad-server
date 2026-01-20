@@ -485,6 +485,40 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         return ad_weighting
 
+    def get_ad_similarity_weight(self, ad, ad_similarity_scores):
+        """
+        Apply weighting based on similarity between ad content and page content.
+
+        Uses embedding-based similarity scores to give higher priority to more relevant ads.
+        Similarity scores range from 0.0 (no match) to 1.0 (perfect match).
+
+        The weight is calculated to give meaningful priority boosts:
+        - 0.5+ similarity: +2 weight
+        - 0.6+ similarity: +3 weight
+        - 0.7+ similarity: +4 weight
+        - 0.8+ similarity: +5 weight
+
+        This complements CTR-based weighting for better ad selection.
+        """
+        if not ad_similarity_scores or ad.id not in ad_similarity_scores:
+            return 0
+
+        similarity = ad_similarity_scores[ad.id]
+
+        weights = {
+            0.5: 2,
+            0.6: 3,
+            0.7: 4,
+            0.8: 5,
+        }
+
+        ad_weighting = 0
+        for threshold, weight in weights.items():
+            if similarity >= threshold and weight > ad_weighting:
+                ad_weighting = weight
+
+        return ad_weighting
+
     def select_ad_for_flight(self, flight):
         """
         Choose an ad from the selected flight filtered requested ``self.ad_types``.
@@ -493,6 +527,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         - Requested placement priority
         - Sampled ad CTR
+        - Ad content similarity to page (using embeddings)
         """
         if not flight:
             return None
@@ -512,6 +547,18 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             "ad_types"
         )
 
+        # Get similarity scores for candidate ads if embedding support is available
+        ad_similarity_scores = {}
+        if "ethicalads_ext.embedding" in settings.INSTALLED_APPS and self.url:
+            try:
+                from ethicalads_ext.embedding.utils import get_ad_similarity_scores
+
+                ad_similarity_scores = get_ad_similarity_scores(
+                    url=self.url, ads=candidate_ads
+                )
+            except Exception as e:
+                log.warning("Failed to get ad similarity scores: %s", e)
+
         for advertisement in candidate_ads:
             placement = self.get_placement(advertisement)
             if not placement:
@@ -529,6 +576,12 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             if flight.prioritize_ads_ctr:
                 # Give more weighting to high performing ads
                 priority += self.get_ad_ctr_weight(advertisement)
+
+            # Add similarity-based weighting if available
+            if ad_similarity_scores:
+                priority += self.get_ad_similarity_weight(
+                    advertisement, ad_similarity_scores
+                )
 
             for _ in range(priority):
                 weighted_ad_choices.append(advertisement)
