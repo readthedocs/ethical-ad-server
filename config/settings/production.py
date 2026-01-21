@@ -274,7 +274,7 @@ if SENTRY_DSN:
             # https://docs.sentry.io/platforms/python/integrations/django/#options
             DjangoIntegration(),
             # https://docs.sentry.io/platforms/python/integrations/celery/#options
-            CeleryIntegration(monitor_beat_tasks=True),
+            CeleryIntegration(),
             # https://docs.sentry.io/platforms/python/integrations/redis/#options
             RedisIntegration(),
         ],
