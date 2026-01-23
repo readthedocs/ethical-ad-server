@@ -46,3 +46,8 @@ COLUMNS=80
 # See ``adserver.analyzer.backends`` for available backends
 # ADSERVER_ANALYZER_BACKEND="adserver.analyzer.backends.TextacyAnalyzerBackend,adserver.analyzer.backends.SentenceTransformerAnalyzerBackend"
 # ADSERVER_ANALYZER_BACKEND=
+
+# Use local models with LocalAI
+OPENAI_API_BASE="http://localai:8080/v1"
+OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
+OPENAI_CHAT_MODEL=gpt-4o

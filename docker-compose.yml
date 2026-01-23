@@ -8,7 +8,6 @@
 #   $ make dockerbuild
 #   $ make dockerserve
 
-version: '3'
 
 volumes:
   local_postgres_data: {}
@@ -93,6 +92,7 @@ services:
 
   localai:
     image: localai/localai:latest-aio-cpu
+    # https://localai.io/basics/container/
     # For a specific version:
     # image: localai/localai:v3.10.0-aio-cpu
     # For Nvidia GPUs decomment one of the following (cuda12 or cuda13):
