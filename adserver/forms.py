@@ -1191,7 +1191,7 @@ class AdvertisementForm(AdvertisementFormMixin, forms.ModelForm):
         # https://docs.djangoproject.com/en/dev/ref/forms/api/#django.forms.Form.changed_data
         if new_instance.image and "image" in self.changed_data:
             log.debug("Image field has changed: %s", new_instance.image.url)
-            notify_on_ad_image_change.apply_async(args=[new_instance.pk])
+            notify_on_ad_image_change.apply_async(args=[new_instance.pk], countdown=60)
 
         return new_instance
 
