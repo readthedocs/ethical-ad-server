@@ -440,3 +440,35 @@ class TestManagementCommands(TestCase):
         output = self.out.getvalue().strip()
 
         self.assertTrue(output.endswith("Keywords/topics: ['backend']"))
+
+    @responses.activate
+    def test_runmodel_with_backend_option(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            body="""
+                <html>
+                <head>
+                </head>
+                <body>
+                    Backend Backend Backend
+                </body>
+                </html>
+            """,
+        )
+
+        management.call_command(
+            "runmodel",
+            self.url,
+            "--backend=adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue().strip()
+
+        self.assertIn(
+            "Using the specified backend: adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend",
+            output,
+        )
+        self.assertTrue(output.endswith("Keywords/topics: ['backend']"))

@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.validators import URLValidator
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from ...utils import get_url_analyzer_backends
@@ -20,12 +21,24 @@ class Command(BaseCommand):
             nargs="+",
             help=_("URL to run against"),
         )
+        parser.add_argument(
+            "--backend",
+            dest="backend",
+            default=None,
+            help=_("Specifies a single backend to use for analysis (dotted path)"),
+        )
 
     def handle(self, *args, **kwargs):
         """Entrypoint to the command."""
-        self.stdout.write(
-            _("Using the model(s) from %s") % settings.ADSERVER_ANALYZER_BACKEND
-        )
+        backend_path = kwargs.get("backend")
+        if backend_path:
+            self.stdout.write(_("Using the specified backend: %s") % backend_path)
+            self.backends = [import_string(backend_path)]
+        else:
+            self.stdout.write(
+                _("Using the model(s) from %s") % settings.ADSERVER_ANALYZER_BACKEND
+            )
+            self.backends = list(get_url_analyzer_backends())
 
         for url in kwargs["urls"]:
             # raises ValidationError on an invalid URL
@@ -37,7 +50,7 @@ class Command(BaseCommand):
         self.stdout.write(_("Running against %s") % url)
 
         keywords = []
-        for backend in get_url_analyzer_backends():
+        for backend in self.backends:
             backend_instance = backend(url)
             response = backend_instance.fetch()
             if not response:
