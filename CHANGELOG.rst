@@ -1,12 +1,32 @@
-## Changes since 2025-12-18T22:46:02.485Z
-
- * @davidfischer: Re-add missing RTD style ads (#1112)
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v5.33.0
+---------------
+
+We removed a number of heavier ML dependencies that were only used for the analyzer.
+These dependencies were causing the Docker image to be very large
+and complicating deployments.
+
+This release also included a few minor bug fixes and improvements
+as well as removing beat monitoring from Sentry which was noisy and flakey.
+
+:Date: January 29, 2026
+
+ * @davidfischer: Runmodel management command supports passing model (#1130)
+ * @davidfischer: Ad image notification delay/countdown (#1129)
+ * @davidfischer: Rename large ad format (#1128)
+ * @ericholscher: Remove heavy ML dependencies (torch, spacy[transformers], langdetect) (#1120)
+ * @Copilot: Fix % change calculation crossing year boundaries in publisher payout view (#1119)
+ * @Copilot: Fix % Change calculation crossing year boundaries in publisher payout view (#1118)
+ * @davidfischer: Improve PublisherGroupAdmin (#1117)
+ * @davidfischer: Increase test coverage (#1116)
+ * @davidfischer: Remove beat monitoring on Sentry (#1107)
 
 
 Version v5.32.1
