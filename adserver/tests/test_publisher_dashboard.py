@@ -1,13 +1,14 @@
 from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
-from django.conf import settings
 
+from ..auth.models import UserPublisherMember
 from ..constants import CLICKS
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
@@ -20,7 +21,6 @@ from ..models import Flight
 from ..models import Publisher
 from ..models import PublisherPayout
 from ..tasks import daily_update_publishers
-from ..auth.models import UserPublisherMember
 
 
 class TestPublisherDashboardViews(TestCase):
@@ -352,7 +352,6 @@ class TestPublisherDashboardViews(TestCase):
                 self.assertEqual(resp.status_code, 302)
                 self.assertEqual(resp["location"], "http://stripe.com/onboarding")
 
-
     def test_publisher_stripe_return(self):
         url = reverse("publisher_stripe_return", args=[self.publisher1.slug])
 
@@ -373,7 +372,9 @@ class TestPublisherDashboardViews(TestCase):
             # No account ID
             resp = self.client.get(url, follow=True)
             self.assertEqual(resp.status_code, 200)
-            self.assertContains(resp, "There was a problem connecting your Stripe account")
+            self.assertContains(
+                resp, "There was a problem connecting your Stripe account"
+            )
 
             # Update account ID on the session
             session = self.client.session
@@ -384,7 +385,9 @@ class TestPublisherDashboardViews(TestCase):
             # Mock out the Stripe account retrieve call
             with (
                 mock.patch("stripe.Account.retrieve") as account_retrieve,
-                mock.patch("djstripe.models.Account.sync_from_stripe_data") as account_sync,
+                mock.patch(
+                    "djstripe.models.Account.sync_from_stripe_data"
+                ) as account_sync,
                 # This is on the redirected settings page after Stripe is connected
                 mock.patch("stripe.Account.create_login_link") as _,
             ):
@@ -395,7 +398,6 @@ class TestPublisherDashboardViews(TestCase):
                 resp = self.client.get(url, follow=True)
                 self.assertEqual(resp.status_code, 200)
                 self.assertContains(resp, "Successfully connected your Stripe account")
-
 
     def test_authorized_users(self):
         url = reverse(
@@ -497,7 +499,11 @@ class TestPublisherDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": "Another User", "email": "another@example.com", "role": UserPublisherMember.ROLE_REPORTER},
+            data={
+                "name": "Another User",
+                "email": "another@example.com",
+                "role": UserPublisherMember.ROLE_REPORTER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -521,7 +527,11 @@ class TestPublisherDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": name, "email": email, "role": UserPublisherMember.ROLE_REPORTER},
+            data={
+                "name": name,
+                "email": email,
+                "role": UserPublisherMember.ROLE_REPORTER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -531,7 +541,11 @@ class TestPublisherDashboardViews(TestCase):
         # Invite the same user again to check that the user isn't created again
         response = self.client.post(
             url,
-            data={"name": "Yet Another User", "email": email, "role": UserPublisherMember.ROLE_REPORTER},
+            data={
+                "name": "Yet Another User",
+                "email": email,
+                "role": UserPublisherMember.ROLE_REPORTER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)

@@ -1,19 +1,23 @@
 import datetime
+from unittest import mock
 
 import bs4
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django_dynamic_fixture import get
 from django_slack.utils import get_backend
-from django.conf import settings
+from djstripe.models import Customer
 
+from ..auth.models import UserAdvertiserMember
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import AdType
@@ -27,7 +31,6 @@ from ..models import Topic
 from ..tasks import daily_update_advertisers
 from ..utils import get_ad_day
 from .common import ONE_PIXEL_PNG_BYTES
-from ..auth.models import UserAdvertiserMember
 
 
 User = get_user_model()
@@ -191,7 +194,9 @@ class TestAdvertiserDashboardViews(TestCase):
             response,
             "There are a few steps to getting started with your first ad campaign with us",
         )
-        self.assertContains(response, f"Month to date overview for {self.advertiser.name}")
+        self.assertContains(
+            response, f"Month to date overview for {self.advertiser.name}"
+        )
 
     def test_flight_list_view(self):
         url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
@@ -207,7 +212,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(response, self.flight.name)
 
         # Make it a reporter who can't request a new flight
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -246,7 +253,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(response, self.ad1.name)
 
         # Make it a reporter who can't edit
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -407,11 +416,13 @@ class TestAdvertiserDashboardViews(TestCase):
             "exclude_countries": "",
             "include_keywords": "python, django",
             "niche_distance": 0.5,
-            "niche_urls": "\n".join([
-                # Make sure comments are stripped properly
-                "https://example.com/niche1/ ",
-                "https://example.com/niche2/",
-            ]),
+            "niche_urls": "\n".join(
+                [
+                    # Make sure comments are stripped properly
+                    "https://example.com/niche1/ ",
+                    "https://example.com/niche2/",
+                ]
+            ),
         }
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, 302)
@@ -429,9 +440,12 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Analyzer is always running in testing - no need to check installed apps here
         # However, we are going to import it in the function just in case
-        from adserver.analyzer.models import AnalyzedAdvertiserUrl  # noqa
+        from ..analyzer.models import AnalyzedAdvertiserUrl  # noqa
+
         self.assertEqual(
-            AnalyzedAdvertiserUrl.objects.filter(advertiser=self.advertiser, flights=self.flight).count(),
+            AnalyzedAdvertiserUrl.objects.filter(
+                advertiser=self.advertiser, flights=self.flight
+            ).count(),
             2,
         )
 
@@ -488,10 +502,12 @@ class TestAdvertiserDashboardViews(TestCase):
             "exclude_countries": "",
             "include_keywords": "python, django",
             "niche_distance": 0.25,
-            "niche_urls": "\n".join([
-                "https://example.com/niche1/",
-                "invalid-url",
-            ]),
+            "niche_urls": "\n".join(
+                [
+                    "https://example.com/niche1/",
+                    "invalid-url",
+                ]
+            ),
         }
         resp = self.client.post(url, data=data)
         self.assertEqual(resp.status_code, 200)
@@ -531,7 +547,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -633,8 +651,8 @@ class TestAdvertiserDashboardViews(TestCase):
         }
         resp = self.client.post(url, data=data, follow=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, f"Successfully created new flight")
-        self.assertContains(resp, f"via renewal")
+        self.assertContains(resp, "Successfully created new flight")
+        self.assertContains(resp, "via renewal")
 
         # Verify the new flight was created in the DB
         new_flight = Flight.objects.filter(name=new_name).first()
@@ -677,7 +695,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -736,8 +756,8 @@ class TestAdvertiserDashboardViews(TestCase):
             url + "?old_flight=&next=step-2", data=data, follow=True
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, f"Successfully setup a new")
-        self.assertContains(resp, f"notified your account manager")
+        self.assertContains(resp, "Successfully setup a new")
+        self.assertContains(resp, "notified your account manager")
 
         # Email to account manager was sent with budget and note
         self.assertEqual(len(mail.outbox), 1)
@@ -771,7 +791,7 @@ class TestAdvertiserDashboardViews(TestCase):
 
         resp = self.client.post(url, data=data, follow=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, f"Successfully setup a new")
+        self.assertContains(resp, "Successfully setup a new")
 
     def test_ad_detail_view(self):
         url = reverse(
@@ -794,7 +814,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(response, self.ad1.name)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -820,7 +842,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -867,7 +891,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -915,7 +941,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -934,9 +962,7 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Successfully removed advertisement")
 
-        self.assertFalse(
-            Advertisement.objects.filter(pk=self.ad1.pk).exists()
-        )
+        self.assertFalse(Advertisement.objects.filter(pk=self.ad1.pk).exists())
 
     def test_ad_delete_view_fail(self):
         url = reverse(
@@ -949,7 +975,9 @@ class TestAdvertiserDashboardViews(TestCase):
         )
 
         self.client.force_login(self.user)
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
@@ -974,9 +1002,7 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.post(url, data={})
         self.assertEqual(response.status_code, 404)
 
-        self.assertTrue(
-            Advertisement.objects.filter(pk=self.ad1.pk).exists()
-        )
+        self.assertTrue(Advertisement.objects.filter(pk=self.ad1.pk).exists())
 
     def test_ad_bulk_create_view(self):
         url = reverse(
@@ -997,18 +1023,28 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Bulk create ads")
 
-        with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload_invalid.csv") as fd:
-            resp = self.client.post(url, data={
-                "advertisements": fd,
-            })
+        with open(
+            settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload_invalid.csv"
+        ) as fd:
+            resp = self.client.post(
+                url,
+                data={
+                    "advertisements": fd,
+                },
+            )
 
             self.assertEqual(resp.status_code, 200)
-            self.assertContains(resp, "Total text for &#x27;Invalid Ad1&#x27; must be 100 or less")
+            self.assertContains(
+                resp, "Total text for &#x27;Invalid Ad1&#x27; must be 100 or less"
+            )
 
         with open(settings.BASE_DIR + "/adserver/tests/data/bulk_ad_upload.csv") as fd:
-            resp = self.client.post(url, data={
-                "advertisements": fd,
-            })
+            resp = self.client.post(
+                url,
+                data={
+                    "advertisements": fd,
+                },
+            )
 
             self.assertEqual(resp.status_code, 200)
             self.assertContains(resp, "Preview and save your ads")
@@ -1019,20 +1055,151 @@ class TestAdvertiserDashboardViews(TestCase):
 
             signed_ads = elem.attrs["value"]
 
-        resp = self.client.post(url, follow=True, data={
-            "signed_advertisements": signed_ads,
-        })
+        resp = self.client.post(
+            url,
+            follow=True,
+            data={
+                "signed_advertisements": signed_ads,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Successfully uploaded")
 
         signed_ads = "invalid"
-        resp = self.client.post(url, follow=True, data={
-            "signed_advertisements": signed_ads,
-        })
+        resp = self.client.post(
+            url,
+            follow=True,
+            data={
+                "signed_advertisements": signed_ads,
+            },
+        )
 
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Upload expired or invalid")
+
+    def test_ad_bulk_create_invalid_redirect(self):
+        # invalid data to bulk create
+        url = reverse(
+            "advertisement_bulk_create",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.client.force_login(self.user)
+        # Empty POST without advertisements or signed_advertisements should be invalid (depending on form)
+        # If form.is_valid() is False, it redirects to get_error_url()
+        resp = self.client.post(url, data={})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            resp["location"],
+            reverse(
+                "advertisement_bulk_create",
+                kwargs={
+                    "advertiser_slug": self.advertiser.slug,
+                    "flight_slug": self.flight.slug,
+                },
+            ),
+        )
+
+    def test_ad_copy_invalid_order(self):
+        url = reverse(
+            "advertisement_copy",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.client.force_login(self.user)
+        resp = self.client.get(url, {"order": "invalid-order"})
+        self.assertEqual(resp.status_code, 200)
+        # It should default to the first ordering option
+
+    def test_ad_copy_valid_order(self):
+        url = reverse(
+            "advertisement_copy",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.client.force_login(self.user)
+        # Assuming "created" is a valid order (it usually is in these views)
+        resp = self.client.get(url, {"order": "created"})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_stripe_portal_view_no_customer(self):
+        url = reverse(
+            "advertiser_stripe_portal", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+        self.client.force_login(self.user)
+        self.advertiser.djstripe_customer = None
+        self.advertiser.save()
+        resp = self.client.get(url, follow=True)
+        # Check messages in the request if response doesn't render them
+        msgs = [m.message for m in get_messages(resp.wsgi_request)]
+        self.assertIn("You can't access the billing portal.", msgs)
+
+    @mock.patch("adserver.views.settings")
+    def test_stripe_portal_view_no_key(self, mock_settings):
+        # Mock settings to have no STRIPE_LIVE_SECRET_KEY
+        mock_settings.STRIPE_LIVE_SECRET_KEY = None
+        # Other settings need to be present
+        mock_settings.DEBUG = False
+        mock_settings.TESTING = True
+        customer = get(Customer)
+        self.advertiser.djstripe_customer = customer
+        self.advertiser.save()
+
+        url = reverse(
+            "advertiser_stripe_portal", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+        self.client.force_login(self.user)
+        resp = self.client.get(url, follow=True)
+        msgs = [m.message for m in get_messages(resp.wsgi_request)]
+        self.assertIn("Billing portal is not configured", msgs)
+
+    @mock.patch("adserver.views.stripe.billing_portal.Session.create")
+    def test_stripe_portal_view_success(self, mock_create):
+        mock_create.return_value = mock.Mock(url="http://stripe.com/portal")
+        customer = get(Customer)
+        self.advertiser.djstripe_customer = customer
+        self.advertiser.save()
+
+        url = reverse(
+            "advertiser_stripe_portal", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+        self.client.force_login(self.user)
+        # Ensure STRIPE_LIVE_SECRET_KEY is set (or mocked as set)
+        with self.settings(STRIPE_LIVE_SECRET_KEY="sk_test_123"):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp["Location"], "http://stripe.com/portal")
+
+    @override_settings(
+        FRONT_ENABLED=True,
+        FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    )
+    def test_flight_request_front_enabled(self):
+        # This view requires an old_flight to be passed in GET
+        url = reverse(
+            "flight_request", kwargs={"advertiser_slug": self.advertiser.slug}
+        )
+        url += f"?old_flight={self.flight.slug}"
+        self.client.force_login(self.user)
+        data = {
+            "name": "New Flight",
+            "campaign": self.campaign.pk,
+            "budget": "100",
+            "note": "Test note",
+            "start_date": "2026-01-10",
+            "end_date": "2026-02-10",
+        }
+        resp = self.client.post(url, data=data)
+        self.assertEqual(resp.status_code, 302)
+        # Check that slack and email were "sent"
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_ad_copy_view(self):
         url = reverse(
@@ -1051,7 +1218,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.client.force_login(self.user)
 
         # Make it a reporter who can't access
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_REPORTER
         member.save()
 
@@ -1068,7 +1237,9 @@ class TestAdvertiserDashboardViews(TestCase):
         # Perform the copy - new ad isn't live by default
         count_ads = Advertisement.objects.all().count()
         live_ads = Advertisement.objects.filter(live=True).count()
-        response = self.client.post(url, data={"advertisements": [self.ad1.pk]}, follow=True)
+        response = self.client.post(
+            url, data={"advertisements": [self.ad1.pk]}, follow=True
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Successfully copied 1 ads to flight")
         # Ads is +1 but live ads is the same
@@ -1077,7 +1248,11 @@ class TestAdvertiserDashboardViews(TestCase):
 
         # Copy again - new ad is live
         live_ads = Advertisement.objects.filter(live=True).count()
-        response = self.client.post(url, data={"advertisements": [self.ad1.pk], "live_after_copy": True}, follow=True)
+        response = self.client.post(
+            url,
+            data={"advertisements": [self.ad1.pk], "live_after_copy": True},
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Successfully copied 1 ads to flight")
         self.assertEqual(Advertisement.objects.filter(live=True).count(), live_ads + 1)
@@ -1134,7 +1309,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
         # Make it a manager who can't invite users
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
@@ -1197,7 +1374,9 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertTrue(response["location"].startswith("/accounts/login/"))
 
         # Make it a manager who can't invite users
-        member = UserAdvertiserMember.objects.get(user=self.user, advertiser=self.advertiser)
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
         member.role = UserAdvertiserMember.ROLE_MANAGER
         member.save()
 
@@ -1214,7 +1393,11 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": "Another User", "email": "another@example.com", "role": UserAdvertiserMember.ROLE_MANAGER},
+            data={
+                "name": "Another User",
+                "email": "another@example.com",
+                "role": UserAdvertiserMember.ROLE_MANAGER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -1235,7 +1418,11 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.post(
             url,
-            data={"name": name, "email": email, "role": UserAdvertiserMember.ROLE_MANAGER},
+            data={
+                "name": name,
+                "email": email,
+                "role": UserAdvertiserMember.ROLE_MANAGER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -1245,14 +1432,23 @@ class TestAdvertiserDashboardViews(TestCase):
         # Invite the same user again to check that the user isn't created again
         response = self.client.post(
             url,
-            data={"name": "Yet Another User", "email": email, "role": UserAdvertiserMember.ROLE_MANAGER},
+            data={
+                "name": "Yet Another User",
+                "email": email,
+                "role": UserAdvertiserMember.ROLE_MANAGER,
+            },
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Successfully invited")
         self.assertEqual(User.objects.filter(email=email).count(), 1)
         self.assertEqual(User.objects.filter(name=name).count(), 1)
-        self.assertEqual(UserAdvertiserMember.objects.filter(advertiser=self.advertiser, user__email=email).count(), 1)
+        self.assertEqual(
+            UserAdvertiserMember.objects.filter(
+                advertiser=self.advertiser, user__email=email
+            ).count(),
+            1,
+        )
 
         # The 2nd request didn't create a user or update the user's name
         self.assertEqual(User.objects.filter(name="Yet Another User").count(), 0)

@@ -10,17 +10,18 @@ from django.test import TestCase
 from django.utils import timezone
 from django_dynamic_fixture import get
 
-from . import tasks
 from ..models import Offer
 from ..models import Publisher
 from ..tests.common import BaseAdModelsTestCase
+from . import tasks
 from .backends.naive import NaiveKeywordAnalyzerBackend
+from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
 from .models import AnalyzedUrl
 from .utils import get_url_analyzer_backend
 from .utils import normalize_title
 from .utils import normalize_url
 from .validators import KeywordsValidator
-from .constants import ANALYZER_REANALYZE_DATE_THRESHOLD
+
 
 try:
     from .backends.eatopics import EthicalAdsTopicsBackend
@@ -101,9 +102,7 @@ class TestModels(TestCase):
         )
 
     def test_str(self):
-        self.assertEqual(
-            str(self.analyzed_url), "https://example.com"
-        )
+        self.assertEqual(str(self.analyzed_url), "https://example.com")
 
     def test_validation(self):
         self.analyzed_url.keywords = ["Python", "Django"]
@@ -284,7 +283,8 @@ class TestTasks(BaseAdModelsTestCase):
             publisher=self.publisher,
             keywords=["python", "django"],
             visits_since_last_analyzed=10,
-            last_analyzed_date=timezone.now() - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD+1),
+            last_analyzed_date=timezone.now()
+            - datetime.timedelta(days=ANALYZER_REANALYZE_DATE_THRESHOLD + 1),
         )
 
         self.campaign.campaign_type = "paid"
@@ -439,4 +439,36 @@ class TestManagementCommands(TestCase):
 
         output = self.out.getvalue().strip()
 
+        self.assertTrue(output.endswith("Keywords/topics: ['backend']"))
+
+    @responses.activate
+    def test_runmodel_with_backend_option(self):
+        responses.add(
+            responses.GET,
+            self.url,
+            body="""
+                <html>
+                <head>
+                </head>
+                <body>
+                    Backend Backend Backend
+                </body>
+                </html>
+            """,
+        )
+
+        management.call_command(
+            "runmodel",
+            self.url,
+            "--backend=adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend",
+            stdout=self.out,
+            stderr=self.err,
+        )
+
+        output = self.out.getvalue().strip()
+
+        self.assertIn(
+            "Using the specified backend: adserver.analyzer.backends.naive.NaiveKeywordAnalyzerBackend",
+            output,
+        )
         self.assertTrue(output.endswith("Keywords/topics: ['backend']"))
