@@ -515,6 +515,56 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertNotEqual(ad1_copy, self.ad1)
         self.assertTrue(self.text_ad_type in list(ad1_copy.ad_types.all()))
 
+    def test_offer_ad_send_bid_rate(self):
+        """Test that offer_ad includes bid rate if publisher enabled it."""
+        publisher = self.publisher
+        publisher.send_bid_rate = True
+        publisher.save()
+
+        # Test CPM
+        flight = self.flight
+        flight.cpm = 10.00
+        flight.cpc = 0
+        flight.save()
+
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertEqual(decision["cpm"], 10.00)
+        self.assertNotIn("cpc", decision)
+
+        # Test CPC
+        flight.cpm = 0
+        flight.cpc = 2.50
+        flight.save()
+
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertEqual(decision["cpc"], 2.50)
+        self.assertNotIn("cpm", decision)
+
+        # Test disabled
+        publisher.send_bid_rate = False
+        publisher.save()
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertNotIn("cpm", decision)
+        self.assertNotIn("cpc", decision)
+
     def test_campaign_totals(self):
         self.assertAlmostEqual(self.campaign.total_value(), 0.0)
 

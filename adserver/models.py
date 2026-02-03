@@ -402,6 +402,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         default=None,
+        help_text=_("How this publisher wants to get paid"),
+    )
+
+    send_bid_rate = models.BooleanField(
+        default=False,
+        help_text=_("Return the bid CPM/CPC with the decision API"),
     )
     djstripe_account = models.ForeignKey(
         djstripe_models.Account,
@@ -2160,7 +2166,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                     if topic_keyword in keywords:
                         topic_set.add(topic)
 
-        return {
+        response = {
             "id": self.slug,
             "text": text,
             "body": body,
@@ -2186,6 +2192,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "display_type": ad_type_slug,
             "campaign_type": self.flight.campaign.campaign_type,
         }
+
+        if publisher.send_bid_rate:
+            if self.flight.cpm:
+                response["cpm"] = self.flight.cpm
+            if self.flight.cpc:
+                response["cpc"] = self.flight.cpc
+
+        return response
 
     @classmethod
     def record_null_offer(
