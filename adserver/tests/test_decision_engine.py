@@ -508,21 +508,20 @@ class DecisionEngineTests(TestCase):
             flights = list(self.probabilistic_backend.get_candidate_flights())
             self.assertEqual(len(flights), 3)
 
-        with self.assertNumQueries(1):
-            # This should just be the same query from `get_candidate_flights` above
+        with self.assertNumQueries(3):
+            # One for flights, one for ads, one for ad types (due to prefetch)
             flight = self.probabilistic_backend.select_flight()
 
-        with self.assertNumQueries(2):
-            # One query to get the specific ad for the chosen flight
-            # One to prefetch all the ad types
+        with self.assertNumQueries(0):
+            # No queries because we used the prefetched ads
             ad = self.probabilistic_backend.select_ad_for_flight(flight)
             self.assertTrue(ad in self.possible_ads, ad)
 
         with self.assertNumQueries(3):
             # Three total queries to get an ad placement
-            # 1. Get all the candidate flights
-            # 2. Choose the specific ad for the chosen flight
-            # 3. Prefetch the ad types for all the ads in the chosen flight
+            # 1. Get all the candidate flights (and prefetch ads/adtypes)
+            # 2. Choose the specific ad for the chosen flight (0 queries)
+            # 3. get_placement (0 queries as it uses prefetch)
             ad, _ = self.probabilistic_backend.get_ad_and_placement()
             self.assertTrue(ad in self.possible_ads, ad)
 
@@ -609,6 +608,85 @@ class DecisionEngineTests(TestCase):
                     randint.return_value = total + 1
                     ad, _ = self.probabilistic_backend.get_ad_and_placement()
                     self.assertEqual(ad, None)
+
+    def test_flight_matching_priority(self):
+        # Remove existing flights
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        # Priority 1
+        ad_type_a = get(AdType, has_image=False, slug="a")
+        # Priority 10
+        ad_type_b = get(AdType, has_image=False, slug="b")
+
+        placements = [
+            {"div_id": "a", "ad_type": "a", "priority": 1},
+            {"div_id": "b", "ad_type": "b", "priority": 10},
+        ]
+
+        # Flight 1: Matches placement A (priority 1)
+        flight1 = get(
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_clicks=1000,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            pacing_interval=24 * 60 * 60,
+        )
+        ad1 = get(
+            Advertisement,
+            slug="ad1",
+            live=True,
+            flight=flight1,
+        )
+        ad1.ad_types.add(ad_type_a)
+
+        # Flight 2: Matches placement B (priority 10)
+        flight2 = get(
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_clicks=1000,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            pacing_interval=24 * 60 * 60,
+        )
+        ad2 = get(
+            Advertisement,
+            slug="ad2",
+            live=True,
+            flight=flight2,
+        )
+        ad2.ad_types.add(ad_type_b)
+
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=placements, publisher=self.publisher
+        )
+
+        flight1_count = 0
+        flight2_count = 0
+        iterations = 1000
+
+        # Ensure base weights are equal
+        self.assertEqual(
+            flight1.weighted_clicks_needed_this_interval(self.publisher),
+            flight2.weighted_clicks_needed_this_interval(self.publisher),
+        )
+
+        for _ in range(iterations):
+            selected = backend.select_flight()
+            if selected == flight1:
+                flight1_count += 1
+            elif selected == flight2:
+                flight2_count += 1
+
+        # Avoid div by 0 and handle potential 0 counts
+        ratio = flight2_count / (flight1_count + 1)
+
+        # Used to be ~1, now should be ~10
+        self.assertGreater(ratio, 5.0)
 
     def test_publisher_campaign_type_restrictions(self):
         self.campaign.campaign_type = PAID_CAMPAIGN
