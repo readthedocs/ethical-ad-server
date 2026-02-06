@@ -411,7 +411,7 @@ class PublisherPayoutTests(TestCase):
             date=december_2025,
         )
 
-        # Create offers for January 2026 (current month) that should be paid out
+        # Create offers for December 2025 that should be paid out in January 2026 ("current" mocked month)
         # We need to create offers for the period since the last payout
         # Create data from Dec 1 2025 to Dec 31 2025 for the "due" report
         # December has 31 days, so range(1, 32) gives us days 1-31
@@ -427,9 +427,9 @@ class PublisherPayoutTests(TestCase):
                     date=offer_date,
                 )
 
-        # Index data for December 2025
-        daily_update_impressions(day=december_2025)
-        daily_update_publishers(day=december_2025)
+            # Index data for December 2025
+            daily_update_impressions(day=offer_date)
+            daily_update_publishers(day=offer_date)
 
         url = reverse("staff-publisher-payouts")
 

@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.34.0
+---------------
+
+This release had two minor changes, a patch version dependency upgrade,
+and a small bugfix.
+One of the changes allows setting a flag to send down the CPM for the chosen ad
+in the decision API. It is off by default which mimics the previous behavior.
+The second change uses the placement priority in the flight selection process
+which is not currently sent by the client (that will change).
+
+:Date: February 6, 2026
+
+ * @davidfischer: Use placement priority in flight selection (#1136)
+ * @dependabot[bot]: Bump django from 5.2.8 to 5.2.11 (#1135)
+ * @davidfischer: Send the bid rate for certain publishers (#1134)
+ * @davidfischer: Fix a test case around the year boundary fix (#1133)
+
+
 Version v5.33.0
 ---------------
 
