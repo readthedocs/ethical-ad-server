@@ -1122,3 +1122,41 @@ class DecisionEngineTests(TestCase):
             super_low.weighted_clicks_needed_this_interval(),
             super_low.sold_clicks * super_low.cpm * overdue_factor,
         )
+
+    def test_get_ad_similarity_weight(self):
+        """Test that similarity-based weighting works correctly."""
+        backend = self.probabilistic_backend
+
+        # Test with no similarity scores
+        weight = backend.get_ad_similarity_weight(self.advertisement1, {})
+        self.assertEqual(weight, 0)
+
+        # Test with low similarity (below threshold)
+        scores = {self.advertisement1.id: 0.4}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 0)
+
+        # Test with medium similarity (0.5+)
+        scores = {self.advertisement1.id: 0.55}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 2)
+
+        # Test with good similarity (0.6+)
+        scores = {self.advertisement1.id: 0.65}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 3)
+
+        # Test with very good similarity (0.7+)
+        scores = {self.advertisement1.id: 0.75}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 4)
+
+        # Test with excellent similarity (0.8+)
+        scores = {self.advertisement1.id: 0.85}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 5)
+
+        # Test with ad not in scores
+        scores = {999: 0.9}
+        weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
+        self.assertEqual(weight, 0)
