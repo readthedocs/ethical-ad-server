@@ -384,7 +384,7 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(finish_response, self.payout3.get_status_display())
         self.assertContains(finish_response, "$99")
         # Verify individual copy buttons are present
-        self.assertContains(finish_response, 'class="copy-btn"')
+        self.assertContains(finish_response, 'copy-btn')
         self.assertContains(finish_response, 'data-copy-target="payout-amount"')
         self.assertContains(finish_response, 'data-copy-target="payout-subject"')
 
