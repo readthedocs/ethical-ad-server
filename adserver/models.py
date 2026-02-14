@@ -2186,6 +2186,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             },
             "image": self.image.url if self.image else None,
             "link": click_url,
+            "link_domain": get_domain_from_url(self.link),
             "view_url": view_url,
             "view_time_url": view_time_url,
             "nonce": nonce,
