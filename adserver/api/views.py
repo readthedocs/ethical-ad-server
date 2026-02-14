@@ -86,6 +86,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             These fields are always plain text.
         :>json string html: An HTML rendering of the ad
         :>json string link: A click URL for the ad
+        :>json string link_domain: The domain where the ad will link to, extracted from the click URL
         :>json string view_url: A view URL to count an ad view
         :>json string view_time_url: A URL endpoint that updates how long the ad was viewed
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
