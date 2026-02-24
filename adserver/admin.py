@@ -219,9 +219,11 @@ class CampaignInline(admin.TabularInline):
 class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
     """Django admin configuration for advertisers."""
 
+    MAX_IMAGE_WIDTH = 100
+
     actions = ["action_create_draft_invoice"]
     inlines = (CampaignInline,)
-    list_display = ("name", "report", "stripe_customer")
+    list_display = ("name", "logo", "report", "stripe_customer")
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
     raw_id_fields = ("djstripe_customer",)
@@ -292,6 +294,16 @@ class AdvertiserAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
                     messages.ERROR,
                     _("No Stripe customer ID for {}".format(advertiser)),
                 )
+
+    def logo(self, obj):
+        if not obj.advertiser_logo:
+            return ""
+
+        return format_html(
+            '<img src="{}" style="max-width: {}px" />',
+            obj.advertiser_logo.url,
+            self.MAX_IMAGE_WIDTH,
+        )
 
     def report(self, instance):
         if not instance.pk:

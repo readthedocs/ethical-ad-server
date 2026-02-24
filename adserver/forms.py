@@ -111,6 +111,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "traffic_fill",
             "traffic_cap",
             "discount",
+            "flight_logo",
         )
 
 
@@ -284,6 +285,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
                 css_class="my-3",
             ),
             # NOTE: remove these when this form is made for non-staff users
+            Field("flight_logo"),
             Field("discount"),
             Field("priority_multiplier"),
             Fieldset(
@@ -424,6 +426,7 @@ class FlightForm(FlightMixin, forms.ModelForm):
             "sold_clicks",
             "cpm",
             "sold_impressions",
+            "flight_logo",
             "discount",
             "priority_multiplier",
         )
