@@ -1029,7 +1029,6 @@ def notify_of_first_flight_launched():
                     to=to_addresses,
                     connection=connection,
                 )
-                message.draft = True  # Only create a draft for now
                 message.send()
 
 

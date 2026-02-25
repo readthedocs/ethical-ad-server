@@ -267,7 +267,18 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
-        return flights.select_related("campaign")
+        # Annotate with today's views/clicks to avoid per-flight queries in views_today()/clicks_today()
+        today = get_ad_day().date()
+        return flights.select_related("campaign").annotate(
+            flight_views_today=models.Sum(
+                "advertisements__impressions__views",
+                filter=models.Q(advertisements__impressions__date=today),
+            ),
+            flight_clicks_today=models.Sum(
+                "advertisements__impressions__clicks",
+                filter=models.Q(advertisements__impressions__date=today),
+            ),
+        )
 
     def filter_flight(self, flight):
         """

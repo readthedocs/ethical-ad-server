@@ -1,3 +1,4 @@
+import tempfile
 from datetime import datetime as dt
 from datetime import timedelta
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -24,6 +26,7 @@ from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_publishers
+from .common import ONE_PIXEL_PNG_BYTES
 
 
 User = get_user_model()
@@ -89,17 +92,34 @@ class CreateAdvertiserTest(TestCase):
         form = CreateAdvertiserForm(data=data)
         self.assertFalse(form.is_valid())
 
-        # Create another advertiser with the same user
+        # Create another advertiser with the same user + logo
         advertiser_name = "Test Advertiser 2"
         data = {
             "advertiser_name": advertiser_name,
             "user_email": user_email,
         }
-        form = CreateAdvertiserForm(data=data)
-        self.assertTrue(form.is_valid())
-        form.save()
+        with tempfile.TemporaryDirectory() as tmp_media:
+            from django.test import override_settings
 
-        self.assertTrue(Advertiser.objects.filter(name=advertiser_name).exists())
+            with override_settings(MEDIA_ROOT=tmp_media):
+                logo_file = SimpleUploadedFile(
+                    "test_logo.png", ONE_PIXEL_PNG_BYTES, content_type="image/png"
+                )
+                form = CreateAdvertiserForm(
+                    data=data, files={"advertiser_logo": logo_file}
+                )
+                self.assertTrue(form.is_valid())
+                form.save()
+
+                self.assertTrue(
+                    Advertiser.objects.filter(name=advertiser_name).exists()
+                )
+                advertiser2 = Advertiser.objects.get(name=advertiser_name)
+                self.assertTrue(bool(advertiser2.advertiser_logo))
+                self.assertTrue(
+                    advertiser2.advertiser_logo.name.endswith("test_logo.png")
+                )
+
         user = User.objects.filter(email=user_email).first()
         self.assertEqual(user.advertisers.count(), 2)
 
@@ -387,6 +407,10 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(finish_response.status_code, 200)
         self.assertContains(finish_response, self.payout3.get_status_display())
         self.assertContains(finish_response, "$99")
+        # Verify individual copy buttons are present
+        self.assertContains(finish_response, "copy-btn")
+        self.assertContains(finish_response, 'data-copy-target="payout-amount"')
+        self.assertContains(finish_response, 'data-copy-target="payout-subject"')
 
         post_response = self.client.post(finish_url)
         self.assertEqual(post_response.status_code, 302)

@@ -21,6 +21,7 @@ from ..models import Publisher
 from ..reports import AdvertiserReport
 from ..utils import GeolocationData
 from ..utils import get_ad_day
+from .common import ONE_PIXEL_PNG_BYTES
 from .common import BaseAdModelsTestCase
 
 
@@ -564,6 +565,56 @@ class TestAdModels(BaseAdModelsTestCase):
         )
         self.assertNotIn("cpm", decision)
         self.assertNotIn("cpc", decision)
+
+    def test_offer_ad_logo(self):
+        """Test that offer_ad includes the logo if provided."""
+        import tempfile
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        with tempfile.TemporaryDirectory() as tmp_media:
+            with override_settings(MEDIA_ROOT=tmp_media):
+                # By default no logo
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertIsNone(decision.get("logo"))
+
+                # Add advertiser logo
+                img = SimpleUploadedFile(
+                    "logo.png", ONE_PIXEL_PNG_BYTES, content_type="image/png"
+                )
+                self.ad1.flight.campaign.advertiser.advertiser_logo = img
+                self.ad1.flight.campaign.advertiser.save()
+
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertTrue(decision.get("logo", "").endswith("logo.png"))
+
+                # Add flight logo, it should override
+                img2 = SimpleUploadedFile(
+                    "flight_logo.png", ONE_PIXEL_PNG_BYTES, content_type="image/png"
+                )
+                self.ad1.flight.flight_logo = img2
+                self.ad1.flight.save()
+
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertTrue(decision.get("logo", "").endswith("flight_logo.png"))
 
     def test_campaign_totals(self):
         self.assertAlmostEqual(self.campaign.total_value(), 0.0)

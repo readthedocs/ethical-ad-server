@@ -6,6 +6,40 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.35.0
+---------------
+
+In this release, there were a few bug fixes and improvements, including:
+
+ - When an advertiser launches their first flight, the email we send is directly sent.
+   It is no longer a draft.
+ - Added a few fields to the API response for ads including the link domain and an advertiser logo.
+ - Added copy to clipboard buttons to the publisher payouts (mostly for PayPal, Stripe is automatic).
+ - Added the ability for a publisher to request one of many ad slots (with their priority) in a single request.
+ - This release also contained many minor/patch version dependency updates.
+
+:Date: February 25, 2026
+
+ * @Copilot: Annotate candidate flights with today's views/clicks to avoid per-flight DB queries (#1148)
+ * @Copilot: Add test for multi-placement ad decision 500 fix (#1147)
+ * @davidfischer: Update AGENTS.md with test suite runtime expectation (#1146)
+ * @davidfischer: Advertiser logos (#1145)
+ * @davidfischer: Minor version updates Feb 2026 (#1144)
+ * @davidfischer: Fix an ad decision 500 (#1143)
+ * @davidfischer: Add link domain to API response (#1142)
+ * @davidfischer: First flight email - not a draft (#1141)
+ * @dependabot[bot]: Bump pillow from 12.0.0 to 12.1.1 (#1140)
+ * @dependabot[bot]: Bump cryptography from 46.0.3 to 46.0.5 (#1139)
+ * @dependabot[bot]: Bump webpack from 5.101.3 to 5.105.0 (#1138)
+ * @davidfischer: Use placement priority in flight selection (#1136)
+ * @dependabot[bot]: Bump azure-core from 1.36.0 to 1.38.0 (#1125)
+ * @dependabot[bot]: Bump aiohttp from 3.13.2 to 3.13.3 (#1124)
+ * @dependabot[bot]: Bump urllib3 from 2.5.0 to 2.6.3 (#1123)
+ * @dependabot[bot]: Bump virtualenv from 20.35.4 to 20.36.1 (#1122)
+ * @dependabot[bot]: Bump filelock from 3.20.0 to 3.20.3 (#1121)
+ * @Copilot: Add individual copy buttons to publisher finish payout view (#1108)
+
+
 Version v5.34.0
 ---------------
 

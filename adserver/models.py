@@ -604,6 +604,15 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
+    advertiser_logo = models.ImageField(
+        _("Advertiser Logo"),
+        upload_to="advertiser_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "The logo for the advertiser. Returned in ad responses. Recommended size 200x200."
+        ),
+    )
 
     # Publisher specific advertiser account
     publisher = models.OneToOneField(
@@ -792,6 +801,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
+    flight_logo = models.ImageField(
+        _("Flight Logo"),
+        upload_to="flight_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "Overrides the advertiser logo for this specific flight. Recommended size 200x200."
+        ),
+    )
     start_date = models.DateField(
         _("Start Date"),
         default=datetime.date.today,
@@ -2166,6 +2184,12 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                     if topic_keyword in keywords:
                         topic_set.add(topic)
 
+        logo = None
+        if self.flight.flight_logo:
+            logo = self.flight.flight_logo.url
+        elif self.flight.campaign.advertiser.advertiser_logo:
+            logo = self.flight.campaign.advertiser.advertiser_logo.url
+
         response = {
             "id": self.slug,
             "text": text,
@@ -2185,7 +2209,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "content": self.content or body,
             },
             "image": self.image.url if self.image else None,
+            "logo": logo,
             "link": click_url,
+            "link_domain": get_domain_from_url(self.link),
             "view_url": view_url,
             "view_time_url": view_time_url,
             "nonce": nonce,
