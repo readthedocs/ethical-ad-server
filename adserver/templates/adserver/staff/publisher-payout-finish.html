@@ -19,6 +19,8 @@
 
 <form method="post">
 
+  <h5 class="mb-3">{% trans 'Payout Details' %}</h5>
+
   <dl>
     <dt>{% trans 'Publisher' %}</dt>
     <dd>{{ payout.publisher }}</dd>
@@ -31,7 +33,10 @@
     {% if payout.publisher.paypal_email %}
     <dt>{% trans 'User' %}</dt>
     <dd>
-    {{ payout.publisher.paypal_email }}
+      <span id="payout-email">{{ payout.publisher.paypal_email }}</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ml-2 copy-btn" data-copy-target="payout-email" title="{% trans 'Copy email' %}">
+        <span class="fa fa-copy" aria-hidden="true"></span>
+      </button>
     </dd>
     {% endif %}
 
@@ -39,10 +44,20 @@
     <dd>{{ payout.get_status_display }}</dd>
 
     <dt>{% trans 'Amount' %}</dt>
-    <dd>${{ payout.amount|floatformat:2|intcomma }}</dd>
+    <dd>
+      <span id="payout-amount">${{ payout.amount|floatformat:2|intcomma }}</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ml-2 copy-btn" data-copy-target="payout-amount" title="{% trans 'Copy amount' %}">
+        <span class="fa fa-copy" aria-hidden="true"></span>
+      </button>
+    </dd>
 
     <dt>{% trans 'Subject' %}</dt>
-    <dd>{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</dd>
+    <dd>
+      <span id="payout-subject">{% trans "EthicalAds Payout" %} - {{ payout.publisher.name }}</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary ml-2 copy-btn" data-copy-target="payout-subject" title="{% trans 'Copy subject' %}">
+        <span class="fa fa-copy" aria-hidden="true"></span>
+      </button>
+    </dd>
 
     <dt>{% trans 'Action' %}</dt>
     <dd>
@@ -84,5 +99,72 @@
 </form>
 
 </div>
+
+<script>
+  (function() {
+    var RESET_TIMEOUT = 1500;
+
+    // Function to copy text to clipboard
+    function copyToClipboard(text, button, callback) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          callback();
+        }).catch(function(err) {
+          console.error('Failed to copy text: ', err);
+          alert('Failed to copy to clipboard');
+        });
+      } else {
+        // Fallback for older browsers
+        var textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          callback();
+        } catch (err) {
+          console.error('Fallback: Failed to copy text: ', err);
+          alert('Failed to copy to clipboard');
+        }
+        document.body.removeChild(textArea);
+      }
+    }
+
+    // Function to show success feedback on button
+    function showSuccessFeedback(button) {
+      var icon = button.querySelector('.fa-copy');
+      if (icon) {
+        icon.classList.remove('fa-copy');
+        icon.classList.add('fa-check');
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+
+        setTimeout(function() {
+          icon.classList.remove('fa-check');
+          icon.classList.add('fa-copy');
+          button.classList.remove('btn-success');
+          button.classList.add('btn-outline-secondary');
+        }, RESET_TIMEOUT);
+      }
+    }
+
+    // Add click handlers to all copy buttons
+    var copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        var targetId = this.getAttribute('data-copy-target');
+        var targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          var textToCopy = targetElement.textContent.trim();
+          copyToClipboard(textToCopy, this, function() {
+            showSuccessFeedback(button);
+          });
+        }
+      });
+    });
+  })();
+</script>
 
 {% endblock content_container %}
