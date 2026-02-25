@@ -2,6 +2,7 @@ import datetime
 import unittest
 
 from django.conf import settings
+from django.core.cache import caches
 from django.test import TestCase
 from django.test import override_settings
 from django.test.client import RequestFactory
@@ -216,6 +217,9 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.incr(CLICKS, self.publisher)
         self.advertisement1.incr(CLICKS, self.publisher)
 
+        # Clear the `clicks/views_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
+
         # Daily cap exceeded
         self.assertFalse(self.backend.filter_flight(self.include_flight))
 
@@ -235,10 +239,12 @@ class DecisionEngineTests(TestCase):
         for _ in range(views_to_simulate):
             self.advertisement2.incr(VIEWS, self.publisher)
 
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
         self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
         # 7th view exceeds the daily cap
         self.advertisement2.incr(VIEWS, self.publisher)
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
         self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_custom_interval(self):
@@ -302,6 +308,8 @@ class DecisionEngineTests(TestCase):
 
         # Refresh the denormalized totals manually since they're no longer updated in real-time
         self.include_flight.refresh_denormalized_totals()
+        # Clear the `clicks_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
 
         self.assertEqual(self.include_flight.clicks_remaining(), 998)
         self.assertEqual(self.include_flight.total_clicks, 2)
@@ -314,6 +322,8 @@ class DecisionEngineTests(TestCase):
 
         # Add 1 click for today
         self.advertisement1.incr(CLICKS, self.publisher)
+        # Clear the `clicks_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
 
         # Refresh the denormalized totals manually since they're no longer updated in real-time
         self.include_flight.refresh_denormalized_totals()
