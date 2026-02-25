@@ -410,6 +410,17 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             # Ignore priorities for forcing a specific ad/campaign
             return random.choice(flights)
 
+        # Fetch embeddings once at the start to reuse in both niche targeting and ad similarity scoring
+        # Store as instance variables so they can be accessed in select_ad_for_flight()
+        self.publisher_embedding = None
+        self.domain_embedding = None
+        if "ethicalads_ext.embedding" in settings.INSTALLED_APPS and self.url:
+            from ethicalads_ext.embedding.utils import get_publisher_embeddings
+
+            self.publisher_embedding, self.domain_embedding = get_publisher_embeddings(
+                url=self.url
+            )
+
         # We iterate over the possible flights in order of priority,
         # and serve the first type that has any budget.
         for possible_flights in (
@@ -430,16 +441,18 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
             # Apply niche targeting only when any flight has it.
             # This is to track whether we should do expensive distance queries.
-            if (
-                flights_with_niche_targeting
-                and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
+            if flights_with_niche_targeting and (
+                self.publisher_embedding or self.domain_embedding
             ):
                 # We have to do this here,
                 # so we can filter by the weight in the filter_flight call below
                 from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
 
                 self.niche_weights = get_niche_weights(
-                    url=self.url, flights=flights_with_niche_targeting
+                    url=self.url,
+                    flights=flights_with_niche_targeting,
+                    publisher_embedding=self.publisher_embedding,
+                    domain_embedding=self.domain_embedding,
                 )
                 if self.niche_weights:
                     log.debug("Niche targeting weights: %s", self.niche_weights)
@@ -516,6 +529,40 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         return ad_weighting
 
+    def get_ad_similarity_weight(self, ad, ad_similarity_scores):
+        """
+        Apply weighting based on similarity between ad content and page content.
+
+        Uses embedding-based similarity scores to give higher priority to more relevant ads.
+        Similarity scores range from 0.0 (no match) to 1.0 (perfect match).
+
+        The weight is calculated to give meaningful priority boosts:
+        - 0.5+ similarity: +2 weight
+        - 0.6+ similarity: +3 weight
+        - 0.7+ similarity: +4 weight
+        - 0.8+ similarity: +5 weight
+
+        This complements CTR-based weighting for better ad selection.
+        """
+        if not ad_similarity_scores or ad.id not in ad_similarity_scores:
+            return 0
+
+        similarity = ad_similarity_scores[ad.id]
+
+        weights = {
+            0.5: 2,
+            0.6: 3,
+            0.7: 4,
+            0.8: 5,
+        }
+
+        ad_weighting = 0
+        for threshold, weight in weights.items():
+            if similarity >= threshold and weight > ad_weighting:
+                ad_weighting = weight
+
+        return ad_weighting
+
     def select_ad_for_flight(self, flight):
         """
         Choose an ad from the selected flight filtered requested ``self.ad_types``.
@@ -524,6 +571,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
         - Requested placement priority
         - Sampled ad CTR
+        - Ad content similarity to page (using embeddings)
         """
         if not flight:
             return None
@@ -547,6 +595,22 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 "ad_types"
             )
 
+        # Get similarity scores for candidate ads if embedding support is available
+        # Reuse the publisher_embedding and domain_embedding fetched earlier to avoid duplicate queries
+        ad_similarity_scores = {}
+        if "ethicalads_ext.embedding" in settings.INSTALLED_APPS and self.url:
+            try:
+                from ethicalads_ext.embedding.utils import get_ad_similarity_scores
+
+                ad_similarity_scores = get_ad_similarity_scores(
+                    url=self.url,
+                    ads=candidate_ads,
+                    publisher_embedding=getattr(self, "publisher_embedding", None),
+                    domain_embedding=getattr(self, "domain_embedding", None),
+                )
+            except Exception as e:
+                log.warning("Failed to get ad similarity scores: %s", e)
+
         for advertisement in candidate_ads:
             placement = self.get_placement(advertisement)
             if not placement:
@@ -564,6 +628,12 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             if flight.prioritize_ads_ctr:
                 # Give more weighting to high performing ads
                 priority += self.get_ad_ctr_weight(advertisement)
+
+            # Add similarity-based weighting if available
+            if ad_similarity_scores:
+                priority += self.get_ad_similarity_weight(
+                    advertisement, ad_similarity_scores
+                )
 
             for _ in range(priority):
                 weighted_ad_choices.append(advertisement)
