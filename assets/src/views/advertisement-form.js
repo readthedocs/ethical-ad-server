@@ -4,7 +4,7 @@ const ko = require('knockout');
 
 
 function AdvertisementFormViewModel(method) {
-  const MAX_PREVIEW_LENGTH = 100;
+  const DEFAULT_MAX_PREVIEW_LENGTH = 100;
   const SENSIBLE_MAXIMUM_LENGTH = 1000;
 
   const viewmodel = this;
@@ -22,13 +22,13 @@ function AdvertisementFormViewModel(method) {
   this.image_height = ko.observable();
 
   this.getHeadlinePreview = function () {
-    return (this.headline() || "").slice(0, MAX_PREVIEW_LENGTH) + " ";
+    return (this.headline() || "").slice(0, this.maxLength()) + " ";
   };
   this.getBodyPreview = function () {
-    return (this.content() || "").slice(0, MAX_PREVIEW_LENGTH);
+    return (this.content() || "").slice(0, this.maxLength());
   };
   this.getCTAPreview = function () {
-    return " " + (this.cta() || "").slice(0, MAX_PREVIEW_LENGTH);
+    return " " + (this.cta() || "").slice(0, this.maxLength());
   };
 
   this.totalLength = function () {
@@ -47,7 +47,7 @@ function AdvertisementFormViewModel(method) {
 
     // Use a sensible default if nothing present
     if(isNaN(max_length) || max_length <= 0 || max_length > SENSIBLE_MAXIMUM_LENGTH) {
-      max_length = MAX_PREVIEW_LENGTH;
+      max_length = DEFAULT_MAX_PREVIEW_LENGTH;
     }
 
     return max_length;

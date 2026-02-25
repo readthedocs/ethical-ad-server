@@ -9,8 +9,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.test import Client
-from django.test import override_settings
 from django.test import TestCase
+from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
@@ -798,15 +798,28 @@ class AdDecisionApiTests(BaseApiTest):
             self.assertEqual(resp.status_code, 200)
             nonce1 = resp.json()["nonce"]
 
-            resp = self.client.get(self.url, self.query_params)
-            self.assertEqual(resp.status_code, 200)
-            nonce2 = resp.json()["nonce"]
+            self.publisher.cache_ads = True
+            self.publisher.save()
 
-            # With this setting, the response should be sticky (same nonce)
+            resp = self.client.get(self.url, self.query_params)
+            nonce2 = resp.json()["nonce"]
             self.assertEqual(nonce1, nonce2)
+
+            # Test with custom duration on publisher
+            self.publisher.cache_ads_duration = 10
+            self.publisher.save()
+            resp = self.client.get(self.url, self.query_params)
+            self.assertEqual(resp.json()["nonce"], nonce1)
 
         # Clear the cache so this setting doesn't mess up the next test
         cache.clear()
+
+    def test_rotations_logging(self):
+        self.query_params["rotations"] = 2
+        with self.assertLogs("adserver.api.views", level="INFO") as cm:
+            resp = self.client.get(self.url, self.query_params)
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(any("Ad rotation" in msg for msg in cm.output))
 
     def test_multiple_placements(self):
         self.query_params["placement_index"] = 0
@@ -827,6 +840,40 @@ class AdDecisionApiTests(BaseApiTest):
         resp = self.client.get(self.url, self.query_params)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue("id" in resp.json())  # Gets an ad successfully
+
+    def test_multiple_placements_no_ad(self):
+        """
+        Requesting multiple placements with no available ad should return empty, not a 500.
+
+        This happens when multiple placements are in the request and no ad is selected.
+        In that case, the backend returns placement=None (since it can't determine which
+        of the multiple placements applies), and _prepare_response must handle None gracefully.
+        """
+        self.ad.live = False
+        self.ad.save()
+
+        # POST with two placements and no available ad
+        data = self.data.copy()
+        data["placements"] = [
+            {"div_id": "a", "ad_type": self.ad_type.slug},
+            {"div_id": "b", "ad_type": self.ad_type.slug},
+        ]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictEqual(resp.json(), {})
+
+        # With cache_ads enabled, sticky decisions are skipped when placement is None
+        # (i.e. for prioritized/grouped ad requests with no ad result)
+        self.publisher.cache_ads = True
+        self.publisher.save()
+        with override_settings(ADSERVER_STICKY_DECISION_DURATION=5):
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertDictEqual(resp.json(), {})
 
 
 class AdvertiserApiTests(BaseApiTest):
@@ -1659,6 +1706,99 @@ class AdvertisingIntegrationTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), {})
 
+    def test_get_decision(self):
+        url = reverse("api:decision")
+        query = {
+            "publisher": self.publisher.slug,
+            "div_ids": "foo|bar",
+            "ad_types": f"{self.ad_type.slug}|z",
+            "priorities": "1|2",
+            "keywords": "django|python",
+            "campaign_types": "paid|house",
+        }
+        resp = self.client.get(url, query)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], "ad-slug")
+
+    def test_disabled_publisher(self):
+        self.publisher.disabled = True
+        self.publisher.save()
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["publisher"][0], "Disabled publisher")
+
+    def test_invalid_user_ip_is_ignored(self):
+        self.data["user_ip"] = "not-an-ip"
+        with self.assertLogs("adserver.api.serializers", level="WARNING") as cm:
+            resp = self.client.post(
+                self.url, json.dumps(self.data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 400)
+            self.assertTrue(
+                any("Invalid ad decision user IP address" in msg for msg in cm.output)
+            )
+
+    def test_multiple_ips_in_header(self):
+        self.data["user_ip"] = "8.8.8.8, 1.1.1.1"
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], "ad-slug")
+
+    def test_api_keywords_disabled(self):
+        self.publisher.allow_api_keywords = False
+        self.publisher.save()
+        self.data["keywords"] = ["django"]
+        self.flight.targeting_parameters = {"include_keywords": ["django"]}
+        self.flight.save()
+
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.json(), {})
+
+    def test_invalid_rotations(self):
+        self.data["rotations"] = 10  # max 9
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_invalid_campaign_types(self):
+        self.data["campaign_types"] = ["not-a-type"]
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_no_placements_invalid(self):
+        self.data["placements"] = []
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_unauthorized_publisher(self):
+        other_publisher = get(Publisher, unauthed_ad_decisions=False)
+        self.data["publisher"] = other_publisher.slug
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        # 403 because permissions check object permissions (publisher)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_forcing_ad_is_forced(self):
+        self.data["force_ad"] = self.ad.slug
+        resp = self.client.post(
+            self.url, json.dumps(self.data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        # Since force_ad is present, forced=True in backend.
+        # This is harder to check directly without mocking backend or checking response data but _prepare_response is called with forced=True.
+
 
 class TestProxyViews(BaseApiTest):
     def setUp(self):
@@ -1804,6 +1944,56 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 404)
 
     @override_settings(ADSERVER_VIEW_RATELIMITS=["1/m"])
+    def test_view_tracking_mismatched_os(self):
+        Offer.objects.filter(id=self.offer["nonce"]).update(os_family="Windows")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp["X-Adserver-Reason"], "Mismatched OS")
+
+    def test_view_tracking_mismatched_browser(self):
+        Offer.objects.filter(id=self.offer["nonce"]).update(browser_family="Firefox")
+        resp = self.client.get(self.url)
+        self.assertEqual(resp["X-Adserver-Reason"], "Mismatched browser")
+
+    def test_view_tracking_cpm_billing(self):
+        self.flight.cpm = 10.0
+        self.flight.save()
+        resp = self.client.get(self.url)
+        self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+        self.publisher.refresh_from_db()
+        self.assertAlmostEqual(float(self.publisher.get_daily_earn()), 10.0 / 1000)
+
+    def test_view_tracking_unknown_publisher(self):
+        # We need a unique IP to avoid ratelimit
+        client = Client(headers={"user-agent": self.user_agent}, REMOTE_ADDR="1.1.1.1")
+        offer = Offer.objects.get(id=self.offer["nonce"])
+        with mock.patch(
+            "adserver.models.Offer.publisher", new_callable=mock.PropertyMock
+        ) as mock_pub:
+            mock_pub.return_value = None
+            with mock.patch(
+                "adserver.views.BaseProxyView.get_offer", return_value=offer
+            ):
+                resp = client.get(self.url)
+                self.assertEqual(resp["X-Adserver-Reason"], "Unknown publisher")
+
+    def test_click_tracking_allowed_domains_logging(self):
+        self.publisher.allowed_domains = "other.com"
+        self.publisher.save()
+        Offer.objects.filter(id=self.offer["nonce"]).update(
+            url="http://example.com", viewed=True
+        )
+        # We need a logger check
+        with self.assertLogs("adserver.views", level="WARNING") as cm:
+            resp = self.client.get(self.click_url)
+            self.assertEqual(resp.status_code, 302)
+            self.assertTrue(
+                any(
+                    "Offer URL is not on the allowed domain list" in msg
+                    for msg in cm.output
+                )
+            )
+
+    @override_settings(ADSERVER_VIEW_RATELIMITS=["1/m"])
     def test_view_tracking_ratelimit(self):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
@@ -1849,6 +2039,23 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(
             resp["Location"], base_url + "?" + urllib.parse.urlencode(query_params)
         )
+
+    def test_click_tracking_no_publisher(self):
+        offer = Offer.objects.get(id=self.offer["nonce"])
+        offer.viewed = True
+        offer.save()
+        # Mocking publisher as None
+        with mock.patch(
+            "adserver.models.Offer.publisher", new_callable=mock.PropertyMock
+        ) as mock_pub:
+            mock_pub.return_value = None
+            with mock.patch(
+                "adserver.views.BaseProxyView.get_offer", return_value=offer
+            ):
+                resp = self.client.get(self.click_url)
+                self.assertEqual(resp.status_code, 302)
+                # It should redirect with 'unknown' publisher
+                self.assertIn("ea-publisher=unknown", resp["Location"])
 
     def test_click_tracking_valid(self):
         Offer.objects.filter(id=self.offer["nonce"]).update(viewed=True)

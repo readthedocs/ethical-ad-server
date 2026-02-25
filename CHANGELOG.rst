@@ -6,6 +6,78 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.34.0
+---------------
+
+This release had two minor changes, a patch version dependency upgrade,
+and a small bugfix.
+One of the changes allows setting a flag to send down the CPM for the chosen ad
+in the decision API. It is off by default which mimics the previous behavior.
+The second change uses the placement priority in the flight selection process
+which is not currently sent by the client (that will change).
+
+:Date: February 6, 2026
+
+ * @davidfischer: Use placement priority in flight selection (#1136)
+ * @dependabot[bot]: Bump django from 5.2.8 to 5.2.11 (#1135)
+ * @davidfischer: Send the bid rate for certain publishers (#1134)
+ * @davidfischer: Fix a test case around the year boundary fix (#1133)
+
+
+Version v5.33.0
+---------------
+
+We removed a number of heavier ML dependencies that were only used for the analyzer.
+These dependencies were causing the Docker image to be very large
+and complicating deployments.
+
+This release also included a few minor bug fixes and improvements
+as well as removing beat monitoring from Sentry which was noisy and flakey.
+
+:Date: January 29, 2026
+
+ * @davidfischer: Runmodel management command supports passing model (#1130)
+ * @davidfischer: Ad image notification delay/countdown (#1129)
+ * @davidfischer: Rename large ad format (#1128)
+ * @ericholscher: Remove heavy ML dependencies (torch, spacy[transformers], langdetect) (#1120)
+ * @Copilot: Fix % change calculation crossing year boundaries in publisher payout view (#1119)
+ * @Copilot: Fix % Change calculation crossing year boundaries in publisher payout view (#1118)
+ * @davidfischer: Improve PublisherGroupAdmin (#1117)
+ * @davidfischer: Increase test coverage (#1116)
+ * @davidfischer: Remove beat monitoring on Sentry (#1107)
+
+
+Version v5.32.1
+---------------
+
+Packaging issue with the release missing some styles.
+
+:Date: December 18, 2025
+
+ * @davidfischer: Re-add missing RTD style ads (#1112)
+
+
+Version v5.32.0
+---------------
+
+This release had significant dependency updates including moving to Ubuntu 24, Python3.12,
+and using uv instead of pip for dependency management.
+There were also some minor improvements to ad styling for a new ad type.
+
+:Date: December 18, 2025
+
+ * @davidfischer: Add ad styles from client (#1110)
+ * @davidfischer: Pass headline/CTA to ad render (#1109)
+ * @davidfischer: Tweak to how dev dependencies are declared (#1106)
+ * @davidfischer: Handle no permission with ip2proxy (#1105)
+ * @ericholscher: Wrap staff advertisers nav in a details block (#1104)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1103)
+ * @Copilot: Upgrade to Ubuntu 24.04 LTS and Python 3.12 with modern uv dependency management (#1100)
+ * @dependabot[bot]: Bump starlette from 0.47.2 to 0.49.1 in /requirements (#1092)
+ * @ericholscher: Add CSV importer (#1077)
+ * @github-actions[bot]: Dependencies: all packages updated via pip-tools (#1074)
+
+
 Version v5.31.0
 ---------------
 

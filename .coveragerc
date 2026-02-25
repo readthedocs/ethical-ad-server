@@ -26,6 +26,7 @@ omit =
 
     templates/includes/*.html
     adserver/templatetags/metabase.py
+    adserver/templates/adserver/metabase/*.html
     adserver/regiontopics.py # Just data/constants
     adserver/importers/*.py
     adserver/management/commands/metabase.py

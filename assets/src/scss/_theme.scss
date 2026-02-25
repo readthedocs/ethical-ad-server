@@ -32,31 +32,261 @@ body {
   }
 
 
-  /* Preview an advertisement - most of this custom CSS comes from Read the Docs' existing ad settings */
+  /* Preview an advertisement - most of this custom CSS comes directly from the ad client */
   .advertisement-preview {
-    .ethical-callout {
-      padding-top: 1em;
-      clear: both;
+    --ea-container-md: 720px;
+    --ea-container-lg: 960px;
+    --ea-container-xl: 1040px;
+
+    --ea-image-width: 120px; // Height is "auto"
+    --ea-image-width-xs: 44px;
+
+    --ea-image-placement-width: 180px;
+    --ea-image-placement-width-horizontal: 320px;
+    --ea-image-logo-width: 80px;
+    --ea-fixedheader-height: 50px;
+
+    --ea-font-size: 14px;
+    --ea-font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+      Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
+      Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+
+    // Backgrounds for image or text-only ads
+    --ea-bgcolor: rgba(0, 0, 0, 0.03);
+    --ea-bgcolor-dark: rgba(255, 255, 255, 0.05);
+
+    // Header size for large text-only ad
+    --ea-font-size-text-only-header: 18px;
+
+    // Background colors for ad styles (stickybox, fixedheader, fixedfooter)
+    --ea-stylefixed-bgcolor: rgb(220, 220, 220);
+    --ea-stylefixed-bgcolor-dark: rgb(80, 80, 80);
+
+    // Text colors for various elements and states
+    --ea-color-link: rgb(80, 80, 80);
+    --ea-color-link-dark: rgb(220, 220, 220);
+
+    --ea-color-link-active: darken(rgb(80, 80, 80), 10%);
+    --ea-color-link-dark-active: lighten(rgb(220, 220, 220), 10%);
+
+    --ea-color-link-callout: lighten(rgb(80, 80, 80), 10%);
+    --ea-color-link-callout-dark: darken(rgb(220, 220, 220), 10%);
+
+    --ea-color-link-callout-active: darken(rgb(80, 80, 80), 10%);
+    --ea-color-link-callout-dark-active: lighten(
+        rgb(220, 220, 220),
+        10%
+      );
+
+    --ea-color-link-bold: #088cdb;
+    --ea-color-link-bold-dark: lighten(#088cdb, 20%);
+
+    --ea-color-domain: lighten(rgb(80, 80, 80), 20%);
+    --ea-color-domain-dark: darken(rgb(220, 220, 220), 20%);
+
+    // Filter to apply on the large text-only logo
+    --ea-image-logo-filter: grayscale(1);
+    --ea-image-logo-filter-dark: grayscale(1) invert(1);
+
+
+    font-size: var(--ea-font-size);
+    font-family: var(--ea-font-family);
+    font-weight: normal;
+    font-style: normal;
+    letter-spacing: 0px;
+    vertical-align: baseline;
+    line-height: 1.3em;
+
+    a {
+      text-decoration: none;
     }
 
-    .ethical-pixel {
-      display: none !important;
+    .ea-pixel {
+      display: none;
     }
 
-    .ethical-image-link {
-      border: 0;
+    .ea-content {
+      margin: 1em 1em 0.5em 1em;
+      padding: 1em;
+
+      background: var(--ea-bgcolor);
+      color: var(--ea-color-link);
+
+      color: var(--ea-color-link);
+      a {
+        &:link {
+          color: var(--ea-color-link);
+        }
+        &:visited {
+          color: var(--ea-color-link);
+        }
+        &:hover {
+          color: var(--ea-color-link-active);
+        }
+        &:active {
+          color: var(--ea-color-link-active);
+        }
+        strong,
+        b {
+          color: var(--ea-color-link-bold);
+        }
+      }
+    }
+    .ea-callout {
+      color: var(--ea-color-link-callout);
+      a {
+        font-size: 0.8em;
+
+        &:link {
+          color: var(--ea-color-link-callout);
+        }
+        &:visited {
+          color: var(--ea-color-link-callout);
+        }
+        &:hover {
+          color: var(--ea-color-link-callout-active);
+        }
+        &:active {
+          color: var(--ea-color-link-callout-active);
+        }
+        strong,
+        b {
+          color: var(--ea-color-link-callout);
+        }
+      }
     }
 
-    .ethical-close {
-      display: none !important;
+    .ea-domain {
+      margin-top: 0.75em;
+      font-size: 0.8em;
+      text-align: center;
+      color: var(--ea-color-domain);
     }
 
-    & img {
-      width: 120px;
-      height: 90px;
+
+    // Image+text format
+    .ea-type-image {
       display: inline-block;
+
+      .ea-content {
+        max-width: var(--ea-image-placement-width);
+        overflow: auto;
+
+        text-align: center;
+
+        > a > img {
+          width: var(--ea-image-width);
+          height: auto;
+          display: inline-block;
+        }
+
+        > .ea-text {
+          margin-top: 1em;
+          font-size: 1em;
+          text-align: center;
+        }
+      }
+
+      .ea-callout {
+        max-width: var(--ea-image-placement-width);
+        margin: 0em 1em 1em 1em;
+        padding-left: 1em;
+        padding-right: 1em;
+        font-style: italic;
+        text-align: right;
+      }
+
+      &.horizontal {
+        .ea-content {
+          max-width: var(--ea-image-placement-width-horizontal);
+
+          > a > img {
+            float: left;
+            margin-right: 1em;
+          }
+
+          .ea-text {
+            margin-top: 0em;
+            text-align: left;
+            overflow: auto;
+          }
+        }
+
+        .ea-callout {
+          max-width: var(--ea-image-placement-width-horizontal);
+          text-align: right;
+        }
+      }
     }
 
+    // Text-only format
+    .ea-type-text {
+      font-size: var(--ea-font-size);
+
+      .ea-content {
+        text-align: left;
+      }
+
+      .ea-callout {
+        margin: 0.5em 1em 1em 1em;
+        padding-left: 1em;
+        padding-right: 1em;
+        text-align: right;
+        font-style: italic;
+      }
+    }
+
+    // Large text+logo format
+    .ea-type-text-large {
+      font-size: var(--ea-font-size);
+      margin: 1em 0;
+
+      .ea-logo {
+        float: right;
+        margin-left: 1em;
+        margin-bottom: 1em;
+      }
+
+      img {
+        width: var(--ea-image-logo-width);
+        height: auto;
+        filter: var(--ea-image-logo-filter);
+      }
+
+      .ea-headline {
+        font-size: var(--ea-font-size-text-only-header);
+        font-weight: bold;
+        margin-bottom: 0.5em;
+        text-align: left;
+      }
+
+      .ea-body {
+        margin-bottom: 0.5em;
+        text-align: left;
+      }
+
+      .ea-cta {
+        border-radius: 0.5em;
+        border: 1px solid var(--ea-color-link);
+        color: var(--ea-color-link);
+        display: inline-block;
+        font-weight: bold;
+        padding: 0.25em 0.5em;
+      }
+      .ea-cta::after {
+        content: " ↗";
+      }
+
+      .ea-callout {
+        margin: 0.5em 1em 1em 1em;
+        padding-left: 1em;
+        padding-right: 1em;
+        text-align: right;
+        font-style: italic;
+      }
+    }
+
+    // Old style RTD placement
     .ethical-sidebar,
     .ethical-footer {
       padding: 0.5em;
@@ -71,10 +301,23 @@ body {
 
       .ethical-callout {
         text-align: center;
+        padding-top: 1em;
       }
 
       .ethical-text {
         margin-top: 1em;
+      }
+
+      img {
+        width: 120px;
+        height: 90px;
+        display: inline-block;
+      }
+
+      a, a:visited, a:hover, a:active {
+        color: #0a0a0a;
+        text-decoration: none !important;
+        border-bottom: 0 !important;
       }
     }
 
@@ -91,32 +334,5 @@ body {
       }
     }
 
-    .ethical-fixedfooter {
-      background-color: #eee;
-      padding: 0.5em 1.5em;
-      text-align: center;
-      color: #404040;
-      width: 100%;
-
-      .ethical-text:before {
-        margin-right: 4px;
-        padding: 2px 6px;
-        border-radius: 3px;
-        background-color: #4caf50;
-        color: #fff;
-        content: "Sponsored";
-      }
-      .ethical-callout {
-        color: #999;
-        padding-left: 6px;
-        white-space: nowrap;
-      }
-    }
-
-    a, a:visited, a:hover, a:active {
-      color: #0a0a0a;
-      text-decoration: none !important;
-      border-bottom: 0 !important;
-    }
   }
 }

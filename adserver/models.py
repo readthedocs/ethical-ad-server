@@ -402,6 +402,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         default=None,
+        help_text=_("How this publisher wants to get paid"),
+    )
+
+    send_bid_rate = models.BooleanField(
+        default=False,
+        help_text=_("Return the bid CPM/CPC with the decision API"),
     )
     djstripe_account = models.ForeignKey(
         djstripe_models.Account,
@@ -598,6 +604,15 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
+    advertiser_logo = models.ImageField(
+        _("Advertiser Logo"),
+        upload_to="advertiser_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "The logo for the advertiser. Returned in ad responses. Recommended size 200x200."
+        ),
+    )
 
     # Publisher specific advertiser account
     publisher = models.OneToOneField(
@@ -786,6 +801,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
+    flight_logo = models.ImageField(
+        _("Flight Logo"),
+        upload_to="flight_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "Overrides the advertiser logo for this specific flight. Recommended size 200x200."
+        ),
+    )
     start_date = models.DateField(
         _("Start Date"),
         default=datetime.date.today,
@@ -2160,7 +2184,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                     if topic_keyword in keywords:
                         topic_set.add(topic)
 
-        return {
+        logo = None
+        if self.flight.flight_logo:
+            logo = self.flight.flight_logo.url
+        elif self.flight.campaign.advertiser.advertiser_logo:
+            logo = self.flight.campaign.advertiser.advertiser_logo.url
+
+        response = {
             "id": self.slug,
             "text": text,
             "body": body,
@@ -2179,13 +2209,23 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "content": self.content or body,
             },
             "image": self.image.url if self.image else None,
+            "logo": logo,
             "link": click_url,
+            "link_domain": get_domain_from_url(self.link),
             "view_url": view_url,
             "view_time_url": view_time_url,
             "nonce": nonce,
             "display_type": ad_type_slug,
             "campaign_type": self.flight.campaign.campaign_type,
         }
+
+        if publisher.send_bid_rate:
+            if self.flight.cpm:
+                response["cpm"] = self.flight.cpm
+            if self.flight.cpc:
+                response["cpc"] = self.flight.cpc
+
+        return response
 
     @classmethod
     def record_null_offer(
@@ -2355,6 +2395,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # we want to display a simple placeholder image.
             image_preview_url = static("image-placeholder.png")
 
+        # Render old style ads where HTML was allowed
+        # New style ads just use headline/content/CTA
+        text = self.render_links(click_url or self.link)
+        body = html.unescape(bleach.clean(text, tags=[], strip=True))
+
         return template.render(
             {
                 "ad": self,
@@ -2368,6 +2413,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 # to link the `Ads by EthicalAds` to.
                 "keywords": keywords,
                 "topics": topics,
+                # Pass headline, body, cta
+                # Newer ad formats can customize the display
+                "headline": self.headline,
+                "content": self.content or body,
+                "cta": self.cta,
             }
         ).strip()
 
