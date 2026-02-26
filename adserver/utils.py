@@ -1,5 +1,6 @@
 """Ad server utilities."""
 
+import functools
 import hashlib
 import ipaddress
 import logging
@@ -17,6 +18,7 @@ from django.conf import settings
 from django.contrib.gis.geoip2 import GeoIP2
 from django.contrib.gis.geoip2 import GeoIP2Exception
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import caches
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -38,6 +40,41 @@ log = logging.getLogger(__name__)  # noqa
 
 # Put this here so we don't reload it on each call
 COUNTRY_DICT = dict(countries)
+
+
+def cached_method(attr_name, cache_alias=None, timeout=60 * 15):
+    """
+    Decorator for caching model method results using Django's local cache.
+
+    First checks for an ``attr_name`` attribute on the instance (which may come
+    from an annotated queryset), then checks the local cache, and finally calls
+    the wrapped method and caches the result.
+
+    The wrapped method gains a ``bypass_cache`` keyword argument (default ``False``)
+    that, when ``True``, forces a fresh DB query and overwrites the cached value.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, bypass_cache=False):
+            # Check for a cached value that would come from an annotated queryset
+            if hasattr(self, attr_name):
+                value = getattr(self, attr_name)
+                return value if value is not None else 0
+
+            alias = cache_alias or settings.CACHE_LOCAL_ALIAS
+            cache_key = f"{self.__class__.__name__}_{attr_name}_{self.pk}"
+            cached_value = caches[alias].get(cache_key)
+            if cached_value is not None and not bypass_cache:
+                return cached_value
+
+            result = func(self)
+            caches[alias].set(cache_key, result, timeout=timeout)
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 @dataclass
