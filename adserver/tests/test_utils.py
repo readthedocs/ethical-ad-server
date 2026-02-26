@@ -324,19 +324,29 @@ class UtilsTest(TestCase):
 class CachedMethodTest(TestCase):
     """Tests for the cached_method decorator."""
 
-    def test_cached_method_caches_result(self):
-        """Second call should return cached value without calling the function."""
+    _next_pk = 1000
+
+    def _make_obj(self, **attrs):
+        """Return a (fake_model_instance, call_count_list) pair for testing."""
+        CachedMethodTest._next_pk += 1
         call_count_ref = [0]
 
         class FakeModel:
-            pk = 1001
-
             @cached_method("my_attr")
             def my_method(self):
                 call_count_ref[0] += 1
                 return 42
 
         obj = FakeModel()
+        obj.pk = CachedMethodTest._next_pk
+        for key, value in attrs.items():
+            setattr(obj, key, value)
+        return obj, call_count_ref
+
+    def test_cached_method_caches_result(self):
+        """Second call should return cached value without calling the function."""
+        obj, call_count_ref = self._make_obj()
+
         result1 = obj.my_method()
         result2 = obj.my_method()
 
@@ -346,17 +356,8 @@ class CachedMethodTest(TestCase):
 
     def test_cached_method_bypass_cache(self):
         """bypass_cache=True should force re-evaluation."""
-        call_count_ref = [0]
+        obj, call_count_ref = self._make_obj()
 
-        class FakeModel:
-            pk = 1002
-
-            @cached_method("my_attr")
-            def my_method(self):
-                call_count_ref[0] += 1
-                return 42
-
-        obj = FakeModel()
         obj.my_method()
         obj.my_method(bypass_cache=True)
 
@@ -364,18 +365,8 @@ class CachedMethodTest(TestCase):
 
     def test_cached_method_uses_annotated_attr(self):
         """An annotated queryset attribute is returned without calling the function."""
-        call_count_ref = [0]
+        obj, call_count_ref = self._make_obj(my_attr=99)
 
-        class FakeModel:
-            pk = 1003
-            my_attr = 99
-
-            @cached_method("my_attr")
-            def my_method(self):
-                call_count_ref[0] += 1
-                return 42
-
-        obj = FakeModel()
         result = obj.my_method()
 
         self.assertEqual(result, 99)
@@ -383,18 +374,8 @@ class CachedMethodTest(TestCase):
 
     def test_cached_method_annotated_attr_none_returns_zero(self):
         """An annotated None value (e.g. no DB rows) is treated as 0."""
-        call_count_ref = [0]
+        obj, call_count_ref = self._make_obj(my_attr=None)
 
-        class FakeModel:
-            pk = 1004
-            my_attr = None
-
-            @cached_method("my_attr")
-            def my_method(self):
-                call_count_ref[0] += 1
-                return 42
-
-        obj = FakeModel()
         result = obj.my_method()
 
         self.assertEqual(result, 0)
