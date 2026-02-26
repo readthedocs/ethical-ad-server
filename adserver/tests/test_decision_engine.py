@@ -25,6 +25,8 @@ from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
 from ..models import PublisherGroup
+from ..models import Region
+from ..models import Topic
 from ..utils import GeolocationData
 from ..utils import get_ad_day
 
@@ -516,17 +518,19 @@ class DecisionEngineTests(TestCase):
     def test_database_queries_made(self):
         # Clear the local cache to ensure a cold start for this test
         caches[settings.CACHE_LOCAL_ALIAS].clear()
+        # Pre-warm Region and Topic caches (loaded once per select_flight call)
+        Region.load_from_cache()
+        Topic.load_from_cache()
 
         with self.assertNumQueries(1):
             flights = list(self.probabilistic_backend.get_candidate_flights())
             self.assertEqual(len(flights), 3)
 
-        with self.assertNumQueries(5):
-            # Five queries total to select a flight on cold cache:
+        with self.assertNumQueries(3):
+            # Three queries to select a flight (Region/Topic caches are warm):
             # 1. Get all the candidate flights
             # 2. Prefetch related ads
             # 3. Prefetch related ad types
-            # 4-5. Region/CountryRegion geo data (only on first call; cached afterward)
             flight = self.probabilistic_backend.select_flight()
 
         with self.assertNumQueries(0):
@@ -535,7 +539,6 @@ class DecisionEngineTests(TestCase):
             self.assertTrue(ad in self.possible_ads, ad)
 
         with self.assertNumQueries(3):
-            # On repeated calls, Region/geo data is in the local cache (no extra queries)
             # Three total queries to get an ad placement:
             # 1. Get all the candidate flights (with prefetch for ads/adtypes)
             # 2. Prefetch related ads
