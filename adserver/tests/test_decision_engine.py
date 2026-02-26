@@ -2,6 +2,7 @@ import datetime
 import unittest
 
 from django.conf import settings
+from django.core.cache import caches
 from django.test import TestCase
 from django.test import override_settings
 from django.test.client import RequestFactory
@@ -216,6 +217,9 @@ class DecisionEngineTests(TestCase):
         self.advertisement1.incr(CLICKS, self.publisher)
         self.advertisement1.incr(CLICKS, self.publisher)
 
+        # Clear the `clicks/views_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
+
         # Daily cap exceeded
         self.assertFalse(self.backend.filter_flight(self.include_flight))
 
@@ -235,10 +239,12 @@ class DecisionEngineTests(TestCase):
         for _ in range(views_to_simulate):
             self.advertisement2.incr(VIEWS, self.publisher)
 
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
         self.assertTrue(self.backend.filter_flight(self.cpm_flight))
 
         # 7th view exceeds the daily cap
         self.advertisement2.incr(VIEWS, self.publisher)
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
         self.assertFalse(self.backend.filter_flight(self.cpm_flight))
 
     def test_custom_interval(self):
@@ -302,6 +308,8 @@ class DecisionEngineTests(TestCase):
 
         # Refresh the denormalized totals manually since they're no longer updated in real-time
         self.include_flight.refresh_denormalized_totals()
+        # Clear the `clicks_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
 
         self.assertEqual(self.include_flight.clicks_remaining(), 998)
         self.assertEqual(self.include_flight.total_clicks, 2)
@@ -314,6 +322,8 @@ class DecisionEngineTests(TestCase):
 
         # Add 1 click for today
         self.advertisement1.incr(CLICKS, self.publisher)
+        # Clear the `clicks_today` cache
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
 
         # Refresh the denormalized totals manually since they're no longer updated in real-time
         self.include_flight.refresh_denormalized_totals()
@@ -504,12 +514,19 @@ class DecisionEngineTests(TestCase):
         )
 
     def test_database_queries_made(self):
+        # Clear the local cache to ensure a cold start for this test
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
+
         with self.assertNumQueries(1):
             flights = list(self.probabilistic_backend.get_candidate_flights())
             self.assertEqual(len(flights), 3)
 
-        with self.assertNumQueries(3):
-            # One for flights, one for ads, one for ad types (due to prefetch)
+        with self.assertNumQueries(5):
+            # Five queries total to select a flight on cold cache:
+            # 1. Get all the candidate flights
+            # 2. Prefetch related ads
+            # 3. Prefetch related ad types
+            # 4-5. Region/CountryRegion geo data (only on first call; cached afterward)
             flight = self.probabilistic_backend.select_flight()
 
         with self.assertNumQueries(0):
@@ -518,12 +535,42 @@ class DecisionEngineTests(TestCase):
             self.assertTrue(ad in self.possible_ads, ad)
 
         with self.assertNumQueries(3):
-            # Three total queries to get an ad placement
-            # 1. Get all the candidate flights (and prefetch ads/adtypes)
-            # 2. Choose the specific ad for the chosen flight (0 queries)
-            # 3. get_placement (0 queries as it uses prefetch)
+            # On repeated calls, Region/geo data is in the local cache (no extra queries)
+            # Three total queries to get an ad placement:
+            # 1. Get all the candidate flights (with prefetch for ads/adtypes)
+            # 2. Prefetch related ads
+            # 3. Prefetch related ad types
             ad, _ = self.probabilistic_backend.get_ad_and_placement()
             self.assertTrue(ad in self.possible_ads, ad)
+
+    def test_views_today_clicks_today_caching(self):
+        """Verify that views_today/clicks_today use a local cache to reduce DB queries."""
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
+
+        # First call queries the database and caches the result
+        with self.assertNumQueries(1):
+            views = self.include_flight.views_today()
+        self.assertEqual(views, 0)
+
+        # Second call uses the local cache - no DB queries
+        with self.assertNumQueries(0):
+            views = self.include_flight.views_today()
+        self.assertEqual(views, 0)
+
+        # First call queries the database and caches the result
+        with self.assertNumQueries(1):
+            clicks = self.include_flight.clicks_today()
+        self.assertEqual(clicks, 0)
+
+        # Second call uses the local cache - no DB queries
+        with self.assertNumQueries(0):
+            clicks = self.include_flight.clicks_today()
+        self.assertEqual(clicks, 0)
+
+        # bypass_cache=True forces a fresh DB query
+        with self.assertNumQueries(1):
+            views = self.include_flight.views_today(bypass_cache=True)
+        self.assertEqual(views, 0)
 
     def test_click_probability(self):
         # Remove existing flights
