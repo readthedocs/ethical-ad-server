@@ -1116,7 +1116,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return []
         return [aau.url for aau in self.analyzedadvertiserurl_set.all()]
 
-    def show_to_geo(self, geo_data):
+    def show_to_geo(self, geo_data, regions=None):
         """
         Check if a flight is valid for a given country code.
 
@@ -1139,7 +1139,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
-        regions = Region.load_from_cache()
+        if regions is None:
+            regions = Region.load_from_cache()
 
         # Check region groupings as well
         if self.included_regions or self.excluded_regions:
@@ -1182,7 +1183,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def show_to_keywords(self, keywords):
+    def show_to_keywords(self, keywords, topics=None):
         """
         Check if a flight is valid for a given keywords.
 
@@ -1202,7 +1203,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         # Check topics (groupings of keywords)
         if self.included_topics:
-            topics = Topic.load_from_cache()
+            if topics is None:
+                topics = Topic.load_from_cache()
             topic_keyword_set = set()
             for topic_slug in self.included_topics:
                 # Be defensive in case the topic isn't in the cache
@@ -1322,29 +1324,49 @@ class Flight(TimeStampedModel, IndestructibleModel):
         remaining_seconds = (end_datetime - timezone.now()).total_seconds()
         return max(0, int(remaining_seconds / self.pacing_interval))
 
-    def views_today(self):
+    def views_today(self, bypass_cache=False):
         # Check for a cached value that would come from an annotated queryset
         if hasattr(self, "flight_views_today"):
             return self.flight_views_today or 0
 
+        # Fetch this value from the local cache if present
+        # Otherwise, populate the local cache
+        cache_key = f"flight_views_today_{self.pk}"
+        cached_value = caches[settings.CACHE_LOCAL_ALIAS].get(cache_key)
+        if cached_value is not None and not bypass_cache:
+            return cached_value
+
         aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all(), date=get_ad_day().date()
+            advertisement__in=self.advertisements.all(), date=timezone.now().date()
         ).aggregate(total_views=models.Sum("views"))["total_views"]
 
         # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
+        result = aggregation or 0
+        caches[settings.CACHE_LOCAL_ALIAS].set(cache_key, result, timeout=60 * 15)
 
-    def clicks_today(self):
+        return result
+
+    def clicks_today(self, bypass_cache=False):
         # Check for a cached value that would come from an annotated queryset
         if hasattr(self, "flight_clicks_today"):
             return self.flight_clicks_today or 0
 
+        # Fetch this value from the local cache if present
+        # Otherwise, populate the local cache
+        cache_key = f"flight_clicks_today_{self.pk}"
+        cached_value = caches[settings.CACHE_LOCAL_ALIAS].get(cache_key)
+        if cached_value is not None and not bypass_cache:
+            return cached_value
+
         aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all(), date=get_ad_day().date()
+            advertisement__in=self.advertisements.all(), date=timezone.now().date()
         ).aggregate(total_clicks=models.Sum("clicks"))["total_clicks"]
 
         # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
+        result = aggregation or 0
+        caches[settings.CACHE_LOCAL_ALIAS].set(cache_key, result, timeout=60 * 15)
+
+        return result
 
     def spend_today(self):
         """Get the total spend for this flight today."""
@@ -1358,7 +1380,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return total
 
     def views_needed_this_interval(self):
-        today = get_ad_day().date()
+        today = timezone.now().date()
         if (
             not self.live
             or self.views_remaining() <= 0
@@ -1379,7 +1401,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     def clicks_needed_this_interval(self):
         """Calculates clicks needed based on the impressions this flight's ads have."""
-        today = get_ad_day().date()
+        today = timezone.now().date()
         if (
             not self.live
             or self.clicks_remaining() <= 0

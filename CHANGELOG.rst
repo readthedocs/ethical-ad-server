@@ -6,6 +6,19 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.36.0
+---------------
+
+This release fixed some performance issues with the ad decision API.
+Some of these were introduced in v5.35.0 which rendered that release unusable
+but others predate that release.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Performance improvements on decision API (#1151)
+ * @davidfischer: Remove aggregation from critical path - use local cache (#1150)
+
+
 Version v5.35.0
 ---------------
 
