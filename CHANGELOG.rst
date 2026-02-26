@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.36.1
+---------------
+
+This release rolled back a change that was making the ad decision API slow.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Rollback the distinct query (#1155)
+
+
 Version v5.36.0
 ---------------
 
