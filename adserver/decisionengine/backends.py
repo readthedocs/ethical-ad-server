@@ -258,10 +258,16 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             flights = flights.filter(live=True, start_date__lte=get_ad_day().date())
 
             # Ensure there's a live ad of the chosen types for each flight
-            flights = flights.filter(
-                advertisements__ad_types__slug__in=self.ad_types,
-                advertisements__live=True,
-            ).distinct()
+            # With production data, this seemed to outperform a "distinct" query.
+            flights = flights.annotate(
+                num_ads=models.Count(
+                    "advertisements",
+                    filter=models.Q(
+                        advertisements__ad_types__slug__in=self.ad_types,
+                        advertisements__live=True,
+                    ),
+                )
+            ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
         return flights.select_related("campaign")
