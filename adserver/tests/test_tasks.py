@@ -180,8 +180,25 @@ class TasksTest(BaseAdModelsTestCase):
         # Shouldn't be any completed flight messages
         self.assertEqual(len(mail.outbox), 0)
 
-        self.flight.end_date = get_ad_day().date() + datetime.timedelta(days=7)
+        # Set up flight to be 0% complete and auto renewing
+        self.flight.start_date = get_ad_day().date()
+        self.flight.end_date = get_ad_day().date() + datetime.timedelta(days=10)
         self.flight.auto_renew = True
+        self.flight.sold_clicks = 100
+        self.flight.cpc = 1.0
+        self.flight.total_clicks = 0
+        self.flight.save()
+
+        # It is 0% complete, so no email should be sent
+        notify_of_autorenewing_flights()
+        self.assertEqual(len(mail.outbox), 0)
+        self.flight.refresh_from_db()
+        self.assertFalse(self.flight.auto_renew_notify)
+
+        # Move the start date back so it is 90% complete (9 days of 10 days elapsed)
+        self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=9)
+        self.flight.end_date = get_ad_day().date() + datetime.timedelta(days=1)
+        self.flight.total_clicks = 90
         self.flight.save()
 
         notify_of_autorenewing_flights()
@@ -191,6 +208,12 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertTrue(
             mail.outbox[0].subject.startswith("Advertising flight renewing")
         )
+        self.flight.refresh_from_db()
+        self.assertTrue(self.flight.auto_renew_notify)
+
+        # Calling again shouldn't send another email because auto_renew_notify is now True
+        notify_of_autorenewing_flights()
+        self.assertEqual(len(mail.outbox), 1)
 
     @override_settings(
         # Use the memory email backend instead of front for testing
