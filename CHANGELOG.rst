@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.36.2
+---------------
+
+This release reverts a change that caused a small performance degradation.
+
+:Date: March 6, 2026
+
+ * @davidfischer: Reverts 1136 - priority in flight selection (#1164)
+
+
 Version v5.36.1
 ---------------
 
