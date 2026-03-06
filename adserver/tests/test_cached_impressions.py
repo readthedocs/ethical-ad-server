@@ -301,7 +301,7 @@ class CachedImpressionWriterTests(TestCase):
         self.assertEqual(impression.views, 1)
 
     def test_concurrent_flush_safety(self):
-        """Flush should use atomic delete to avoid double-counting."""
+        """Flush should use atomic decr to avoid double-counting."""
         day = get_ad_day().date()
 
         self.writer.increment(self.ad.pk, self.publisher.pk, day, VIEWS)
@@ -318,3 +318,70 @@ class CachedImpressionWriterTests(TestCase):
             advertisement=self.ad, publisher=self.publisher, date=day
         )
         self.assertEqual(impression.views, 2)
+
+    def test_increments_during_flush_are_preserved(self):
+        """Increments that arrive between the snapshot read and the decr are not lost."""
+        day = get_ad_day().date()
+        key = self.writer._cache_key(self.ad.pk, self.publisher.pk, day, VIEWS)
+
+        # Seed the counter with 3 views
+        for _ in range(3):
+            self.writer.increment(self.ad.pk, self.publisher.pk, day, VIEWS)
+        self.assertEqual(cache.get(key), 3)
+
+        # Simulate what flush does internally: snapshot, then write, then decr.
+        # Between snapshot and decr, a new increment arrives.
+        dirty_keys = self.writer.get_dirty_keys()
+        snapshots = {k: cache.get(k) for k in dirty_keys}
+
+        # --- concurrent increment arrives here ---
+        self.writer.increment(self.ad.pk, self.publisher.pk, day, VIEWS)
+        self.assertEqual(cache.get(key), 4)  # 3 original + 1 new
+
+        # Now finish the flush by writing snapshot to DB and decrementing
+        self.writer.flush()
+
+        # The first flush saw 3 + wrote 3 to DB. But the counter was 4 at
+        # decr time so 4 - 3 = 1 remains.  That remaining 1 should survive
+        # for the next flush cycle.
+        #
+        # Actually, the full flush re-reads dirty keys and snapshots, so
+        # let's just verify end-to-end: after two full flushes, total = 4.
+        # Reset and do it properly.
+
+        # --- end-to-end test ---
+        cache.clear()
+        AdImpression.objects.all().delete()
+
+        for _ in range(3):
+            self.writer.increment(self.ad.pk, self.publisher.pk, day, VIEWS)
+
+        # Manually bump the counter to simulate a concurrent increment after
+        # the flush snapshots but before it decrements.
+        # We'll use a patching approach: patch cache.decr to inject an increment.
+        from unittest.mock import patch
+
+        original_decr = cache.decr
+
+        def decr_with_concurrent_increment(k, amount):
+            # Before decrementing, simulate a concurrent increment
+            cache.incr(k)
+            self.writer._add_dirty_key(k)
+            return original_decr(k, amount)
+
+        with patch.object(cache, "decr", side_effect=decr_with_concurrent_increment):
+            self.writer.flush()
+
+        # After flush: 3 were snapshot and written to DB.
+        # During decr, counter went from 3 → 4 (concurrent incr) → 1 (decr by 3).
+        # So 1 remains in cache.
+        self.assertEqual(cache.get(key), 1)
+        self.assertIn(key, self.writer.get_dirty_keys())
+
+        # Second flush picks up the remaining 1
+        self.writer.flush()
+
+        impression = AdImpression.objects.get(
+            advertisement=self.ad, publisher=self.publisher, date=day
+        )
+        self.assertEqual(impression.views, 4)  # 3 + 1 concurrent
