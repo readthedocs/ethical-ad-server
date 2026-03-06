@@ -5,8 +5,11 @@ Instead of writing to the database on every ad decision,
 this module accumulates writes in Redis and flushes them
 in bulk periodically. This reduces per-request database load significantly.
 
-Enable globally via ``ADSERVER_BATCH_DB_WRITES = True`` in settings,
-or per-publisher via ``Publisher.batch_db_writes = True``.
+Enable impression batching via ``ADSERVER_BATCH_IMPRESSION_WRITES = True``
+or per-publisher via ``Publisher.batch_impression_writes = True``.
+
+Enable offer batching via ``ADSERVER_BATCH_OFFER_WRITES = True``
+or per-publisher via ``Publisher.batch_offer_writes = True``.
 """
 
 import json
@@ -34,11 +37,19 @@ OFFER_PENDING_KEY_PREFIX = "batch:offer:"
 IMPRESSION_FIELDS = (OFFERS, DECISIONS, VIEWS, CLICKS)
 
 
-def is_batch_enabled(publisher=None):
-    """Check if batched writes are enabled for this request."""
-    global_enabled = getattr(settings, "ADSERVER_BATCH_DB_WRITES", False)
-    if publisher and hasattr(publisher, "batch_db_writes"):
-        return publisher.batch_db_writes or global_enabled
+def is_impression_batch_enabled(publisher=None):
+    """Check if batched AdImpression writes are enabled."""
+    global_enabled = getattr(settings, "ADSERVER_BATCH_IMPRESSION_WRITES", False)
+    if publisher and hasattr(publisher, "batch_impression_writes"):
+        return publisher.batch_impression_writes or global_enabled
+    return global_enabled
+
+
+def is_offer_batch_enabled(publisher=None):
+    """Check if batched Offer writes are enabled."""
+    global_enabled = getattr(settings, "ADSERVER_BATCH_OFFER_WRITES", False)
+    if publisher and hasattr(publisher, "batch_offer_writes"):
+        return publisher.batch_offer_writes or global_enabled
     return global_enabled
 
 
@@ -160,7 +171,6 @@ def get_pending_offer(nonce):
         return None
 
     # Found in Redis - flush this single offer to the DB immediately
-    from .models import Offer
 
     offer_data = json.loads(data)
     # Remove from pending
@@ -354,9 +364,7 @@ def flush_impression_counters():
 
             count += 1
         except Exception:
-            log.exception(
-                "Failed to flush impression counters for key: %s", key_str
-            )
+            log.exception("Failed to flush impression counters for key: %s", key_str)
             # Don't remove key so it can be retried
             continue
 

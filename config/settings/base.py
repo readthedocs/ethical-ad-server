@@ -591,8 +591,11 @@ ADSERVER_STICKY_DECISION_DURATION = 0
 # Batched DB writes configuration
 # When enabled, offers and impression counter updates are accumulated in Redis
 # and flushed to the database in bulk. This reduces per-request DB write load.
-# Can be enabled globally here or per-publisher via Publisher.batch_db_writes.
-ADSERVER_BATCH_DB_WRITES = env.bool("ADSERVER_BATCH_DB_WRITES", default=False)
+# Can be enabled globally here or per-publisher via the corresponding Publisher fields.
+ADSERVER_BATCH_IMPRESSION_WRITES = env.bool(
+    "ADSERVER_BATCH_IMPRESSION_WRITES", default=False
+)
+ADSERVER_BATCH_OFFER_WRITES = env.bool("ADSERVER_BATCH_OFFER_WRITES", default=False)
 ADSERVER_BATCH_SIZE = env.int("ADSERVER_BATCH_SIZE", default=100)
 ADSERVER_BATCH_FLUSH_SECONDS = env.int("ADSERVER_BATCH_FLUSH_SECONDS", default=60)
 

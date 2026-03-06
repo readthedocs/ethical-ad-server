@@ -476,10 +476,17 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "use a custom duration instead of settings.ADSERVER_STICKY_DECISION_DURATION."
         ),
     )
-    batch_db_writes = models.BooleanField(
+    batch_impression_writes = models.BooleanField(
         default=False,
         help_text=_(
-            "Batch database writes (offers, impressions) in Redis and flush periodically. "
+            "Batch AdImpression counter updates in Redis and flush periodically. "
+            "Reduces per-request DB load. Requires Redis cache backend."
+        ),
+    )
+    batch_offer_writes = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Batch Offer row creation in Redis and flush periodically. "
             "Reduces per-request DB load. Requires Redis cache backend."
         ),
     )
@@ -1996,9 +2003,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         # Try batched writes first if enabled for this publisher
         from .batch_writer import batch_incr_impressions
-        from .batch_writer import is_batch_enabled
+        from .batch_writer import is_impression_batch_enabled
 
-        if is_batch_enabled(publisher):
+        if is_impression_batch_enabled(publisher):
             if batch_incr_impressions(self, publisher, impression_types, day):
                 return
 
@@ -2091,9 +2098,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         # Only batch Offer writes (not Click/View which need immediate DB presence)
         if model == Offer:
             from .batch_writer import batch_create_offer
-            from .batch_writer import is_batch_enabled
+            from .batch_writer import is_offer_batch_enabled
 
-            if is_batch_enabled(publisher):
+            if is_offer_batch_enabled(publisher):
                 offer_id = uuid.uuid7()
                 offer_data = {
                     "id": str(offer_id),

@@ -8,49 +8,72 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.test import override_settings
-from django_dynamic_fixture import get
 
 from ..batch_writer import IMPRESSION_COUNTER_KEY_PREFIX
-from ..batch_writer import OFFER_PENDING_KEY_PREFIX
-from ..batch_writer import OFFER_QUEUE_KEY
 from ..batch_writer import batch_create_offer
 from ..batch_writer import batch_incr_impressions
 from ..batch_writer import flush_impression_counters
 from ..batch_writer import flush_offer_queue
 from ..batch_writer import get_pending_offer
-from ..batch_writer import is_batch_enabled
+from ..batch_writer import is_impression_batch_enabled
+from ..batch_writer import is_offer_batch_enabled
 from ..constants import DECISIONS
 from ..constants import OFFERS
-from ..constants import VIEWS
 from ..models import AdImpression
 from ..models import Offer
 from .common import BaseAdModelsTestCase
 
 
-class TestIsBatchEnabled(TestCase):
-    """Test the is_batch_enabled function."""
+class TestIsImpressionBatchEnabled(TestCase):
+    """Test the is_impression_batch_enabled function."""
 
-    @override_settings(ADSERVER_BATCH_DB_WRITES=False)
+    @override_settings(ADSERVER_BATCH_IMPRESSION_WRITES=False)
     def test_disabled_globally(self):
         publisher = MagicMock()
-        publisher.batch_db_writes = False
-        self.assertFalse(is_batch_enabled(publisher))
+        publisher.batch_impression_writes = False
+        self.assertFalse(is_impression_batch_enabled(publisher))
 
-    @override_settings(ADSERVER_BATCH_DB_WRITES=True)
+    @override_settings(ADSERVER_BATCH_IMPRESSION_WRITES=True)
     def test_enabled_globally(self):
         publisher = MagicMock()
-        publisher.batch_db_writes = False
-        self.assertTrue(is_batch_enabled(publisher))
+        publisher.batch_impression_writes = False
+        self.assertTrue(is_impression_batch_enabled(publisher))
 
-    @override_settings(ADSERVER_BATCH_DB_WRITES=False)
+    @override_settings(ADSERVER_BATCH_IMPRESSION_WRITES=False)
     def test_enabled_per_publisher(self):
         publisher = MagicMock()
-        publisher.batch_db_writes = True
-        self.assertTrue(is_batch_enabled(publisher))
+        publisher.batch_impression_writes = True
+        self.assertTrue(is_impression_batch_enabled(publisher))
 
-    @override_settings(ADSERVER_BATCH_DB_WRITES=False)
+    @override_settings(ADSERVER_BATCH_IMPRESSION_WRITES=False)
     def test_no_publisher(self):
-        self.assertFalse(is_batch_enabled(None))
+        self.assertFalse(is_impression_batch_enabled(None))
+
+
+class TestIsOfferBatchEnabled(TestCase):
+    """Test the is_offer_batch_enabled function."""
+
+    @override_settings(ADSERVER_BATCH_OFFER_WRITES=False)
+    def test_disabled_globally(self):
+        publisher = MagicMock()
+        publisher.batch_offer_writes = False
+        self.assertFalse(is_offer_batch_enabled(publisher))
+
+    @override_settings(ADSERVER_BATCH_OFFER_WRITES=True)
+    def test_enabled_globally(self):
+        publisher = MagicMock()
+        publisher.batch_offer_writes = False
+        self.assertTrue(is_offer_batch_enabled(publisher))
+
+    @override_settings(ADSERVER_BATCH_OFFER_WRITES=False)
+    def test_enabled_per_publisher(self):
+        publisher = MagicMock()
+        publisher.batch_offer_writes = True
+        self.assertTrue(is_offer_batch_enabled(publisher))
+
+    @override_settings(ADSERVER_BATCH_OFFER_WRITES=False)
+    def test_no_publisher(self):
+        self.assertFalse(is_offer_batch_enabled(None))
 
 
 class TestBatchImpressionCounters(BaseAdModelsTestCase):
@@ -325,6 +348,120 @@ class TestBatchOfferCreation(BaseAdModelsTestCase):
 
         # Only one offer should exist
         self.assertEqual(Offer.objects.filter(id=data["id"]).count(), 1)
+
+
+class TestBatchAutoFlush(BaseAdModelsTestCase):
+    """Test auto-flush when batch size is reached."""
+
+    @override_settings(ADSERVER_BATCH_SIZE=2)
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_auto_flush_triggers_celery_task(self, mock_get_client):
+        """When queue reaches batch size, celery task should be triggered."""
+        mock_redis = MagicMock()
+        pipe = MagicMock()
+        pipe.execute.return_value = [True, 1]
+        mock_redis.pipeline.return_value = pipe
+        mock_redis.llen.return_value = 2  # Equals batch size
+
+        mock_get_client.return_value = mock_redis
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "date": "2025-01-15T10:30:00+00:00",
+            "publisher_id": self.publisher.pk,
+        }
+        with patch("adserver.batch_writer.flush_offer_queue") as mock_flush_offers:
+            with patch(
+                "adserver.batch_writer.flush_impression_counters"
+            ) as mock_flush_impressions:
+                batch_create_offer(data)
+                # Celery import will fail in test, so it falls back to inline flush
+                mock_flush_offers.assert_called_once()
+                mock_flush_impressions.assert_called_once()
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_no_redis_for_pending_offer(self, mock_get_client):
+        mock_get_client.return_value = None
+        result = get_pending_offer(str(uuid.uuid4()))
+        self.assertIsNone(result)
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_impression_counters_no_redis(self, mock_get_client):
+        mock_get_client.return_value = None
+        count = flush_impression_counters()
+        self.assertEqual(count, 0)
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_offer_queue_no_redis(self, mock_get_client):
+        mock_get_client.return_value = None
+        count = flush_offer_queue()
+        self.assertEqual(count, 0)
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_offer_queue_bad_json(self, mock_get_client):
+        """Bad JSON in queue should be skipped gracefully."""
+        mock_redis = MagicMock()
+        pipe = MagicMock()
+        pipe.execute.return_value = [[b"not-valid-json"], 1]
+        mock_redis.pipeline.return_value = pipe
+        mock_get_client.return_value = mock_redis
+
+        count = flush_offer_queue()
+        self.assertEqual(count, 0)
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_impression_counters_invalid_key(self, mock_get_client):
+        """Invalid counter keys should be removed from the active set."""
+        mock_redis = MagicMock()
+        # Key with wrong format (not enough parts)
+        mock_redis.smembers.return_value = {b"batch:impression:badkey"}
+        pipe = MagicMock()
+        pipe.execute.return_value = [{b"offers": b"5"}, 1]
+        mock_redis.pipeline.return_value = pipe
+        mock_get_client.return_value = mock_redis
+
+        count = flush_impression_counters()
+        self.assertEqual(count, 0)
+        # Should still clean up the bad key
+        mock_redis.srem.assert_called_once()
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_impression_counters_empty_hash(self, mock_get_client):
+        """Empty counter hashes should be cleaned up."""
+        mock_redis = MagicMock()
+        key = f"batch:impression:{self.ad1.pk}:{self.publisher.pk}:{date.today().isoformat()}"
+        mock_redis.smembers.return_value = {key.encode()}
+        pipe = MagicMock()
+        pipe.execute.return_value = [{}, 1]  # Empty hash
+        mock_redis.pipeline.return_value = pipe
+        mock_get_client.return_value = mock_redis
+
+        count = flush_impression_counters()
+        self.assertEqual(count, 0)
+        mock_redis.srem.assert_called_once()
+
+    @patch("adserver.batch_writer._get_redis_client")
+    def test_flush_impression_null_ad_key(self, mock_get_client):
+        """Test flushing counters for null advertisement (null offers)."""
+        mock_redis = MagicMock()
+        day = date.today()
+        key = f"batch:impression:null:{self.publisher.pk}:{day.isoformat()}"
+
+        mock_redis.smembers.return_value = {key.encode()}
+        pipe = MagicMock()
+        pipe.execute.return_value = [{b"decisions": b"3"}, 1]
+        mock_redis.pipeline.return_value = pipe
+        mock_get_client.return_value = mock_redis
+
+        count = flush_impression_counters()
+        self.assertEqual(count, 1)
+
+        impression = AdImpression.objects.get(
+            advertisement=None,
+            publisher=self.publisher,
+            date=day,
+        )
+        self.assertEqual(impression.decisions, 3)
 
 
 class TestFlushBatchedDBWritesTask(BaseAdModelsTestCase):

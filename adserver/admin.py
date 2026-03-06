@@ -161,7 +161,7 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         "allow_community_campaigns",
         "allow_house_campaigns",
         "record_views",
-        "batch_db_writes",
+        "batch_impression_writes",
     )
     list_filter = (
         "payout_method",
@@ -171,7 +171,7 @@ class PublisherAdmin(RemoveDeleteMixin, SimpleHistoryAdmin):
         "allow_community_campaigns",
         "allow_house_campaigns",
         "record_views",
-        "batch_db_writes",
+        "batch_impression_writes",
     )
     list_per_page = 500
     prepopulated_fields = {"slug": ("name",)}
