@@ -587,6 +587,10 @@ ADSERVER_MINIMUM_PAYOUT = env.int("ADSERVER_MINIMUM_PAYOUT", default=50)
 ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 ADSERVER_STICKY_DECISION_DURATION = 0
+# When True, impression increments are buffered in the cache and flushed periodically
+ADSERVER_IMPRESSION_CACHE_ENABLED = env.bool(
+    "ADSERVER_IMPRESSION_CACHE_ENABLED", default=False
+)
 
 # For customer support emails
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
