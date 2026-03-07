@@ -1,0 +1,59 @@
+# EthicalAds Production Terraform Variables
+#
+# Copy this file to production.tfvars and fill in the values.
+# NEVER commit the actual production.tfvars file.
+#
+# Usage:
+#   terraform plan -var-file=production.tfvars
+#   terraform apply -var-file=production.tfvars
+
+# General
+project     = "ethicalads"
+environment = "production"
+aws_region  = "us-east-1"
+
+# Networking
+vpc_cidr = "10.0.0.0/16"
+
+# RDS PostgreSQL
+db_instance_class    = "db.r6g.large"
+db_allocated_storage = 100
+db_name              = "ethicaladserver"
+db_username          = "ethicalads"
+db_password          = "CHANGE_ME_USE_A_STRONG_PASSWORD"
+db_multi_az          = true
+db_create_replica    = false  # Set to true if you need a read replica for reporting
+
+# ElastiCache Redis
+redis_node_type       = "cache.r6g.large"
+redis_num_cache_nodes = 1
+
+# ECS Fargate
+image_tag                   = "latest"
+django_desired_count        = 2
+django_cpu                  = 1024   # 1 vCPU
+django_memory               = 2048   # 2 GB
+celery_worker_desired_count = 2
+celery_worker_cpu           = 1024
+celery_worker_memory        = 2048
+
+# Domains
+allowed_hosts = "server.ethicalads.io"
+media_domain  = "media.ethicalads.io"
+
+# ACM Certificate ARNs
+# Create these in the AWS console or via Terraform before first deploy.
+# The media cert MUST be in us-east-1 (CloudFront requirement).
+media_acm_certificate_arn = ""
+app_acm_certificate_arn   = ""
+
+# Application secrets
+# These are passed as environment variables to ECS tasks.
+app_secrets = {
+  SECRET_KEY        = "CHANGE_ME"
+  SENDGRID_API_KEY  = ""
+  SENTRY_DSN        = ""
+  STRIPE_SECRET_KEY = ""
+  SLACK_TOKEN       = ""
+  NEW_RELIC_LICENSE_KEY = ""
+}

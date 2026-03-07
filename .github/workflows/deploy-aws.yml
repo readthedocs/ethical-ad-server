@@ -1,0 +1,124 @@
+# Deploy to AWS ECS Fargate
+#
+# Builds a Docker image, pushes to ECR, and updates ECS services.
+# Triggered on push to the main branch.
+#
+# Required GitHub secrets:
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   AWS_REGION (or use default us-east-1)
+#   ECR_REPOSITORY (e.g. 123456789.dkr.ecr.us-east-1.amazonaws.com/ethicalads-production)
+#   ECS_CLUSTER (e.g. ethicalads-production)
+
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                       -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Run database migrations
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        run: |
+          # Run migrations as a one-off ECS task before deploying
+          TASK_DEF=$(aws ecs describe-services \
+            --cluster $ECS_CLUSTER \
+            --services ${ECS_CLUSTER}-django \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          NETWORK_CONFIG=$(aws ecs describe-services \
+            --cluster $ECS_CLUSTER \
+            --services ${ECS_CLUSTER}-django \
+            --query 'services[0].networkConfiguration' \
+            --output json)
+
+          aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --task-definition $TASK_DEF \
+            --launch-type FARGATE \
+            --network-configuration "$NETWORK_CONFIG" \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "django",
+                "command": ["/.venv/bin/python", "manage.py", "migrate", "--noinput"]
+              }]
+            }' \
+            --query 'tasks[0].taskArn' \
+            --output text
+
+      - name: Update Django ECS service
+        env:
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service ${ECS_CLUSTER}-django \
+            --force-new-deployment
+
+      - name: Update Celery worker ECS service
+        env:
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service ${ECS_CLUSTER}-celery-worker \
+            --force-new-deployment
+
+      - name: Update Celery beat ECS service
+        env:
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service ${ECS_CLUSTER}-celery-beat \
+            --force-new-deployment
+
+      - name: Wait for Django service stability
+        env:
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services ${ECS_CLUSTER}-django

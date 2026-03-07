@@ -128,7 +128,10 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 # User upload storage
 # https://docs.djangoproject.com/en/dev/topics/files/
-# https://django-storages.readthedocs.io/en/latest/backends/azure.html
+# Supports both Azure Blob Storage and AWS S3 via django-storages.
+# Set DEFAULT_FILE_STORAGE to switch backends:
+#   Azure: storages.backends.azure_storage.AzureStorage (default)
+#   AWS:   storages.backends.s3boto3.S3Boto3Storage
 STORAGES["default"]["BACKEND"] = env(
     "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"
 )
@@ -138,9 +141,21 @@ if custom_domain:
     STORAGES["default"]["OPTIONS"]["custom_domain"] = custom_domain
 MEDIA_URL = env("MEDIA_URL", default="")
 MEDIA_ROOT = env("MEDIA_ROOT", default="")
+
+# Azure Blob Storage settings (legacy)
 AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
 AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
 AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
+
+# AWS S3 settings
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="us-east-1")
+AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default=None)
+AWS_DEFAULT_ACL = env("AWS_DEFAULT_ACL", default=None)
+AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=False)
+AWS_BACKUPS_STORAGE_BUCKET_NAME = env("AWS_BACKUPS_STORAGE_BUCKET_NAME", default="")
+
+# Backups storage (supports both Azure and S3)
 BACKUPS_STORAGE = env("BACKUPS_STORAGE", default="config.storage.AzureBackupsStorage")
 STORAGES["backups"] = {"BACKEND": BACKUPS_STORAGE}
 
