@@ -156,6 +156,34 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # https://docs.celeryq.dev/page/userguide/configuration.html#std:setting-task_acks_late
 CELERY_ACKS_LATE = True
 
+# Retry behavior
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Control how many times it tries to reconnect before giving up
+# None means it will retry forever
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+
+# Redis transport options
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-retry-on-timeout
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-backend-health-check-interval
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # Periodically pings Redis (in seconds) to keep connection alive
+    "health_check_interval": 30,
+    # Retries a command once if it hits a socket timeout
+    "retry_on_timeout": True,
+    # Standard socket timeouts to prevent hanging
+    "socket_timeout": 30,
+    "socket_connect_timeout": 30,
+    # Celery's internal retry policy for the broker connection
+    "retry_policy": {
+        "timeout": 5.0,
+        "max_retries": 10,
+        "interval_start": 0,
+        "interval_step": 0.2,
+        "interval_max": 0.5,
+    },
+}
+
 if env.bool("REDIS_SSL", default=False):
     CELERY_BROKER_URL = CELERY_BROKER_URL.replace("redis://", "rediss://")
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
