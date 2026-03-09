@@ -493,6 +493,7 @@ CORS_URLS_REGEX = r"^/api/v1/similar-.*/$"
 # Metabase
 # Graphing and BI tool
 # --------------------------------------------------------------------------
+METABASE_ENABLED = env.bool("METABASE_ENABLED", default=True)
 METABASE_SITE_URL = env("METABASE_SITE_URL", default="http://metabase:3000")
 METABASE_SECRET_KEY = env("METABASE_SECRET_KEY", default=None)
 # Maps metabase questions by name to the ID
