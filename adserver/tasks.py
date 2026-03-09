@@ -1168,6 +1168,7 @@ def notify_of_completed_flights():
                 "sold_impressions",
                 "campaign",
                 "auto_renew",  # New flight will also auto-renew
+                "auto_renew_payment_method",
             ):
                 setattr(new_flight, field, getattr(flight, field))
 
