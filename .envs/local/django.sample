@@ -29,6 +29,8 @@ DATABASE_URL=psql://localuser:localpass@postgres:5432/ethicaladserver
 
 # Metabase
 # ------------------------------------------------------------------------------
+# Disable metabase entirely by setting this flag
+# METABASE_ENABLED=False
 # This is the address in docker. Use http://localhost:3000 outside docker.
 METABASE_SITE_URL=http://metabase:3000
 # Ensure this is set in http://localhost:3000/admin/settings/embedding_in_other_applications
