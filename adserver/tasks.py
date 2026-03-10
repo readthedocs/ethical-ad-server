@@ -962,6 +962,19 @@ def refresh_flight_denormalized_totals():
 
 
 @app.task()
+def flush_impression_cache():
+    """Flush cached impression writes to the database."""
+    from .impression_cache import CachedImpressionWriter
+
+    if not settings.ADSERVER_IMPRESSION_CACHE_ENABLED:
+        return
+
+    writer = CachedImpressionWriter()
+    flushed = writer.flush()
+    log.info("flush_impression_cache: flushed %d impression records", flushed)
+
+
+@app.task()
 def notify_on_ad_image_change(advertisement_id):
     ad = Advertisement.objects.filter(id=advertisement_id).first()
     if not ad or not ad.image:
