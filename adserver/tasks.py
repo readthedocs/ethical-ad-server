@@ -1041,16 +1041,10 @@ def notify_of_autorenewing_flights(completion_threshold=80):
         auto_renew_notified=False,
     ).select_related():
         # Flight must be at least 80% complete to receive the notification
-        flight_duration_perc_complete = 0.0
-        flight_days = flight.sold_days()
-        if flight_days > 0:
-            flight_duration_perc_complete = (
-                max(0, flight_days - flight.days_remaining()) / flight_days * 100
-            )
-
+        # By both duration AND actual spend/fill
         if (
             flight.percent_complete() < completion_threshold
-            or flight_duration_perc_complete < completion_threshold
+            or flight.duration_percent_complete() < completion_threshold
         ):
             continue
 
