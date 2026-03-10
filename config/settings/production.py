@@ -216,6 +216,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.refresh_flight_denormalized_totals",
         "schedule": crontab(minute="*/5"),  # Every 5 minutes
     },
+    "frequent-flush-batched-db-writes": {
+        "task": "adserver.tasks.flush_batched_db_writes",
+        "schedule": ADSERVER_BATCH_FLUSH_SECONDS,  # Interval in seconds
+    },
     # Run publisher importers daily
     "every-day-sync-publisher-data": {
         "task": "adserver.tasks.run_publisher_importers",

@@ -476,6 +476,20 @@ class Publisher(TimeStampedModel, IndestructibleModel):
             "use a custom duration instead of settings.ADSERVER_STICKY_DECISION_DURATION."
         ),
     )
+    batch_impression_writes = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Batch AdImpression counter updates in Redis and flush periodically. "
+            "Reduces per-request DB load. Requires Redis cache backend."
+        ),
+    )
+    batch_offer_writes = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Batch Offer row creation in Redis and flush periodically. "
+            "Reduces per-request DB load. Requires Redis cache backend."
+        ),
+    )
 
     # Denormalized fields
     sampled_ctr = models.FloatField(
@@ -1958,6 +1972,10 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         Add to the number of times this action has been performed, stored in the DB.
 
+        If batched writes are enabled for this publisher, increments are
+        accumulated in Redis and flushed periodically instead of
+        hitting the database on every request.
+
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
@@ -1982,6 +2000,14 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # These fields are now calculated on-demand from AdImpression or
             # refreshed periodically by a background task.
             # See: Flight.refresh_denormalized_totals()
+
+        # Try batched writes first if enabled for this publisher
+        from .batch_writer import batch_incr_impressions
+        from .batch_writer import is_impression_batch_enabled
+
+        if is_impression_batch_enabled(publisher):
+            if batch_incr_impressions(self, publisher, impression_types, day):
+                return
 
         # Ensure that an impression object exists for today
         # and make sure to query the writable DB for this
@@ -2016,6 +2042,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         This is used for all subclasses,
         so we need to keep all the data passed in generic.
+
+        For Offer records when batched writes are enabled,
+        the data is queued in Redis and flushed in bulk periodically.
         """
         ip_address = get_client_ip(request)
         user_agent = get_client_user_agent(request)
@@ -2040,8 +2069,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # we only store the first 100 characters of it.
             div_id = div_id[: Offer.DIV_MAXLENGTH]
 
-        obj = model.objects.create(
-            date=timezone.now(),
+        now = timezone.now()
+        record_kwargs = dict(
+            date=now,
             publisher=publisher,
             ip=anonymize_ip_address(ip_address),
             user_agent=user_agent,
@@ -2064,6 +2094,48 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # Page info
             advertisement=self,
         )
+
+        # Only batch Offer writes (not Click/View which need immediate DB presence)
+        if model == Offer:
+            from .batch_writer import batch_create_offer
+            from .batch_writer import is_offer_batch_enabled
+
+            if is_offer_batch_enabled(publisher):
+                offer_id = uuid.uuid7()
+                offer_data = {
+                    "id": str(offer_id),
+                    "date": now.isoformat(),
+                    "publisher_id": publisher.pk,
+                    "ip": record_kwargs["ip"],
+                    "user_agent": user_agent,
+                    "client_id": client_id,
+                    "country": country,
+                    "url": url,
+                    "domain": domain,
+                    "paid_eligible": paid_eligible,
+                    "rotations": rotations,
+                    "browser_family": parsed_ua.browser.family,
+                    "os_family": parsed_ua.os.family,
+                    "is_bot": parsed_ua.is_bot,
+                    "is_mobile": parsed_ua.is_mobile,
+                    "is_proxy": record_kwargs["is_proxy"],
+                    "keywords": keywords if keywords else None,
+                    "div_id": div_id,
+                    "ad_type_slug": ad_type_slug,
+                    "advertisement_id": self.pk if self else None,
+                    "viewed": False,
+                    "clicked": False,
+                    "uplifted": None,
+                    "view_time": None,
+                    "is_refunded": False,
+                }
+                if batch_create_offer(offer_data):
+                    # Return an unsaved Offer object with the pre-generated pk
+                    # so callers can use offer.pk as the nonce
+                    obj = Offer(id=offer_id, **record_kwargs)
+                    return obj
+
+        obj = model.objects.create(**record_kwargs)
         return obj
 
     def track_impression(self, request, impression_type, publisher, offer):
