@@ -1038,7 +1038,7 @@ def notify_of_autorenewing_flights(completion_threshold=80):
     for flight in Flight.objects.filter(
         live=True,
         auto_renew=True,
-        auto_renew_notify=False,
+        auto_renew_notified=False,
     ).select_related():
         # Flight must be at least 80% complete to receive the notification
         flight_duration_perc_complete = 0.0
@@ -1083,8 +1083,8 @@ def notify_of_autorenewing_flights(completion_threshold=80):
                 message.draft = True  # Only create a draft for now
                 message.send()
 
-        flight.auto_renew_notify = True
-        flight.save(update_fields=["auto_renew_notify"])
+        flight.auto_renew_notified = True
+        flight.save(update_fields=["auto_renew_notified"])
 
 
 @app.task()

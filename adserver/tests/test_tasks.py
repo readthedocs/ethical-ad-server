@@ -193,7 +193,7 @@ class TasksTest(BaseAdModelsTestCase):
         notify_of_autorenewing_flights()
         self.assertEqual(len(mail.outbox), 0)
         self.flight.refresh_from_db()
-        self.assertFalse(self.flight.auto_renew_notify)
+        self.assertFalse(self.flight.auto_renew_notified)
 
         # Move the start date back so it is 90% complete (9 days of 10 days elapsed)
         self.flight.start_date = get_ad_day().date() - datetime.timedelta(days=9)
@@ -209,9 +209,9 @@ class TasksTest(BaseAdModelsTestCase):
             mail.outbox[0].subject.startswith("Advertising flight renewing")
         )
         self.flight.refresh_from_db()
-        self.assertTrue(self.flight.auto_renew_notify)
+        self.assertTrue(self.flight.auto_renew_notified)
 
-        # Calling again shouldn't send another email because auto_renew_notify is now True
+        # Calling again shouldn't send another email because auto_renew_notified is now True
         notify_of_autorenewing_flights()
         self.assertEqual(len(mail.outbox), 1)
 

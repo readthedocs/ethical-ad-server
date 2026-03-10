@@ -832,7 +832,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         _("Automatically renew when complete"),
         default=False,
     )
-    auto_renew_notify = models.BooleanField(
+    auto_renew_notified = models.BooleanField(
         _("Auto renew notification sent"),
         default=False,
         help_text=_("Whether the user has been notified of their flight renewal"),
