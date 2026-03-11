@@ -12,6 +12,7 @@ from geoip2.errors import AddressNotFoundError
 from ..utils import anonymize_ip_address
 from ..utils import anonymize_user_agent
 from ..utils import build_blocked_ip_set
+from ..utils import cached_method
 from ..utils import calculate_ctr
 from ..utils import calculate_ecpm
 from ..utils import calculate_percent_diff
@@ -318,3 +319,64 @@ class UtilsTest(TestCase):
 
     def test_offers_dump_exists_placeholder(self):
         self.assertFalse(offers_dump_exists(datetime.date.today()))
+
+
+class CachedMethodTest(TestCase):
+    """Tests for the cached_method decorator."""
+
+    _next_pk = 1000
+
+    def _make_obj(self, **attrs):
+        """Return a (fake_model_instance, call_count_list) pair for testing."""
+        CachedMethodTest._next_pk += 1
+        call_count_ref = [0]
+
+        class FakeModel:
+            @cached_method("my_attr")
+            def my_method(self):
+                call_count_ref[0] += 1
+                return 42
+
+        obj = FakeModel()
+        obj.pk = CachedMethodTest._next_pk
+        for key, value in attrs.items():
+            setattr(obj, key, value)
+        return obj, call_count_ref
+
+    def test_cached_method_caches_result(self):
+        """Second call should return cached value without calling the function."""
+        obj, call_count_ref = self._make_obj()
+
+        result1 = obj.my_method()
+        result2 = obj.my_method()
+
+        self.assertEqual(result1, 42)
+        self.assertEqual(result2, 42)
+        self.assertEqual(call_count_ref[0], 1)
+
+    def test_cached_method_bypass_cache(self):
+        """bypass_cache=True should force re-evaluation."""
+        obj, call_count_ref = self._make_obj()
+
+        obj.my_method()
+        obj.my_method(bypass_cache=True)
+
+        self.assertEqual(call_count_ref[0], 2)
+
+    def test_cached_method_uses_annotated_attr(self):
+        """An annotated queryset attribute is returned without calling the function."""
+        obj, call_count_ref = self._make_obj(my_attr=99)
+
+        result = obj.my_method()
+
+        self.assertEqual(result, 99)
+        self.assertEqual(call_count_ref[0], 0)
+
+    def test_cached_method_annotated_attr_none_returns_zero(self):
+        """An annotated None value (e.g. no DB rows) is treated as 0."""
+        obj, call_count_ref = self._make_obj(my_attr=None)
+
+        result = obj.my_method()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(call_count_ref[0], 0)

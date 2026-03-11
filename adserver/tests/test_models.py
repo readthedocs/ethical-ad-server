@@ -1,6 +1,8 @@
 import datetime
 from unittest import mock
 
+from django.conf import settings
+from django.core.cache import caches
 from django.db import IntegrityError
 from django.test import override_settings
 from django.utils import timezone
@@ -882,3 +884,65 @@ class TestAdModels(BaseAdModelsTestCase):
         self.assertAlmostEqual(report.total["views"], 1)
         self.assertAlmostEqual(report.total["clicks"], 1)
         self.assertAlmostEqual(report.total["cost"], 2.0)
+
+
+class FlightCachedMethodTest(BaseAdModelsTestCase):
+    """Tests for Flight.views_today() and Flight.clicks_today() caching behavior."""
+
+    def setUp(self):
+        super().setUp()
+        # Clear the local cache before each test to start fresh
+        caches[settings.CACHE_LOCAL_ALIAS].clear()
+
+    def test_views_today_uses_cache_on_second_call(self):
+        """Repeated calls to views_today() should not hit the DB after the first call."""
+        # Prime the cache with a first call
+        self.flight.views_today()
+
+        # Second call should use the cache - zero DB queries
+        with self.assertNumQueries(0):
+            result = self.flight.views_today()
+
+        self.assertEqual(result, 0)
+
+    def test_clicks_today_uses_cache_on_second_call(self):
+        """Repeated calls to clicks_today() should not hit the DB after the first call."""
+        self.flight.clicks_today()
+
+        with self.assertNumQueries(0):
+            result = self.flight.clicks_today()
+
+        self.assertEqual(result, 0)
+
+    def test_views_today_bypass_cache_hits_db(self):
+        """bypass_cache=True should force a fresh DB query."""
+        self.flight.views_today()  # prime cache
+
+        # bypass_cache forces at least one DB query
+        with self.assertNumQueries(1):
+            self.flight.views_today(bypass_cache=True)
+
+    def test_clicks_today_bypass_cache_hits_db(self):
+        """bypass_cache=True should force a fresh DB query."""
+        self.flight.clicks_today()  # prime cache
+
+        with self.assertNumQueries(1):
+            self.flight.clicks_today(bypass_cache=True)
+
+    def test_views_today_annotated_attr_skips_db(self):
+        """An annotated flight_views_today attribute avoids DB and cache lookups."""
+        self.flight.flight_views_today = 55
+
+        with self.assertNumQueries(0):
+            result = self.flight.views_today()
+
+        self.assertEqual(result, 55)
+
+    def test_clicks_today_annotated_attr_skips_db(self):
+        """An annotated flight_clicks_today attribute avoids DB and cache lookups."""
+        self.flight.flight_clicks_today = 33
+
+        with self.assertNumQueries(0):
+            result = self.flight.clicks_today()
+
+        self.assertEqual(result, 33)
