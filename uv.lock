@@ -914,6 +914,9 @@ azure = [
     { name = "azure-core" },
     { name = "azure-storage-blob" },
 ]
+s3 = [
+    { name = "boto3" },
+]
 
 [[package]]
 name = "django-upgrade"
@@ -1036,7 +1039,7 @@ analyzer = [
 production = [
     { name = "django-anymail" },
     { name = "django-redis", extra = ["hiredis"] },
-    { name = "django-storages", extra = ["azure"] },
+    { name = "django-storages", extra = ["azure", "s3"] },
     { name = "gunicorn", extra = ["gevent"] },
     { name = "newrelic" },
     { name = "psycopg", extra = ["binary", "pool"] },
@@ -1088,7 +1091,7 @@ requires-dist = [
     { name = "django-redis", extras = ["hiredis"], marker = "extra == 'production'" },
     { name = "django-simple-history" },
     { name = "django-slack" },
-    { name = "django-storages", extras = ["azure"], marker = "extra == 'production'" },
+    { name = "django-storages", extras = ["azure", "s3"], marker = "extra == 'production'" },
     { name = "djangorestframework" },
     { name = "djangorestframework-jsonp" },
     { name = "duckdb", marker = "extra == 'analyzer'", specifier = ">=1.1.0,<1.2" },

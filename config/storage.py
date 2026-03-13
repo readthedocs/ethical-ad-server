@@ -10,7 +10,8 @@ from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
 from django.conf import settings
-from storages.backends.azure_storage import AzureStorage  # noqa
+from storages.backends.azure_storage import AzureStorage
+from storages.backends.s3 import S3Storage
 
 
 class OverrideHostnameMixin:
@@ -48,3 +49,16 @@ class AzureBackupsStorage(AzureStorage):
     azure_container = (
         getattr(settings, "AZURE_BACKUPS_STORAGE_CONTAINER", None) or "backups"
     )
+
+
+class S3CDNFileStorage(OverrideHostnameMixin, S3Storage):
+    """An S3 Storage backend that uses a CDN and custom hostname for media."""
+
+    override_hostname = getattr(settings, "DEFAULT_FILE_STORAGE_HOSTNAME", None)
+    bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+
+
+class S3BackupsStorage(S3Storage):
+    """An S3 Storage backend for backups."""
+
+    bucket_name = getattr(settings, "AWS_BACKUPS_STORAGE_BUCKET_NAME", None)
