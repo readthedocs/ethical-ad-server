@@ -98,7 +98,7 @@ production = [
     "django-redis[hiredis]",
 
     # Upload files to cloud storage (Azure)
-    "django-storages[azure]",
+    "django-storages[azure, s3]",
 
     # Logging and monitoring
     "newrelic",
