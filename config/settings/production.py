@@ -151,9 +151,9 @@ AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=False)
 # This default is true on AWS but false by default on Azure
 AWS_S3_FILE_OVERWRITE = False
 AWS_BACKUPS_STORAGE_BUCKET_NAME = env("AWS_BACKUPS_STORAGE_BUCKET_NAME", default="")
-# Backup storage configuration
-BACKUPS_STORAGE = env("BACKUPS_STORAGE", default="config.storage.AzureBackupsStorage")
-STORAGES["backups"] = {"BACKEND": BACKUPS_STORAGE}
+# Data storage configuration
+DATA_STORAGE = env("DATA_STORAGE", default="config.storage.AzureDataStorage")
+STORAGES["data"] = {"BACKEND": DATA_STORAGE}
 
 
 # Celery settings for asynchronous tasks

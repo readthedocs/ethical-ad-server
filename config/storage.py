@@ -43,12 +43,10 @@ class AzureCDNFileStorage(OverrideHostnameMixin, AzureStorage):
     override_hostname = getattr(settings, "DEFAULT_FILE_STORAGE_HOSTNAME", None)
 
 
-class AzureBackupsStorage(AzureStorage):
-    """An Azure Storage backend for backups."""
+class AzureDataStorage(AzureStorage):
+    """An Azure Storage backend for private data/backups/etc."""
 
-    azure_container = (
-        getattr(settings, "AZURE_BACKUPS_STORAGE_CONTAINER", None) or "backups"
-    )
+    azure_container = getattr(settings, "AZURE_DATA_STORAGE_CONTAINER", None) or "data"
 
 
 class S3CDNFileStorage(OverrideHostnameMixin, S3Storage):
@@ -58,7 +56,7 @@ class S3CDNFileStorage(OverrideHostnameMixin, S3Storage):
     bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
 
 
-class S3BackupsStorage(S3Storage):
-    """An S3 Storage backend for backups."""
+class S3DataStorage(S3Storage):
+    """An S3 Storage backend for private data/backups/etc."""
 
-    bucket_name = getattr(settings, "AWS_BACKUPS_STORAGE_BUCKET_NAME", None)
+    bucket_name = getattr(settings, "AWS_DATA_STORAGE_BUCKET_NAME", None)
