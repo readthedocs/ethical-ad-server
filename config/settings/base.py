@@ -119,6 +119,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.settings_processor",
+                "config.context_processors.maintenance_message_processor",
             ]
         },
     }
@@ -612,3 +613,13 @@ if ADSERVER_IPADDRESS_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
 if ADSERVER_GEOIP_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
+
+# Maintenance Message
+# --------------------------------------------------------------------------
+# A maintenance message displayed on all pages until an expiry datetime.
+# The expiry can be None for a message to always be displayed
+# or it can be an ISO8601 datetime string like "2027-01-01T00:00:00Z"
+ADSERVER_MAINTENANCE_MESSAGE = env("ADSERVER_MAINTENANCE_MESSAGE", default=None)
+ADSERVER_MAINTENANCE_MESSAGE_EXPIRY = env(
+    "ADSERVER_MAINTENANCE_MESSAGE_EXPIRY", default=None
+)
