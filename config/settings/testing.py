@@ -35,10 +35,13 @@ if "adserver.analyzer" not in INSTALLED_APPS:
 # unless you run `collectstatic` before running tests
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "django.core.files.storage.InMemoryStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+    "data": {
+        "BACKEND": "django.core.files.storage.InMemoryStorage",
     },
 }
 

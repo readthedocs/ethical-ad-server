@@ -269,6 +269,14 @@ STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
+    # This is a storage backend used for storing private (non-web accessible) data files
+    # This includes backups, long term caches, and other data files
+    "data": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": os.path.join(BASE_DIR, "data"),
+        },
+    },
 }
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets", "dist"),
