@@ -1,6 +1,8 @@
 import datetime
+import tempfile
 from unittest import mock
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import override_settings
 from django.utils import timezone
@@ -508,6 +510,12 @@ class TestAdModels(BaseAdModelsTestCase):
         count_ads = Advertisement.objects.all().count()
 
         self.ad1.ad_types.set([self.text_ad_type])
+
+        self.ad1.image = SimpleUploadedFile(
+            "test_image.jpg", b"file_content", content_type="image/jpeg"
+        )
+        self.ad1.save()
+
         ad1_copy = self.ad1.__copy__()
 
         # Should be one more ad than before
@@ -515,6 +523,8 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertNotEqual(ad1_copy, self.ad1)
         self.assertTrue(self.text_ad_type in list(ad1_copy.ad_types.all()))
+        self.assertEqual(ad1_copy.image.name, self.ad1.image.name)
+        self.assertEqual(ad1_copy.image.url, self.ad1.image.url)
 
     def test_offer_ad_send_bid_rate(self):
         """Test that offer_ad includes bid rate if publisher enabled it."""
@@ -568,10 +578,6 @@ class TestAdModels(BaseAdModelsTestCase):
 
     def test_offer_ad_logo(self):
         """Test that offer_ad includes the logo if provided."""
-        import tempfile
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-
         with tempfile.TemporaryDirectory() as tmp_media:
             with override_settings(MEDIA_ROOT=tmp_media):
                 # By default no logo

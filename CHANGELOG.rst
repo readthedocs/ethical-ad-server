@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.37.0
+---------------
+
+This release merges code to use AWS instead of Azure for storage
+although we are not switching to AWS for about a week.
+We are going to show a message alerting users about upcoming maintenance (AWS migration).
+This release also has a bug fix around duplicating ad images when copied.
+
+:Date: March 18, 2026
+
+ * @davidfischer: Do not duplicate images on ad copy (#1176)
+ * @davidfischer: Maintenance message (#1175)
+ * @davidfischer: Add a STORAGES["data"] (#1174)
+ * @davidfischer: Configure storage for S3 instead of Azure (#1172)
+
+
 Version v5.36.2
 ---------------
 

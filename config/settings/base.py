@@ -119,6 +119,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.settings_processor",
+                "config.context_processors.maintenance_message_processor",
             ]
         },
     }
@@ -268,6 +269,14 @@ STORAGES = {
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+    # This is a storage backend used for storing private (non-web accessible) data files
+    # This includes backups, long term caches, and other data files
+    "data": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": os.path.join(BASE_DIR, "data"),
+        },
     },
 }
 STATICFILES_DIRS = [
@@ -493,6 +502,7 @@ CORS_URLS_REGEX = r"^/api/v1/similar-.*/$"
 # Metabase
 # Graphing and BI tool
 # --------------------------------------------------------------------------
+METABASE_ENABLED = env.bool("METABASE_ENABLED", default=True)
 METABASE_SITE_URL = env("METABASE_SITE_URL", default="http://metabase:3000")
 METABASE_SECRET_KEY = env("METABASE_SECRET_KEY", default=None)
 # Maps metabase questions by name to the ID
@@ -611,3 +621,13 @@ if ADSERVER_IPADDRESS_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_IPADDRESS_MIDDLEWARE)
 if ADSERVER_GEOIP_MIDDLEWARE:
     MIDDLEWARE.append(ADSERVER_GEOIP_MIDDLEWARE)
+
+# Maintenance Message
+# --------------------------------------------------------------------------
+# A maintenance message displayed on all pages until an expiry datetime.
+# The expiry can be None for a message to always be displayed
+# or it can be an ISO8601 datetime string like "2027-01-01T00:00:00Z"
+ADSERVER_MAINTENANCE_MESSAGE = env("ADSERVER_MAINTENANCE_MESSAGE", default=None)
+ADSERVER_MAINTENANCE_MESSAGE_EXPIRY = env(
+    "ADSERVER_MAINTENANCE_MESSAGE_EXPIRY", default=None
+)

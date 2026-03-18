@@ -129,6 +129,7 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 # User upload storage
 # https://docs.djangoproject.com/en/dev/topics/files/
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 STORAGES["default"]["BACKEND"] = env(
     "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"
 )
@@ -138,11 +139,21 @@ if custom_domain:
     STORAGES["default"]["OPTIONS"]["custom_domain"] = custom_domain
 MEDIA_URL = env("MEDIA_URL", default="")
 MEDIA_ROOT = env("MEDIA_ROOT", default="")
+# Azure config (if on Azure)
 AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
 AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
 AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
-BACKUPS_STORAGE = env("BACKUPS_STORAGE", default="config.storage.AzureBackupsStorage")
-STORAGES["backups"] = {"BACKEND": BACKUPS_STORAGE}
+# S3 config (if on AWS)
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=False)
+# This default is true on AWS but false by default on Azure
+AWS_S3_FILE_OVERWRITE = False
+AWS_DATA_STORAGE_BUCKET_NAME = env("AWS_DATA_STORAGE_BUCKET_NAME", default="")
+# Data storage configuration
+DATA_STORAGE = env("DATA_STORAGE", default="config.storage.AzureDataStorage")
+STORAGES["data"] = {"BACKEND": DATA_STORAGE}
 
 
 # Celery settings for asynchronous tasks
@@ -155,6 +166,34 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # This setting means that workers should acknowledge a task after it is executed
 # https://docs.celeryq.dev/page/userguide/configuration.html#std:setting-task_acks_late
 CELERY_ACKS_LATE = True
+
+# Retry behavior
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Control how many times it tries to reconnect before giving up
+# None means it will retry forever
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+
+# Redis transport options
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-retry-on-timeout
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-backend-health-check-interval
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # Periodically pings Redis (in seconds) to keep connection alive
+    "health_check_interval": 30,
+    # Retries a command once if it hits a socket timeout
+    "retry_on_timeout": True,
+    # Standard socket timeouts to prevent hanging
+    "socket_timeout": 30,
+    "socket_connect_timeout": 30,
+    # Celery's internal retry policy for the broker connection
+    "retry_policy": {
+        "timeout": 5.0,
+        "max_retries": 10,
+        "interval_start": 0,
+        "interval_step": 0.2,
+        "interval_max": 0.5,
+    },
+}
 
 if env.bool("REDIS_SSL", default=False):
     CELERY_BROKER_URL = CELERY_BROKER_URL.replace("redis://", "rediss://")
@@ -234,7 +273,7 @@ if "adserver.analyzer" in INSTALLED_APPS:
         "schedule": crontab(hour="4", minute="0"),
     }
     CELERY_BEAT_SCHEDULE["every-week-domain-centroids"] = {
-        "task": "adserver.analyzer.tasks.update_domain_centroids",
+        "task": "ethicalads_ext.embedding.tasks.update_domain_centroids",
         "schedule": crontab(day_of_week=6, hour="1", minute="10"),
     }
 if "ethicalads_ext.embedding" in INSTALLED_APPS:

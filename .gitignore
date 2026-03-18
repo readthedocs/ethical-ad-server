@@ -82,6 +82,7 @@ celerybeat.pid
 assets/dist
 static
 media
+/data
 
 # Development database
 db.sqlite3
