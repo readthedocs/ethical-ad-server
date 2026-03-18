@@ -184,4 +184,4 @@ class TestArchiveOffers(TestCase):
         )
 
         output = self.out.getvalue()
-        self.assertTrue("already exists in data" in output)
+        self.assertTrue("already exists in backups" in output)

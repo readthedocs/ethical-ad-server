@@ -150,7 +150,7 @@ AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
 AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=False)
 # This default is true on AWS but false by default on Azure
 AWS_S3_FILE_OVERWRITE = False
-AWS_BACKUPS_STORAGE_BUCKET_NAME = env("AWS_BACKUPS_STORAGE_BUCKET_NAME", default="")
+AWS_DATA_STORAGE_BUCKET_NAME = env("AWS_DATA_STORAGE_BUCKET_NAME", default="")
 # Data storage configuration
 DATA_STORAGE = env("DATA_STORAGE", default="config.storage.AzureDataStorage")
 STORAGES["data"] = {"BACKEND": DATA_STORAGE}
