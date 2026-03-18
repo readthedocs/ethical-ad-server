@@ -1915,6 +1915,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
         ad.slug = Advertisement.generate_slug(new_name)
         ad.live = False  # The new ad should always be non-live
+
+        # Prevent the image from being duplicated in storage
+        if ad.image:
+            ad.image = ad.image.name
+
         ad.save()
 
         ad.ad_types.set(ad_types)
