@@ -34,8 +34,6 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
 # Add the local IP for ALB health checks
 try:
-    import socket
-
     local_ip = socket.gethostbyname(socket.gethostname())
     if local_ip not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(local_ip)
