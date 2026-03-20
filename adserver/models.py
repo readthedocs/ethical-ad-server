@@ -1980,7 +1980,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             impression_types = impression_type
 
         for imp_type in impression_types:
-            assert imp_type in IMPRESSION_TYPES
+            assert imp_type in IMPRESSION_TYPES  # noqa: S101
 
             # NOTE: We no longer update the denormalized total_views/total_clicks fields
             # in real-time to avoid lock contention on the Flight table.
@@ -2374,7 +2374,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         url = link or self.link
         if not self.text:
             template = get_template("adserver/advertisement-body.html")
-            return mark_safe(
+            return mark_safe(  # noqa: S308
                 template.render(
                     {
                         "url": url,
@@ -2390,7 +2390,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             '<a href="{}" rel="nofollow noopener sponsored" target="_blank">', url
         )
 
-        return mark_safe(ad_html.replace("<a>", a_tag))
+        return mark_safe(ad_html.replace("<a>", a_tag))  # noqa: S308
 
     def render_ad(
         self,

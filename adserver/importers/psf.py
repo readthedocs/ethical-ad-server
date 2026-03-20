@@ -60,6 +60,7 @@ def run_import(sync=False, images=False):
     response = requests.get(
         api_url,
         headers={"Authorization": f"Token {api_token}"},
+        timeout=5,
     )
 
     for item in response.json():
