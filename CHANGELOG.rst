@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.38.0
+---------------
+
+This release had a few minor bug fixes and improvements including one DB migration (notifications).
+
+:Date: March 24, 2026
+
+ * @ericholscher: Change publisher aggregation to every 5 minutes (#1181)
+ * @ericholscher: Auto-add local IP to ALLOWED_HOSTS for health checks (#1179)
+ * @davidfischer: Auto-renewal notification updates (#1159)
+
+
 Version v5.37.0
 ---------------
 
