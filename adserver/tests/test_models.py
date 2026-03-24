@@ -731,6 +731,47 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
 
+    def test_duration_percent_complete(self):
+        import pytz
+
+        now = timezone.now()
+        self.flight.start_date = now.date()
+        self.flight.end_date = now.date() + datetime.timedelta(days=9)
+        self.flight.save()
+
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(
+                self.flight.start_date, datetime.datetime.min.time()
+            )
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(
+                self.flight.end_date, datetime.datetime.max.time()
+            )
+        )
+        total_seconds = (end_datetime - start_datetime).total_seconds()
+
+        with mock.patch("adserver.models.timezone.now") as mock_now:
+            # Before start
+            mock_now.return_value = start_datetime - datetime.timedelta(days=1)
+            self.assertEqual(self.flight.duration_percent_complete(), 0.0)
+
+            # After end
+            mock_now.return_value = end_datetime + datetime.timedelta(days=1)
+            self.assertEqual(self.flight.duration_percent_complete(), 100.0)
+
+            # 50% complete
+            mock_now.return_value = start_datetime + datetime.timedelta(
+                seconds=total_seconds / 2
+            )
+            self.assertAlmostEqual(self.flight.duration_percent_complete(), 50.0)
+
+            # 25% complete
+            mock_now.return_value = start_datetime + datetime.timedelta(
+                seconds=total_seconds / 4
+            )
+            self.assertAlmostEqual(self.flight.duration_percent_complete(), 25.0)
+
     @override_settings(ADSERVER_DO_NOT_TRACK=True)
     def test_offer_ad(self):
         request = self.factory.get("/")

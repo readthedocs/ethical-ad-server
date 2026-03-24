@@ -1033,17 +1033,21 @@ def notify_of_first_flight_launched():
 
 
 @app.task()
-def notify_of_autorenewing_flights(days_before=7):
+def notify_of_autorenewing_flights(completion_threshold=80):
     """Send a note to flights set to renew automatically."""
-    # Flight must end in exactly `days_before` days
-    # to receive the notification
-    end_date = get_ad_day().date() + datetime.timedelta(days=days_before)
-
     for flight in Flight.objects.filter(
         live=True,
         auto_renew=True,
-        end_date=end_date,
+        auto_renew_notified=False,
     ).select_related():
+        # Flight must be at least 80% complete to receive the notification
+        # By both duration AND actual spend/fill
+        if (
+            flight.percent_complete() < completion_threshold
+            or flight.duration_percent_complete() < completion_threshold
+        ):
+            continue
+
         log.info("Notifying about flight %s auto-renewing", flight)
         if settings.FRONT_ENABLED:
             advertiser = flight.campaign.advertiser
@@ -1072,6 +1076,9 @@ def notify_of_autorenewing_flights(days_before=7):
                 )
                 message.draft = True  # Only create a draft for now
                 message.send()
+
+        flight.auto_renew_notified = True
+        flight.save(update_fields=["auto_renew_notified"])
 
 
 @app.task()

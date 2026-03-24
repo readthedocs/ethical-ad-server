@@ -31,6 +31,15 @@ TEMPLATE_DEBUG = DEBUG
 # ALLOWED_HOSTS is required in production
 # eg. "adserver.yourserver.com,adserver.yourserver.io"
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+# Add the local IP for ALB health checks
+try:
+    local_ip = socket.gethostbyname(socket.gethostname())
+    if local_ip not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(local_ip)
+except socket.gaierror:
+    pass
+
 SECRET_KEY = env("SECRET_KEY")  # Django won't start unless the SECRET_KEY is non-empty
 INTERNAL_IPS = env.list("INTERNAL_IPS", default=[])
 
@@ -249,7 +258,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "halfhourly-publisher-index": {
         "task": "adserver.tasks.daily_update_publishers",
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(minute="*/5"),
     },
     "frequent-refresh-flight-totals": {
         "task": "adserver.tasks.refresh_flight_denormalized_totals",
