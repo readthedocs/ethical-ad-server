@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Chat Demo - Ethical Ad Targeting</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #0d47a1;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header .subtitle { font-size: 13px; opacity: 0.8; }
+
+    .layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Chat panel */
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .message.user {
+      align-self: flex-end;
+      background: #0d47a1;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .message.assistant {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-bottom-left-radius: 4px;
+    }
+    .message.system-msg {
+      align-self: center;
+      background: #fff3cd;
+      color: #856404;
+      font-size: 13px;
+      border-radius: 8px;
+      max-width: 90%;
+    }
+    .message.error {
+      align-self: center;
+      background: #f8d7da;
+      color: #721c24;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+
+    .typing-indicator {
+      align-self: flex-start;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #888;
+      display: none;
+    }
+    .typing-indicator.visible { display: block; }
+
+    .input-area {
+      padding: 12px 20px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 8px;
+    }
+    .input-area textarea {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-height: 42px;
+      max-height: 120px;
+    }
+    .input-area textarea:focus { border-color: #0d47a1; }
+    .input-area button {
+      padding: 10px 20px;
+      background: #0d47a1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .input-area button:hover { background: #1565c0; }
+    .input-area button:disabled { background: #90a4ae; cursor: not-allowed; }
+
+    /* Ad sidebar */
+    .ad-sidebar {
+      width: 320px;
+      background: #fff;
+      border-left: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .ad-sidebar-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ad-container {
+      padding: 16px;
+      flex: 1;
+    }
+
+    .ad-card {
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      transition: box-shadow 0.2s;
+    }
+    .ad-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .ad-card img {
+      width: 100%;
+      display: block;
+    }
+    .ad-card-body {
+      padding: 12px;
+    }
+    .ad-card-body .ad-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #333;
+    }
+    .ad-card-body .ad-text a {
+      color: #0d47a1;
+      text-decoration: none;
+    }
+    .ad-card-body .ad-text a:hover {
+      text-decoration: underline;
+    }
+    .ad-card-body .ad-cta {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 14px;
+      background: #0d47a1;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .ad-card-body .ad-cta:hover { background: #1565c0; }
+
+    .ad-placeholder {
+      padding: 40px 16px;
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .ad-meta {
+      font-size: 11px;
+      color: #999;
+      padding: 8px 12px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .ad-disclosure {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      padding: 8px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    /* Settings panel */
+    .settings-bar {
+      padding: 8px 20px;
+      background: #e3f2fd;
+      border-bottom: 1px solid #bbdefb;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+    .settings-bar label { font-weight: 600; color: #0d47a1; }
+    .settings-bar input {
+      padding: 4px 8px;
+      border: 1px solid #90caf9;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .ad-sidebar { width: 100%; border-left: none; border-top: 1px solid #e0e0e0; max-height: 200px; }
+      .message { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>AI Chat with Ethical Ad Targeting</h1>
+    <div class="subtitle">Chat prompts are used to contextually target relevant ads via embeddings</div>
+  </div>
+</header>
+
+<div class="settings-bar">
+  <label for="publisher-slug">Publisher:</label>
+  <input type="text" id="publisher-slug" value="{{ publisher_slug }}" placeholder="your-publisher-slug" size="25">
+</div>
+
+<div class="layout">
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="message system-msg">
+        Welcome! Start chatting and relevant ads will appear in the sidebar,
+        targeted based on the context of your conversation.
+      </div>
+    </div>
+
+    <div class="typing-indicator" id="typing">Thinking...</div>
+
+    <div class="input-area">
+      <textarea id="prompt-input" placeholder="Type your message..." rows="1"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <div class="ad-sidebar">
+    <div class="ad-sidebar-header">Contextual Ads</div>
+    <div class="ad-container" id="ad-container">
+      <div class="ad-placeholder" id="ad-placeholder">
+        Ads will appear here once you start chatting.
+        They are targeted based on the content of your conversation.
+      </div>
+    </div>
+    <div class="ad-disclosure">
+      Ads are contextually targeted using prompt embeddings &mdash; no personal data is collected.
+    </div>
+  </div>
+</div>
+
+<script>
+$(function() {
+  var conversationHistory = [];
+  var $messages = $('#messages');
+  var $input = $('#prompt-input');
+  var $sendBtn = $('#send-btn');
+  var $typing = $('#typing');
+  var $adContainer = $('#ad-container');
+  var $adPlaceholder = $('#ad-placeholder');
+  var $publisherSlug = $('#publisher-slug');
+
+  // Auto-resize textarea
+  $input.on('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // Send on Enter (Shift+Enter for newline)
+  $input.on('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  $sendBtn.on('click', sendMessage);
+
+  function appendMessage(role, content) {
+    var cssClass = role === 'user' ? 'user' : 'assistant';
+    var $msg = $('<div class="message">').addClass(cssClass).text(content);
+    $messages.append($msg);
+    $messages.scrollTop($messages[0].scrollHeight);
+  }
+
+  function appendError(text) {
+    var $msg = $('<div class="message error">').text(text);
+    $messages.append($msg);
+    $messages.scrollTop($messages[0].scrollHeight);
+  }
+
+  function sendMessage() {
+    var text = $.trim($input.val());
+    if (!text) return;
+
+    // Show user message
+    appendMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    $input.val('').trigger('input');
+    $sendBtn.prop('disabled', true);
+    $typing.addClass('visible');
+
+    // Fire both requests in parallel:
+    // 1) Chat completion via our server proxy
+    // 2) Ad decision with the prompt for embedding-based targeting
+    var chatRequest = $.ajax({
+      url: '{% url "chatdemo:chat-completion" %}',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        messages: conversationHistory
+      })
+    });
+
+    var publisherSlug = $.trim($publisherSlug.val());
+    if (publisherSlug) {
+      fetchAd(text, publisherSlug);
+    }
+
+    chatRequest.done(function(data) {
+      $typing.removeClass('visible');
+      $sendBtn.prop('disabled', false);
+
+      if (data.content) {
+        appendMessage('assistant', data.content);
+        conversationHistory.push({ role: 'assistant', content: data.content });
+      } else if (data.error) {
+        appendError('Error: ' + data.error);
+      }
+
+      $input.focus();
+    });
+
+    chatRequest.fail(function(xhr) {
+      $typing.removeClass('visible');
+      $sendBtn.prop('disabled', false);
+
+      var errMsg = 'Request failed';
+      try {
+        var resp = JSON.parse(xhr.responseText);
+        if (resp.error) errMsg = resp.error;
+      } catch(e) {}
+      appendError('Error: ' + errMsg);
+      $input.focus();
+    });
+  }
+
+  function fetchAd(promptText, publisherSlug) {
+    $.ajax({
+      url: '/api/v1/decision/',
+      method: 'GET',
+      data: {
+        publisher: publisherSlug,
+        div_ids: 'chat-ad',
+        ad_types: 'image-v1|readthedocs-sidebar',
+        keywords: extractKeywords(promptText),
+        prompt: promptText
+      },
+      success: function(data) {
+        renderAd(data);
+      },
+      error: function(xhr) {
+        console.log('Ad decision failed:', xhr.status, xhr.responseText);
+      }
+    });
+  }
+
+  function extractKeywords(text) {
+    // Simple keyword extraction: take significant words from the prompt
+    var stopWords = new Set([
+      'the','a','an','is','are','was','were','be','been','being',
+      'have','has','had','do','does','did','will','would','could',
+      'should','may','might','shall','can','need','dare','ought',
+      'used','to','of','in','for','on','with','at','by','from',
+      'as','into','through','during','before','after','above',
+      'below','between','out','off','over','under','again','then',
+      'once','here','there','when','where','why','how','all','each',
+      'every','both','few','more','most','other','some','such','no',
+      'not','only','own','same','so','than','too','very','just',
+      'because','but','and','or','if','while','what','which','who',
+      'this','that','these','those','i','me','my','we','our','you',
+      'your','he','him','his','she','her','it','its','they','them'
+    ]);
+
+    var words = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(function(w) { return w.length > 2 && !stopWords.has(w); });
+
+    // Deduplicate and take top keywords
+    var unique = [];
+    var seen = {};
+    for (var i = 0; i < words.length; i++) {
+      if (!seen[words[i]]) {
+        seen[words[i]] = true;
+        unique.push(words[i]);
+      }
+    }
+
+    return unique.slice(0, 10).join('|');
+  }
+
+  function renderAd(data) {
+    if (!data || !data.id) {
+      // No ad returned
+      return;
+    }
+
+    $adPlaceholder.hide();
+
+    var $card = $('<div class="ad-card">');
+
+    // Ad image
+    if (data.image) {
+      var $imgLink = $('<a>').attr('href', data.link || '#').attr('target', '_blank').attr('rel', 'noopener');
+      $imgLink.append($('<img>').attr('src', data.image).attr('alt', 'Ad'));
+      $card.append($imgLink);
+    }
+
+    // Ad body
+    var $body = $('<div class="ad-card-body">');
+
+    if (data.copy && (data.copy.headline || data.copy.content)) {
+      var adHtml = '';
+      if (data.copy.headline) {
+        adHtml += '<strong>' + escapeHtml(data.copy.headline) + '</strong> ';
+      }
+      if (data.copy.content) {
+        adHtml += escapeHtml(data.copy.content);
+      }
+      $body.append($('<div class="ad-text">').html(adHtml));
+
+      if (data.copy.cta && data.link) {
+        $body.append(
+          $('<a class="ad-cta">').attr('href', data.link).attr('target', '_blank')
+            .attr('rel', 'noopener').text(data.copy.cta)
+        );
+      }
+    } else if (data.html) {
+      $body.append($('<div class="ad-text">').html(data.html));
+    } else if (data.body) {
+      $body.append($('<div class="ad-text">').text(data.body));
+    }
+
+    $card.append($body);
+
+    // Meta info
+    var metaParts = [];
+    if (data.campaign_type) metaParts.push(data.campaign_type);
+    if (data.display_type) metaParts.push(data.display_type);
+    if (metaParts.length) {
+      $card.append($('<div class="ad-meta">').text(metaParts.join(' \u00b7 ')));
+    }
+
+    // Replace existing ads (show most recent on top)
+    $adContainer.find('.ad-card').slice(2).remove();  // Keep max 3 ads
+    $adContainer.prepend($card);
+
+    // Fire view tracking pixel
+    if (data.view_url) {
+      $('<img>').attr('src', data.view_url).css({ width: 1, height: 1, position: 'absolute' })
+        .appendTo('body');
+    }
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  $input.focus();
+});
+</script>
+
+</body>
+</html>

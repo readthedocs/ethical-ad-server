@@ -119,6 +119,9 @@ class BaseAdDecisionBackend:
         self.ad_slug = kwargs.get("ad_slug")
         self.campaign_slug = kwargs.get("campaign_slug")
 
+        # Chat/AI prompt text for embedding-based targeting
+        self.prompt = kwargs.get("prompt") or ""
+
         self.niche_weights = None
 
     def get_analyzer_keywords(self):
@@ -420,19 +423,29 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
             # Apply niche targeting only when any flight has it.
             # This is to track whether we should do expensive distance queries.
-            if (
-                flights_with_niche_targeting
-                and "ethicalads_ext.embedding" in settings.INSTALLED_APPS
-            ):
-                # We have to do this here,
-                # so we can filter by the weight in the filter_flight call below
-                from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
+            if flights_with_niche_targeting:
+                if self.prompt:
+                    # Use prompt-based embedding for niche targeting
+                    # This enables AI chat contexts to target ads
+                    from ..chatdemo.embedding import get_prompt_niche_weights
 
-                self.niche_weights = get_niche_weights(
-                    url=self.url, flights=flights_with_niche_targeting
-                )
-                if self.niche_weights:
-                    log.debug("Niche targeting weights: %s", self.niche_weights)
+                    self.niche_weights = get_prompt_niche_weights(
+                        self.prompt, flights_with_niche_targeting
+                    )
+                    if self.niche_weights:
+                        log.debug(
+                            "Prompt niche targeting weights: %s",
+                            self.niche_weights,
+                        )
+                elif "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
+                    # Fall back to URL-based niche targeting
+                    from ethicalads_ext.embedding.utils import get_niche_weights  # noqa
+
+                    self.niche_weights = get_niche_weights(
+                        url=self.url, flights=flights_with_niche_targeting
+                    )
+                    if self.niche_weights:
+                        log.debug("Niche targeting weights: %s", self.niche_weights)
 
             for flight in possible_flights:
                 # Handle excluding flights based on targeting

@@ -86,6 +86,11 @@ class AdDecisionSerializer(serializers.Serializer):
     user_ip = serializers.CharField(required=False)
     user_ua = serializers.CharField(required=False)
 
+    # Chat/AI prompt text used for embedding-based ad targeting
+    # When provided, the ad server generates an embedding from this text
+    # to match against advertiser content for niche targeting
+    prompt = serializers.CharField(max_length=8000, required=False)
+
     # Used to specify a specific ad or campaign to show (used for debugging mostly)
     force_ad = serializers.CharField(required=False)  # slug
     force_campaign = serializers.CharField(required=False)  # slug

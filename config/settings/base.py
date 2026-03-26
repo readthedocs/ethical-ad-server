@@ -598,6 +598,12 @@ ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 ADSERVER_STICKY_DECISION_DURATION = 0
 
+# OpenAI API key for chat demo completions and embedding generation
+OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
+
+# The default publisher slug for the chat demo
+ADSERVER_CHAT_DEMO_PUBLISHER = env("ADSERVER_CHAT_DEMO_PUBLISHER", default="")
+
 # For customer support emails
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
 ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
