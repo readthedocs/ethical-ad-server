@@ -11,9 +11,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: astral-sh/setup-uv@v4
+
+      # https://docs.astral.sh/uv/guides/integration/github/
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          # Install a specific version of uv.
+          version: "0.11.1"
+
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
