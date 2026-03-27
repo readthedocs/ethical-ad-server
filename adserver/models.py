@@ -833,6 +833,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
         _("Automatically renew when complete"),
         default=False,
     )
+    auto_renew_notified = models.BooleanField(
+        _("Auto renew notification sent"),
+        default=False,
+        help_text=_("Whether the user has been notified of their flight renewal"),
+    )
     auto_renew_payment_method = models.CharField(
         _("Auto renewal payment method"),
         max_length=100,
@@ -1486,6 +1491,25 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return self.total_value() / projected_total * 100
         return 0
 
+    def duration_percent_complete(self) -> float:
+        """Percentage of the flight duration that has elapsed [0.0, 100.0]."""
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
+        now = timezone.now()
+
+        if now < start_datetime:
+            return 0.0
+        if now > end_datetime:
+            return 100.0
+
+        total_duration = end_datetime - start_datetime
+        elapsed_duration = now - start_datetime
+        return elapsed_duration.total_seconds() / total_duration.total_seconds() * 100
+
     def daily_cap_exceeded(self):
         """
         Check if the daily cap for a given flight has been exceeded.
@@ -1890,6 +1914,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
         ad.slug = Advertisement.generate_slug(new_name)
         ad.live = False  # The new ad should always be non-live
+
+        # Prevent the image from being duplicated in storage
+        if ad.image:
+            ad.image = ad.image.name
+
         ad.save()
 
         ad.ad_types.set(ad_types)

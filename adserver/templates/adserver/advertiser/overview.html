@@ -80,7 +80,7 @@
           </ul>
         </div>
       </div>
-    {% else %}
+    {% elif metabase_enabled %}
       <div class="row mb-5">
         <div class="col min-vh-75">
           {% metabase_dashboard_embed metabase_advertiser_dashboard advertiser_slug=advertiser.slug start_date=start_date end_date=end_date %}

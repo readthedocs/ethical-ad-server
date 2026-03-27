@@ -6,6 +6,67 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.38.0
+---------------
+
+This release had a few minor bug fixes and improvements including one DB migration (notifications).
+
+:Date: March 24, 2026
+
+ * @ericholscher: Change publisher aggregation to every 5 minutes (#1181)
+ * @ericholscher: Auto-add local IP to ALLOWED_HOSTS for health checks (#1179)
+ * @davidfischer: Auto-renewal notification updates (#1159)
+
+
+Version v5.37.0
+---------------
+
+This release merges code to use AWS instead of Azure for storage
+although we are not switching to AWS for about a week.
+We are going to show a message alerting users about upcoming maintenance (AWS migration).
+This release also has a bug fix around duplicating ad images when copied.
+
+:Date: March 18, 2026
+
+ * @davidfischer: Do not duplicate images on ad copy (#1176)
+ * @davidfischer: Maintenance message (#1175)
+ * @davidfischer: Add a STORAGES["data"] (#1174)
+ * @davidfischer: Configure storage for S3 instead of Azure (#1172)
+
+
+Version v5.36.2
+---------------
+
+This release reverts a change that caused a small performance degradation.
+
+:Date: March 6, 2026
+
+ * @davidfischer: Reverts 1136 - priority in flight selection (#1164)
+
+
+Version v5.36.1
+---------------
+
+This release rolled back a change that was making the ad decision API slow.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Rollback the distinct query (#1155)
+
+
+Version v5.36.0
+---------------
+
+This release fixed some performance issues with the ad decision API.
+Some of these were introduced in v5.35.0 which rendered that release unusable
+but others predate that release.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Performance improvements on decision API (#1151)
+ * @davidfischer: Remove aggregation from critical path - use local cache (#1150)
+
+
 Version v5.35.0
 ---------------
 

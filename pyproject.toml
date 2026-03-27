@@ -98,7 +98,7 @@ production = [
     "django-redis[hiredis]",
 
     # Upload files to cloud storage (Azure)
-    "django-storages[azure]",
+    "django-storages[azure, s3]",
 
     # Logging and monitoring
     "newrelic",
@@ -237,7 +237,9 @@ env_list = ["coverage", "styles", "migrations", "docs"]
 description = "Run the full test suite under {base_python}"
 runner = "uv-venv-lock-runner"
 base_python = ["python3.12"]
-setenv = { DJANGO_SETTINGS_MODULE = "config.settings.testing", DJANGO_SETTINGS_SKIP_LOCAL = "True" }
+# We set `UV_FROZEN=true` to ensure the lockfile isn't changed by tests
+uv_sync_locked = false
+setenv = { DJANGO_SETTINGS_MODULE = "config.settings.testing", DJANGO_SETTINGS_SKIP_LOCAL = "True", UV_FROZEN="true" }
 
 [tool.tox.env.py3]
 description = "Run specific unit tests without coverage"
