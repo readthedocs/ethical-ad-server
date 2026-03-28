@@ -96,6 +96,3 @@ geoip/*
 trainingset-urls-cache.sqlite
 /machine_learning_experiments/assets/*.json
 .venv/
-
-# LocalAI models and data
-.localai/
