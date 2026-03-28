@@ -110,6 +110,16 @@ class TestArchiveOffers(TestCase):
                 stderr=self.err,
             )
 
+    @override_settings(
+        STORAGES={
+            "default": {
+                "BACKEND": "django.core.files.storage.InMemoryStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+            },
+        }
+    )
     @patch("django.db.connections")
     def test_archive_offers(self, conn_mock):
         management.call_command(
@@ -121,6 +131,7 @@ class TestArchiveOffers(TestCase):
         output = self.out.getvalue()
 
         self.assertTrue("Successfully archived" in output)
+        # This appears when there's no STORAGES["data"]
         self.assertTrue("Skipping copying offers" in output)
         self.assertFalse("Skipping deleting archived offers" in output)
 
@@ -138,12 +149,14 @@ class TestArchiveOffers(TestCase):
         STORAGES={
             "default": {
                 "BACKEND": "django.core.files.storage.FileSystemStorage",
+                "OPTIONS": {"location": "/tmp/tmpmedia"},
             },
             "staticfiles": {
                 "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
             },
-            "backups": {
+            "data": {
                 "BACKEND": "django.core.files.storage.FileSystemStorage",
+                "OPTIONS": {"location": "/tmp/tmpdata"},
             },
         }
     )

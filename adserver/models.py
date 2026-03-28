@@ -402,6 +402,12 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         blank=True,
         null=True,
         default=None,
+        help_text=_("How this publisher wants to get paid"),
+    )
+
+    send_bid_rate = models.BooleanField(
+        default=False,
+        help_text=_("Return the bid CPM/CPC with the decision API"),
     )
     djstripe_account = models.ForeignKey(
         djstripe_models.Account,
@@ -598,6 +604,15 @@ class Advertiser(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Advertiser Slug"), max_length=200, unique=True)
+    advertiser_logo = models.ImageField(
+        _("Advertiser Logo"),
+        upload_to="advertiser_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "The logo for the advertiser. Returned in ad responses. Recommended size 200x200."
+        ),
+    )
 
     # Publisher specific advertiser account
     publisher = models.OneToOneField(
@@ -786,6 +801,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     name = models.CharField(_("Name"), max_length=200)
     slug = models.SlugField(_("Flight Slug"), max_length=200, unique=True)
+    flight_logo = models.ImageField(
+        _("Flight Logo"),
+        upload_to="flight_logos/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text=_(
+            "Overrides the advertiser logo for this specific flight. Recommended size 200x200."
+        ),
+    )
     start_date = models.DateField(
         _("Start Date"),
         default=datetime.date.today,
@@ -807,6 +831,11 @@ class Flight(TimeStampedModel, IndestructibleModel):
     auto_renew = models.BooleanField(
         _("Automatically renew when complete"),
         default=False,
+    )
+    auto_renew_notified = models.BooleanField(
+        _("Auto renew notification sent"),
+        default=False,
+        help_text=_("Whether the user has been notified of their flight renewal"),
     )
     auto_renew_payment_method = models.CharField(
         _("Auto renewal payment method"),
@@ -1092,7 +1121,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
             return []
         return [aau.url for aau in self.analyzedadvertiserurl_set.all()]
 
-    def show_to_geo(self, geo_data):
+    def show_to_geo(self, geo_data, regions=None):
         """
         Check if a flight is valid for a given country code.
 
@@ -1115,7 +1144,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if self.excluded_countries and geo_data.country in self.excluded_countries:
             return False
 
-        regions = Region.load_from_cache()
+        if regions is None:
+            regions = Region.load_from_cache()
 
         # Check region groupings as well
         if self.included_regions or self.excluded_regions:
@@ -1158,7 +1188,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         return True
 
-    def show_to_keywords(self, keywords):
+    def show_to_keywords(self, keywords, topics=None):
         """
         Check if a flight is valid for a given keywords.
 
@@ -1178,7 +1208,8 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
         # Check topics (groupings of keywords)
         if self.included_topics:
-            topics = Topic.load_from_cache()
+            if topics is None:
+                topics = Topic.load_from_cache()
             topic_keyword_set = set()
             for topic_slug in self.included_topics:
                 # Be defensive in case the topic isn't in the cache
@@ -1298,29 +1329,49 @@ class Flight(TimeStampedModel, IndestructibleModel):
         remaining_seconds = (end_datetime - timezone.now()).total_seconds()
         return max(0, int(remaining_seconds / self.pacing_interval))
 
-    def views_today(self):
+    def views_today(self, bypass_cache=False):
         # Check for a cached value that would come from an annotated queryset
         if hasattr(self, "flight_views_today"):
             return self.flight_views_today or 0
 
+        # Fetch this value from the local cache if present
+        # Otherwise, populate the local cache
+        cache_key = f"flight_views_today_{self.pk}"
+        cached_value = caches[settings.CACHE_LOCAL_ALIAS].get(cache_key)
+        if cached_value is not None and not bypass_cache:
+            return cached_value
+
         aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all(), date=get_ad_day().date()
+            advertisement__in=self.advertisements.all(), date=timezone.now().date()
         ).aggregate(total_views=models.Sum("views"))["total_views"]
 
         # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
+        result = aggregation or 0
+        caches[settings.CACHE_LOCAL_ALIAS].set(cache_key, result, timeout=60 * 15)
 
-    def clicks_today(self):
+        return result
+
+    def clicks_today(self, bypass_cache=False):
         # Check for a cached value that would come from an annotated queryset
         if hasattr(self, "flight_clicks_today"):
             return self.flight_clicks_today or 0
 
+        # Fetch this value from the local cache if present
+        # Otherwise, populate the local cache
+        cache_key = f"flight_clicks_today_{self.pk}"
+        cached_value = caches[settings.CACHE_LOCAL_ALIAS].get(cache_key)
+        if cached_value is not None and not bypass_cache:
+            return cached_value
+
         aggregation = AdImpression.objects.filter(
-            advertisement__in=self.advertisements.all(), date=get_ad_day().date()
+            advertisement__in=self.advertisements.all(), date=timezone.now().date()
         ).aggregate(total_clicks=models.Sum("clicks"))["total_clicks"]
 
         # The aggregation can be `None` if there are no impressions
-        return aggregation or 0
+        result = aggregation or 0
+        caches[settings.CACHE_LOCAL_ALIAS].set(cache_key, result, timeout=60 * 15)
+
+        return result
 
     def spend_today(self):
         """Get the total spend for this flight today."""
@@ -1334,7 +1385,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
         return total
 
     def views_needed_this_interval(self):
-        today = get_ad_day().date()
+        today = timezone.now().date()
         if (
             not self.live
             or self.views_remaining() <= 0
@@ -1355,7 +1406,7 @@ class Flight(TimeStampedModel, IndestructibleModel):
 
     def clicks_needed_this_interval(self):
         """Calculates clicks needed based on the impressions this flight's ads have."""
-        today = get_ad_day().date()
+        today = timezone.now().date()
         if (
             not self.live
             or self.clicks_remaining() <= 0
@@ -1464,6 +1515,25 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if projected_total > 0:
             return self.total_value() / projected_total * 100
         return 0
+
+    def duration_percent_complete(self) -> float:
+        """Percentage of the flight duration that has elapsed [0.0, 100.0]."""
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        )
+        now = timezone.now()
+
+        if now < start_datetime:
+            return 0.0
+        if now > end_datetime:
+            return 100.0
+
+        total_duration = end_datetime - start_datetime
+        elapsed_duration = now - start_datetime
+        return elapsed_duration.total_seconds() / total_duration.total_seconds() * 100
 
     def daily_cap_exceeded(self):
         """
@@ -1869,6 +1939,11 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         ad.name = new_name + " {}".format(timezone.now().strftime("%Y-%m-%d"))
         ad.slug = Advertisement.generate_slug(new_name)
         ad.live = False  # The new ad should always be non-live
+
+        # Prevent the image from being duplicated in storage
+        if ad.image:
+            ad.image = ad.image.name
+
         ad.save()
 
         ad.ad_types.set(ad_types)
@@ -2160,7 +2235,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                     if topic_keyword in keywords:
                         topic_set.add(topic)
 
-        return {
+        logo = None
+        if self.flight.flight_logo:
+            logo = self.flight.flight_logo.url
+        elif self.flight.campaign.advertiser.advertiser_logo:
+            logo = self.flight.campaign.advertiser.advertiser_logo.url
+
+        response = {
             "id": self.slug,
             "text": text,
             "body": body,
@@ -2179,13 +2260,23 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
                 "content": self.content or body,
             },
             "image": self.image.url if self.image else None,
+            "logo": logo,
             "link": click_url,
+            "link_domain": get_domain_from_url(self.link),
             "view_url": view_url,
             "view_time_url": view_time_url,
             "nonce": nonce,
             "display_type": ad_type_slug,
             "campaign_type": self.flight.campaign.campaign_type,
         }
+
+        if publisher.send_bid_rate:
+            if self.flight.cpm:
+                response["cpm"] = self.flight.cpm
+            if self.flight.cpc:
+                response["cpc"] = self.flight.cpc
+
+        return response
 
     @classmethod
     def record_null_offer(

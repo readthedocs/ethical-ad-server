@@ -5,7 +5,7 @@ The offers table can get very large
 and it's important for performance to keep it as small as possible.
 As a result, archiving old offers can have a good effect on performance.
 This management command archives old offers to CSV files, zips them,
-can copy them to remote storage (settings.BACKUPS_STORAGE)
+can copy them to remote storage (settings.DATA_STORAGE)
 and with a passed flag can delete the archives from the DB.
 """
 
@@ -134,18 +134,18 @@ class Command(BaseCommand):
         return zipped_output_file
 
     def copy_offer_dump(self, archive_filepath):
-        """Copy offer CSV files to settings.BACKUPS_STORAGE."""
-        if "backups" not in settings.STORAGES:
+        """Copy offer CSV files to settings.DATA_STORAGE."""
+        if "data" not in settings.STORAGES:
             self.stdout.write(
                 self.style.WARNING(
                     _(
-                        "Skipping copying offers to backups (BACKUPS_STORAGE is not defined)..."
+                        "Skipping copying offers to data (DATA_STORAGE is not defined)..."
                     )
                 )
             )
             return
 
-        storage = storages.create_storage(storages.backends["backups"])
+        storage = storages.create_storage(storages.backends["data"])
 
         storage_path = self.storage_output_dir + archive_filepath.name
         self.stdout.write(_("Copying offers (%s) to backups...") % archive_filepath)
@@ -163,8 +163,8 @@ class Command(BaseCommand):
         )
 
     def delete_offers(self, day):
-        """Deletes offers from the database (requires them to be copied to settings.BACKUPS_STORAGE)."""
-        if "backups" not in settings.STORAGES:
+        """Deletes offers from the database (requires them to be copied to settings.DATA_STORAGE)."""
+        if "data" not in settings.STORAGES:
             self.stdout.write(
                 self.style.WARNING(
                     _("Skipping deleting archived offers (backups weren't copied)...")

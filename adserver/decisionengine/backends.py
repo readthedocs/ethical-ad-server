@@ -15,6 +15,8 @@ from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import Flight
+from ..models import Region
+from ..models import Topic
 from ..utils import get_ad_day
 from ..utils import get_client_user_agent
 
@@ -255,6 +257,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             flights = flights.filter(live=True, start_date__lte=get_ad_day().date())
 
             # Ensure there's a live ad of the chosen types for each flight
+            # With production data, this seemed to outperform a "distinct" query.
             flights = flights.annotate(
                 num_ads=models.Count(
                     "advertisements",
@@ -268,7 +271,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
         return flights.select_related("campaign")
 
-    def filter_flight(self, flight):
+    def filter_flight(self, flight, regions=None, topics=None):
         """
         Apply flight targeting.
 
@@ -281,11 +284,11 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return True
 
         # Skip if we aren't meant to show to this country/state/dma
-        if not flight.show_to_geo(self.geolocation):
+        if not flight.show_to_geo(self.geolocation, regions=regions):
             return False
 
         # Skip if we aren't meant to show to these keywords
-        if not flight.show_to_keywords(self.keywords):
+        if not flight.show_to_keywords(self.keywords, topics=topics):
             return False
 
         # Skip if we aren't meant to show to this traffic because it is mobile or non-mobile
@@ -322,11 +325,17 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         """Naively select a flight from the candidates."""
         flights = self.get_candidate_flights()
 
-        # Apply targeting
-        flights = [flight for flight in flights if self.filter_flight(flight)]
+        # Filter and randomly sort
+        valid_flights = []
+        regions = Region.load_from_cache()
+        topics = Topic.load_from_cache()
 
-        if flights:
-            return random.choice(flights)
+        for flight in flights:
+            if self.filter_flight(flight, regions=regions, topics=topics):
+                valid_flights.append(flight)
+
+        if valid_flights:
+            return random.choice(valid_flights)
 
         return None
 
@@ -399,6 +408,9 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                 url=self.url
             )
 
+        regions = Region.load_from_cache()
+        topics = Topic.load_from_cache()
+
         # We iterate over the possible flights in order of priority,
         # and serve the first type that has any budget.
         for possible_flights in (
@@ -437,7 +449,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
 
             for flight in possible_flights:
                 # Handle excluding flights based on targeting
-                if not self.filter_flight(flight):
+                if not self.filter_flight(flight, regions=regions, topics=topics):
                     continue
 
                 # If any impressions/clicks are needed, add this flight

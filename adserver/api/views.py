@@ -86,6 +86,7 @@ class AdDecisionView(GeoIpMixin, APIView):
             These fields are always plain text.
         :>json string html: An HTML rendering of the ad
         :>json string link: A click URL for the ad
+        :>json string link_domain: The domain where the ad will link to, extracted from the click URL
         :>json string view_url: A view URL to count an ad view
         :>json string view_time_url: A URL endpoint that updates how long the ad was viewed
         :>json string nonce: A one-time nonce used in the URLs so the ad is never double counted
@@ -172,12 +173,16 @@ class AdDecisionView(GeoIpMixin, APIView):
 
         Data passed to `offer_ad` is cached for use on the View & Click tracking.
         """
-        ad_type_slug = placement.get("ad_type")
-        div_id = placement.get("div_id")
+        if placement:
+            ad_type_slug = placement.get("ad_type")
+            div_id = placement.get("div_id")
+        else:
+            ad_type_slug = None
+            div_id = None
 
         # Check if this client should get a sticky ad decision
         data = None
-        if publisher.cache_ads:
+        if publisher.cache_ads and ad_type_slug:
             cache_key = self._sticky_decision_cache_key(publisher, ad_type_slug)
             data = cache.get(cache_key)
 

@@ -1,12 +1,145 @@
-## Changes since 2025-12-18T22:46:02.485Z
-
- * @davidfischer: Re-add missing RTD style ads (#1112)
 CHANGELOG
 =========
 
 .. The text for the changelog is generated with ``npm run changelog``
 .. Then it is formatted and copied into this file.
 .. This is included by docs/developer/changelog.rst
+
+
+Version v5.38.0
+---------------
+
+This release had a few minor bug fixes and improvements including one DB migration (notifications).
+
+:Date: March 24, 2026
+
+ * @ericholscher: Change publisher aggregation to every 5 minutes (#1181)
+ * @ericholscher: Auto-add local IP to ALLOWED_HOSTS for health checks (#1179)
+ * @davidfischer: Auto-renewal notification updates (#1159)
+
+
+Version v5.37.0
+---------------
+
+This release merges code to use AWS instead of Azure for storage
+although we are not switching to AWS for about a week.
+We are going to show a message alerting users about upcoming maintenance (AWS migration).
+This release also has a bug fix around duplicating ad images when copied.
+
+:Date: March 18, 2026
+
+ * @davidfischer: Do not duplicate images on ad copy (#1176)
+ * @davidfischer: Maintenance message (#1175)
+ * @davidfischer: Add a STORAGES["data"] (#1174)
+ * @davidfischer: Configure storage for S3 instead of Azure (#1172)
+
+
+Version v5.36.2
+---------------
+
+This release reverts a change that caused a small performance degradation.
+
+:Date: March 6, 2026
+
+ * @davidfischer: Reverts 1136 - priority in flight selection (#1164)
+
+
+Version v5.36.1
+---------------
+
+This release rolled back a change that was making the ad decision API slow.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Rollback the distinct query (#1155)
+
+
+Version v5.36.0
+---------------
+
+This release fixed some performance issues with the ad decision API.
+Some of these were introduced in v5.35.0 which rendered that release unusable
+but others predate that release.
+
+:Date: February 26, 2026
+
+ * @davidfischer: Performance improvements on decision API (#1151)
+ * @davidfischer: Remove aggregation from critical path - use local cache (#1150)
+
+
+Version v5.35.0
+---------------
+
+In this release, there were a few bug fixes and improvements, including:
+
+ - When an advertiser launches their first flight, the email we send is directly sent.
+   It is no longer a draft.
+ - Added a few fields to the API response for ads including the link domain and an advertiser logo.
+ - Added copy to clipboard buttons to the publisher payouts (mostly for PayPal, Stripe is automatic).
+ - Added the ability for a publisher to request one of many ad slots (with their priority) in a single request.
+ - This release also contained many minor/patch version dependency updates.
+
+:Date: February 25, 2026
+
+ * @Copilot: Annotate candidate flights with today's views/clicks to avoid per-flight DB queries (#1148)
+ * @Copilot: Add test for multi-placement ad decision 500 fix (#1147)
+ * @davidfischer: Update AGENTS.md with test suite runtime expectation (#1146)
+ * @davidfischer: Advertiser logos (#1145)
+ * @davidfischer: Minor version updates Feb 2026 (#1144)
+ * @davidfischer: Fix an ad decision 500 (#1143)
+ * @davidfischer: Add link domain to API response (#1142)
+ * @davidfischer: First flight email - not a draft (#1141)
+ * @dependabot[bot]: Bump pillow from 12.0.0 to 12.1.1 (#1140)
+ * @dependabot[bot]: Bump cryptography from 46.0.3 to 46.0.5 (#1139)
+ * @dependabot[bot]: Bump webpack from 5.101.3 to 5.105.0 (#1138)
+ * @davidfischer: Use placement priority in flight selection (#1136)
+ * @dependabot[bot]: Bump azure-core from 1.36.0 to 1.38.0 (#1125)
+ * @dependabot[bot]: Bump aiohttp from 3.13.2 to 3.13.3 (#1124)
+ * @dependabot[bot]: Bump urllib3 from 2.5.0 to 2.6.3 (#1123)
+ * @dependabot[bot]: Bump virtualenv from 20.35.4 to 20.36.1 (#1122)
+ * @dependabot[bot]: Bump filelock from 3.20.0 to 3.20.3 (#1121)
+ * @Copilot: Add individual copy buttons to publisher finish payout view (#1108)
+
+
+Version v5.34.0
+---------------
+
+This release had two minor changes, a patch version dependency upgrade,
+and a small bugfix.
+One of the changes allows setting a flag to send down the CPM for the chosen ad
+in the decision API. It is off by default which mimics the previous behavior.
+The second change uses the placement priority in the flight selection process
+which is not currently sent by the client (that will change).
+
+:Date: February 6, 2026
+
+ * @davidfischer: Use placement priority in flight selection (#1136)
+ * @dependabot[bot]: Bump django from 5.2.8 to 5.2.11 (#1135)
+ * @davidfischer: Send the bid rate for certain publishers (#1134)
+ * @davidfischer: Fix a test case around the year boundary fix (#1133)
+
+
+Version v5.33.0
+---------------
+
+We removed a number of heavier ML dependencies that were only used for the analyzer.
+These dependencies were causing the Docker image to be very large
+and complicating deployments.
+
+This release also included a few minor bug fixes and improvements
+as well as removing beat monitoring from Sentry which was noisy and flakey.
+
+:Date: January 29, 2026
+
+ * @davidfischer: Runmodel management command supports passing model (#1130)
+ * @davidfischer: Ad image notification delay/countdown (#1129)
+ * @davidfischer: Rename large ad format (#1128)
+ * @ericholscher: Remove heavy ML dependencies (torch, spacy[transformers], langdetect) (#1120)
+ * @Copilot: Fix % change calculation crossing year boundaries in publisher payout view (#1119)
+ * @Copilot: Fix % Change calculation crossing year boundaries in publisher payout view (#1118)
+ * @davidfischer: Improve PublisherGroupAdmin (#1117)
+ * @davidfischer: Increase test coverage (#1116)
+ * @davidfischer: Remove beat monitoring on Sentry (#1107)
 
 
 Version v5.32.1

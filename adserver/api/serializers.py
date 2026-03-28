@@ -39,6 +39,13 @@ class AdPlacementSerializer(serializers.Serializer):
         ),
     )
 
+    def validate_ad_type(self, ad_type):
+        """This ad type was renamed but the previous name was retained for backwards compatibility."""
+        if ad_type == "text-only-large-v1":
+            ad_type = "logo-large-v1"
+
+        return ad_type
+
 
 class AdDecisionSerializer(serializers.Serializer):
     """De-serializes incoming possibilities for the ad API."""

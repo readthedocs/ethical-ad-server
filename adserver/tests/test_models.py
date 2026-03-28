@@ -1,6 +1,8 @@
 import datetime
+import tempfile
 from unittest import mock
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import override_settings
 from django.utils import timezone
@@ -21,6 +23,7 @@ from ..models import Publisher
 from ..reports import AdvertiserReport
 from ..utils import GeolocationData
 from ..utils import get_ad_day
+from .common import ONE_PIXEL_PNG_BYTES
 from .common import BaseAdModelsTestCase
 
 
@@ -507,6 +510,12 @@ class TestAdModels(BaseAdModelsTestCase):
         count_ads = Advertisement.objects.all().count()
 
         self.ad1.ad_types.set([self.text_ad_type])
+
+        self.ad1.image = SimpleUploadedFile(
+            "test_image.jpg", b"file_content", content_type="image/jpeg"
+        )
+        self.ad1.save()
+
         ad1_copy = self.ad1.__copy__()
 
         # Should be one more ad than before
@@ -514,6 +523,104 @@ class TestAdModels(BaseAdModelsTestCase):
 
         self.assertNotEqual(ad1_copy, self.ad1)
         self.assertTrue(self.text_ad_type in list(ad1_copy.ad_types.all()))
+        self.assertEqual(ad1_copy.image.name, self.ad1.image.name)
+        self.assertEqual(ad1_copy.image.url, self.ad1.image.url)
+
+    def test_offer_ad_send_bid_rate(self):
+        """Test that offer_ad includes bid rate if publisher enabled it."""
+        publisher = self.publisher
+        publisher.send_bid_rate = True
+        publisher.save()
+
+        # Test CPM
+        flight = self.flight
+        flight.cpm = 10.00
+        flight.cpc = 0
+        flight.save()
+
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertEqual(decision["cpm"], 10.00)
+        self.assertNotIn("cpc", decision)
+
+        # Test CPC
+        flight.cpm = 0
+        flight.cpc = 2.50
+        flight.save()
+
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertEqual(decision["cpc"], 2.50)
+        self.assertNotIn("cpm", decision)
+
+        # Test disabled
+        publisher.send_bid_rate = False
+        publisher.save()
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertNotIn("cpm", decision)
+        self.assertNotIn("cpc", decision)
+
+    def test_offer_ad_logo(self):
+        """Test that offer_ad includes the logo if provided."""
+        with tempfile.TemporaryDirectory() as tmp_media:
+            with override_settings(MEDIA_ROOT=tmp_media):
+                # By default no logo
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertIsNone(decision.get("logo"))
+
+                # Add advertiser logo
+                img = SimpleUploadedFile(
+                    "logo.png", ONE_PIXEL_PNG_BYTES, content_type="image/png"
+                )
+                self.ad1.flight.campaign.advertiser.advertiser_logo = img
+                self.ad1.flight.campaign.advertiser.save()
+
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertTrue(decision.get("logo", "").endswith("logo.png"))
+
+                # Add flight logo, it should override
+                img2 = SimpleUploadedFile(
+                    "flight_logo.png", ONE_PIXEL_PNG_BYTES, content_type="image/png"
+                )
+                self.ad1.flight.flight_logo = img2
+                self.ad1.flight.save()
+
+                decision = self.ad1.offer_ad(
+                    self.factory.get("/"),
+                    self.publisher,
+                    "text",
+                    "div-id",
+                    [],
+                )
+                self.assertTrue(decision.get("logo", "").endswith("flight_logo.png"))
 
     def test_campaign_totals(self):
         self.assertAlmostEqual(self.campaign.total_value(), 0.0)
@@ -623,6 +730,47 @@ class TestAdModels(BaseAdModelsTestCase):
         self.flight.save()
 
         self.assertAlmostEqual(self.flight.projected_total_value(), 5.0)
+
+    def test_duration_percent_complete(self):
+        import pytz
+
+        now = timezone.now()
+        self.flight.start_date = now.date()
+        self.flight.end_date = now.date() + datetime.timedelta(days=9)
+        self.flight.save()
+
+        start_datetime = pytz.utc.localize(
+            datetime.datetime.combine(
+                self.flight.start_date, datetime.datetime.min.time()
+            )
+        )
+        end_datetime = pytz.utc.localize(
+            datetime.datetime.combine(
+                self.flight.end_date, datetime.datetime.max.time()
+            )
+        )
+        total_seconds = (end_datetime - start_datetime).total_seconds()
+
+        with mock.patch("adserver.models.timezone.now") as mock_now:
+            # Before start
+            mock_now.return_value = start_datetime - datetime.timedelta(days=1)
+            self.assertEqual(self.flight.duration_percent_complete(), 0.0)
+
+            # After end
+            mock_now.return_value = end_datetime + datetime.timedelta(days=1)
+            self.assertEqual(self.flight.duration_percent_complete(), 100.0)
+
+            # 50% complete
+            mock_now.return_value = start_datetime + datetime.timedelta(
+                seconds=total_seconds / 2
+            )
+            self.assertAlmostEqual(self.flight.duration_percent_complete(), 50.0)
+
+            # 25% complete
+            mock_now.return_value = start_datetime + datetime.timedelta(
+                seconds=total_seconds / 4
+            )
+            self.assertAlmostEqual(self.flight.duration_percent_complete(), 25.0)
 
     @override_settings(ADSERVER_DO_NOT_TRACK=True)
     def test_offer_ad(self):

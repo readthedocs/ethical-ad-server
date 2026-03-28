@@ -47,6 +47,13 @@ class CreateAdvertiserForm(forms.Form):
 
     # Advertiser information
     advertiser_name = forms.CharField(label=_("Advertiser name"), max_length=200)
+    advertiser_logo = forms.ImageField(
+        label=_("Advertiser logo"),
+        required=False,
+        help_text=_(
+            "The logo for the advertiser. Returned in ad responses. Recommended size 200x200."
+        ),
+    )
 
     # User information
     user_name = forms.CharField(label=_("Name"), max_length=200, required=False)
@@ -64,6 +71,7 @@ class CreateAdvertiserForm(forms.Form):
             Fieldset(
                 _("Advertiser information"),
                 Field("advertiser_name", placeholder=_("Company name")),
+                Field("advertiser_logo"),
                 css_class="my-3",
             ),
             Fieldset(
@@ -120,9 +128,12 @@ class CreateAdvertiserForm(forms.Form):
     def create_advertiser(self):
         """Create the advertiser, campaign, and initial flight."""
         advertiser_name = self.cleaned_data["advertiser_name"].strip()
+        advertiser_logo = self.cleaned_data.get("advertiser_logo")
 
         advertiser = Advertiser.objects.create(
-            name=advertiser_name, slug=slugify(advertiser_name)
+            name=advertiser_name,
+            slug=slugify(advertiser_name),
+            advertiser_logo=advertiser_logo,
         )
         campaign = Campaign.objects.create(
             advertiser=advertiser,

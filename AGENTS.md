@@ -38,6 +38,7 @@ Imports should go at the top of the file, after any docstrings unless there is a
 ## 3. Testing Procedures
 
 Run `tox` to run the test suite.
+The full test suite takes a couple of minutes to run.
 This verifies the code style and linting and runs the full test suite.
 The test suite verifies that there are no missing migrations
 and that test coverage is above the threshold defined in `pyproject.toml`.
@@ -45,6 +46,10 @@ and that test coverage is above the threshold defined in `pyproject.toml`.
 Every feature or bug fix must include a corresponding test case in the Django app's `tests/` directory (eg. `adserver/tests/test_*.py`).
 Typically there is one class per feature, with multiple test methods.
 A single test file may contain multiple classes for logical sections (eg. `test_utils.py` tests `utils.py`).
+
+To run a single test file, use the following command:
+
+    uv run pytest -- adserver/tests/test_*.py
 
 
 ## 4. Django Development Patterns

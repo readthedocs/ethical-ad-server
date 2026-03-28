@@ -841,6 +841,40 @@ class AdDecisionApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue("id" in resp.json())  # Gets an ad successfully
 
+    def test_multiple_placements_no_ad(self):
+        """
+        Requesting multiple placements with no available ad should return empty, not a 500.
+
+        This happens when multiple placements are in the request and no ad is selected.
+        In that case, the backend returns placement=None (since it can't determine which
+        of the multiple placements applies), and _prepare_response must handle None gracefully.
+        """
+        self.ad.live = False
+        self.ad.save()
+
+        # POST with two placements and no available ad
+        data = self.data.copy()
+        data["placements"] = [
+            {"div_id": "a", "ad_type": self.ad_type.slug},
+            {"div_id": "b", "ad_type": self.ad_type.slug},
+        ]
+        resp = self.client.post(
+            self.url, json.dumps(data), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictEqual(resp.json(), {})
+
+        # With cache_ads enabled, sticky decisions are skipped when placement is None
+        # (i.e. for prioritized/grouped ad requests with no ad result)
+        self.publisher.cache_ads = True
+        self.publisher.save()
+        with override_settings(ADSERVER_STICKY_DECISION_DURATION=5):
+            resp = self.client.post(
+                self.url, json.dumps(data), content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertDictEqual(resp.json(), {})
+
 
 class AdvertiserApiTests(BaseApiTest):
     def setUp(self):

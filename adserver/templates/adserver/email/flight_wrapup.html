@@ -23,14 +23,19 @@
 </ul>
 
 {% endspaceless %}
-{% url "flight_request" advertiser.slug as flight_request_url %}
-<p>{% blocktrans with site_domain=site.domain %}
-  If you'd like to renew your flight, you can <a href="{{ site_domain }}{{ flight_request_url }}">request a new one</a>
-  with your desired budget and targeting details.
-  We can run another campaign with the same creatives,
-  or adjust things based on your feedback around what's converting best.
-  If you have any questions, you can always reply to this email.
-{% endblocktrans %}</p>
+
+{% if flight.auto_renew %}
+  <p>{% trans 'Your flight was automatically renewed.' %}</p>
+{% else %}
+  {% url "flight_request" advertiser.slug as flight_request_url %}
+  <p>{% blocktrans with site_domain=site.domain %}
+    If you'd like to renew your flight, you can <a href="{{ site_domain }}{{ flight_request_url }}">request a new one</a>
+    with your desired budget and targeting details.
+    We can run another campaign with the same creatives,
+    or adjust things based on your feedback around what's converting best.
+    If you have any questions, you can always reply to this email.
+  {% endblocktrans %}</p>
+{% endif %}
 
 {% url "flight_list" advertiser.slug as advertiser_url %}
 {% with site_domain=site.domain current_flight_count=current_flights|length upcoming_flight_count=upcoming_flights|length pluralized_current_flights=current_flights|length|pluralize pluralized_upcoming_flights=upcoming_flights|length|pluralize %}

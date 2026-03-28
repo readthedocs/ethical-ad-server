@@ -1,5 +1,8 @@
-{% if messages %}
+{% if messages or maintenance_message %}
   <div class="messages">
+    {% if maintenance_message %}
+      <div class="alert alert-info">{{ maintenance_message }}</div>
+    {% endif %}
     {% for message in messages %}
       <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}{% if message.tags == 'error' %} alert-danger{% endif %}">{{ message }}</div>
     {% endfor %}
