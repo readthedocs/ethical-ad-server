@@ -340,6 +340,8 @@ class AdDecisionView(GeoIpMixin, APIView):
                 campaign_types=campaign_types,
                 url=url,
                 placement_index=serializer.validated_data.get("placement_index"),
+                # Prompt text for embedding-based targeting
+                prompt=serializer.validated_data.get("prompt"),
                 # Debugging parameters
                 ad_slug=serializer.validated_data.get("force_ad"),
                 campaign_slug=serializer.validated_data.get("force_campaign"),

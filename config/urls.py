@@ -62,6 +62,8 @@ if "ethicalads_ext.etl" in settings.INSTALLED_APPS:
     ]
 
 urlpatterns += [
+    # AI Chat demo with ethical ad targeting
+    path(r"chat/", include("adserver.chatdemo.urls")),
     # Allauth overrides
     # Disable managing emails for now
     path(
