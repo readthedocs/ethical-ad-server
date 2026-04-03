@@ -63,7 +63,8 @@ class BaseAnalyzerBackend:
         kwargs.setdefault("headers", {"user-agent": self.user_agent})
 
         try:
-            return requests.get(self.url, **kwargs)
+            # Linter not smart enough to realize timeout set a few lines above
+            return requests.get(self.url, **kwargs)  # noqa: S113
         except (requests.exceptions.RequestException, urllib3.exceptions.HTTPError):
             log.info("Error analyzing URL: %s", self.url, exc_info=True)
 
