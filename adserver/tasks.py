@@ -1484,3 +1484,35 @@ def run_publisher_importers():
     """
     # PSF is the only importer for now..
     psf.run_import(sync=True)
+
+
+@app.task()
+def publish_celery_queue_depth():
+    """Publish Celery queue depth to CloudWatch for autoscaling the celery ASG."""
+    import boto3
+    import redis
+
+    broker_url = settings.CELERY_BROKER_URL
+    queues = ["celery", "analyzer", "priority"]
+
+    try:
+        r = redis.Redis.from_url(broker_url, socket_timeout=5, socket_connect_timeout=5)
+        total = sum(r.llen(q) for q in queues)
+    except Exception:
+        log.exception("Failed to read Celery queue depths from Redis")
+        return
+
+    try:
+        client = boto3.client("cloudwatch", region_name=settings.AWS_S3_REGION_NAME)
+        client.put_metric_data(
+            Namespace="EthicalAds/Celery",
+            MetricData=[
+                {
+                    "MetricName": "QueueDepth",
+                    "Value": total,
+                    "Unit": "Count",
+                }
+            ],
+        )
+    except Exception:
+        log.exception("Failed to publish queue depth to CloudWatch")

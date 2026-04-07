@@ -269,6 +269,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.run_publisher_importers",
         "schedule": crontab(hour="1", minute="0"),
     },
+    # Publish queue depth to CloudWatch for celery ASG autoscaling
+    "every-minute-publish-queue-depth": {
+        "task": "adserver.tasks.publish_celery_queue_depth",
+        "schedule": crontab(),  # Every minute
+    },
 }
 
 # Tasks which should only be run if the analyzer is installed
