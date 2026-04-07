@@ -332,7 +332,7 @@ class CachedImpressionWriterTests(TestCase):
         # Simulate what flush does internally: snapshot, then write, then decr.
         # Between snapshot and decr, a new increment arrives.
         dirty_keys = self.writer.get_dirty_keys()
-        snapshots = {k: cache.get(k) for k in dirty_keys}
+        _snapshots = {k: cache.get(k) for k in dirty_keys}  # noqa: F841
 
         # --- concurrent increment arrives here ---
         self.writer.increment(self.ad.pk, self.publisher.pk, day, VIEWS)

@@ -92,9 +92,7 @@ class CachedImpressionWriter:
         # an optimistic hint that may lose concurrent additions, but any
         # lost keys will be re-added on the next increment and picked up
         # by the next flush cycle.
-        cache.set(
-            self._dirty_marker_key(key), 1, timeout=IMPRESSION_CACHE_TIMEOUT
-        )
+        cache.set(self._dirty_marker_key(key), 1, timeout=IMPRESSION_CACHE_TIMEOUT)
         dirty_keys = cache.get(DIRTY_KEYS_CACHE_KEY) or set()
         dirty_keys.add(key)
         cache.set(DIRTY_KEYS_CACHE_KEY, dirty_keys, timeout=IMPRESSION_CACHE_TIMEOUT)
