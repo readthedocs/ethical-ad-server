@@ -11,18 +11,14 @@ chat demo at /chat/ can successfully request and display ads.
 
 import datetime
 
-from django.utils import timezone
-
 from adserver.constants import HOUSE_CAMPAIGN
-from adserver.models import (
-    AdType,
-    Advertisement,
-    Advertiser,
-    Campaign,
-    Flight,
-    Publisher,
-    PublisherGroup,
-)
+from adserver.models import AdType
+from adserver.models import Advertisement
+from adserver.models import Advertiser
+from adserver.models import Campaign
+from adserver.models import Flight
+from adserver.models import Publisher
+from adserver.models import PublisherGroup
 
 
 def run():
@@ -80,7 +76,7 @@ def run():
     # Link publisher to publisher group
     if not publisher.publisher_groups.filter(pk=pub_group.pk).exists():
         pub_group.publishers.add(publisher)
-        print(f"  Added Publisher to PublisherGroup")
+        print("  Added Publisher to PublisherGroup")
 
     # --- AdType ---
     ad_type = AdType.objects.filter(slug="readthedocs-sidebar").first()
@@ -128,7 +124,7 @@ def run():
     # Ensure the campaign's publisher groups include ours
     if not campaign.publisher_groups.filter(pk=pub_group.pk).exists():
         campaign.publisher_groups.add(pub_group)
-        print(f"  Added PublisherGroup to Campaign")
+        print("  Added PublisherGroup to Campaign")
 
     # --- Flight ---
     flight = Flight.objects.first()
@@ -187,7 +183,7 @@ def run():
     if not ad.live:
         ad.live = True
         ad.save(update_fields=["live"])
-        print(f"  Set Advertisement live=True")
+        print("  Set Advertisement live=True")
 
     # Ensure ad has the ad type
     if not ad.ad_types.filter(pk=ad_type.pk).exists():
@@ -209,14 +205,14 @@ def run():
     print()
     print("Environment variables to set:")
     print(f'  export ADSERVER_CHAT_DEMO_PUBLISHER="{publisher.slug}"')
-    print(f'  export OPENAI_API_KEY="sk-your-key-here"')
+    print('  export OPENAI_API_KEY="sk-your-key-here"')
     print()
     print("Then run:")
     print("  python manage.py runserver")
     print()
     print("And open: http://localhost:8000/chat/")
     print()
-    print(f"Test the ad API directly:")
+    print("Test the ad API directly:")
     print(
         f"  curl 'http://localhost:8000/api/v1/decision/"
         f"?publisher={publisher.slug}"
