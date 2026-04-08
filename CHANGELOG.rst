@@ -6,6 +6,30 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+
+Version v5.39.0
+---------------
+
+The large change in this release was to prioritize ad selection using embeddings if available.
+This doesn't change how advertisers/flights are selected, but just attempts to choose the best ad from an advertiser's flight
+based on similarity to the page content.
+This release also had minor dependency updates.
+
+:Date: April 8, 2026
+
+ * @dependabot[bot]: Bump django from 5.2.12 to 5.2.13 (#1197)
+ * @dependabot[bot]: Bump pygments from 2.19.2 to 2.20.0 (#1192)
+ * @dependabot[bot]: Bump cryptography from 46.0.5 to 46.0.6 (#1191)
+ * @davidfischer: Frontend deps update March 2026 (#1190)
+ * @dependabot[bot]: Bump serialize-javascript, terser-webpack-plugin and css-minimizer-webpack-plugin (#1189)
+ * @dependabot[bot]: Bump handlebars from 4.7.8 to 4.7.9 (#1188)
+ * @dependabot[bot]: Bump picomatch from 2.3.1 to 2.3.2 (#1183)
+ * @dependabot[bot]: Bump svgo from 2.8.0 to 2.8.2 (#1163)
+ * @dependabot[bot]: Bump immutable from 4.3.5 to 4.3.8 (#1161)
+ * @ericholscher: Add similarity-based ad prioritization using embeddings (#1127)
+
+
+
 Version v5.38.0
 ---------------
 
