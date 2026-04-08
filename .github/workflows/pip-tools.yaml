@@ -22,9 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
+
+      # https://docs.astral.sh/uv/guides/integration/github/
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          # Install a specific version of uv.
+          version: "0.11.1"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -32,8 +37,10 @@ jobs:
       - name: Install "pg_config" requirement
         run: sudo apt-get install libpq-dev
 
+      # Update packages where the new version has been out at least 2 weeks
+      # https://docs.astral.sh/uv/reference/cli/#uv-lock--exclude-newer
       - name: Update dependencies with uv lock
-        run: uv lock --upgrade
+        run: uv lock --upgrade --exclude-newer "$(date -I -d '-2 weeks')"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
