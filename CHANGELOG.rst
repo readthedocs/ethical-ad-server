@@ -6,6 +6,15 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.39.1
+---------------
+
+This release fixes an edge case around niche weights (which were introduced in v5.39.0).
+
+:Date: April 8, 2026
+
+ * @davidfischer: Hotfix for niche weights (#1200)
+
 
 Version v5.39.0
 ---------------
