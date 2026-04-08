@@ -18,6 +18,7 @@ from ..constants import VIEWS
 from ..models import AdImpression
 from ..models import AdType
 from ..models import Advertisement
+from ..models import Advertiser
 from ..models import Campaign
 from ..models import Flight
 from ..models import Offer
@@ -827,6 +828,36 @@ class TestAdModels(BaseAdModelsTestCase):
         )
         offer = Offer.objects.get(pk=output["nonce"])
         self.assertIsNotNone(offer.user_agent)
+
+    def test_niche_targeting(self):
+        # Default case (no niche targeting set): returns True
+        self.flight.targeting_parameters = {}
+        self.flight.save()
+        self.assertTrue(self.flight.show_to_niche_targeting({}))
+
+        # Niche targeting set
+        self.flight.targeting_parameters = {"niche_targeting": 0.5}
+        self.flight.save()
+
+        # weights is None: should return False (prevents crash)
+        self.assertFalse(self.flight.show_to_niche_targeting(None))
+
+        # weights is empty: should return False
+        self.assertFalse(self.flight.show_to_niche_targeting({}))
+
+        # weights has the advertiser, but weight >= goal: should return False
+        # advertiser matches self.advertiser
+        weights = {self.advertiser: 0.6}
+        self.assertFalse(self.flight.show_to_niche_targeting(weights))
+
+        # weights has the advertiser, and weight < goal: should return True
+        weights = {self.advertiser: 0.4}
+        self.assertTrue(self.flight.show_to_niche_targeting(weights))
+
+        # advertiser not in weights: should return False
+        other_advertiser = get(Advertiser)
+        weights = {other_advertiser: 0.1}
+        self.assertFalse(self.flight.show_to_niche_targeting(weights))
 
     def test_refund(self):
         request = self.factory.get("/")

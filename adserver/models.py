@@ -1293,9 +1293,10 @@ class Flight(TimeStampedModel, IndestructibleModel):
         if not self.niche_targeting:
             return True
 
-        if self.campaign.advertiser in weights:
+        if weights and self.campaign.advertiser in weights:
             goal_weight = self.niche_targeting
             return weights[self.campaign.advertiser] < goal_weight
+
         return False
 
     def sold_days(self):
