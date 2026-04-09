@@ -295,6 +295,12 @@ if "ethicalads_ext.etl" in INSTALLED_APPS:
         "task": "ethicalads_ext.etl.tasks.daily_etl_pipeline",
         "schedule": crontab(hour="2", minute="0"),
     }
+if "ethicalads_ext.monitoring" in INSTALLED_APPS:
+    # Publish queue depth to CloudWatch for celery ASG autoscaling
+    CELERY_BEAT_SCHEDULE["every-minute-publish-queue-depth"] = {
+        "task": "ethicalads_ext.monitoring.tasks.publish_celery_queue_depth",
+        "schedule": crontab(),  # Every minute
+    }
 
 
 # Sentry settings for error monitoring
