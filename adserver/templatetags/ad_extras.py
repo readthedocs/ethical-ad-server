@@ -16,7 +16,7 @@ def advertisement_preview(ad, ad_type=None):
     if not ad_type:
         ad_type = ad.ad_types.first()
 
-    return mark_safe(ad.render_ad(ad_type, preview=True))
+    return mark_safe(ad.render_ad(ad_type, preview=True))  # noqa: S308
 
 
 @register.simple_tag

@@ -63,4 +63,4 @@ GEOIP_PATH = os.path.join(BASE_DIR, "geoip-noexists")
 # from unit tests
 # https://django-slack.readthedocs.io/#testing
 SLACK_BACKEND = "django_slack.backends.TestBackend"
-SLACK_TOKEN = "this-is-a-test-token"
+SLACK_TOKEN = "this-is-a-test-token"  # noqa: S105
