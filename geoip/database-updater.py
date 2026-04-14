@@ -33,6 +33,9 @@ IPPROXY_FILENAME = "IP2Proxy.BIN"
 TOR_EXIT_NODES_URL = "https://check.torproject.org/torbulkexitlist"
 TOR_EXIT_NODES_FILENAME = "torbulkexitlist.txt"
 
+# Timeout to download databases
+TIMEOUT = 60
+
 
 def update_maxmind_dbs(outdir):
     """Downloads the GeoIP databases from MaxMind. Requires a free MaxMind account."""
@@ -46,7 +49,7 @@ def update_maxmind_dbs(outdir):
         )
 
     for url in (MAXMIND_COUNTRY_DATABASE, MAXMIND_CITY_DATABASE):
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=TIMEOUT)
         if not resp.ok:
             raise RuntimeError(
                 f"Failed to update GeoIP database: {url}. Status_code={resp.status_code}"
@@ -79,7 +82,7 @@ def update_ipproxy_db(outdir):
         )
 
     url = IP2LOCATION_IPPROXY
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=TIMEOUT)
     if not resp.ok:
         raise RuntimeError(
             f"Failed to update IP2Proxy database: {url}. Status_code={resp.status_code}"
@@ -109,7 +112,7 @@ def update_torexit_list(outdir):
     print("Updating Tor exit nodes list...")
 
     url = TOR_EXIT_NODES_URL
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=TIMEOUT)
     if not resp.ok:
         raise RuntimeError(
             f"Failed to update Tor exit nodes list: {url}. Status_code={resp.status_code}"

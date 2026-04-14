@@ -351,7 +351,9 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
 
         # Get an OAuth token
         # Raises an error on a PayPal failure
-        resp = requests.post(oauth_url, data=payload, headers=headers, auth=auth)
+        resp = requests.post(
+            oauth_url, data=payload, headers=headers, auth=auth, timeout=5
+        )
         resp.raise_for_status()
         access_token = resp.json()["access_token"]
 
@@ -381,7 +383,9 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
                 },
             ],
         }
-        resp = requests.post(payout_url, data=json.dumps(payload), headers=headers)
+        resp = requests.post(
+            payout_url, data=json.dumps(payload), headers=headers, timeout=5
+        )
         resp.raise_for_status()
 
         return resp.json()["batch_header"]["payout_batch_id"]
