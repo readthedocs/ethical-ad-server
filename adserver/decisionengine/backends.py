@@ -270,7 +270,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
-        return flights.select_related()
+        return flights.select_related("campaign", "campaign__advertiser")
 
     def filter_flight(self, flight, regions=None, topics=None):
         """
