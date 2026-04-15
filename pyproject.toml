@@ -12,6 +12,10 @@ dependencies = [
     # Celery <5.5 has a stability issue the redis broker: https://github.com/celery/celery/issues/8030
     "celery[redis]==5.5.0rc1",
 
+    # Celery depends on prompt-toolkit via click-repl
+    # Versions <3.0.43 pass coroutines to asyncio.wait() which raises TypeError on Python 3.12+
+    "prompt-toolkit>=3.0.43",
+
     # Static files
     "whitenoise",
 
