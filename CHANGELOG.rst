@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.40.0
+---------------
+
+This release re-introduces flight priority (removed in v5.36.1).
+There were also some minor dependency updates.
+
+:Date: April 16, 2026
+
+ * @davidfischer: Re-introduce flight priority again (#1205)
+
+
 Version v5.39.1
 ---------------
 

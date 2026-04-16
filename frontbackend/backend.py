@@ -136,7 +136,7 @@ class EmailBackend(BaseEmailBackend):
             url = self.message_url
             log.debug("Starting Front conversation: %s", email_message.subject)
 
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(url, json=payload, headers=self.headers, timeout=5)
 
         if response.ok:
             return True

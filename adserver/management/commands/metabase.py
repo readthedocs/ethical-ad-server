@@ -59,6 +59,7 @@ class Command(BaseCommand):
         resp = requests.post(
             settings.METABASE_SITE_URL + "/api/session",
             json={"username": metabase_user, "password": metabase_password},
+            timeout=5,
         )
         if not resp.ok:
             self.stdout.write(resp.text)
@@ -79,6 +80,7 @@ class Command(BaseCommand):
         resp = requests.get(
             settings.METABASE_SITE_URL + "/api/card/embeddable",
             headers={"X-Metabase-Session": self.metabase_session},
+            timeout=5,
         )
 
         if not resp.ok:
@@ -91,6 +93,7 @@ class Command(BaseCommand):
             card_resp = requests.get(
                 settings.METABASE_SITE_URL + "/api/card/" + str(question["id"]),
                 headers={"X-Metabase-Session": self.metabase_session},
+                timeout=5,
             )
             card = card_resp.json()
             questions.append(
@@ -121,6 +124,7 @@ class Command(BaseCommand):
         resp = requests.get(
             settings.METABASE_SITE_URL + "/api/card",
             headers={"X-Metabase-Session": self.metabase_session},
+            timeout=5,
         )
         if resp.json():
             self.stdout.write(
@@ -139,6 +143,7 @@ class Command(BaseCommand):
                 settings.METABASE_SITE_URL + "/api/card",
                 headers={"X-Metabase-Session": self.metabase_session},
                 json=question,
+                timeout=5,
             )
 
             if not resp.ok:

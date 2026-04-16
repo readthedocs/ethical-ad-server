@@ -651,7 +651,7 @@ class FlightRenewForm(FlightMixin, FlightCreateForm):
         return helper
 
     def save(self, commit=True):
-        assert commit, "Delayed saving is not supported on this form"
+        assert commit, "Delayed saving is not supported on this form"  # noqa: S101
 
         instance = super().save(commit)
 
@@ -883,7 +883,7 @@ class FlightRequestForm(FlightCreateForm):
         return helper
 
     def save(self, commit=True):
-        assert commit, "Delayed saving is not supported on this form"
+        assert commit, "Delayed saving is not supported on this form"  # noqa: S101
 
         if not self.instance.targeting_parameters:
             # This can happen if the flight was setup with no targeting at all
@@ -1301,9 +1301,9 @@ class BulkAdvertisementUploadCSVForm(forms.Form):
 
             image_resp = None
             try:
-                image_resp = requests.get(image_url, timeout=3, stream=True)
+                image_resp = requests.get(image_url, timeout=5, stream=True)
             except Exception:
-                pass
+                log.warning("Could not retrieve image %s", image_url)
 
             if not image_resp or not image_resp.ok:
                 raise forms.ValidationError(
