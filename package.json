@@ -1,6 +1,6 @@
 {
   "name": "ethical-ad-server",
-  "version": "5.39.1",
+  "version": "5.40.0",
   "description": "",
   "main": "index.js",
   "engines": {
