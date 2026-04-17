@@ -791,7 +791,12 @@ def daily_update_publishers(day=None):
             )
 
 
-@app.task(time_limit=60 * 60 * 4)
+@app.task(
+    time_limit=60 * 60 * 4,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 3},
+    retry_backoff=True,
+)
 def daily_update_reports():
     """Update today's report data rather than the previous day."""
     day, _ = get_day()
