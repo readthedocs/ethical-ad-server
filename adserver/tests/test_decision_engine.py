@@ -518,20 +518,21 @@ class DecisionEngineTests(TestCase):
             flights = list(self.probabilistic_backend.get_candidate_flights())
             self.assertEqual(len(flights), 3)
 
-        with self.assertNumQueries(3):
-            # One for flights, one for ads, one for ad types (due to prefetch)
+        with self.assertNumQueries(1):
+            # This should just be the same query from `get_candidate_flights` above
             flight = self.probabilistic_backend.select_flight()
 
-        with self.assertNumQueries(0):
-            # No queries because we used the prefetched ads
+        with self.assertNumQueries(2):
+            # One query to get the specific ad for the chosen flight
+            # One to prefetch all the ad types
             ad = self.probabilistic_backend.select_ad_for_flight(flight)
             self.assertTrue(ad in self.possible_ads, ad)
 
         with self.assertNumQueries(3):
             # Three total queries to get an ad placement
-            # 1. Get all the candidate flights (and prefetch ads/adtypes)
-            # 2. Choose the specific ad for the chosen flight (0 queries)
-            # 3. get_placement (0 queries as it uses prefetch)
+            # 1. Get all the candidate flights
+            # 2. Choose the specific ad for the chosen flight
+            # 3. Prefetch the ad types for all the ads in the chosen flight
             ad, _ = self.probabilistic_backend.get_ad_and_placement()
             self.assertTrue(ad in self.possible_ads, ad)
 
