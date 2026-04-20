@@ -14,7 +14,6 @@ from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..constants import PUBLISHER_HOUSE_CAMPAIGN
-from ..models import Advertisement
 from ..models import Flight
 from ..models import Region
 from ..models import Topic
@@ -270,7 +269,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             ).filter(num_ads__gt=0)
 
         # Ensure we prefetch necessary data so it doesn't result in N queries for each flight
-        return flights.select_related("campaign", "campaign__advertiser")
+        return flights.select_related("campaign")
 
     def filter_flight(self, flight, regions=None, topics=None):
         """
@@ -374,15 +373,22 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         * Prioritize the flight that needs the most impressions
         """
         flights = self.get_candidate_flights()
-        flights = flights.prefetch_related(
-            models.Prefetch(
-                "advertisements",
-                queryset=Advertisement.objects.filter(
-                    live=True, ad_types__slug__in=self.ad_types
-                ),
-                to_attr="matching_ads",
-            ),
-            "matching_ads__ad_types",
+        whens = [
+            models.When(
+                advertisements__ad_types__slug=placement["ad_type"],
+                advertisements__live=True,
+                then=models.Value(placement.get("priority", 1)),
+            )
+            for placement in self.placements
+        ]
+        flights = flights.annotate(
+            max_placement_priority=models.Max(
+                models.Case(
+                    *whens,
+                    default=models.Value(1),
+                    output_field=models.IntegerField(),
+                )
+            )
         )
 
         paid_flights = []
@@ -480,11 +486,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                     )
 
                     # Boost the weight of this flight if it matches a high priority placement
-                    priority = 1
-                    for ad in flight.matching_ads:
-                        placement = self.get_placement(ad)
-                        if placement:
-                            priority = max(priority, placement.get("priority", 1))
+                    priority = getattr(flight, "max_placement_priority", 1)
 
                     weighted_clicks_needed_this_interval *= priority
 
@@ -583,18 +585,14 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         if self.ad_slug:
             # Ignore live and adtype checks when forcing a specific ad
             candidate_ads = flight.advertisements.filter(slug=self.ad_slug)
-            candidate_ads = candidate_ads.select_related("flight").prefetch_related(
-                "ad_types"
-            )
-        elif hasattr(flight, "matching_ads"):
-            candidate_ads = flight.matching_ads
         else:
             candidate_ads = flight.advertisements.filter(
                 live=True, ad_types__slug__in=self.ad_types
             )
-            candidate_ads = candidate_ads.select_related("flight").prefetch_related(
-                "ad_types"
-            )
+
+        candidate_ads = candidate_ads.select_related(
+            "flight", "flight__campaign", "flight__campaign__advertiser"
+        ).prefetch_related("ad_types")
 
         # Get similarity scores for candidate ads if embedding support is available
         # Reuse the publisher_embedding and domain_embedding fetched earlier to avoid duplicate queries

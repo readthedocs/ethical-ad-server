@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.41.0
+---------------
+
+This release attempts to fix a minor performance degradation in v5.40.0.
+It also adds retries to the daily reports.
+
+:Date: April 20, 2026
+
+ * @davidfischer: Improve placement priority performance (#1209)
+ * @davidfischer: Add retries to the daily reports (#1208)
+
+
 Version v5.40.0
 ---------------
 
