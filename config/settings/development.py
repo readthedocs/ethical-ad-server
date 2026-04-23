@@ -54,6 +54,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.daily_update_reports",
         "schedule": crontab(minute="*/5"),
     },
+    "dev-flush-impression-cache": {
+        "task": "adserver.tasks.flush_impression_cache",
+        "schedule": crontab(minute="*/1"),
+    },
 }
 
 CORS_ALLOWED_ORIGINS += ["http://localhost:8000", "http://127.0.0.1:8000"]
