@@ -699,6 +699,86 @@ class DecisionEngineTests(TestCase):
         # Used to be ~1, now should be ~10
         self.assertGreater(ratio, 5.0)
 
+    def test_multi_ad_type_placement_priority(self):
+        # An ad whose ad_types match multiple placements should weight its flight
+        # by the MAX priority across all matching placements, not the first match.
+        for flight in Flight.objects.all():
+            flight.live = False
+            flight.save()
+
+        ad_type_a = get(AdType, has_image=False, slug="a")
+        ad_type_b = get(AdType, has_image=False, slug="b")
+
+        placements = [
+            {"div_id": "a", "ad_type": "a", "priority": 1},
+            {"div_id": "b", "ad_type": "b", "priority": 10},
+        ]
+
+        # Flight with a single ad matching both placements (ad_types a and b)
+        multi_flight = get(
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_clicks=1000,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            pacing_interval=24 * 60 * 60,
+        )
+        multi_ad = get(
+            Advertisement,
+            slug="multi-type-ad",
+            live=True,
+            flight=multi_flight,
+        )
+        multi_ad.ad_types.add(ad_type_a)
+        multi_ad.ad_types.add(ad_type_b)
+
+        # Flight whose ad only matches the low-priority placement
+        single_flight = get(
+            Flight,
+            live=True,
+            campaign=self.campaign,
+            sold_clicks=1000,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            pacing_interval=24 * 60 * 60,
+        )
+        single_ad = get(
+            Advertisement,
+            slug="single-type-ad",
+            live=True,
+            flight=single_flight,
+        )
+        single_ad.ad_types.add(ad_type_a)
+
+        backend = ProbabilisticFlightBackend(
+            request=self.request, placements=placements, publisher=self.publisher
+        )
+
+        # Base weights are equal, so any ratio difference comes from placement priority
+        self.assertEqual(
+            multi_flight.weighted_clicks_needed_this_interval(self.publisher),
+            single_flight.weighted_clicks_needed_this_interval(self.publisher),
+        )
+
+        multi_count = 0
+        single_count = 0
+        iterations = 1000
+
+        for _ in range(iterations):
+            selected = backend.select_flight()
+            if selected == multi_flight:
+                multi_count += 1
+            elif selected == single_flight:
+                single_count += 1
+
+        ratio = multi_count / (single_count + 1)
+
+        # With first-matching-placement semantics the multi flight would get
+        # priority 1 and ratio ~1. With max-across-matching-placements semantics
+        # the multi flight gets priority 10 and ratio should be ~10.
+        self.assertGreater(ratio, 5.0)
+
     def test_publisher_campaign_type_restrictions(self):
         self.campaign.campaign_type = PAID_CAMPAIGN
         self.campaign.save()
