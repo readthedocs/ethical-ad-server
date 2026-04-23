@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = "==3.12.*"
 
 [[package]]
@@ -1010,6 +1010,7 @@ dependencies = [
     { name = "ip2proxy" },
     { name = "jsonfield" },
     { name = "pillow" },
+    { name = "prompt-toolkit" },
     { name = "pyjwt" },
     { name = "pytz" },
     { name = "stripe" },
@@ -1108,6 +1109,7 @@ requires-dist = [
     { name = "openai", marker = "extra == 'analyzer'", specifier = ">=1.84.0" },
     { name = "pgvector", marker = "extra == 'analyzer'" },
     { name = "pillow" },
+    { name = "prompt-toolkit", specifier = ">=3.0.43" },
     { name = "psycopg", extras = ["binary", "pool"], marker = "extra == 'production'" },
     { name = "pyjwt" },
     { name = "pytz" },
