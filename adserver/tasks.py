@@ -1270,6 +1270,107 @@ def notify_of_completed_flights():
                 message.send()
 
 
+def check_publisher_metrics_change(
+    publisher,
+    metric,
+    current_start,
+    current_end,
+    previous_start,
+    previous_end,
+    difference_threshold,
+    min_views,
+    current_period_name,
+    previous_period_name,
+    check_increase_only=False,
+    min_views_in_current_only=False,
+):
+    """
+    Check if a publisher's metrics have changed significantly between two periods
+    and send a Slack notification if they have.
+
+    :param publisher: The Publisher instance to check
+    :param metric: The metric to compare (e.g. "views", "revenue")
+    :param current_start: Start date for the current period
+    :param current_end: End date for the current period
+    :param previous_start: Start date for the previous period
+    :param previous_end: End date for the previous period
+    :param difference_threshold: Notify of differences larger than this (e.g., 0.25 = 25%)
+    :param min_views: Don't notify unless there's at least this many views
+    :param current_period_name: Human-readable name for current period (e.g., "last week")
+    :param previous_period_name: Human-readable name for previous period
+    :param check_increase_only: If True, only notify on increases, not decreases
+    :param min_views_in_current_only: If True, only check the current period against min_views
+    """
+    # Generate a report for the current period
+    queryset = AdImpression.objects.filter(
+        date__gte=current_start,
+        publisher=publisher,
+        advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+    )
+    if current_end:
+        queryset = queryset.filter(date__lte=current_end)
+    current_report = PublisherReport(queryset)
+    current_report.generate()
+
+    # Generate the previous period for comparison
+    queryset = AdImpression.objects.filter(
+        date__gte=previous_start,
+        publisher=publisher,
+        advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+    )
+    if previous_end:
+        queryset = queryset.filter(date__lte=previous_end)
+    previous_report = PublisherReport(queryset)
+    previous_report.generate()
+
+    current_value = current_report.total[metric]
+    previous_value = previous_report.total[metric]
+
+    current_views = current_report.total["views"]
+    previous_views = previous_report.total["views"]
+    total_views = current_views + previous_views
+
+    if current_value > 0 and previous_value > 0:
+        if check_increase_only:
+            metric_diff = (current_value / previous_value) - 1
+        else:
+            metric_diff = abs((current_value / previous_value) - 1)
+
+        perc_diff = calculate_percent_diff(current_value, previous_value)
+
+        has_min_views = (
+            current_views >= min_views
+            if min_views_in_current_only
+            else total_views >= min_views
+        )
+
+        if metric_diff > difference_threshold and has_min_views:
+            log.info(
+                "Publisher %s: %s was %s %s and %s %s.",
+                publisher,
+                metric,
+                current_value,
+                current_period_name,
+                previous_value,
+                previous_period_name,
+            )
+
+            # Send notification to Slack about this publisher
+            slack_message(
+                "adserver/slack/publisher-metric.slack",
+                {
+                    "publisher": publisher,
+                    "metric": metric,
+                    "current_value": current_value,
+                    "previous_value": previous_value,
+                    "percent_diff": perc_diff,
+                    "report_url": generate_absolute_url(publisher.get_absolute_url()),
+                    "current_period_name": current_period_name,
+                    "previous_period_name": previous_period_name,
+                },
+            )
+
+
 @app.task()
 def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
     """
@@ -1282,57 +1383,46 @@ def notify_of_publisher_changes(difference_threshold=0.25, min_views=10_000):
     two_weeks_ago = a_week_ago - datetime.timedelta(days=7)
 
     for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
-        # Generate a report for the last week
-        queryset = AdImpression.objects.filter(
-            date__gte=a_week_ago,
+        check_publisher_metrics_change(
             publisher=publisher,
-            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+            metric="revenue",
+            current_start=a_week_ago,
+            current_end=None,
+            previous_start=two_weeks_ago,
+            previous_end=a_week_ago,
+            difference_threshold=difference_threshold,
+            min_views=min_views,
+            current_period_name="last week",
+            previous_period_name="the previous week",
         )
-        last_week_report = PublisherReport(queryset)
-        last_week_report.generate()
 
-        # Generate the previous week for comparison
-        queryset = AdImpression.objects.filter(
-            date__gte=two_weeks_ago,
-            date__lte=a_week_ago,
+
+@app.task()
+def notify_of_daily_traffic_spikes(difference_threshold=2.0, min_views=1_000):
+    """
+    Send a notification when a publisher's day-over-day traffic spikes.
+
+    :param difference_threshold: Notify of increases larger than this (2.0 = 200%)
+    :param min_views: Don't notify unless there's at least this many views in the current day
+    """
+    yesterday = get_ad_day() - datetime.timedelta(days=1)
+    day_before_yesterday = yesterday - datetime.timedelta(days=1)
+
+    for publisher in Publisher.objects.filter(allow_paid_campaigns=True):
+        check_publisher_metrics_change(
             publisher=publisher,
-            advertisement__flight__campaign__campaign_type=PAID_CAMPAIGN,
+            metric="views",
+            current_start=yesterday,
+            current_end=yesterday,
+            previous_start=day_before_yesterday,
+            previous_end=day_before_yesterday,
+            difference_threshold=difference_threshold,
+            min_views=min_views,
+            current_period_name="yesterday",
+            previous_period_name="the previous day",
+            check_increase_only=True,
+            min_views_in_current_only=True,
         )
-        previous_week_report = PublisherReport(queryset)
-        previous_week_report.generate()
-
-        for metric in ("revenue",):
-            total_views = (
-                last_week_report.total["views"] + previous_week_report.total["views"]
-            )
-            last_week_value = last_week_report.total[metric]
-            previous_week_value = previous_week_report.total[metric]
-            if last_week_value > 0 and previous_week_value > 0:
-                metric_diff = abs((last_week_value / previous_week_value) - 1)
-                perc_diff = calculate_percent_diff(last_week_value, previous_week_value)
-                if metric_diff > difference_threshold and total_views >= min_views:
-                    log.info(
-                        "Publisher %s: %s was %s last week and %s the previous week.",
-                        publisher,
-                        metric,
-                        last_week_value,
-                        previous_week_value,
-                    )
-
-                    # Send notification to Slack about this publisher
-                    slack_message(
-                        "adserver/slack/publisher-metric.slack",
-                        {
-                            "publisher": publisher,
-                            "metric": metric,
-                            "last_week_value": last_week_value,
-                            "previous_week_value": previous_week_value,
-                            "percent_diff": perc_diff,
-                            "report_url": generate_absolute_url(
-                                publisher.get_absolute_url()
-                            ),
-                        },
-                    )
 
 
 @app.task()
