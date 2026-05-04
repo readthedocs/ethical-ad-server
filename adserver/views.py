@@ -1150,7 +1150,7 @@ class BaseProxyView(View):
         elif not advertisement.is_valid_offer(self.impression_type, offer):
             log.log(self.log_level, "Old or nonexistent impression nonce")
             reason = "Old/Invalid nonce"
-        elif parsed_ua.is_bot:
+        elif parsed_ua.is_bot or "bot" in parsed_ua.browser.family.lower():
             log.log(self.log_level, "Bot impression. User Agent: [%s]", user_agent)
             reason = "Bot impression"
         elif not settings.DEBUG and ip_address in settings.INTERNAL_IPS:
