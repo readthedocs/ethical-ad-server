@@ -1890,6 +1890,14 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Bot impression")
 
+        # https://support.apple.com/en-us/119829
+        applebot_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)"
+
+        resp = self.client.get(self.url, headers={"user-agent": applebot_ua})
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["X-Adserver-Reason"], "Bot impression")
+
     def test_view_tracking_unknown_ua(self):
         unknown_ua = "Unrecognized UA"
         resp = self.client.get(self.url, headers={"user-agent": unknown_ua})
