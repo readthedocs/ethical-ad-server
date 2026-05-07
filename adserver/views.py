@@ -1266,6 +1266,15 @@ class BaseProxyView(View):
             log.debug("Invalid Offer. exception=%s", exception)
             offer = None
 
+            # Check if the offer is pending in the batch queue (not yet flushed to DB)
+            if offer is None:
+                try:
+                    from adserver.batch_writer import get_pending_offer
+
+                    offer = get_pending_offer(str(nonce))
+                except Exception:
+                    log.debug("Failed to check pending offers for nonce=%s", nonce)
+
         return offer
 
     def handle_action(self, request, advertisement, offer, publisher):

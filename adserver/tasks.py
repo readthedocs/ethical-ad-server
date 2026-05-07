@@ -59,6 +59,27 @@ log = logging.getLogger(__name__)  # noqa
 
 
 @app.task()
+def flush_batched_db_writes():
+    """
+    Flush batched offers and impression counters from Redis to the database.
+
+    This task is run periodically (configured via ADSERVER_BATCH_FLUSH_SECONDS)
+    and also triggered when the batch queue reaches ADSERVER_BATCH_SIZE.
+    """
+    from .batch_writer import flush_impression_counters
+    from .batch_writer import flush_offer_queue
+
+    offers_flushed = flush_offer_queue()
+    impressions_flushed = flush_impression_counters()
+    log.info(
+        "Batched DB write flush complete. offers=%d, impression_groups=%d",
+        offers_flushed,
+        impressions_flushed,
+    )
+    return {"offers": offers_flushed, "impressions": impressions_flushed}
+
+
+@app.task()
 def daily_update_geos(day=None, geo=True, region=True):
     """
     Update the Geo & region index each day.
