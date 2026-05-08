@@ -236,6 +236,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.notify_of_first_flight_launched",
         "schedule": crontab(hour="1", minute="30"),
     },
+    "every-day-notify-publisher-traffic-spikes": {
+        "task": "adserver.tasks.notify_of_daily_traffic_spikes",
+        "schedule": crontab(hour="3", minute="15"),
+    },
     "every-week-notify-publisher-changes": {
         "task": "adserver.tasks.notify_of_publisher_changes",
         # Runs on Wednesday

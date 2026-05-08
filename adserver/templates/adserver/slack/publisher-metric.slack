@@ -1,6 +1,5 @@
 {% extends django_slack %}
 
-
 {% block text %}
-Publisher {{ publisher }}: "{{ metric }}" was {{ last_week_value|floatformat:-2 }} last week and {{ previous_week_value|floatformat:-2 }} the previous week ({% if percent_diff > 0 %}+{% endif %}{{ percent_diff|floatformat:2 }}%): {{ report_url }}
+Publisher {{ publisher }}: "{{ metric }}" was {{ current_value|floatformat:-2 }} {{ current_period_name|default:"last week" }} and {{ previous_value|floatformat:-2 }} {{ previous_period_name|default:"the previous week" }} ({% if percent_diff > 0 %}+{% endif %}{{ percent_diff|floatformat:2 }}%): {{ report_url }}
 {% endblock %}
