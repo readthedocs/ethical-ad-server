@@ -6,6 +6,22 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.42.0
+---------------
+
+This release had some minor improvements and dependency updates.
+It also added some additional notifications on publisher traffic spikes.
+
+:Date: May 8, 2026
+
+ * @davidfischer: Notify on large daily publisher traffic spikes (#1216)
+ * @davidfischer: Applebot detection fix (#1215)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1214)
+ * @dependabot[bot]: Bump lxml from 6.0.2 to 6.1.0 (#1213)
+ * @davidfischer: Updated RTD uv configs (#1212)
+ * @ericholscher: Test multi-ad-type placement priority weighting logic (#1211)
+
+
 Version v5.41.0
 ---------------
 

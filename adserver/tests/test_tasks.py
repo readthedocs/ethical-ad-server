@@ -35,6 +35,7 @@ from ..tasks import daily_update_uplift
 from ..tasks import disable_inactive_publishers
 from ..tasks import notify_of_autorenewing_flights
 from ..tasks import notify_of_completed_flights
+from ..tasks import notify_of_daily_traffic_spikes
 from ..tasks import notify_of_first_flight_launched
 from ..tasks import notify_of_publisher_changes
 from ..tasks import remove_old_client_ids
@@ -420,6 +421,65 @@ class TasksTest(BaseAdModelsTestCase):
 
         # No messages because it's below the minimum views
         notify_of_publisher_changes(min_views=1000)
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
+
+    def test_notify_of_daily_traffic_spikes(self):
+        # Publisher changes only apply to paid campaigns
+        self.publisher.allow_paid_campaigns = True
+        self.publisher.save()
+
+        backend = get_backend()
+        backend.reset_messages()
+
+        notify_of_daily_traffic_spikes()
+        messages = backend.retrieve_messages()
+
+        # Shouldn't be any traffic spikes yet
+        self.assertEqual(len(messages), 0)
+
+        yesterday = get_ad_day() - datetime.timedelta(days=1)
+        day_before = yesterday - datetime.timedelta(days=1)
+
+        # Add 1000 views to yesterday
+        for _ in range(100):
+            get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher,
+                date=yesterday,
+                viewed=True,
+            )
+
+        # Add 10 views to the day before
+        for _ in range(1):
+            get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher,
+                date=day_before,
+                viewed=True,
+            )
+
+        daily_update_impressions(yesterday)
+        daily_update_impressions(day_before)
+
+        backend.reset_messages()
+        # Use smaller min_views for test speed, difference threshold of 2.0 (200% increase)
+        notify_of_daily_traffic_spikes(min_views=100)
+
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 1, messages)
+        self.assertTrue(
+            '"views" was 100 yesterday and 1 the previous day (+9900.00%)'
+            in messages[0]["text"],
+            messages[0]["text"],
+        )
+
+        backend.reset_messages()
+
+        # No messages because it's below the minimum views
+        notify_of_daily_traffic_spikes(min_views=1000)
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
 
