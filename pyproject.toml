@@ -174,7 +174,7 @@ dev = [
     "pytest-django",
     "django-dynamic-fixture",
     "responses>=0.25.3,<1",
-    "urllib3>=2.2.2,<3",
+    "urllib3>=2.7.0,<3",
 
     # Used to keep things up-to-date
     "django-upgrade",
