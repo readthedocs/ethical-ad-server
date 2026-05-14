@@ -692,16 +692,16 @@ wheels = [
 
 [[package]]
 name = "django"
-version = "5.2.13"
+version = "5.2.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "sqlparse" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/c5/c69e338eb2959f641045802e5ea87ca4bf5ac90c5fd08953ca10742fad51/django-5.2.13.tar.gz", hash = "sha256:a31589db5188d074c63f0945c3888fad104627dfcc236fb2b97f71f89da33bc4", size = 10890368, upload-time = "2026-04-07T14:02:15.072Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/65/95/95f7faa0950867afaa0bef2460c6263afd6a2c78cc9434046ed28160b015/django-5.2.14.tar.gz", hash = "sha256:58a63ba841662e5c686b57ba1fec52ddd68c0b93bd96ac3029d55728f00bf8a2", size = 10895118, upload-time = "2026-05-05T13:57:31.104Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/b1/51ab36b2eefcf8cdb9338c7188668a157e29e30306bfc98a379704c9e10d/django-5.2.13-py3-none-any.whl", hash = "sha256:5788fce61da23788a8ce6f02583765ab060d396720924789f97fa42119d37f7a", size = 8310982, upload-time = "2026-04-07T14:02:08.883Z" },
+    { url = "https://files.pythonhosted.org/packages/14/44/f172870cf87aa25afef48fb72adba89ee8b77fcab6f3b23d240b923f1528/django-5.2.14-py3-none-any.whl", hash = "sha256:6f712143bd3064310d1f50fac859c3e9a274bdcfc9595339853be7779297fc76", size = 8311320, upload-time = "2026-05-05T13:57:25.795Z" },
 ]
 
 [[package]]
@@ -927,18 +927,6 @@ wheels = [
 ]
 
 [[package]]
-name = "djangorestframework"
-version = "3.17.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/d7/c016e69fac19ff8afdc89db9d31d9ae43ae031e4d1993b20aca179b8301a/djangorestframework-3.17.1.tar.gz", hash = "sha256:a6def5f447fe78ff853bff1d47a3c59bf38f5434b031780b351b0c73a62db1a5", size = 905742, upload-time = "2026-03-24T16:58:33.705Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/e1/2c516bdc83652b1a60c6119366ac2c0607b479ed05cd6093f916ca8928f8/djangorestframework-3.17.1-py3-none-any.whl", hash = "sha256:c3c74dd3e83a5a3efc37b3c18d92bd6f86a6791c7b7d4dff62bb068500e76457", size = 898844, upload-time = "2026-03-24T16:58:31.845Z" },
-]
-
-[[package]]
 name = "djangorestframework-jsonp"
 version = "1.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1000,7 +988,6 @@ dependencies = [
     { name = "django-ratelimit" },
     { name = "django-simple-history" },
     { name = "django-slack" },
-    { name = "djangorestframework" },
     { name = "djangorestframework-jsonp" },
     { name = "geoip2" },
     { name = "ip2proxy" },
@@ -1075,6 +1062,7 @@ requires-dist = [
     { name = "crispy-bootstrap4" },
     { name = "dj-stripe" },
     { name = "django", specifier = ">=5.2,<5.3" },
+    { name = "django", specifier = ">=5.2.14,<5.3" },
     { name = "django-allauth", extras = ["mfa"], specifier = ">=65.9.0" },
     { name = "django-anymail", marker = "extra == 'production'" },
     { name = "django-cors-headers" },
@@ -1088,7 +1076,6 @@ requires-dist = [
     { name = "django-simple-history" },
     { name = "django-slack" },
     { name = "django-storages", extras = ["azure", "s3"], marker = "extra == 'production'" },
-    { name = "djangorestframework" },
     { name = "djangorestframework-jsonp" },
     { name = "duckdb", marker = "extra == 'analyzer'", specifier = ">=1.1.0,<1.2" },
     { name = "en-core-web-md", marker = "extra == 'analyzer'", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl" },
