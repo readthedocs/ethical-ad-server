@@ -5,7 +5,7 @@ description = "Ethical Ad Server"
 requires-python = ">=3.12, <3.13"
 dependencies = [
     # Django itself and its requirements
-    "Django>=5.2,<5.3",
+    "django>=5.2, <5.3",
     "pytz",
 
     # Asynchronous tasks
