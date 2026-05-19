@@ -334,6 +334,30 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(list_response, "<td>$70.00</td>")
         self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
+    def test_list_view_paid_filter_with_emailed_payout(self):
+        """An emailed-but-not-paid payout should count as unpaid, not paid."""
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+
+        # Simulate the staff having sent the payout email for this cycle.
+        get(
+            PublisherPayout,
+            status="emailed",
+            publisher=self.publisher1,
+            amount=70,
+            date=timezone.now(),
+        )
+
+        # paid=False should still include the publisher (the payout was emailed but not paid).
+        list_response = self.client.get(url + "?paid=False")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
+
+        # paid=True should NOT include the publisher (not yet paid).
+        list_response = self.client.get(url + "?paid=True")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, f"<span>{self.publisher1.name}</span>")
+
     @override_settings(
         # Use the memory email backend instead of front for testing
         FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",
