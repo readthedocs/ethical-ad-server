@@ -45,7 +45,7 @@
 
     <dt>{% trans 'Amount' %}</dt>
     <dd>
-      <span id="payout-amount">${{ payout.amount|floatformat:2|intcomma }}</span>
+      $<span id="payout-amount">{{ payout.amount|floatformat:2|intcomma }}</span>
       <button type="button" class="btn btn-sm btn-outline-secondary ml-2 copy-btn" data-copy-target="payout-amount" title="{% trans 'Copy amount' %}">
         <span class="fa fa-copy" aria-hidden="true"></span>
       </button>
