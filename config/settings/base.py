@@ -598,6 +598,17 @@ ADSERVER_RECORD_VIEWS = True
 ADSERVER_HTTPS = False  # Should be True in most production setups
 ADSERVER_STICKY_DECISION_DURATION = 0
 
+# Batched DB writes configuration
+# When enabled, offers and impression counter updates are accumulated in Redis
+# and flushed to the database in bulk. This reduces per-request DB write load.
+# Can be enabled globally here or per-publisher via the corresponding Publisher fields.
+ADSERVER_BATCH_IMPRESSION_WRITES = env.bool(
+    "ADSERVER_BATCH_IMPRESSION_WRITES", default=False
+)
+ADSERVER_BATCH_OFFER_WRITES = env.bool("ADSERVER_BATCH_OFFER_WRITES", default=False)
+ADSERVER_BATCH_SIZE = env.int("ADSERVER_BATCH_SIZE", default=100)
+ADSERVER_BATCH_FLUSH_SECONDS = env.int("ADSERVER_BATCH_FLUSH_SECONDS", default=60)
+
 # For customer support emails
 ADSERVER_SUPPORT_TO_EMAIL = env("ADSERVER_SUPPORT_TO_EMAIL", default=None)
 ADSERVER_SUPPORT_FORM_ACTION = env("ADSERVER_SUPPORT_FORM_ACTION", default=None)
