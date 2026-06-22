@@ -92,27 +92,6 @@ class BaseReport:
     def generate(self):
         raise NotImplementedError("Subclasses implement this method")
 
-    def serialize(self, fields):
-        """
-        Project the generated ``results`` and ``total`` onto ``fields``.
-
-        Returns JSON-serializable rows suitable for an API response or a CSV
-        export. The ``index`` value is coerced to a string since it may be a
-        model instance (eg. a ``Publisher`` in the advertiser publisher report),
-        matching how ``csv.DictWriter`` serializes the dashboard exports.
-        """
-
-        def project(row):
-            projected = {field: row.get(field) for field in fields}
-            if projected.get("index") is not None:
-                projected["index"] = str(projected["index"])
-            return projected
-
-        return {
-            "total": project(self.total),
-            "results": [project(row) for row in self.results],
-        }
-
 
 class AdvertiserReport(BaseReport):
     """Report for showing daily ad performance for an advertiser."""
