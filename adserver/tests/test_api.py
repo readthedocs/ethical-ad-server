@@ -1046,8 +1046,9 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["total"]["views"], 150)
         self.assertEqual(data["total"]["clicks"], 12)
         self.assertEqual(len(data["results"]), 2)
-        # Ordered by views descending - the US row is first
-        self.assertEqual(data["results"][0]["country"], "United States of America")
+        # Ordered by views descending - the US row is first.
+        # The breakdown label is the country name in the "index" field.
+        self.assertEqual(data["results"][0]["index"], "United States of America")
         self.assertEqual(data["results"][0]["views"], 100)
         self.assertEqual(data["results"][0]["clicks"], 10)
         # The flight CPC is 1.0 so cost == clicks
@@ -1076,9 +1077,8 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["total"]["views"], 3)
         self.assertEqual(data["total"]["clicks"], 1)
         self.assertEqual(len(data["results"]), 2)
-        # Results are broken down by publisher with a machine-readable slug
-        self.assertEqual(data["results"][0]["publisher"], self.publisher1.slug)
-        self.assertEqual(data["results"][0]["publisher_name"], self.publisher1.name)
+        # Results are broken down by publisher, labeled in the "index" field
+        self.assertEqual(data["results"][0]["index"], str(self.publisher1))
         self.assertEqual(data["results"][0]["views"], 2)
         self.assertEqual(data["results"][0]["clicks"], 1)
 

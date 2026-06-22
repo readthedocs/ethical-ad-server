@@ -412,7 +412,8 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :query date end_date: End the report on a given day inclusive.
             If not specified, no end time is used (up to current)
 
-        :>json array results: An array of advertiser results per country
+        :>json array results: An array of advertiser results per country.
+            Each result is indexed by the country name in the ``index`` field.
         :>json object total: An object of aggregated totals for the advertiser
 
     .. http:get:: /api/v1/advertisers/(str:slug)/publisher_report/
@@ -425,12 +426,17 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :query date end_date: End the report on a given day inclusive.
             If not specified, no end time is used (up to current)
 
-        :>json array results: An array of advertiser results per publisher
+        :>json array results: An array of advertiser results per publisher.
+            Each result is indexed by the publisher name in the ``index`` field.
         :>json object total: An object of aggregated totals for the advertiser
     """
 
     serializer_class = AdvertiserSerializer
     lookup_field = "slug"
+
+    # Columns returned for breakdown reports.
+    # This mirrors ``BaseReportView.fieldnames`` used by the dashboard CSV exports.
+    report_fields = ("index", "views", "clicks", "cost", "ctr", "ecpm")
 
     def get_queryset(self):
         """Returns Advertisers the user has access to."""
@@ -449,7 +455,19 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         return start_date, end_date
 
-    def _breakdown_report(self, request, report_class, model, dimension):
+    def _serialize_report_row(self, row):
+        """
+        Project a report row down to the JSON-serializable report columns.
+
+        This mirrors the dashboard CSV export (``BaseReportView``), which writes
+        the same fields and relies on the ``index`` value being stringified --
+        for the publisher report the raw index is a ``Publisher`` instance.
+        """
+        serialized = {field: row.get(field) for field in self.report_fields}
+        serialized["index"] = str(serialized["index"])
+        return serialized
+
+    def _breakdown_report(self, request, report_class, model):
         """
         Generate a breakdown report for the requested advertiser.
 
@@ -471,45 +489,24 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         report = report_class(queryset)
         report.generate()
 
-        results = []
-        for result in report.results:
-            # The report indexes results by a model/value that isn't always
-            # JSON serializable (eg. a Publisher instance), so build a clean row.
-            value = result.get(dimension)
-            row = {
-                "views": result["views"],
-                "clicks": result["clicks"],
-                "cost": result["cost"],
-                "ctr": result["ctr"],
-                "ecpm": result["ecpm"],
-            }
-            if isinstance(value, Publisher):
-                row["publisher"] = value.slug
-                row["publisher_name"] = value.name
-            else:
-                row[dimension] = value
-            results.append(row)
-
         return Response(
             {
-                "total": report.total,
-                "results": results,
+                "total": self._serialize_report_row(report.total),
+                "results": [
+                    self._serialize_report_row(result) for result in report.results
+                ],
             }
         )
 
     @action(detail=True, methods=["get"])
     def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
         """Return a report of ad performance for this advertiser broken down by country."""
-        return self._breakdown_report(
-            request, AdvertiserGeoReport, GeoImpression, "country"
-        )
+        return self._breakdown_report(request, AdvertiserGeoReport, GeoImpression)
 
     @action(detail=True, methods=["get"])
     def publisher_report(self, request, slug=None):  # pylint: disable=unused-argument
         """Return a report of ad performance for this advertiser broken down by publisher."""
-        return self._breakdown_report(
-            request, AdvertiserPublisherReport, AdImpression, "publisher"
-        )
+        return self._breakdown_report(request, AdvertiserPublisherReport, AdImpression)
 
     @action(detail=True, methods=["get"])
     def report(self, request, slug=None):  # pylint: disable=unused-argument
