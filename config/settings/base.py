@@ -584,8 +584,17 @@ if ADSERVER_EXT:
 ADSERVER_DO_NOT_TRACK = False
 
 ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
+# Links from the dashboard back to external resources (policies, the API
+# reference, and the marketing website). These are configurable so self-hosted
+# instances can point them at their own resources (or unset them to hide the
+# links entirely).
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_PUBLISHER_POLICY_URL = env("ADSERVER_PUBLISHER_POLICY_URL", default=None)
+ADSERVER_API_DOCUMENTATION_URL = env(
+    "ADSERVER_API_DOCUMENTATION_URL",
+    default="https://ethical-ad-server.readthedocs.io/en/latest/user-guide/api.html",
+)
+ADSERVER_WEBSITE_URL = env("ADSERVER_WEBSITE_URL", default=None)
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_VIEW_RATELIMITS = []
 ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
