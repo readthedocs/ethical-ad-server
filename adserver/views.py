@@ -1429,12 +1429,11 @@ class BaseReportView(UserPassesTestMixin, ReportQuerysetMixin, TemplateView):
             response = HttpResponse(content_type="text/csv")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            writer = csv.DictWriter(
-                response, fieldnames=self.fieldnames, extrasaction="ignore"
-            )
+            data = report.serialize(self.fieldnames)
+            writer = csv.DictWriter(response, fieldnames=self.fieldnames)
             writer.writeheader()
-            writer.writerows(report.results)
-            writer.writerow(report.total)
+            writer.writerows(data["results"])
+            writer.writerow(data["total"])
 
             return response
 

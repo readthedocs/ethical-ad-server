@@ -455,25 +455,14 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         return start_date, end_date
 
-    def _serialize_report_row(self, row):
-        """
-        Project a report row down to the JSON-serializable report columns.
-
-        This mirrors the dashboard CSV export (``BaseReportView``), which writes
-        the same fields and relies on the ``index`` value being stringified --
-        for the publisher report the raw index is a ``Publisher`` instance.
-        """
-        serialized = {field: row.get(field) for field in self.report_fields}
-        serialized["index"] = str(serialized["index"])
-        return serialized
-
     def _breakdown_report(self, request, report_class, model):
         """
         Generate a breakdown report for the requested advertiser.
 
         This powers the granular ``geo_report`` and ``publisher_report``
         actions which break performance down by a single dimension
-        (country or publisher).
+        (country or publisher). The response shape mirrors the dashboard CSV
+        exports via ``BaseReport.serialize``.
         """
         # This will raise a 404 if the user doesn't have access to the advertiser
         advertiser = self.get_object()
@@ -489,14 +478,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         report = report_class(queryset)
         report.generate()
 
-        return Response(
-            {
-                "total": self._serialize_report_row(report.total),
-                "results": [
-                    self._serialize_report_row(result) for result in report.results
-                ],
-            }
-        )
+        return Response(report.serialize(self.report_fields))
 
     @action(detail=True, methods=["get"])
     def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
