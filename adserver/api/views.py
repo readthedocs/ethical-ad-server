@@ -453,9 +453,9 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Generate a breakdown report for the requested advertiser.
 
-        This powers the granular ``geo_report``, ``publisher_report``,
-        and ``keyword_report`` actions which break performance down by
-        a single dimension (country, publisher, or keyword).
+        This powers the granular ``geo_report`` and ``publisher_report``
+        actions which break performance down by a single dimension
+        (country or publisher).
         """
         # This will raise a 404 if the user doesn't have access to the advertiser
         advertiser = self.get_object()
