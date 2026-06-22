@@ -22,6 +22,10 @@
 
 <p>{% trans 'API tokens allow you to use the ad server API to download reports.' %}</p>
 
+{% if adserver_api_documentation_url %}
+  <p>{% blocktrans %}See the <a href="{{ adserver_api_documentation_url }}" target="_blank">API documentation</a> for the available endpoints and usage details.{% endblocktrans %}</p>
+{% endif %}
+
 {% if not object_list %}
   <form method="post" action="{% url 'api_token_create' %}">
     {% csrf_token %}

@@ -316,6 +316,16 @@
             <a href="{% url 'support' %}" target="_blank">{% trans 'Support' %}</a>
           </li>
         {% endif %}
+        {% if adserver_api_documentation_url %}
+          <li class="list-inline-item small">
+            <a href="{{ adserver_api_documentation_url }}" target="_blank">{% trans 'API' %}</a>
+          </li>
+        {% endif %}
+        {% if adserver_website_url %}
+          <li class="list-inline-item small">
+            <a href="{{ adserver_website_url }}" target="_blank">{% trans 'Website' %}</a>
+          </li>
+        {% endif %}
         {% if adserver_privacy_policy %}
           <li class="list-inline-item small">
             <a href="{{ adserver_privacy_policy }}" target="_blank">{% trans 'Privacy Policy' %}</a>
