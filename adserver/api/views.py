@@ -20,7 +20,12 @@ from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
+from ..models import GeoImpression
+from ..models import KeywordImpression
 from ..models import Publisher
+from ..reports import AdvertiserGeoReport
+from ..reports import AdvertiserKeywordReport
+from ..reports import AdvertiserPublisherReport
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
 from ..utils import get_client_id
@@ -398,6 +403,45 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :>json array days: An array of advertiser results per day
         :>json object total: An object of aggregated totals for the advertiser
         :>json array flights: An array of flights for this advertiser in the time period
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/geo_report/
+
+        Return a report of ad performance for this advertiser broken down by country.
+        This matches the geo report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per country
+        :>json object total: An object of aggregated totals for the advertiser
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/publisher_report/
+
+        Return a report of ad performance for this advertiser broken down by publisher.
+        This matches the publisher report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per publisher
+        :>json object total: An object of aggregated totals for the advertiser
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/keyword_report/
+
+        Return a report of ad performance for this advertiser broken down by keyword.
+        This matches the keyword report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per keyword
+        :>json object total: An object of aggregated totals for the advertiser
     """
 
     serializer_class = AdvertiserSerializer
@@ -410,16 +454,91 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         return self.request.user.advertisers.all()
 
-    @action(detail=True, methods=["get"])
-    def report(self, request, slug=None):  # pylint: disable=unused-argument
-        """Return a report of ad performance for this advertiser."""
-        # This will raise a 404 if the user doesn't have access to the advertiser
-        advertiser = self.get_object()
+    def _date_range(self, request):
+        """Parse the ``start_date``/``end_date`` query params used by the report actions."""
         start_date = parse_date_string(request.query_params.get("start_date"))
         end_date = parse_date_string(request.query_params.get("end_date"))
 
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
+
+        return start_date, end_date
+
+    def _breakdown_report(self, request, report_class, model, dimension):
+        """
+        Generate a breakdown report for the requested advertiser.
+
+        This powers the granular ``geo_report``, ``publisher_report``,
+        and ``keyword_report`` actions which break performance down by
+        a single dimension (country, publisher, or keyword).
+        """
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
+
+        queryset = model.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser,
+            date__gte=start_date,
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        report = report_class(queryset)
+        report.generate()
+
+        results = []
+        for result in report.results:
+            # The report indexes results by a model/value that isn't always
+            # JSON serializable (eg. a Publisher instance), so build a clean row.
+            value = result.get(dimension)
+            row = {
+                "views": result["views"],
+                "clicks": result["clicks"],
+                "cost": result["cost"],
+                "ctr": result["ctr"],
+                "ecpm": result["ecpm"],
+            }
+            if isinstance(value, Publisher):
+                row["publisher"] = value.slug
+                row["publisher_name"] = value.name
+            else:
+                row[dimension] = value
+            results.append(row)
+
+        return Response(
+            {
+                "total": report.total,
+                "results": results,
+            }
+        )
+
+    @action(detail=True, methods=["get"])
+    def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by country."""
+        return self._breakdown_report(
+            request, AdvertiserGeoReport, GeoImpression, "country"
+        )
+
+    @action(detail=True, methods=["get"])
+    def publisher_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by publisher."""
+        return self._breakdown_report(
+            request, AdvertiserPublisherReport, AdImpression, "publisher"
+        )
+
+    @action(detail=True, methods=["get"])
+    def keyword_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by keyword."""
+        return self._breakdown_report(
+            request, AdvertiserKeywordReport, KeywordImpression, "keyword"
+        )
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser."""
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
 
         queryset = AdImpression.objects.filter(
             advertisement__flight__campaign__advertiser=advertiser

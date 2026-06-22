@@ -191,6 +191,14 @@ class AdvertiserPublisherReport(AdvertiserReport):
     select_related_fields = ("advertisement", "advertisement__flight", "publisher")
 
 
+class AdvertiserKeywordReport(AdvertiserReport):
+    """Report to breakdown advertiser performance by keyword."""
+
+    model = KeywordImpression
+    index = "keyword"
+    order = "-views"
+
+
 class PublisherReport(BaseReport):
     """Report for showing daily ad performance for a publisher."""
 
