@@ -33,7 +33,6 @@ from ..models import Campaign
 from ..models import Click
 from ..models import Flight
 from ..models import GeoImpression
-from ..models import KeywordImpression
 from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
@@ -909,9 +908,6 @@ class AdvertiserApiTests(BaseApiTest):
         self.advertiser1_publisher_report_url = reverse(
             "api:advertisers-publisher-report", args=[self.advertiser1.slug]
         )
-        self.advertiser1_keyword_report_url = reverse(
-            "api:advertisers-keyword-report", args=[self.advertiser1.slug]
-        )
 
     def test_advertiser_access(self):
         # User has access to advertiser1 but not advertiser2
@@ -928,7 +924,6 @@ class AdvertiserApiTests(BaseApiTest):
             self.advertiser1_report_url,
             self.advertiser1_geo_report_url,
             self.advertiser1_publisher_report_url,
-            self.advertiser1_keyword_report_url,
         ):
             resp = self.client.get(url, content_type="application/json")
             self.assertEqual(resp.status_code, 200, resp.content)
@@ -1087,42 +1082,10 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["results"][0]["views"], 2)
         self.assertEqual(data["results"][0]["clicks"], 1)
 
-    def test_advertiser_keyword_report(self):
-        # No data yet
-        resp = self.client.get(
-            self.advertiser1_keyword_report_url, content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        data = resp.json()
-        self.assertEqual(data["results"], [])
-        self.assertEqual(data["total"]["views"], 0)
-
-        get(
-            KeywordImpression,
-            advertisement=self.ad,
-            publisher=self.publisher1,
-            keyword="python",
-            date=timezone.now().date(),
-            views=80,
-            clicks=4,
-        )
-
-        resp = self.client.get(
-            self.advertiser1_keyword_report_url, content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        data = resp.json()
-        self.assertEqual(data["total"]["views"], 80)
-        self.assertEqual(data["total"]["clicks"], 4)
-        self.assertEqual(len(data["results"]), 1)
-        self.assertEqual(data["results"][0]["keyword"], "python")
-        self.assertEqual(data["results"][0]["views"], 80)
-        self.assertEqual(data["results"][0]["clicks"], 4)
-
         # Respects the start_date filter
         start_date = (timezone.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
         resp = self.client.get(
-            self.advertiser1_keyword_report_url,
+            self.advertiser1_publisher_report_url,
             data={"start_date": start_date},
             content_type="application/json",
         )

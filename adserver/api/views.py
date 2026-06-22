@@ -21,10 +21,8 @@ from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
 from ..models import GeoImpression
-from ..models import KeywordImpression
 from ..models import Publisher
 from ..reports import AdvertiserGeoReport
-from ..reports import AdvertiserKeywordReport
 from ..reports import AdvertiserPublisherReport
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
@@ -429,19 +427,6 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         :>json array results: An array of advertiser results per publisher
         :>json object total: An object of aggregated totals for the advertiser
-
-    .. http:get:: /api/v1/advertisers/(str:slug)/keyword_report/
-
-        Return a report of ad performance for this advertiser broken down by keyword.
-        This matches the keyword report shown in the advertiser dashboard.
-
-        :query date start_date: Start the report on a given day inclusive.
-            If not specified, defaults to 30 days ago
-        :query date end_date: End the report on a given day inclusive.
-            If not specified, no end time is used (up to current)
-
-        :>json array results: An array of advertiser results per keyword
-        :>json object total: An object of aggregated totals for the advertiser
     """
 
     serializer_class = AdvertiserSerializer
@@ -524,13 +509,6 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         """Return a report of ad performance for this advertiser broken down by publisher."""
         return self._breakdown_report(
             request, AdvertiserPublisherReport, AdImpression, "publisher"
-        )
-
-    @action(detail=True, methods=["get"])
-    def keyword_report(self, request, slug=None):  # pylint: disable=unused-argument
-        """Return a report of ad performance for this advertiser broken down by keyword."""
-        return self._breakdown_report(
-            request, AdvertiserKeywordReport, KeywordImpression, "keyword"
         )
 
     @action(detail=True, methods=["get"])
