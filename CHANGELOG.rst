@@ -6,6 +6,24 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.43.0
+---------------
+
+This release had a number of dependency updates and minor bug fixes.
+
+:Date: July 1, 2026
+
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1238)
+ * @ericholscher: Link the dashboard back to the API docs and website (settings-driven) (#1236)
+ * @davidfischer: Slight tweak to bot rules (#1230)
+ * @davidfischer: Upgrade django to 5.2.14 (#1225)
+ * @davidfischer: Pin GHA workflows (#1224)
+ * @ericholscher: Fix staff payout paid filter to check status, not existence (#1223)
+ * @ericholscher: Exclude $ from copied amount in staff payout finish view (#1222)
+ * @dependabot[bot]: Bump urllib3 from 2.6.3 to 2.7.0 (#1221)
+ * @ericholscher: Pin prompt-toolkit>=3.0.43 to fix TypeError on Python 3.12 (#1206)
+
+
 Version v5.42.0
 ---------------
 
