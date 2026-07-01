@@ -12,6 +12,8 @@ def settings_processor(request):
         "adserver_ethicalads_branding": settings.ADSERVER_ETHICALADS_BRANDING,
         "adserver_privacy_policy": settings.ADSERVER_PRIVACY_POLICY_URL,
         "adserver_publisher_policy": settings.ADSERVER_PUBLISHER_POLICY_URL,
+        "adserver_api_documentation_url": settings.ADSERVER_API_DOCUMENTATION_URL,
+        "adserver_website_url": settings.ADSERVER_WEBSITE_URL,
         "adserver_version": settings.ADSERVER_VERSION,
         "adserver_etl": "ethicalads_ext.etl" in settings.INSTALLED_APPS,
         "metabase_enabled": settings.METABASE_ENABLED,

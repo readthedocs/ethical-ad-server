@@ -5,7 +5,7 @@ description = "Ethical Ad Server"
 requires-python = ">=3.12, <3.13"
 dependencies = [
     # Django itself and its requirements
-    "Django>=5.2,<5.3",
+    "django>=5.2, <5.3",
     "pytz",
 
     # Asynchronous tasks
@@ -178,7 +178,7 @@ dev = [
     "pytest-django",
     "django-dynamic-fixture",
     "responses>=0.25.3,<1",
-    "urllib3>=2.2.2,<3",
+    "urllib3>=2.7.0,<3",
 
     # Used to keep things up-to-date
     "django-upgrade",

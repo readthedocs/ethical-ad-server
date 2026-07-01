@@ -6,6 +6,45 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.42.0
+---------------
+
+This release had some minor improvements and dependency updates.
+It also added some additional notifications on publisher traffic spikes.
+
+:Date: May 8, 2026
+
+ * @davidfischer: Notify on large daily publisher traffic spikes (#1216)
+ * @davidfischer: Applebot detection fix (#1215)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1214)
+ * @dependabot[bot]: Bump lxml from 6.0.2 to 6.1.0 (#1213)
+ * @davidfischer: Updated RTD uv configs (#1212)
+ * @ericholscher: Test multi-ad-type placement priority weighting logic (#1211)
+
+
+Version v5.41.0
+---------------
+
+This release attempts to fix a minor performance degradation in v5.40.0.
+It also adds retries to the daily reports.
+
+:Date: April 20, 2026
+
+ * @davidfischer: Improve placement priority performance (#1209)
+ * @davidfischer: Add retries to the daily reports (#1208)
+
+
+Version v5.40.0
+---------------
+
+This release re-introduces flight priority (removed in v5.36.1).
+There were also some minor dependency updates.
+
+:Date: April 16, 2026
+
+ * @davidfischer: Re-introduce flight priority again (#1205)
+
+
 Version v5.39.1
 ---------------
 

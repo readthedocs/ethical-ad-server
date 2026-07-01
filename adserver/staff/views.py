@@ -140,10 +140,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
             if not report and not current_payout:
                 continue
 
-            if (paid == "True" and current_payout is None) or (
-                paid == "False" and current_payout is not None
-            ):
-                # Filter by ``paid``, allowing for 3 states (''=all, False=not first, True=first)
+            is_paid = current_payout is not None and current_payout.status == PAID
+            if (paid == "True" and not is_paid) or (paid == "False" and is_paid):
+                # Filter by ``paid``, allowing for 3 states (''=all, False=not paid, True=paid)
                 continue
 
             if (first == "True" and data["first"] is False) or (
