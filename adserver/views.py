@@ -356,7 +356,27 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
+        flights = self.get_queryset()
+        flight_groups_dict = collections.OrderedDict()
+        for f in flights:
+            if f.state not in flight_groups_dict:
+                flight_groups_dict[f.state] = {
+                    "state": f.state,
+                    "flights": [],
+                    "total_budget": 0.0,
+                }
+            flight_groups_dict[f.state]["flights"].append(f)
+            flight_groups_dict[f.state]["total_budget"] += float(
+                f.projected_total_value()
+            )
+
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flights": flights,
+                "flight_groups": list(flight_groups_dict.values()),
+            }
+        )
 
         return context
 
