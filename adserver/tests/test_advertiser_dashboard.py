@@ -222,6 +222,28 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Request a new flight")
 
+        # Test that single flight does not show total budget row
+        self.assertNotContains(response, "Total")
+
+        # Add another flight in the same state (Current)
+        get(
+            Flight,
+            name="Test Flight 2",
+            slug="test-flight-2",
+            campaign=self.campaign,
+            live=True,
+            cpc=1.5,
+            sold_clicks=1000,
+            start_date=get_ad_day().date() - datetime.timedelta(days=1),
+        )
+
+        response = self.client.get(url)
+        # self.flight is 2000 clicks * 2.0 CPC = $4000
+        # flight2 is 1000 clicks * 1.5 CPC = $1500
+        # Total = $5500.00
+        self.assertContains(response, "Total")
+        self.assertContains(response, "$5500.00")
+
     def test_flight_detail_view(self):
         url = reverse(
             "flight_detail",
