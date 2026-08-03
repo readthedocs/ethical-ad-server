@@ -1,0 +1,67 @@
+# cloud-config
+#
+# This cloud-config file is used to configure the adserver instance
+# for run inside a sandbox environment.
+#
+# This can be useful for working on it with AI Agents
+#
+#  > # Create a multipass instance with the following command:
+#  > multipass launch 24.04 --name agent-sandbox --cpus 4 --memory 8G --disk 30G --cloud-init cloud-config.yaml
+#
+#  > # Mount the adserver source code into the instance with:
+#  > multipass mount . agent-sandbox:/home/ubuntu/workspace/ethical-ad-server
+#
+#  > # Connect to the instance with:
+#  > multipass shell agent-sandbox
+#
+#
+package_update: true
+package_upgrade: false
+
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - make
+  - python3
+  - python3-pip
+  - python3-venv
+  - jq
+  - docker.io
+  - docker-compose-v2
+  - docker-buildx
+
+# Native file creation (avoids brittle shell redirection syntax)
+write_files:
+  - path: /etc/profile.d/agent-sandbox.sh
+    permissions: '0644'
+    content: |
+      # Ensure uv and user local binaries are in PATH
+      export PATH="$HOME/.local/bin:$PATH"
+
+      # UV Configuration for Sandboxed VM Execution
+      # 1. Store virtual environments on native guest storage (~/.cache/uv/venv)
+      #    instead of the sshfs host-mounted workspace.
+      export UV_PROJECT_ENVIRONMENT="$HOME/.cache/uv/venv"
+
+      # 2. Copy binaries and packages instead of symlinking to avoid sshfs cross-mount permission errors.
+      export UV_LINK_MODE="copy"
+
+      if [ "$SSH_TTY" ] || [ -t 0 ]; then
+        echo "========================================="
+        echo "          Agent Sandbox Ready            "
+        echo "  Workspace: ~/workspace                 "
+        echo "========================================="
+      fi
+
+runcmd:
+  # 1. Add ubuntu user to docker group
+  - usermod -aG docker ubuntu
+
+  # 2. Create workspace directory with correct ownership
+  - mkdir -p /home/ubuntu/workspace
+  - chown -R ubuntu:ubuntu /home/ubuntu/workspace
+
+  # 3. Install Astral's uv directly into the ubuntu user's home directory
+  - sudo -u ubuntu bash -c "curl -LsSf https://astral.sh/uv/install.sh | sh"
