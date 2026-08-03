@@ -45,7 +45,7 @@ Requirements
 ~~~~~~~~~~~~
 
 - `uv <https://docs.astral.sh/uv/getting-started/installation/>`_
-- Nodejs (tested with v20)
+- Nodejs (tested with v24)
 
 
 Managing the ad server and setup
