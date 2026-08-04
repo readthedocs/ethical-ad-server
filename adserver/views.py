@@ -128,6 +128,7 @@ from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
 from .utils import is_allowed_domain
+from .utils import is_asn_ratelimited
 from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
@@ -1226,6 +1227,14 @@ class BaseProxyView(View):
                 geo_data.metro,
             )
             reason = "Invalid targeting impression"
+        elif is_asn_ratelimited(request):
+            log.log(
+                self.log_security_level,
+                "Too many requests from this ASN, Publisher: [%s], ASN: [%s]",
+                offer.publisher,
+                request.geo.asn,
+            )
+            reason = "ASN Ratelimited impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
             log.log(
                 self.log_level,
