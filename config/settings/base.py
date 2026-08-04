@@ -494,9 +494,10 @@ SLACK_FAIL_SILENTLY = env.bool("SLACK_FAIL_SILENTLY", default=True)
 # CORS
 # https://github.com/adamchainz/django-cors-headers
 # --------------------------------------------------------------------------
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=True)
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_HEADERS = ["*"]
-CORS_URLS_REGEX = r"^/api/v1/similar-.*/$"
+CORS_URLS_REGEX = r"^/api/v1/(decision|similar-.*)/$"
 
 
 # Metabase
