@@ -237,6 +237,7 @@ lines-after-imports = 2
 "adserver/decisionengine/backends.py" = ["S311"]
 # Only trusted users call this command
 "adserver/management/commands/archive_offers.py" = ["S108", "S608", "S603", "S607"]
+"adserver/management/commands/export_d1_sql.py" = ["S608"]
 
 
 # Run all tests with `tox`
