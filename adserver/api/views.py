@@ -20,7 +20,10 @@ from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
+from ..models import GeoImpression
 from ..models import Publisher
+from ..reports import AdvertiserGeoReport
+from ..reports import AdvertiserPublisherReport
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
 from ..utils import get_client_id
@@ -398,10 +401,42 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :>json array days: An array of advertiser results per day
         :>json object total: An object of aggregated totals for the advertiser
         :>json array flights: An array of flights for this advertiser in the time period
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/geo_report/
+
+        Return a report of ad performance for this advertiser broken down by country.
+        This matches the geo report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per country.
+            Each result is indexed by the country name in the ``index`` field.
+        :>json object total: An object of aggregated totals for the advertiser
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/publisher_report/
+
+        Return a report of ad performance for this advertiser broken down by publisher.
+        This matches the publisher report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per publisher.
+            Each result is indexed by the publisher name in the ``index`` field.
+        :>json object total: An object of aggregated totals for the advertiser
     """
 
     serializer_class = AdvertiserSerializer
     lookup_field = "slug"
+
+    # Columns returned for breakdown reports.
+    # This mirrors ``BaseReportView.fieldnames`` used by the dashboard CSV exports.
+    report_fields = ("index", "views", "clicks", "cost", "ctr", "ecpm")
 
     def get_queryset(self):
         """Returns Advertisers the user has access to."""
@@ -410,16 +445,75 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         return self.request.user.advertisers.all()
 
-    @action(detail=True, methods=["get"])
-    def report(self, request, slug=None):  # pylint: disable=unused-argument
-        """Return a report of ad performance for this advertiser."""
-        # This will raise a 404 if the user doesn't have access to the advertiser
-        advertiser = self.get_object()
+    def _date_range(self, request):
+        """Parse the ``start_date``/``end_date`` query params used by the report actions."""
         start_date = parse_date_string(request.query_params.get("start_date"))
         end_date = parse_date_string(request.query_params.get("end_date"))
 
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
+
+        return start_date, end_date
+
+    def _serialize_report_row(self, row):
+        """
+        Project a report row down to the JSON-serializable report columns.
+
+        This mirrors the dashboard CSV export (``BaseReportView``), which writes
+        the same fields and relies on the ``index`` value being stringified --
+        for the publisher report the raw index is a ``Publisher`` instance.
+        """
+        serialized = {field: row.get(field) for field in self.report_fields}
+        serialized["index"] = str(serialized["index"])
+        return serialized
+
+    def _breakdown_report(self, request, report_class, model):
+        """
+        Generate a breakdown report for the requested advertiser.
+
+        This powers the granular ``geo_report`` and ``publisher_report``
+        actions which break performance down by a single dimension
+        (country or publisher).
+        """
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
+
+        queryset = model.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser,
+            date__gte=start_date,
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        report = report_class(queryset)
+        report.generate()
+
+        return Response(
+            {
+                "total": self._serialize_report_row(report.total),
+                "results": [
+                    self._serialize_report_row(result) for result in report.results
+                ],
+            }
+        )
+
+    @action(detail=True, methods=["get"])
+    def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by country."""
+        return self._breakdown_report(request, AdvertiserGeoReport, GeoImpression)
+
+    @action(detail=True, methods=["get"])
+    def publisher_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by publisher."""
+        return self._breakdown_report(request, AdvertiserPublisherReport, AdImpression)
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser."""
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
 
         queryset = AdImpression.objects.filter(
             advertisement__flight__campaign__advertiser=advertiser
