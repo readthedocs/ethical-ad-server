@@ -174,10 +174,10 @@ class ExportD1SqlTestCase(TestCase):
         self.assertEqual(ads[0][2], "Headline Active")
         self.assertEqual(ads[0][3], "Click Now")
 
-        cursor.execute("SELECT ad_slug, ad_type_slug FROM advertisement_ad_types")
+        cursor.execute("SELECT ad_id, ad_type_slug FROM advertisement_ad_types")
         ad_ad_types = cursor.fetchall()
         self.assertEqual(len(ad_ad_types), 1)
-        self.assertEqual(ad_ad_types[0][0], "active-ad")
+        self.assertEqual(ad_ad_types[0][0], self.ad_active.id)
         self.assertEqual(ad_ad_types[0][1], "readthedocs-sidebar")
 
         conn.close()
