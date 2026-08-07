@@ -816,12 +816,6 @@ def update_previous_day_reports(day=None):
         # If not specified,
         # do the previous day now that the day is complete
         start_date -= datetime.timedelta(days=1)
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": f"Started aggregating report data for yesterday ({start_date:%Y-%m-%d})."
-            },
-        )
 
     # Do all reports
     daily_update_geos(start_date)
@@ -839,13 +833,12 @@ def update_previous_day_reports(day=None):
     update_flight_traffic_fill.apply_async()
 
     if not day:
-        # Send notification to Slack about previous day's reports
-        # Don't send this notification if run manually
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": f"Completed aggregating report data for yesterday ({start_date:%Y-%m-%d}). :page_with_curl:"
-            },
+        # Update cache with last successful run timestamp - used in health checks
+        # Only do this for the nightly task, not for manual runs of the task with a specific day.
+        cache.set(
+            "health.update_previous_day_reports",
+            timezone.now().isoformat(),
+            timeout=None,  # Never expire
         )
 
 
@@ -953,7 +946,7 @@ def refresh_flight_denormalized_totals():
 
     # Update cache with last successful run timestamp
     cache.set(
-        "flight_totals_last_refresh",
+        "health.flight_totals_last_refresh",
         timezone.now().isoformat(),
         timeout=None,  # Never expire
     )
