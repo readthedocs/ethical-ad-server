@@ -292,6 +292,36 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+    def test_cors_headers(self):
+        # Test CORS headers on GET request
+        resp = self.client.get(
+            self.url, self.query_params, headers={"origin": "https://example.com"}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+
+        # Test CORS headers on POST request
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+            headers={"origin": "https://example.com"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+
+        # Test CORS headers on OPTIONS preflight request
+        resp = self.client.options(
+            self.url,
+            headers={
+                "origin": "https://example.com",
+                "access-control-request-method": "POST",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+        self.assertIn("POST", resp.headers.get("Access-Control-Allow-Methods", ""))
+
     def test_invalid_auth(self):
         client = Client()
         resp = client.post(
@@ -933,6 +963,15 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         self.assertEqual(data["count"], 2)
+
+    def test_no_cors_headers(self):
+        resp = self.client.get(
+            self.advertiser_list_url,
+            content_type="application/json",
+            headers={"origin": "https://example.com"},
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertNotIn("Access-Control-Allow-Origin", resp.headers)
 
     def test_advertiser_report(self):
         resp = self.client.get(
