@@ -53,6 +53,10 @@
       {% if flight.hard_stop %}<span title="{% trans 'The flight will be stopped on this date even if not completely fulfilled. The balance will be credited.' %}" data-toggle="tooltip" data-placement="left"> ({% trans 'Hard stop' %})</span>{% endif %}
     </dd>
   {% endif %}
+  {% if request.user.is_staff and flight.traffic_cap %}
+    <dt title="{% trans 'A traffic cap is shown only to staff' %}" data-toggle="tooltip" data-placement="left">{% trans 'Traffic cap' %}  <span class="fa fa-lock fa-fw mr-2 text-muted" aria-hidden="true"></span></dt>
+    <dd>{{ flight.traffic_cap }}</dd>
+  {% endif %}
 
   <dt title="{% trans 'Determines which ad is chosen when a flight has multiple ads.' %}" data-toggle="tooltip" data-placement="left">{% trans 'Ad selection' %} <span class="fa fa-info-circle fa-fw mr-2 text-muted" aria-hidden="true"></span></dt>
   <dd>

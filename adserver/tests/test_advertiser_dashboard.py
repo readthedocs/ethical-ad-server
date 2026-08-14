@@ -345,6 +345,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(resp, "Mobile traffic: exclude")
         self.assertContains(resp, "Days: Saturday, Sunday")
 
+        # Non-staff user should not see traffic cap even if set
+        self.flight.traffic_cap = {"countries": {"US": 0.5}}
+        self.flight.save()
+
+        resp = self.client.get(url)
+        self.assertNotContains(resp, "Traffic cap")
+
+        # Staff user should see traffic cap
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertContains(resp, "Traffic cap")
+
     def test_flight_create_view(self):
         url = reverse(
             "flight_create",
