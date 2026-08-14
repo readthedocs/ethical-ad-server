@@ -128,6 +128,7 @@ from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
 from .utils import is_allowed_domain
+from .utils import is_asn_ratelimited
 from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
@@ -356,7 +357,27 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
+        flights = self.get_queryset()
+        flight_groups_dict = collections.OrderedDict()
+        for f in flights:
+            if f.state not in flight_groups_dict:
+                flight_groups_dict[f.state] = {
+                    "state": f.state,
+                    "flights": [],
+                    "total_budget": 0.0,
+                }
+            flight_groups_dict[f.state]["flights"].append(f)
+            flight_groups_dict[f.state]["total_budget"] += float(
+                f.projected_total_value()
+            )
+
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flights": flights,
+                "flight_groups": list(flight_groups_dict.values()),
+            }
+        )
 
         return context
 
@@ -1206,6 +1227,14 @@ class BaseProxyView(View):
                 geo_data.metro,
             )
             reason = "Invalid targeting impression"
+        elif is_asn_ratelimited(request):
+            log.log(
+                self.log_security_level,
+                "Too many requests from this ASN, Publisher: [%s], ASN: [%s]",
+                offer.publisher,
+                request.geo.asn,
+            )
+            reason = "ASN Ratelimited impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
             log.log(
                 self.log_level,

@@ -299,6 +299,10 @@ if "ethicalads_ext.etl" in INSTALLED_APPS:
         "task": "ethicalads_ext.etl.tasks.daily_etl_pipeline",
         "schedule": crontab(hour="2", minute="0"),
     }
+    CELERY_BEAT_SCHEDULE["every-month-offers-dump"] = {
+        "task": "ethicalads_ext.etl.tasks.monthly_offers_dump",
+        "schedule": crontab(day_of_month=1, hour="5", minute="0"),
+    }
 
 
 # Sentry settings for error monitoring

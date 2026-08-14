@@ -601,6 +601,12 @@ ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
     "ADSERVER_BLOCKLISTED_USER_AGENTS", default=[]
 )
 ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", default=[])
+# Ratelimit certain problematic ASNs
+ADSERVER_ASNS_TO_RATELIMIT = {
+    int(x) for x in env.list("ADSERVER_ASNS_TO_RATELIMIT", default=[])
+}
+ADSERVER_ASN_RATELIMITS = env.list("ADSERVER_ASN_RATELIMITS", default=[])
+
 ADSERVER_MINIMUM_PAYOUT = env.int("ADSERVER_MINIMUM_PAYOUT", default=50)
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True

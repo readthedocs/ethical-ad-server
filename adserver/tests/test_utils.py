@@ -4,11 +4,14 @@ from unittest import mock
 
 import pytz
 from django.contrib.gis.geoip2 import GeoIP2Exception
+from django.core.cache import cache
 from django.test import TestCase
+from django.test import override_settings
 from django.test.client import RequestFactory
 from django.utils import timezone
 from geoip2.errors import AddressNotFoundError
 
+from ..utils import GeolocationData
 from ..utils import anonymize_ip_address
 from ..utils import anonymize_user_agent
 from ..utils import build_blocked_ip_set
@@ -27,6 +30,7 @@ from ..utils import get_geoipdb_geolocation
 from ..utils import get_geolocation
 from ..utils import get_ipproxy_db
 from ..utils import is_allowed_domain
+from ..utils import is_asn_ratelimited
 from ..utils import is_blocklisted_ip
 from ..utils import is_blocklisted_referrer
 from ..utils import is_blocklisted_user_agent
@@ -39,6 +43,7 @@ from ..utils import parse_date_string
 
 class UtilsTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.factory = RequestFactory()
         self.request = self.factory.get("/")
 
@@ -141,6 +146,39 @@ class UtilsTest(TestCase):
         self.assertFalse(is_view_ratelimited(request, ratelimits))
         self.assertFalse(is_view_ratelimited(request, ratelimits))
         self.assertTrue(is_view_ratelimited(request, ratelimits))
+
+    @override_settings(ADSERVER_ASNS_TO_RATELIMIT=[13335])
+    def test_asn_ratelimited(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        # No request.geo set
+        self.assertFalse(is_asn_ratelimited(request))
+
+        # request.geo set but no asn
+        request.geo = GeolocationData()
+        self.assertFalse(is_asn_ratelimited(request))
+
+        # ASN not in ADSERVER_ASNS_TO_RATELIMIT
+        request.geo.asn = 20473
+        self.assertFalse(is_asn_ratelimited(request))
+
+        # ASN in ADSERVER_ASNS_TO_RATELIMIT (string)
+        request.geo.asn = 13335
+        ratelimits = ["1/m"]
+        self.assertFalse(is_asn_ratelimited(request, ratelimits))
+        self.assertTrue(is_asn_ratelimited(request, ratelimits))
+
+    @override_settings(ADSERVER_ASNS_TO_RATELIMIT=[13335])
+    def test_asn_ratelimited_int_asn(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        # ASN as integer in geo and settings
+        request.geo = GeolocationData(asn=13335)
+        ratelimits = ["1/m"]
+        self.assertFalse(is_asn_ratelimited(request, ratelimits))
+        self.assertTrue(is_asn_ratelimited(request, ratelimits))
 
     def test_generate_client_id(self):
         hexdigest1 = generate_client_id("8.8.8.8", "Mac OS, Safari, 10.x.x")

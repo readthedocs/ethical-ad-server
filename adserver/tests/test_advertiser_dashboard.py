@@ -222,6 +222,28 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Request a new flight")
 
+        # Test that single flight does not show total budget row
+        self.assertNotContains(response, "Total")
+
+        # Add another flight in the same state (Current)
+        get(
+            Flight,
+            name="Test Flight 2",
+            slug="test-flight-2",
+            campaign=self.campaign,
+            live=True,
+            cpc=1.5,
+            sold_clicks=1000,
+            start_date=get_ad_day().date() - datetime.timedelta(days=1),
+        )
+
+        response = self.client.get(url)
+        # self.flight is 2000 clicks * 2.0 CPC = $4000
+        # flight2 is 1000 clicks * 1.5 CPC = $1500
+        # Total = $5500.00
+        self.assertContains(response, "Total")
+        self.assertContains(response, "$5500.00")
+
     def test_flight_detail_view(self):
         url = reverse(
             "flight_detail",
@@ -322,6 +344,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertContains(resp, "Exclude domains")
         self.assertContains(resp, "Mobile traffic: exclude")
         self.assertContains(resp, "Days: Saturday, Sunday")
+
+        # Non-staff user should not see traffic cap even if set
+        self.flight.traffic_cap = {"countries": {"US": 0.5}}
+        self.flight.save()
+
+        resp = self.client.get(url)
+        self.assertNotContains(resp, "Traffic cap")
+
+        # Staff user should see traffic cap
+        self.client.force_login(self.staff_user)
+        resp = self.client.get(url)
+        self.assertContains(resp, "Traffic cap")
 
     def test_flight_create_view(self):
         url = reverse(
