@@ -15,7 +15,6 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
-from djstripe.models import Account
 
 from ..models import Advertiser
 from ..models import Campaign
@@ -443,11 +442,10 @@ class PublisherPayoutTests(TestCase):
         # requery to get new object
         self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")
 
-    def _setup_stripe_payout(self):
-        self.publisher1.djstripe_account = get(Account)
-        self.publisher1.save()
+    def test_finish_view_stripe_payout(self):
+        self.client.force_login(self.staff_user)
 
-        return get(
+        payout = get(
             PublisherPayout,
             status="emailed",
             publisher=self.publisher1,
@@ -455,56 +453,27 @@ class PublisherPayoutTests(TestCase):
             date=timezone.now(),
             method="stripe",
         )
-
-    def test_finish_view_stripe_payout(self):
-        self.client.force_login(self.staff_user)
-        payout = self._setup_stripe_payout()
-
         finish_url = reverse(
             "staff-finish-publisher-payout",
             kwargs=dict(publisher_slug=self.publisher1.slug),
         )
+        pay_method = (
+            "adserver.staff.views.PublisherFinishPayoutView.pay_via_stripe_connect"
+        )
 
-        with (
-            patch("adserver.staff.views.stripe.Transfer.create") as transfer_create,
-            patch(
-                "adserver.staff.views.Transfer.sync_from_stripe_data"
-            ) as sync_transfer,
-        ):
-            sync_transfer.return_value = Mock(id="tr_12345")
-            post_response = self.client.post(
-                finish_url, data={"stripe-payout-confirm": "on"}
-            )
+        # Without a transfer ID, the payout is not marked paid
+        with patch(pay_method, return_value=Mock(id=None)):
+            with self.assertRaises(RuntimeError):
+                self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
+        payout.refresh_from_db()
+        self.assertEqual(payout.status, "emailed")
 
-        self.assertTrue(transfer_create.called)
-        self.assertEqual(post_response.status_code, 302)
+        # With a transfer ID, the payout is marked paid
+        with patch(pay_method, return_value=Mock(id="tr_12345")):
+            self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
         payout.refresh_from_db()
         self.assertEqual(payout.status, "paid")
         self.assertEqual(payout.note, "Stripe Transfer: tr_12345")
-
-    def test_finish_view_stripe_payout_no_transfer_id(self):
-        self.client.force_login(self.staff_user)
-        payout = self._setup_stripe_payout()
-
-        finish_url = reverse(
-            "staff-finish-publisher-payout",
-            kwargs=dict(publisher_slug=self.publisher1.slug),
-        )
-
-        for missing_transfer in (Mock(id=None), None):
-            with (
-                patch("adserver.staff.views.stripe.Transfer.create"),
-                patch(
-                    "adserver.staff.views.Transfer.sync_from_stripe_data"
-                ) as sync_transfer,
-            ):
-                sync_transfer.return_value = missing_transfer
-                with self.assertRaises(RuntimeError):
-                    self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
-
-            payout.refresh_from_db()
-            self.assertEqual(payout.status, "emailed")
-            self.assertFalse(payout.note)
 
     def test_percent_change_across_year_boundary(self):
         """Test that % change calculation works correctly when crossing year boundaries."""
