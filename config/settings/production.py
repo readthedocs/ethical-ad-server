@@ -280,6 +280,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.etl.tasks.daily_etl_pipeline",
         "schedule": crontab(hour="2", minute="0"),
     },
+    "every-month-offers-dump": {
+        "task": "adserver.etl.tasks.monthly_offers_dump",
+        "schedule": crontab(day_of_month=1, hour="5", minute="0"),
+    },
 }
 
 # Tasks which should only be run if the analyzer is installed

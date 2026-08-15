@@ -292,6 +292,11 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             "stripe-payout-confirm"
         ):
             transfer = self.pay_via_stripe_connect(self.payout)
+            if not transfer or not transfer.id:
+                raise RuntimeError(
+                    f"No Stripe transfer ID for payout {self.payout.pk}. "
+                    f"Not marking the payout as paid."
+                )
             self.payout.note = f"Stripe Transfer: { transfer.id }"
             messages.success(self.request, _("Successfully paid via Stripe Connect"))
         elif self.payout.method == PAYOUT_PAYPAL and self.request.POST.get(

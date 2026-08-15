@@ -1,6 +1,7 @@
 import tempfile
 from datetime import datetime as dt
 from datetime import timedelta
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -440,6 +441,39 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(post_response.status_code, 302)
         # requery to get new object
         self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")
+
+    def test_finish_view_stripe_payout(self):
+        self.client.force_login(self.staff_user)
+
+        payout = get(
+            PublisherPayout,
+            status="emailed",
+            publisher=self.publisher1,
+            amount=55,
+            date=timezone.now(),
+            method="stripe",
+        )
+        finish_url = reverse(
+            "staff-finish-publisher-payout",
+            kwargs=dict(publisher_slug=self.publisher1.slug),
+        )
+        pay_method = (
+            "adserver.staff.views.PublisherFinishPayoutView.pay_via_stripe_connect"
+        )
+
+        # Without a transfer ID, the payout is not marked paid
+        with patch(pay_method, return_value=Mock(id=None)):
+            with self.assertRaises(RuntimeError):
+                self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
+        payout.refresh_from_db()
+        self.assertEqual(payout.status, "emailed")
+
+        # With a transfer ID, the payout is marked paid
+        with patch(pay_method, return_value=Mock(id="tr_12345")):
+            self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
+        payout.refresh_from_db()
+        self.assertEqual(payout.status, "paid")
+        self.assertEqual(payout.note, "Stripe Transfer: tr_12345")
 
     def test_percent_change_across_year_boundary(self):
         """Test that % change calculation works correctly when crossing year boundaries."""
