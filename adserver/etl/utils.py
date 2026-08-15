@@ -1,11 +1,15 @@
 """Utilities for ETL."""
 
+import glob
+import logging
 import os
 
 import duckdb
 import ibis
 from django.conf import settings
 
+
+log = logging.getLogger(__name__)
 
 QUERYDUMP_OFFERS_PREFIX = "querydumps/offers/"
 MONTHLY_QUERYDUMP_OFFERS_PREFIX = "querydumps/monthly-offers/"
@@ -285,14 +289,18 @@ def dump_monthly_offers(month_date, parquet_path=None, con=None) -> str:
 
     backend = con if con is not None else ibis.duckdb.connect()
 
+    input_glob = month_to_daily_offers_parquet_glob(month_date)
     if str(parquet_path).startswith("s3://"):
         setup_duckdb_aws_connection(con=backend)
-        input_glob = month_to_daily_offers_parquet_glob(month_date)
     else:
+        if not glob.glob(input_glob):
+            log.warning(
+                "No daily offers parquet files found for %s (%s)",
+                month_date,
+                input_glob,
+            )
+            return None
         os.makedirs(os.path.dirname(str(parquet_path)), exist_ok=True)
-        parent_dir = os.path.dirname(parquet_path)
-        year_month = f"{month_date.year}-{month_date.month:02d}"
-        input_glob = os.path.join(parent_dir, f"{year_month}-*.parquet")
 
     set_duckdb_memory_limit(con=backend)
 

@@ -11,6 +11,7 @@ from unittest import mock
 import duckdb
 import pyarrow as pa
 import pyarrow.parquet as pq
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.test import override_settings
@@ -440,19 +441,41 @@ class TestOffersParquetUtils(TestCase):
                 )
 
     def test_dump_monthly_offers(self):
-        day2_path = os.path.join(self.temp_dir.name, "2025-05-14.parquet")
+        offers_dir = os.path.join(self.temp_dir.name, "querydumps", "offers")
+        os.makedirs(offers_dir, exist_ok=True)
+        day1_path = os.path.join(offers_dir, "2025-05-13.parquet")
+        day2_path = os.path.join(offers_dir, "2025-05-14.parquet")
+        write_test_offers_parquet(day1_path)
         write_test_offers_parquet(day2_path)
 
-        monthly_path = os.path.join(self.temp_dir.name, "2025-05.parquet")
-        result_path = dump_monthly_offers(self.day, parquet_path=monthly_path)
-        self.assertEqual(result_path, monthly_path)
-        self.assertTrue(os.path.exists(monthly_path))
+        with override_settings(
+            ADSERVER_OFFERS_LOCAL_PATH=self.temp_dir.name,
+            AWS_DATA_STORAGE_BUCKET_NAME=None,
+        ):
+            with mock.patch("adserver.etl.utils.DATA_BUCKET_NAME", None):
+                result_path = dump_monthly_offers(self.day)
+                expected_path = os.path.join(
+                    self.temp_dir.name,
+                    "querydumps",
+                    "monthly-offers",
+                    "2025-05.parquet",
+                )
+                self.assertEqual(result_path, expected_path)
+                self.assertTrue(os.path.exists(result_path))
 
-        con = duckdb.connect()
-        count = con.execute(
-            f"SELECT COUNT(*) FROM read_parquet('{monthly_path}')"
-        ).fetchone()[0]
-        self.assertEqual(count, 10)
+                con = duckdb.connect()
+                count = con.execute(
+                    f"SELECT COUNT(*) FROM read_parquet('{result_path}')"
+                ).fetchone()[0]
+                self.assertEqual(count, 10)
+
+                # Test with explicit parquet_path
+                custom_path = os.path.join(
+                    self.temp_dir.name, "custom", "2025-05.parquet"
+                )
+                custom_result = dump_monthly_offers(self.day, parquet_path=custom_path)
+                self.assertEqual(custom_result, custom_path)
+                self.assertTrue(os.path.exists(custom_path))
 
     def test_dump_monthly_offers_s3(self):
         with override_settings(AWS_DATA_STORAGE_BUCKET_NAME="test-bucket"):
@@ -473,6 +496,15 @@ class TestOffersParquetUtils(TestCase):
             with mock.patch("adserver.etl.utils.DATA_BUCKET_NAME", None):
                 with self.assertRaises(RuntimeError):
                     dump_monthly_offers(self.day)
+
+    def test_dump_monthly_offers_no_daily_files(self):
+        with override_settings(
+            ADSERVER_OFFERS_LOCAL_PATH=self.temp_dir.name,
+            AWS_DATA_STORAGE_BUCKET_NAME=None,
+        ):
+            with mock.patch("adserver.etl.utils.DATA_BUCKET_NAME", None):
+                res = dump_monthly_offers(datetime.date(2020, 1, 1))
+                self.assertIsNone(res)
 
     def test_monthly_offers_dump_exists(self):
         monthly_path = os.path.join(self.temp_dir.name, "2025-05.parquet")
@@ -1008,20 +1040,20 @@ class TestETLCeleryTasks(TestCase):
                 "adserver.etl.tasks.dump_offers",
                 return_value="s3://bucket/path.parquet",
             ):
-                with override_settings(
-                    INSTALLED_APPS=["adserver.etl", "ethicalads_ext.etl"]
+                mock_customer_task = mock.MagicMock()
+                with mock.patch.dict(
+                    "sys.modules",
+                    {
+                        "ethicalads_ext.etl.tasks": mock.MagicMock(
+                            daily_customer_etl=mock_customer_task
+                        )
+                    },
                 ):
-                    mock_customer_task = mock.MagicMock()
-                    with mock.patch.dict(
-                        "sys.modules",
-                        {
-                            "ethicalads_ext.etl.tasks": mock.MagicMock(
-                                daily_customer_etl=mock_customer_task
-                            )
-                        },
-                    ):
-                        daily_offers_dump(day=day, run_customer_jobs=True)
+                    daily_offers_dump(day=day, run_customer_jobs=True)
+                    if "ethicalads_ext.etl" in settings.INSTALLED_APPS:
                         mock_customer_task.delay.assert_called_once()
+                    else:
+                        mock_customer_task.delay.assert_not_called()
 
     def test_monthly_offers_dump_skips_when_exists(self):
         day = datetime.date(2025, 5, 1)
@@ -1062,6 +1094,17 @@ class TestETLCeleryTasks(TestCase):
                 mock_dump.reset_mock()
                 monthly_offers_dump(day="2025-05-01")
                 self.assertTrue(mock_dump.called)
+
+    def test_monthly_offers_dump_no_daily_parquets(self):
+        with mock.patch(
+            "adserver.etl.tasks.monthly_offers_dump_exists", return_value=False
+        ):
+            with mock.patch(
+                "adserver.etl.tasks.dump_monthly_offers", return_value=None
+            ):
+                with mock.patch("adserver.etl.tasks.slack_message") as mock_slack:
+                    monthly_offers_dump(day="2025-05-01")
+                    mock_slack.assert_not_called()
 
     def test_daily_etl_pipeline(self):
         with mock.patch("adserver.etl.tasks.daily_offers_dump.delay") as mock_delay:

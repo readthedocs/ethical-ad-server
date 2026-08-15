@@ -90,6 +90,12 @@ def monthly_offers_dump(day=None, force=False):
 
     log.info("Creating monthly offers parquet dump for %s...", day.strftime("%Y-%m"))
     offers_parquet_url = dump_monthly_offers(day)
+    if not offers_parquet_url:
+        log.warning(
+            "Skipping monthly offers parquet dump notification for %s as no parquet was generated.",
+            day.strftime("%Y-%m"),
+        )
+        return
 
     # Send notification to Slack about parquet dump
     slack_message(
