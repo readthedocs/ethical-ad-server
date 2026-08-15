@@ -640,6 +640,13 @@ class TestETLAggregations(TestCase):
         self.parquet_path = os.path.join(self.temp_dir.name, "2025-05-13.parquet")
         write_test_offers_parquet(self.parquet_path)
 
+        self.sqlite_path = os.path.join(self.temp_dir.name, "test_db.sqlite3")
+        with sqlite3.connect(self.sqlite_path) as conn:
+            conn.execute(
+                "CREATE TABLE adserver_publisher (id INTEGER PRIMARY KEY, allow_paid_campaigns BOOLEAN);"
+            )
+            conn.execute("INSERT INTO adserver_publisher VALUES (1, 1), (2, 0);")
+
     def tearDown(self):
         self.temp_dir.cleanup()
 
@@ -648,9 +655,9 @@ class TestETLAggregations(TestCase):
             self.start_date, self.end_date, parquet_url=self.parquet_path
         )
         with self.assertRaises(RuntimeError):
-            agg.get_select_query()
+            agg.get_expression()
         with self.assertRaises(RuntimeError):
-            agg.get_insert_query()
+            agg.aggregate()
 
     def test_base_aggregation_s3_url(self):
         with override_settings(AWS_DATA_STORAGE_BUCKET_NAME="test-bucket"):
@@ -667,75 +674,75 @@ class TestETLAggregations(TestCase):
                     mock_aws.assert_called_once()
 
     def test_base_aggregation_aggregate(self):
-        with mock.patch("adserver.etl.aggregations.duckdb.execute") as mock_exec:
-            agg = DomainAggregation(
-                self.start_date, self.end_date, parquet_url=self.parquet_path
-            )
+        agg = DomainAggregation(
+            self.start_date, self.end_date, parquet_url=self.parquet_path
+        )
+        mock_backend = mock.MagicMock()
+        agg.backend = mock_backend
+        with mock.patch.object(agg, "get_expression", return_value=mock.MagicMock()):
             agg.aggregate()
-            mock_exec.assert_called_once()
+            mock_backend.insert.assert_called_once()
 
     def test_domain_aggregation(self):
         agg = DomainAggregation(
             self.start_date, self.end_date, parquet_url=self.parquet_path
         )
-        query = agg.get_select_query()
         self.assertIn("adserver_domainimpression", agg.table)
-        self.assertIn(
-            "ethicaladsdb_primary.adserver_domainimpression",
-            agg.get_insert_query(),
-        )
-
-        con = duckdb.connect()
-        con.execute(query, [self.start_date, self.end_date])
-        results = con.fetchall()
+        expr = agg.get_expression()
+        results = expr.execute()
 
         self.assertGreaterEqual(len(results), 2)
-        self.assertEqual(results[0][2], "docs.readthedocs.io")
+        self.assertEqual(results["domain"].iloc[0], "docs.readthedocs.io")
 
     def test_uplift_aggregation(self):
         agg = UpliftAggregation(
             self.start_date, self.end_date, parquet_url=self.parquet_path
         )
-        query = agg.get_select_query()
         self.assertIn("adserver_upliftimpression", agg.table)
-
-        con = duckdb.connect()
-        con.execute(query, [self.start_date, self.end_date])
-        results = con.fetchall()
+        expr = agg.get_expression()
+        results = expr.execute()
 
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0][1], 1)
-        self.assertEqual(results[0][2], 1)
-        self.assertEqual(results[0][3], 2)
-        self.assertEqual(results[0][5], 2)
+        self.assertEqual(results["advertisement_id"].iloc[0], 1)
+        self.assertEqual(results["publisher_id"].iloc[0], 1)
+        self.assertEqual(results["decisions"].iloc[0], 2)
+        self.assertEqual(results["views"].iloc[0], 2)
 
     def test_rotation_aggregation(self):
         agg = RotationAggregation(
             self.start_date, self.end_date, parquet_url=self.parquet_path
         )
-        query = agg.get_select_query()
         self.assertIn("adserver_rotationimpression", agg.table)
-
-        con = duckdb.connect()
-        con.execute(query, [self.start_date, self.end_date])
-        results = con.fetchall()
+        expr = agg.get_expression()
+        results = expr.execute()
 
         self.assertEqual(len(results), 2)
 
     def test_geo_and_region_aggregation_queries(self):
-        geo_agg = GeoAggregation(
-            self.start_date, self.end_date, parquet_url=self.parquet_path
-        )
-        self.assertIn("adserver_geoimpression", geo_agg.table)
-        geo_query = geo_agg.get_select_query()
-        self.assertIn("adserver_publisher", geo_query)
+        with mock.patch.dict(
+            os.environ,
+            {
+                "DATABASE_URL": f"sqlite:///{self.sqlite_path}",
+                "REPLICA_DATABASE_URL": f"sqlite:///{self.sqlite_path}",
+            },
+        ):
+            geo_agg = GeoAggregation(
+                self.start_date, self.end_date, parquet_url=self.parquet_path
+            )
+            self.assertIn("adserver_geoimpression", geo_agg.table)
+            geo_expr = geo_agg.get_expression()
+            self.assertIsNotNone(geo_expr)
+            geo_results = geo_expr.execute()
+            self.assertGreaterEqual(len(geo_results), 1)
 
-        region_agg = RegionAggregation(
-            self.start_date, self.end_date, parquet_url=self.parquet_path
-        )
-        self.assertIn("adserver_regionimpression", region_agg.table)
-        region_query = region_agg.get_select_query()
-        self.assertIn("tt_country_region", region_query)
+            region_agg = RegionAggregation(
+                self.start_date, self.end_date, parquet_url=self.parquet_path
+            )
+            self.assertIn("adserver_regionimpression", region_agg.table)
+            region_expr = region_agg.get_expression()
+            self.assertIsNotNone(region_expr)
+            region_results = region_expr.execute()
+            self.assertGreaterEqual(len(region_results), 1)
 
 
 class TestAudienceEstimator(TestCase):
