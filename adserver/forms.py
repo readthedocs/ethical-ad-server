@@ -1456,6 +1456,40 @@ class AdvertisementCopyForm(forms.Form):
         return len(self.cleaned_data["advertisements"])
 
 
+class AdvertisementBulkLiveForm(forms.Form):
+    """Used by advertisers to bulk update which ads on a flight are live."""
+
+    live_advertisements = forms.ModelMultipleChoiceField(
+        queryset=Advertisement.objects.none(),
+        required=False,
+        help_text=_("The advertisements on the flight that should be live"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        if "flight" in kwargs:
+            self.flight = kwargs.pop("flight")
+        else:
+            raise RuntimeError("'flight' is required for the form")
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["live_advertisements"].queryset = self.flight.advertisements.all()
+
+    def save(self):
+        """Update the flight's ads and return the number of ads changed."""
+        live_ad_pks = {ad.pk for ad in self.cleaned_data["live_advertisements"]}
+
+        ads_changed = 0
+        for ad in self.flight.advertisements.all():
+            live = ad.pk in live_ad_pks
+            if ad.live != live:
+                ad.live = live
+                ad.save()
+                ads_changed += 1
+
+        return ads_changed
+
+
 class PublisherSettingsForm(forms.ModelForm):
     """Form for letting publishers control publisher specific settings."""
 

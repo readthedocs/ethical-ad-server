@@ -8,6 +8,7 @@ from .views import AccountOverviewView
 from .views import AccountSupportView
 from .views import AdClickProxyView
 from .views import AdvertisementBulkCreateView
+from .views import AdvertisementBulkLiveView
 from .views import AdvertisementCopyView
 from .views import AdvertisementCreateView
 from .views import AdvertisementDetailView
@@ -273,6 +274,11 @@ urlpatterns = [
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/bulk-create/",
         AdvertisementBulkCreateView.as_view(),
         name="advertisement_bulk_create",
+    ),
+    path(
+        r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/bulk-live/",
+        AdvertisementBulkLiveView.as_view(),
+        name="advertisement_bulk_live",
     ),
     path(
         r"advertiser/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/",

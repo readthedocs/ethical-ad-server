@@ -84,6 +84,11 @@
     {% endif %}
   </div>
 
+  {% if has_advertiser_edit_permission and advertisement_list %}
+  <form method="post" action="{% url 'advertisement_bulk_live' advertiser.slug flight.slug %}" id="advertisement-bulk-live">
+    {% csrf_token %}
+  {% endif %}
+
   {% if live_ads %}
     <div class="table-responsive" id="advertisement-list">
       {% with live_ads as advertisements %}
@@ -113,6 +118,14 @@
         {% endwith %}
       </div>
     </div>
+  {% endif %}
+
+  {% if has_advertiser_edit_permission and advertisement_list %}
+    <button type="submit" class="btn btn-sm btn-outline-primary" data-toggle="tooltip" data-placement="right" title="{% trans 'Checked ads will be live and unchecked ads will be disabled' %}">
+      <span class="fa fa-check mr-1" aria-hidden="true"></span>
+      <span>{% trans 'Update live ads' %}</span>
+    </button>
+  </form>
   {% endif %}
 </section>
 

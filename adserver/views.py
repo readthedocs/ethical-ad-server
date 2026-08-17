@@ -66,6 +66,7 @@ from .constants import PAYOUT_STRIPE
 from .constants import PUBLISHER_HOUSE_CAMPAIGN
 from .constants import VIEWS
 from .forms import AccountForm
+from .forms import AdvertisementBulkLiveForm
 from .forms import AdvertisementCopyForm
 from .forms import AdvertisementForm
 from .forms import BulkAdvertisementUploadCSVForm
@@ -1175,6 +1176,55 @@ class AdvertisementCopyView(
         if not order or order not in [o[0] for o in self.ORDERING_OPTIONS]:
             order = self.ORDERING_OPTIONS[0][0]
         return order
+
+    def get_success_url(self):
+        return reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+
+class AdvertisementBulkLiveView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, FormView
+):
+    """Bulk update which ads on a flight are live (POSTed from the flight detail page)."""
+
+    form_class = AdvertisementBulkLiveForm
+    http_method_names = ["post"]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        ads_changed = form.save()
+
+        messages.success(
+            self.request,
+            _("Successfully updated %(ads_changed)s advertisements")
+            % {"ads_changed": ads_changed},
+        )
+        return result
+
+    def form_invalid(self, form):
+        messages.error(self.request, _("Error updating the flight's advertisements"))
+        return redirect(self.get_success_url())
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["flight"] = self.flight
+        return kwargs
 
     def get_success_url(self):
         return reverse(

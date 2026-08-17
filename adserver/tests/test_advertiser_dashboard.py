@@ -357,6 +357,116 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.get(url)
         self.assertContains(resp, "Traffic cap")
 
+    def test_flight_detail_bulk_live_form(self):
+        url = reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(url)
+        self.assertContains(response, 'name="live_advertisements"')
+        self.assertContains(response, "Update live ads")
+
+        # Reporters can't toggle ads live so they don't see the form
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.get(url)
+        self.assertNotContains(response, 'name="live_advertisements"')
+        self.assertNotContains(response, "Update live ads")
+
+    def test_advertisement_bulk_live_view(self):
+        url = reverse(
+            "advertisement_bulk_live",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.ad1.live = True
+        self.ad1.save()
+
+        # Anonymous - no access
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # This is a POST-only view
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 405)
+
+        # ad1 stays live, ad2 goes live, ad3 stays disabled
+        response = self.client.post(
+            url,
+            data={"live_advertisements": [self.ad1.pk, self.ad2.pk]},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully updated 1 advertisements")
+
+        self.ad1.refresh_from_db()
+        self.ad2.refresh_from_db()
+        self.ad3.refresh_from_db()
+        self.assertTrue(self.ad1.live)
+        self.assertTrue(self.ad2.live)
+        self.assertFalse(self.ad3.live)
+
+        # No ads checked - all the flight's ads are disabled
+        response = self.client.post(url, data={}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Successfully updated 2 advertisements")
+
+        self.ad1.refresh_from_db()
+        self.ad2.refresh_from_db()
+        self.assertFalse(self.ad1.live)
+        self.assertFalse(self.ad2.live)
+
+        # Ads from a different flight are invalid and nothing is changed
+        flight2 = get(
+            Flight,
+            name="Test Flight 2",
+            slug="test-flight-2",
+            campaign=self.campaign,
+        )
+        ad4 = get(
+            Advertisement,
+            name="Test Ad 4",
+            slug="test-ad-4",
+            flight=flight2,
+            live=True,
+            image=None,
+        )
+        response = self.client.post(
+            url,
+            data={"live_advertisements": [self.ad1.pk, ad4.pk]},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Error updating the flight&#x27;s advertisements")
+
+        self.ad1.refresh_from_db()
+        self.assertFalse(self.ad1.live)
+
+        # Reporters can't update ads
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.post(url, data={"live_advertisements": [self.ad1.pk]})
+        self.assertEqual(response.status_code, 403)
+
     def test_flight_create_view(self):
         url = reverse(
             "flight_create",
