@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
@@ -1316,3 +1317,19 @@ class TestReportTasks(TestReportsBase):
             self.assertTrue(patched_keywords.called)
             self.assertTrue(patched_placements.called)
             self.assertTrue(patched_uplift.called)
+
+    def test_update_previous_day_reports_health_cache(self):
+        cache.clear()
+        self.assertIsNone(cache.get("health.update_previous_day_reports"))
+
+        # Manual run with explicit day does not set health check cache
+        update_previous_day_reports(day=timezone.now())
+        self.assertIsNone(cache.get("health.update_previous_day_reports"))
+
+        # Nightly run (day=None) sets health check cache
+        update_previous_day_reports()
+        health_cache = cache.get("health.update_previous_day_reports")
+        self.assertIsNotNone(health_cache)
+        self.assertTrue(datetime.datetime.fromisoformat(health_cache))
+
+        cache.clear()
