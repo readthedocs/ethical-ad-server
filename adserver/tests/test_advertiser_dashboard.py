@@ -468,6 +468,67 @@ class TestAdvertiserDashboardViews(TestCase):
         response = self.client.post(url, data={"live_advertisements": [self.ad1.pk]})
         self.assertEqual(response.status_code, 403)
 
+    def test_advertisement_toggle_live_view(self):
+        url = reverse(
+            "advertisement_toggle_live",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad1.slug,
+            },
+        )
+        detail_url = reverse(
+            "advertisement_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad1.slug,
+            },
+        )
+
+        # Anonymous - no access
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["location"].startswith("/accounts/login/"))
+
+        self.client.force_login(self.user)
+
+        # This is a POST-only view
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 405)
+
+        # The detail page shows the toggle for the disabled ad
+        response = self.client.get(detail_url)
+        self.assertContains(response, "Make advertisement live")
+
+        # Toggle the ad live
+        response = self.client.post(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Successfully set {self.ad1.name} live")
+        self.assertContains(response, "Disable advertisement")
+        self.ad1.refresh_from_db()
+        self.assertTrue(self.ad1.live)
+
+        # Toggle it back to disabled
+        response = self.client.post(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Successfully disabled {self.ad1.name}")
+        self.ad1.refresh_from_db()
+        self.assertFalse(self.ad1.live)
+
+        # Reporters can't toggle ads and don't see the button
+        member = UserAdvertiserMember.objects.get(
+            user=self.user, advertiser=self.advertiser
+        )
+        member.role = UserAdvertiserMember.ROLE_REPORTER
+        member.save()
+
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.get(detail_url)
+        self.assertNotContains(response, "Make advertisement live")
+
     def test_flight_create_view(self):
         url = reverse(
             "flight_create",

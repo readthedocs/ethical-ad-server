@@ -968,6 +968,52 @@ class AdvertisementRemoveView(
         return context
 
 
+class AdvertisementToggleLiveView(
+    AdvertiserManagerAccessMixin, UserPassesTestMixin, View
+):
+    """Toggle whether an advertisement is live from the ad detail page."""
+
+    http_method_names = ["post"]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.advertiser = get_object_or_404(
+            Advertiser, slug=self.kwargs["advertiser_slug"]
+        )
+        self.flight = get_object_or_404(
+            Flight,
+            slug=self.kwargs["flight_slug"],
+            campaign__advertiser=self.advertiser,
+        )
+        self.advertisement = get_object_or_404(
+            Advertisement,
+            flight=self.flight,
+            slug=self.kwargs["advertisement_slug"],
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        advertisement = self.advertisement
+        advertisement.live = not advertisement.live
+        advertisement.save(update_fields=["live", "modified"])
+
+        if advertisement.live:
+            message = _("Successfully set %(ad)s live")
+        else:
+            message = _("Successfully disabled %(ad)s")
+        messages.success(self.request, message % {"ad": advertisement.name})
+
+        return HttpResponseRedirect(
+            reverse(
+                "advertisement_detail",
+                kwargs={
+                    "advertiser_slug": self.advertiser.slug,
+                    "flight_slug": self.flight.slug,
+                    "advertisement_slug": advertisement.slug,
+                },
+            )
+        )
+
+
 class AdvertisementBulkCreateView(
     AdvertiserManagerAccessMixin,
     UserPassesTestMixin,
