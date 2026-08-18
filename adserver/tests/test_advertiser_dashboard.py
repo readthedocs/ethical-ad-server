@@ -285,6 +285,39 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Create advertisement")
 
+    def test_flight_detail_view_ad_ordering(self):
+        url = reverse(
+            "flight_detail",
+            kwargs={
+                "advertiser_slug": self.advertiser.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+
+        self.client.force_login(self.user)
+
+        self.ad3.live = True
+        self.ad3.save()
+
+        # Disable ad1 and then ad2 - ad2 is the most recently updated
+        self.ad1.live = False
+        self.ad1.save()
+        self.ad2.live = False
+        self.ad2.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["live_ads"], [self.ad3])
+
+        # Disabled ads are sorted by most recently updated, not alphabetically
+        self.assertEqual(response.context["disabled_ads"], [self.ad2, self.ad1])
+
+        # Updating ad1 moves it to the top of the disabled list
+        self.ad1.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.context["disabled_ads"], [self.ad1, self.ad2])
+
     def test_flight_detail_metadata(self):
         url = reverse(
             "flight_detail",

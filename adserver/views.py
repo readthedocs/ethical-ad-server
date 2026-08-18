@@ -447,7 +447,13 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
                 "advertiser": self.advertiser,
                 "advertisement_list": advertisement_list,
                 "live_ads": [ad for ad in advertisement_list if ad.live],
-                "disabled_ads": [ad for ad in advertisement_list if not ad.live],
+                # Sort disabled ads by most recently updated
+                # so recently disabled ads appear first
+                "disabled_ads": sorted(
+                    (ad for ad in advertisement_list if not ad.live),
+                    key=lambda ad: ad.modified,
+                    reverse=True,
+                ),
             }
         )
         return context
