@@ -1465,17 +1465,18 @@ class AdvertisementBulkLiveForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
+        """Limit the valid choices to the flight's ads whether they're currently live or not."""
         if "flight" in kwargs:
             self.flight = kwargs.pop("flight")
         else:
-            raise RuntimeError("'flight' is required for the form")
+            raise RuntimeError("'flight' is required for the ad form")
 
         super().__init__(*args, **kwargs)
 
         self.fields["live_advertisements"].queryset = self.flight.advertisements.all()
 
     def save(self):
-        """Update the flight's ads and return the number of ads changed."""
+        """Make the selected ads live, disable the flight's other ads, and return the number changed."""
         live_ad_pks = {ad.pk for ad in self.cleaned_data["live_advertisements"]}
 
         ads_changed = 0

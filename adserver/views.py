@@ -1207,6 +1207,10 @@ class AdvertisementBulkLiveView(
         )
         return super().dispatch(request, *args, **kwargs)
 
+    def form_invalid(self, form):
+        messages.error(self.request, _("Error updating the flight's advertisements"))
+        return redirect(self.get_success_url())
+
     def form_valid(self, form):
         result = super().form_valid(form)
         ads_changed = form.save()
@@ -1221,10 +1225,6 @@ class AdvertisementBulkLiveView(
             % {"ads_changed": ads_changed},
         )
         return result
-
-    def form_invalid(self, form):
-        messages.error(self.request, _("Error updating the flight's advertisements"))
-        return redirect(self.get_success_url())
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
