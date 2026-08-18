@@ -1019,6 +1019,18 @@ class TestAdvertiserDashboardViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.ad1.name)
 
+        # The disabled ad warning is shown
+        self.assertContains(response, "This ad is not currently being shown")
+        self.assertNotContains(response, "The ad flight is also currently disabled")
+
+        # When the flight is also disabled, the warning mentions it
+        self.flight.live = False
+        self.flight.save()
+
+        response = self.client.get(url)
+        self.assertContains(response, "This ad is not currently being shown")
+        self.assertContains(response, "The ad flight is also currently disabled")
+
         # Make it a reporter who can't access
         member = UserAdvertiserMember.objects.get(
             user=self.user, advertiser=self.advertiser

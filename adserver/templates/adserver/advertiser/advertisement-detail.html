@@ -31,6 +31,9 @@
         <span>{% trans 'The ad flight is currently disabled' %}</span>
       {% else %}
         <span>{% trans 'This ad is not currently being shown' %}</span>
+        {% if not advertisement.flight.live %}
+          <span>{% trans 'The ad flight is also currently disabled' %}</span>
+        {% endif %}
       {% endif %}
     </div>
   </div>
