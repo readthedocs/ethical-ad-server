@@ -412,7 +412,8 @@ class TestAdvertiserDashboardViews(TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Successfully updated 1 advertisements")
+        self.assertContains(response, "Successfully updated 1 advertisement")
+        self.assertNotContains(response, "Successfully updated 1 advertisements")
 
         self.ad1.refresh_from_db()
         self.ad2.refresh_from_db()
