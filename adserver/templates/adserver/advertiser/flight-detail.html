@@ -91,9 +91,7 @@
 
   {% if live_ads %}
     <div class="table-responsive" id="advertisement-list">
-      {% with live_ads as advertisements %}
-        {% include 'adserver/includes/ad-list.html' %}
-      {% endwith %}
+      {% include 'adserver/includes/ad-list.html' with advertisements=live_ads show_live_checkboxes=has_advertiser_edit_permission %}
     </div>
   {% else %}
     {% url 'advertisement_create' advertiser.slug flight.slug as create_ad_url %}
@@ -113,9 +111,7 @@
       <h5 class="">{% trans 'Disabled ads' %}</h5>
 
       <div class="table-responsive">
-        {% with disabled_ads as advertisements %}
-          {% include 'adserver/includes/ad-list.html' %}
-        {% endwith %}
+        {% include 'adserver/includes/ad-list.html' with advertisements=disabled_ads show_live_checkboxes=has_advertiser_edit_permission %}
       </div>
     </div>
   {% endif %}

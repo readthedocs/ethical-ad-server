@@ -1459,10 +1459,9 @@ class AdvertisementCopyForm(forms.Form):
 class AdvertisementBulkLiveForm(forms.Form):
     """Used by advertisers to bulk update which ads on a flight are live."""
 
-    live_advertisements = forms.ModelMultipleChoiceField(
+    live_advertisements = AdvertisementMultipleChoiceField(
         queryset=Advertisement.objects.none(),
         required=False,
-        help_text=_("The advertisements on the flight that should be live"),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1484,7 +1483,7 @@ class AdvertisementBulkLiveForm(forms.Form):
             live = ad.pk in live_ad_pks
             if ad.live != live:
                 ad.live = live
-                ad.save()
+                ad.save(update_fields=["live", "modified"])
                 ads_changed += 1
 
         return ads_changed

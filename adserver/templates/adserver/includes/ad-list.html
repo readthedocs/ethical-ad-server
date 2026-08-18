@@ -4,7 +4,7 @@
 <table class="table table-hover">
   <thead>
     <tr>
-      {% if has_advertiser_edit_permission %}
+      {% if show_live_checkboxes %}
         <th width="5%"><strong>{% trans 'Live' %}</strong></th>
       {% endif %}
       <th width="25%"><strong>{% trans 'Advertisement' %}</strong></th>
@@ -16,7 +16,7 @@
   <tbody>
     {% for ad in advertisements %}
       <tr>
-        {% if has_advertiser_edit_permission %}
+        {% if show_live_checkboxes %}
           <td class="text-center">
             <input type="checkbox" name="live_advertisements" value="{{ ad.pk }}" {% if ad.live %}checked{% endif %} aria-label="{% blocktrans with ad_name=ad.name %}Set whether {{ ad_name }} is live{% endblocktrans %}">
           </td>
