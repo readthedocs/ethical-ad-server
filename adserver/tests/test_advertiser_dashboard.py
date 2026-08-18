@@ -307,16 +307,16 @@ class TestAdvertiserDashboardViews(TestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["live_ads"], [self.ad3])
+        self.assertEqual(list(response.context["live_ads"]), [self.ad3])
 
         # Disabled ads are sorted by most recently updated, not alphabetically
-        self.assertEqual(response.context["disabled_ads"], [self.ad2, self.ad1])
+        self.assertEqual(list(response.context["disabled_ads"]), [self.ad2, self.ad1])
 
         # Updating ad1 moves it to the top of the disabled list
         self.ad1.save()
 
         response = self.client.get(url)
-        self.assertEqual(response.context["disabled_ads"], [self.ad1, self.ad2])
+        self.assertEqual(list(response.context["disabled_ads"]), [self.ad1, self.ad2])
 
     def test_flight_detail_metadata(self):
         url = reverse(
