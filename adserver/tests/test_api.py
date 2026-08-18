@@ -7,17 +7,11 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.test import TestCase
 from django.test import override_settings
-from django.test.client import BOUNDARY
-from django.test.client import MULTIPART_CONTENT
 from django.test.client import RequestFactory
-from django.test.client import encode_multipart
 from django.urls import reverse
 from django.utils import timezone
 from django_dynamic_fixture import get
@@ -25,17 +19,13 @@ from rest_framework.authtoken.models import Token
 
 from .. import utils as adserver_utils
 from ..api.permissions import AdDecisionPermission
-from ..api.permissions import AdvertisementPermission
 from ..api.permissions import AdvertiserPermission
-from ..api.permissions import FlightPermission
 from ..api.permissions import PublisherPermission
-from ..auth.models import UserAdvertiserMember
 from ..constants import CLICKS
 from ..constants import COMMUNITY_CAMPAIGN
 from ..constants import HOUSE_CAMPAIGN
 from ..constants import PAID_CAMPAIGN
 from ..constants import VIEWS
-from ..models import AdImpression
 from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
@@ -47,7 +37,6 @@ from ..models import Publisher
 from ..models import PublisherGroup
 from ..models import View
 from ..utils import GeolocationData
-from .common import ONE_PIXEL_PNG_BYTES
 
 
 class ApiPermissionTest(TestCase):
@@ -182,60 +171,6 @@ class ApiPermissionTest(TestCase):
             self.advertiser_permission.has_object_permission(
                 self.request, None, self.advertiser
             )
-        )
-
-    def test_flight_advertisement_permissions(self):
-        flight_permission = FlightPermission()
-        ad_permission = AdvertisementPermission()
-
-        campaign = get(Campaign, advertiser=self.advertiser)
-        flight = get(Flight, campaign=campaign)
-        advertisement = get(
-            Advertisement,
-            flight=flight,
-            link="http://example.com",
-            image=None,
-        )
-
-        # obj is not a flight/advertisement or the user isn't authed
-        for permission in (flight_permission, ad_permission):
-            self.assertFalse(permission.has_object_permission(self.request, None, None))
-            self.assertFalse(
-                permission.has_object_permission(self.request, None, self.advertiser)
-            )
-        self.assertFalse(
-            flight_permission.has_object_permission(self.request, None, flight)
-        )
-        self.assertFalse(
-            ad_permission.has_object_permission(self.request, None, advertisement)
-        )
-
-        # No access on the advertiser
-        self.request.user = self.user
-        self.assertFalse(
-            flight_permission.has_object_permission(self.request, None, flight)
-        )
-        self.assertFalse(
-            ad_permission.has_object_permission(self.request, None, advertisement)
-        )
-
-        self.user.advertisers.add(self.advertiser)
-
-        # Refetch the user since roles are cached on the user object
-        self.request.user = get_user_model().objects.get(pk=self.user.pk)
-        self.assertTrue(
-            flight_permission.has_object_permission(self.request, None, flight)
-        )
-        self.assertTrue(
-            ad_permission.has_object_permission(self.request, None, advertisement)
-        )
-
-        self.request.user = self.staff_user
-        self.assertTrue(
-            flight_permission.has_object_permission(self.request, None, flight)
-        )
-        self.assertTrue(
-            ad_permission.has_object_permission(self.request, None, advertisement)
         )
 
 
@@ -2258,13 +2193,12 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
 
 
-class BaseManagementApiTest(BaseApiTest):
-    """Shared setup for the flight and advertisement management API tests."""
+class BaseReadOnlyApiTest(BaseApiTest):
+    """Shared setup for the flight and advertisement API tests."""
 
     def setUp(self):
         super().setUp()
 
-        # The user is an Admin for advertiser1 (role defaults to Admin)
         self.user.advertisers.add(self.advertiser1)
 
         # A second advertiser the user does *not* have access to
@@ -2272,10 +2206,7 @@ class BaseManagementApiTest(BaseApiTest):
             Advertiser, name="Another Advertiser", slug="another-advertiser"
         )
         self.campaign2 = get(
-            Campaign,
-            slug="another-campaign",
-            advertiser=self.advertiser2,
-            publisher_groups=[self.publisher_group],
+            Campaign, slug="another-campaign", advertiser=self.advertiser2
         )
         self.flight2 = get(
             Flight,
@@ -2285,46 +2216,19 @@ class BaseManagementApiTest(BaseApiTest):
             sold_clicks=100,
             cpc=2.0,
         )
-
-        # Ad types with validation rules used by the ad management tests
-        self.text_ad_type = get(
-            AdType,
-            name="Text Ad Type",
-            slug="text-ad-type",
-            has_image=False,
-            image_width=None,
-            image_height=None,
-            has_text=True,
-            max_text_length=100,
-            deprecated=False,
+        self.other_ad = get(
+            Advertisement,
+            slug="other-ad",
+            name="Other Ad",
+            link="http://other.example.com",
+            image=None,
+            live=True,
+            flight=self.flight2,
         )
-        self.image_ad_type = get(
-            AdType,
-            name="Image Ad Type",
-            slug="image-ad-type",
-            has_image=True,
-            image_width=1,
-            image_height=1,
-            has_text=True,
-            max_text_length=100,
-            deprecated=False,
-        )
-
-    def set_advertiser_role(self, user, advertiser, role):
-        member = UserAdvertiserMember.objects.get(user=user, advertiser=advertiser)
-        member.role = role
-        member.save()
-
-    def grant_permission(self, user, codename, model=Flight):
-        user.user_permissions.add(
-            Permission.objects.get(
-                codename=codename,
-                content_type=ContentType.objects.get_for_model(model),
-            )
-        )
+        self.other_ad.ad_types.add(self.ad_type)
 
 
-class FlightManagementApiTests(BaseManagementApiTest):
+class FlightApiTests(BaseReadOnlyApiTest):
     def setUp(self):
         super().setUp()
 
@@ -2345,7 +2249,6 @@ class FlightManagementApiTests(BaseManagementApiTest):
         data = resp.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.flight.slug)
-        self.assertEqual(data["results"][0]["advertiser"], self.advertiser1.slug)
 
         # Staff users see all flights
         resp = self.staff_client.get(self.flight_list_url)
@@ -2361,9 +2264,8 @@ class FlightManagementApiTests(BaseManagementApiTest):
         ):
             resp = self.staff_client.get(self.flight_list_url + querystring)
             self.assertEqual(resp.status_code, 200, resp.content)
-            data = resp.json()
             self.assertEqual(
-                [flight["slug"] for flight in data["results"]],
+                [flight["slug"] for flight in resp.json()["results"]],
                 expected_slugs,
                 querystring,
             )
@@ -2372,11 +2274,25 @@ class FlightManagementApiTests(BaseManagementApiTest):
         resp = self.client.get(self.flight1_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
+
+        # The fields match the flights in the advertiser report API
+        self.assertEqual(
+            set(data.keys()),
+            {
+                "name",
+                "slug",
+                "live",
+                "cpc",
+                "cpm",
+                "targeting_parameters",
+                "start_date",
+                "end_date",
+                "created",
+                "modified",
+            },
+        )
         self.assertEqual(data["name"], self.flight.name)
-        self.assertEqual(data["campaign"], self.campaign.slug)
-        self.assertEqual(data["advertiser"], self.advertiser1.slug)
         self.assertEqual(data["cpc"], 1.0)
-        self.assertEqual(data["sold_clicks"], 1000)
         self.assertTrue(data["live"])
 
         # No access to flights of other advertisers
@@ -2387,262 +2303,35 @@ class FlightManagementApiTests(BaseManagementApiTest):
         resp = self.staff_client.get(self.flight2_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
 
-    def test_flight_create_permissions(self):
-        data = {"name": "My New Flight", "campaign": self.campaign.slug}
-
-        resp = self.unauth_client.post(
-            self.flight_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 401, resp.content)
-
-        # Regular users can't create flights even for their own advertiser
-        resp = self.client.post(
-            self.flight_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        # Staff users require the "add_flight" permission just like in the UI
-        resp = self.staff_client.post(
-            self.flight_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        self.grant_permission(self.user, "add_flight")
-        resp = self.client.post(
-            self.flight_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-
-        flight = Flight.objects.filter(name="My New Flight").first()
-        self.assertIsNotNone(flight)
-        self.assertEqual(flight.campaign, self.campaign)
-        self.assertEqual(flight.slug, "campaign-slug-my-new-flight")
-        self.assertEqual(resp.json()["slug"], flight.slug)
-
-        # Creating a flight with a duplicate name generates a unique slug
-        resp = self.client.post(
-            self.flight_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-        duplicate_slug = resp.json()["slug"]
-        self.assertNotEqual(duplicate_slug, flight.slug)
-        self.assertTrue(duplicate_slug.startswith("campaign-slug-my-new-flight"))
-
-        # Names already prefixed with the campaign slug aren't double prefixed
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps({"name": "Campaign Slug Extra", "campaign": self.campaign.slug}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-        self.assertEqual(resp.json()["slug"], "campaign-slug-extra")
-
-        # Even with the permission, the user can't create flights
-        # in another advertiser's campaign
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps({"name": "Sneaky Flight", "campaign": self.campaign2.slug}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Staff with the permission can create flights for any advertiser
-        self.grant_permission(self.staff_user, "add_flight")
+    def test_flight_read_only(self):
+        # The API is read-only - writes are rejected even for staff
         resp = self.staff_client.post(
             self.flight_list_url,
-            json.dumps({"name": "Staff Flight", "campaign": self.campaign2.slug}),
+            json.dumps({"name": "New Flight"}),
             content_type="application/json",
         )
-        self.assertEqual(resp.status_code, 201, resp.content)
-        self.assertEqual(resp.json()["advertiser"], self.advertiser2.slug)
+        self.assertEqual(resp.status_code, 405, resp.content)
 
-    def test_flight_create_validation(self):
-        self.grant_permission(self.user, "add_flight")
-
-        # A flight can't have both a CPC and a CPM
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps(
-                {
-                    "name": "Invalid Flight",
-                    "campaign": self.campaign.slug,
-                    "cpc": 1.0,
-                    "cpm": 2.0,
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # The end date must come after the start date
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps(
-                {
-                    "name": "Invalid Flight",
-                    "campaign": self.campaign.slug,
-                    "start_date": "2026-08-30",
-                    "end_date": "2026-08-01",
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Targeting parameters are validated
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps(
-                {
-                    "name": "Invalid Flight",
-                    "campaign": self.campaign.slug,
-                    "targeting_parameters": {"unknown_key": ["python"]},
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # A fully valid flight
-        resp = self.client.post(
-            self.flight_list_url,
-            json.dumps(
-                {
-                    "name": "Valid Flight",
-                    "campaign": self.campaign.slug,
-                    "start_date": "2026-08-01",
-                    "end_date": "2026-08-30",
-                    "cpc": 2.0,
-                    "sold_clicks": 500,
-                    "live": True,
-                    "targeting_parameters": {
-                        "include_countries": ["US", "CA"],
-                        "include_keywords": ["python"],
-                    },
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-
-        flight = Flight.objects.filter(name="Valid Flight").first()
-        self.assertIsNotNone(flight)
-        self.assertEqual(flight.included_countries, ["US", "CA"])
-        self.assertEqual(flight.sold_clicks, 500)
-        self.assertTrue(flight.live)
-
-    def test_flight_update(self):
-        data = {"name": "Updated Flight Name"}
-
-        resp = self.unauth_client.patch(
-            self.flight1_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 401, resp.content)
-
-        # Regular users can't update flights even for their own advertiser
-        resp = self.client.patch(
-            self.flight1_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        # Staff users require the "change_flight" permission just like in the UI
         resp = self.staff_client.patch(
-            self.flight1_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        self.grant_permission(self.user, "change_flight")
-        resp = self.client.patch(
-            self.flight1_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.flight.refresh_from_db()
-        self.assertEqual(self.flight.name, "Updated Flight Name")
-
-        # Pause the flight
-        resp = self.client.patch(
             self.flight1_detail_url,
-            json.dumps({"live": False}),
+            json.dumps({"name": "Updated Name"}),
             content_type="application/json",
         )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.flight.refresh_from_db()
-        self.assertFalse(self.flight.live)
+        self.assertEqual(resp.status_code, 405, resp.content)
 
-        # This flight already has a CPC so it can't get a CPM
-        resp = self.client.patch(
-            self.flight1_detail_url,
-            json.dumps({"cpm": 2.0}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Flights can't be moved between campaigns
-        # even for a campaign of the same advertiser
-        other_campaign = get(
-            Campaign, slug="second-campaign", advertiser=self.advertiser1
-        )
-        for campaign_slug in (self.campaign2.slug, other_campaign.slug):
-            resp = self.client.patch(
-                self.flight1_detail_url,
-                json.dumps({"campaign": campaign_slug}),
-                content_type="application/json",
-            )
-            self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Even with the permission, other advertisers' flights aren't accessible
-        resp = self.client.patch(
-            self.flight2_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 404, resp.content)
-
-        # Staff with the permission can update any flight
-        self.grant_permission(self.staff_user, "change_flight")
-        resp = self.staff_client.patch(
-            self.flight2_detail_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.flight2.refresh_from_db()
-        self.assertEqual(self.flight2.name, "Updated Flight Name")
-
-    def test_flight_delete_not_allowed(self):
-        self.grant_permission(self.user, "delete_flight")
-        resp = self.client.delete(self.flight1_detail_url)
+        resp = self.staff_client.delete(self.flight1_detail_url)
         self.assertEqual(resp.status_code, 405, resp.content)
 
 
-class AdvertisementManagementApiTests(BaseManagementApiTest):
+class AdvertisementApiTests(BaseReadOnlyApiTest):
     def setUp(self):
         super().setUp()
-
-        # An ad in another advertiser's flight
-        self.other_ad = get(
-            Advertisement,
-            slug="other-ad",
-            name="Other Ad",
-            link="http://other.example.com",
-            image=None,
-            live=True,
-            flight=self.flight2,
-        )
-        self.other_ad.ad_types.add(self.ad_type)
 
         self.ad_list_url = reverse("api:advertisements-list")
         self.ad_detail_url = reverse("api:advertisements-detail", args=[self.ad.slug])
         self.other_ad_detail_url = reverse(
             "api:advertisements-detail", args=[self.other_ad.slug]
         )
-
-        self.ad_data = {
-            "name": "New Test Ad",
-            "flight": self.flight.slug,
-            "ad_types": [self.text_ad_type.slug],
-            "link": "http://example.com",
-            "headline": "Test Company: ",
-            "content": "This is a compelling advertisement",
-            "cta": "Buy now!",
-            "live": True,
-        }
 
     def test_ad_list(self):
         # Unauthenticated requests are rejected
@@ -2655,18 +2344,16 @@ class AdvertisementManagementApiTests(BaseManagementApiTest):
         data = resp.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.ad.slug)
-        self.assertEqual(data["results"][0]["flight"], self.flight.slug)
-        self.assertEqual(data["results"][0]["advertiser"], self.advertiser1.slug)
 
         # Staff users see all ads
         resp = self.staff_client.get(self.ad_list_url)
         self.assertEqual(resp.status_code, 200, resp.content)
         self.assertEqual(resp.json()["count"], 2)
 
-        # Filtering by flight and advertiser
+    def test_ad_list_filtering(self):
         for querystring, expected_slugs in (
-            (f"?flight={self.flight.slug}", [self.ad.slug]),
-            (f"?advertiser={self.advertiser2.slug}", [self.other_ad.slug]),
+            (f"?advertiser={self.advertiser1.slug}", [self.ad.slug]),
+            (f"?flight={self.flight2.slug}", [self.other_ad.slug]),
             ("?flight=nonexistent", []),
         ):
             resp = self.staff_client.get(self.ad_list_url + querystring)
@@ -2681,10 +2368,25 @@ class AdvertisementManagementApiTests(BaseManagementApiTest):
         resp = self.client.get(self.ad_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
+
+        # The fields match the advertisements in the advertiser report API
+        self.assertEqual(
+            set(data.keys()),
+            {
+                "name",
+                "slug",
+                "text",
+                "image",
+                "link",
+                "ad_types",
+                "live",
+                "created",
+                "modified",
+            },
+        )
         self.assertEqual(data["name"], self.ad.name)
-        self.assertEqual(data["flight"], self.flight.slug)
-        self.assertEqual(data["advertiser"], self.advertiser1.slug)
-        self.assertEqual(data["ad_types"], [self.ad_type.slug])
+        self.assertEqual(data["link"], self.ad.link)
+        self.assertEqual(data["ad_types"], [self.ad_type.name])
 
         # No access to ads of other advertisers
         resp = self.client.get(self.other_ad_detail_url)
@@ -2694,294 +2396,21 @@ class AdvertisementManagementApiTests(BaseManagementApiTest):
         resp = self.staff_client.get(self.other_ad_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
 
-    def test_ad_create(self):
-        resp = self.unauth_client.post(
-            self.ad_list_url, json.dumps(self.ad_data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 401, resp.content)
-
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(self.ad_data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-
-        ad = Advertisement.objects.filter(name="New Test Ad").first()
-        self.assertIsNotNone(ad)
-        self.assertEqual(ad.flight, self.flight)
-        self.assertEqual(ad.content, "This is a compelling advertisement")
-        self.assertEqual([t.slug for t in ad.ad_types.all()], [self.text_ad_type.slug])
-        self.assertTrue(ad.live)
-        self.assertEqual(resp.json()["slug"], ad.slug)
-        self.assertEqual(resp.json()["advertiser"], self.advertiser1.slug)
-
-    def test_ad_create_roles(self):
-        # Reporters can view but not manage ads
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_REPORTER
-        )
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(self.ad_data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        # Managers can manage ads
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_MANAGER
-        )
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(self.ad_data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-
-        # Users can't create ads in other advertisers' flights
-        data = dict(self.ad_data, name="Sneaky Ad", flight=self.flight2.slug)
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Staff can create ads for any advertiser
-        data = dict(self.ad_data, name="Staff Ad", flight=self.flight2.slug)
+    def test_ad_read_only(self):
+        # The API is read-only - writes are rejected even for staff
         resp = self.staff_client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 201, resp.content)
-        self.assertEqual(resp.json()["advertiser"], self.advertiser2.slug)
-
-    def test_ad_create_validation(self):
-        # At least one ad type is required
-        data = dict(self.ad_data, ad_types=[])
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("ad_types", resp.json())
-
-        # Omitting the ad types entirely is also invalid
-        data = dict(self.ad_data)
-        del data["ad_types"]
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("ad_types", resp.json())
-
-        # Content is required for new ads
-        data = dict(self.ad_data)
-        del data["content"]
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("content", resp.json())
-
-        # The combined text is too long for this ad type (max 100 chars)
-        data = dict(self.ad_data, content="a" * 101)
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("content", resp.json())
-
-        # An image is required for image ad types
-        data = dict(self.ad_data, ad_types=[self.image_ad_type.slug])
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("image", resp.json())
-
-        # Deprecated ad types can't be used for new ads
-        deprecated_ad_type = get(
-            AdType,
-            name="Deprecated Ad Type",
-            slug="deprecated-ad-type",
-            has_image=False,
-            max_text_length=100,
-            deprecated=True,
-        )
-        data = dict(self.ad_data, ad_types=[deprecated_ad_type.slug])
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("ad_types", resp.json())
-
-        # Ad types specific to other publisher groups aren't allowed
-        other_group = get(PublisherGroup, name="other group")
-        unavailable_ad_type = get(
-            AdType,
-            name="Unavailable Ad Type",
-            slug="unavailable-ad-type",
-            has_image=False,
-            max_text_length=100,
-            deprecated=False,
-            publisher_groups=[other_group],
-        )
-        data = dict(self.ad_data, ad_types=[unavailable_ad_type.slug])
-        resp = self.client.post(
-            self.ad_list_url, json.dumps(data), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("ad_types", resp.json())
-
-    def test_ad_create_with_image(self):
-        # Image uploads use multipart form data instead of JSON
-        data = dict(self.ad_data, ad_types=[self.image_ad_type.slug])
-        data["image"] = SimpleUploadedFile(
-            name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
-        )
-        resp = self.client.post(self.ad_list_url, data=data)
-        self.assertEqual(resp.status_code, 201, resp.content)
-
-        ad = Advertisement.objects.filter(name="New Test Ad").first()
-        self.assertIsNotNone(ad)
-        self.assertTrue(ad.image)
-
-        # Image dimensions are validated against the ad type
-        large_image_ad_type = get(
-            AdType,
-            name="Large Image Ad Type",
-            slug="large-image-ad-type",
-            has_image=True,
-            image_width=100,
-            image_height=100,
-            max_text_length=100,
-            deprecated=False,
-        )
-        data = dict(self.ad_data, name="Wrong Size Ad")
-        data["ad_types"] = [large_image_ad_type.slug]
-        data["image"] = SimpleUploadedFile(
-            name="test.png", content=ONE_PIXEL_PNG_BYTES, content_type="image/png"
-        )
-        resp = self.client.post(self.ad_list_url, data=data)
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("image", resp.json())
-
-    def test_ad_update(self):
-        resp = self.client.patch(
-            self.ad_detail_url,
-            json.dumps({"name": "Updated Ad Name", "live": False}),
+            self.ad_list_url,
+            json.dumps({"name": "New Ad"}),
             content_type="application/json",
         )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.ad.refresh_from_db()
-        self.assertEqual(self.ad.name, "Updated Ad Name")
-        self.assertFalse(self.ad.live)
+        self.assertEqual(resp.status_code, 405, resp.content)
 
-        # Updating the ad image uses multipart form data instead of JSON
-        resp = self.client.patch(
-            self.ad_detail_url,
-            data=encode_multipart(
-                BOUNDARY,
-                {
-                    "image": SimpleUploadedFile(
-                        name="test.png",
-                        content=ONE_PIXEL_PNG_BYTES,
-                        content_type="image/png",
-                    )
-                },
-            ),
-            content_type=MULTIPART_CONTENT,
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.ad.refresh_from_db()
-        self.assertTrue(self.ad.image)
-
-        # The (legacy) text field is read-only
-        old_text = self.ad.text
-        resp = self.client.patch(
-            self.ad_detail_url,
-            json.dumps({"text": "New text"}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.ad.refresh_from_db()
-        self.assertEqual(self.ad.text, old_text)
-
-        # Ads can't be moved to a different flight
-        flight3 = get(
-            Flight,
-            slug="same-advertiser-flight",
-            live=True,
-            campaign=self.campaign,
-        )
-        resp = self.client.patch(
-            self.ad_detail_url,
-            json.dumps({"flight": flight3.slug}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-
-        # Reporters can't update ads
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_REPORTER
-        )
-        resp = self.client.patch(
-            self.ad_detail_url,
-            json.dumps({"live": True}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        # No access to other advertisers' ads
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_ADMIN
-        )
-        resp = self.client.patch(
-            self.other_ad_detail_url,
-            json.dumps({"live": False}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 404, resp.content)
-
-        # Staff can update any ad
         resp = self.staff_client.patch(
-            self.other_ad_detail_url,
-            json.dumps({"live": False}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.other_ad.refresh_from_db()
-        self.assertFalse(self.other_ad.live)
-
-    def test_ad_update_validation(self):
-        # Updating the content validates against the ad's types
-        resp = self.client.patch(
             self.ad_detail_url,
-            json.dumps({"content": "a" * 101, "ad_types": [self.text_ad_type.slug]}),
+            json.dumps({"name": "Updated Name"}),
             content_type="application/json",
         )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("content", resp.json())
+        self.assertEqual(resp.status_code, 405, resp.content)
 
-        # Removing all ad types is invalid
-        resp = self.client.patch(
-            self.ad_detail_url,
-            json.dumps({"ad_types": []}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertIn("ad_types", resp.json())
-
-    def test_ad_delete(self):
-        # Reporters can't delete ads
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_REPORTER
-        )
-        resp = self.client.delete(self.ad_detail_url)
-        self.assertEqual(resp.status_code, 403, resp.content)
-
-        # Admins can delete ads that have never been shown
-        self.set_advertiser_role(
-            self.user, self.advertiser1, UserAdvertiserMember.ROLE_ADMIN
-        )
-        resp = self.client.delete(self.ad_detail_url)
-        self.assertEqual(resp.status_code, 204, resp.content)
-        self.assertFalse(Advertisement.objects.filter(slug="ad-slug").exists())
-
-        # Ads that have been shown can never be deleted
-        get(AdImpression, advertisement=self.other_ad, publisher=self.publisher)
-        resp = self.staff_client.delete(self.other_ad_detail_url)
-        self.assertEqual(resp.status_code, 400, resp.content)
-        self.assertTrue(Advertisement.objects.filter(slug="other-ad").exists())
+        resp = self.staff_client.delete(self.ad_detail_url)
+        self.assertEqual(resp.status_code, 405, resp.content)

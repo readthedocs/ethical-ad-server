@@ -6,16 +6,9 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
-from rest_framework import mixins
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.exceptions import ValidationError
-from rest_framework.parsers import FormParser
-from rest_framework.parsers import JSONParser
-from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,18 +23,13 @@ from ..models import Flight
 from ..models import Publisher
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
-from ..tasks import notify_on_ad_image_change
 from ..utils import get_client_id
 from ..utils import parse_date_string
 from .mixins import GeoIpMixin
 from .permissions import AdDecisionPermission
-from .permissions import AdvertisementPermission
-from .permissions import FlightPermission
 from .serializers import AdDecisionSerializer
-from .serializers import AdvertisementManagementSerializer
 from .serializers import AdvertisementSerializer
 from .serializers import AdvertiserSerializer
-from .serializers import FlightManagementSerializer
 from .serializers import FlightSerializer
 from .serializers import PublisherSerializer
 
@@ -559,21 +547,9 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
-class FlightViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+class FlightViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Flight management API calls.
-
-    Any user with access to a flight's advertiser can view the flight.
-    Since flight pricing and targeting affect billing,
-    creating and updating flights requires the same Django permissions
-    as the flight management UI (``adserver.add_flight``/``adserver.change_flight``).
-    Flights cannot be deleted via the API.
+    Flight API calls.
 
     .. http:get:: /api/v1/flights/
 
@@ -589,62 +565,31 @@ class FlightViewSet(
 
     .. http:get:: /api/v1/flights/(str:slug)/
 
-        Return a specific flight
+        Return a specific flight.
+        The fields returned are the same as the flights
+        in the advertiser report API.
 
-        :>json string url: The URL to this flight
         :>json string name: The name of the flight
         :>json string slug: A slug identifying the flight
-        :>json string campaign: The slug of the flight's campaign
-        :>json string advertiser: The slug of the flight's advertiser
-        :>json string state: The flight state (``current``, ``upcoming``, or ``past``)
         :>json bool live: Whether the flight is currently shown
-        :>json bool hard_stop: Whether the flight stops on the end date even if not fulfilled
-        :>json bool auto_renew: Whether the flight automatically renews when complete
-        :>json date start_date: The date the flight starts being shown
-        :>json date end_date: The estimated end date of the flight
         :>json float cpc: The cost per click of the flight
-        :>json int sold_clicks: The number of clicks sold on the flight
         :>json float cpm: The cost per 1,000 impressions of the flight
-        :>json int sold_impressions: The number of impressions sold on the flight
-        :>json float daily_cap: A daily maximum spend for the flight
         :>json object targeting_parameters: The flight targeting (regions, topics, keywords, etc.)
-        :>json int total_views: Total views across all ads in the flight
-        :>json int total_clicks: Total clicks across all ads in the flight
-
-    .. http:post:: /api/v1/flights/
-
-        Create a new flight (requires the ``adserver.add_flight`` permission).
-        The flight's slug is generated automatically from the campaign and name.
-
-        :<json string name: **Required**. The name of the flight
-        :<json string campaign: **Required**. The slug of the campaign for the flight
-        :<json date start_date: The date the flight starts being shown
-        :<json date end_date: The estimated end date of the flight
-        :<json float cpc: The cost per click (a flight cannot have both CPC & CPM)
-        :<json int sold_clicks: The number of clicks sold
-        :<json float cpm: The cost per 1,000 impressions
-        :<json int sold_impressions: The number of impressions sold
-        :<json bool live: Whether the flight is currently shown
-        :<json object targeting_parameters: The flight targeting
-
-        The response is the same as the flight details call.
-
-    .. http:patch:: /api/v1/flights/(str:slug)/
-
-        Update a flight (requires the ``adserver.change_flight`` permission).
-        Accepts the same fields as flight creation
-        except that the campaign cannot be changed.
+        :>json date start_date: The date the flight starts being shown
+        :>json date end_date: The estimated end date for the flight
+        :>json date created: The date the flight was created
+        :>json date modified: The date the flight was last modified
     """
 
-    serializer_class = FlightManagementSerializer
-    permission_classes = (FlightPermission,)
+    serializer_class = FlightSerializer
     lookup_field = "slug"
 
     def get_queryset(self):
-        """Returns flights the user has access to."""
-        queryset = Flight.objects.all()
-        if not self.request.user.is_staff:
-            queryset = queryset.filter(
+        """Returns Flights the user has access to."""
+        if self.request.user.is_staff:
+            queryset = Flight.objects.all()
+        else:
+            queryset = Flight.objects.filter(
                 campaign__advertiser__in=self.request.user.advertisers.all()
             )
 
@@ -656,22 +601,12 @@ class FlightViewSet(
         if campaign_slug:
             queryset = queryset.filter(campaign__slug=campaign_slug)
 
-        return queryset.select_related("campaign", "campaign__advertiser")
+        return queryset
 
 
-class AdvertisementViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Advertisement management API calls.
-
-    Any user with access to an ad's advertiser can view the ad.
-    Creating and updating ads requires a manager or admin role on the advertiser.
+    Advertisement API calls.
 
     .. http:get:: /api/v1/advertisements/
 
@@ -687,67 +622,30 @@ class AdvertisementViewSet(
 
     .. http:get:: /api/v1/advertisements/(str:slug)/
 
-        Return a specific advertisement
+        Return a specific advertisement.
+        The fields returned are the same as the advertisements
+        in the advertiser report API.
 
-        :>json string url: The URL to this advertisement
         :>json string name: The name of the ad (not shown to users)
         :>json string slug: A slug identifying the ad
-        :>json string flight: The slug of the ad's flight
-        :>json string advertiser: The slug of the ad's advertiser
-        :>json bool live: Whether the ad is enabled
-        :>json array ad_types: The slugs of this ad's ad types
+        :>json string text: The text of the ad
         :>json string image: A URL of the ad's image (if any)
         :>json string link: The URL of the ad's landing page
-        :>json string headline: The headline at the beginning of the ad
-        :>json string content: The main text of the ad
-        :>json string cta: The call to action text at the end of the ad
-        :>json string text: The ad text (only set on old ads, read-only)
-
-    .. http:post:: /api/v1/advertisements/
-
-        Create a new advertisement in a flight
-        (requires a manager or admin role on the advertiser).
-        The ad's slug is generated automatically from the name.
-
-        To include an image with the ad, send the request
-        as ``multipart/form-data`` rather than JSON.
-
-        :<json string name: **Required**. The name of the ad
-        :<json string flight: **Required**. The slug of the flight for the ad
-        :<json array ad_types: **Required**. The slugs of the ad types for this ad
-        :<json string link: **Required**. The URL of the ad's landing page
-        :<json string content: **Required**. The main text of the ad
-        :<json string headline: An optional headline at the beginning of the ad
-        :<json string cta: An optional call to action at the end of the ad
-        :<json bool live: Whether the ad is enabled
-
-        The response is the same as the advertisement details call.
-
-    .. http:patch:: /api/v1/advertisements/(str:slug)/
-
-        Update an advertisement (requires a manager or admin role on the advertiser).
-        Accepts the same fields as advertisement creation
-        except that the flight cannot be changed.
-
-    .. http:delete:: /api/v1/advertisements/(str:slug)/
-
-        Delete an advertisement (requires a manager or admin role on the advertiser).
-        Only ads that have *never* been shown can be deleted.
-        Set ``live`` to ``false`` to disable an ad that has already been shown.
+        :>json array ad_types: The names of this ad's ad types
+        :>json bool live: Whether the ad is enabled
+        :>json date created: The date the ad was created
+        :>json date modified: The date the ad was last modified
     """
 
-    serializer_class = AdvertisementManagementSerializer
-    permission_classes = (AdvertisementPermission,)
+    serializer_class = AdvertisementSerializer
     lookup_field = "slug"
 
-    # Multipart parsing is needed for uploading ad images
-    parser_classes = (JSONParser, MultiPartParser, FormParser)
-
     def get_queryset(self):
-        """Returns advertisements the user has access to."""
-        queryset = Advertisement.objects.all()
-        if not self.request.user.is_staff:
-            queryset = queryset.filter(
+        """Returns Advertisements the user has access to."""
+        if self.request.user.is_staff:
+            queryset = Advertisement.objects.all()
+        else:
+            queryset = Advertisement.objects.filter(
                 flight__campaign__advertiser__in=self.request.user.advertisers.all()
             )
 
@@ -761,42 +659,4 @@ class AdvertisementViewSet(
         if flight_slug:
             queryset = queryset.filter(flight__slug=flight_slug)
 
-        return queryset.select_related(
-            "flight", "flight__campaign", "flight__campaign__advertiser"
-        ).prefetch_related("ad_types")
-
-    def perform_create(self, serializer):
-        """Create an ad after checking the user can manage the flight's advertiser."""
-        flight = serializer.validated_data["flight"]
-        user = self.request.user
-        if not user.is_staff and not user.has_advertiser_manager_permission(
-            flight.campaign.advertiser
-        ):
-            raise PermissionDenied(
-                _("You do not have permission to manage this advertiser's ads")
-            )
-
-        advertisement = serializer.save()
-
-        # We alert on new ad images as a secondary check for malicious images
-        if advertisement.image:
-            notify_on_ad_image_change.apply_async(args=[advertisement.pk], countdown=60)
-
-    def perform_update(self, serializer):
-        image_changed = "image" in serializer.validated_data
-        advertisement = serializer.save()
-
-        # We alert on ad image changes as a secondary check for malicious images
-        if image_changed and advertisement.image:
-            notify_on_ad_image_change.apply_async(args=[advertisement.pk], countdown=60)
-
-    def perform_destroy(self, instance):
-        """Advertisements that have been shown can never be deleted."""
-        if not instance.can_be_deleted():
-            raise ValidationError(
-                _(
-                    "Advertisements that have been shown cannot be deleted. "
-                    "Set 'live' to false to disable the ad instead."
-                )
-            )
-        instance.delete()
+        return queryset.prefetch_related("ad_types")
