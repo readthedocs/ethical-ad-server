@@ -5,7 +5,9 @@ from django.urls import path
 from rest_framework import routers
 
 from .views import AdDecisionView
+from .views import AdvertisementViewSet
 from .views import AdvertiserViewSet
+from .views import FlightViewSet
 from .views import PublisherViewSet
 
 
@@ -16,6 +18,8 @@ urlpatterns = [path(r"decision/", AdDecisionView.as_view(), name="decision")]
 router = routers.SimpleRouter()
 router.register(r"advertisers", AdvertiserViewSet, basename="advertisers")
 router.register(r"publishers", PublisherViewSet, basename="publishers")
+router.register(r"flights", FlightViewSet, basename="flights")
+router.register(r"advertisements", AdvertisementViewSet, basename="advertisements")
 
 if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
     from ethicalads_ext.embedding import urls as embedding_urls  # noqa

@@ -39,3 +39,15 @@ Advertiser APIs
 ---------------
 
 .. autoclass:: adserver.api.views.AdvertiserViewSet
+
+
+Flight management APIs
+----------------------
+
+.. autoclass:: adserver.api.views.FlightViewSet
+
+
+Advertisement management APIs
+-----------------------------
+
+.. autoclass:: adserver.api.views.AdvertisementViewSet

@@ -2,15 +2,22 @@
 
 import logging
 
+import bleach
 from django.core.exceptions import ValidationError
+from django.core.files.images import get_image_dimensions
 from django.core.validators import URLValidator
 from django.core.validators import validate_ipv46_address
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from ..constants import ALL_CAMPAIGN_TYPES
+from ..forms import AdvertisementFormMixin
+from ..models import AdType
 from ..models import Advertisement
 from ..models import Advertiser
+from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
 
@@ -209,3 +216,280 @@ class AdvertisementSerializer(serializers.ModelSerializer):
 
     def get_ad_types(self, obj):
         return [t.name for t in obj.ad_types.all()]
+
+
+class FlightManagementSerializer(serializers.ModelSerializer):
+    """
+    Serializes flights for the flight management API.
+
+    Fields such as the price (CPC/CPM), the sold clicks or impressions,
+    and the targeting can only be changed by users
+    with the same Django permissions used by the flight management UI.
+    """
+
+    url = serializers.HyperlinkedIdentityField(
+        view_name="api:flights-detail", lookup_field="slug"
+    )
+    campaign = serializers.SlugRelatedField(
+        slug_field="slug", queryset=Campaign.objects.all()
+    )
+    advertiser = serializers.SlugField(
+        source="campaign.advertiser.slug", read_only=True
+    )
+    state = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = (
+            "url",
+            "name",
+            "slug",
+            "campaign",
+            "advertiser",
+            "state",
+            "live",
+            "hard_stop",
+            "auto_renew",
+            "start_date",
+            "end_date",
+            "cpc",
+            "sold_clicks",
+            "cpm",
+            "sold_impressions",
+            "daily_cap",
+            "priority_multiplier",
+            "pacing_interval",
+            "prioritize_ads_ctr",
+            "targeting_parameters",
+            "total_views",
+            "total_clicks",
+            "created",
+            "modified",
+        )
+        read_only_fields = (
+            "slug",
+            "total_views",
+            "total_clicks",
+            "created",
+            "modified",
+        )
+
+    def __init__(self, *args, **kwargs):
+        """Limit writable campaigns to ones the user has access to."""
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+        if request and request.user.is_authenticated and not request.user.is_staff:
+            self.fields["campaign"].queryset = Campaign.objects.filter(
+                advertiser__in=request.user.advertisers.all()
+            )
+
+    def validate_campaign(self, campaign):
+        if self.instance and campaign != self.instance.campaign:
+            raise serializers.ValidationError(
+                _("A flight cannot be moved to a different campaign")
+            )
+        return campaign
+
+    def validate(self, data):
+        """Mirror the validation from the flight management UI forms."""
+        cpc = data.get("cpc", self.instance.cpc if self.instance else 0) or 0
+        cpm = data.get("cpm", self.instance.cpm if self.instance else 0) or 0
+        if cpc > 0 and cpm > 0:
+            raise serializers.ValidationError(_("A flight cannot have both CPC & CPM"))
+
+        start_date = data.get(
+            "start_date", self.instance.start_date if self.instance else None
+        )
+        end_date = data.get(
+            "end_date", self.instance.end_date if self.instance else None
+        )
+        if start_date and end_date and start_date >= end_date:
+            raise serializers.ValidationError(
+                _("The end date must come after the start date")
+            )
+
+        return data
+
+    def generate_slug(self, name, campaign):
+        """Generates an available flight slug the same way the flight create form does."""
+        campaign_slug = campaign.slug
+        slug = slugify(name)
+        if not slug.startswith(campaign_slug):
+            slug = slugify(f"{campaign_slug}-{slug}")
+
+        while Flight.objects.filter(slug=slug).exists():
+            random_char = get_random_string(1)
+            slug = slugify(f"{slug}-{random_char}")
+
+        return slug
+
+    def create(self, validated_data):
+        validated_data["slug"] = self.generate_slug(
+            validated_data["name"], validated_data["campaign"]
+        )
+        return super().create(validated_data)
+
+
+class AdvertisementManagementSerializer(serializers.ModelSerializer):
+    """
+    Serializes advertisements for the ad management API.
+
+    New ads must use the ``headline``, ``content``, and ``cta`` fields.
+    The ``text`` field is read-only and only set on old ads.
+    """
+
+    url = serializers.HyperlinkedIdentityField(
+        view_name="api:advertisements-detail", lookup_field="slug"
+    )
+    flight = serializers.SlugRelatedField(
+        slug_field="slug", queryset=Flight.objects.all()
+    )
+    advertiser = serializers.SlugField(
+        source="flight.campaign.advertiser.slug", read_only=True
+    )
+    ad_types = serializers.SlugRelatedField(
+        slug_field="slug", many=True, queryset=AdType.objects.all()
+    )
+
+    class Meta:
+        model = Advertisement
+        fields = (
+            "url",
+            "name",
+            "slug",
+            "flight",
+            "advertiser",
+            "live",
+            "ad_types",
+            "image",
+            "link",
+            "text",
+            "headline",
+            "content",
+            "cta",
+            "created",
+            "modified",
+        )
+        read_only_fields = ("slug", "text", "created", "modified")
+
+    def __init__(self, *args, **kwargs):
+        """Limit writable flights to ones the user has access to."""
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+        if request and request.user.is_authenticated and not request.user.is_staff:
+            self.fields["flight"].queryset = Flight.objects.filter(
+                campaign__advertiser__in=request.user.advertisers.all()
+            )
+
+    def validate_flight(self, flight):
+        if self.instance and flight != self.instance.flight:
+            raise serializers.ValidationError(
+                _("An advertisement cannot be moved to a different flight")
+            )
+        return flight
+
+    def validate(self, data):
+        """Mirror the validation from the advertisement management UI forms."""
+        instance = self.instance
+        messages = AdvertisementFormMixin.messages
+
+        flight = data.get("flight") or (instance.flight if instance else None)
+
+        if "ad_types" in data:
+            ad_types = data["ad_types"]
+        elif instance:
+            ad_types = list(instance.ad_types.all())
+        else:
+            ad_types = []
+
+        if "image" in data:
+            image = data["image"]
+        elif instance:
+            image = instance.image
+        else:
+            image = None
+
+        headline = data.get("headline", instance.headline if instance else None) or ""
+        content = data.get("content", instance.content if instance else None)
+        cta = data.get("cta", instance.cta if instance else None) or ""
+
+        if not ad_types:
+            raise serializers.ValidationError(
+                {"ad_types": messages["ad_type_required"]}
+            )
+
+        # Ad types must be valid for the campaign's publisher groups
+        # and deprecated ad types are only allowed if the ad already has them
+        allowed_ad_type_pks = set(
+            flight.campaign.allowed_ad_types().values_list("pk", flat=True)
+        )
+        current_ad_type_pks = set()
+        if instance:
+            current_ad_type_pks = {at.pk for at in instance.ad_types.all()}
+        for ad_type in ad_types:
+            if ad_type.pk not in allowed_ad_type_pks or (
+                ad_type.deprecated and ad_type.pk not in current_ad_type_pks
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "ad_types": _(
+                            "'%(ad_type)s' is not a valid ad type for this flight"
+                        )
+                        % {"ad_type": ad_type.slug}
+                    }
+                )
+
+        # New ads and ads already converted to the new style
+        # require the ad content (the text field is read-only)
+        if not content:
+            if not (instance and instance.text and not instance.content):
+                raise serializers.ValidationError(
+                    {"content": _("This field is required.")}
+                )
+            stripped_text = bleach.clean(instance.text, tags=[], strip=True)
+        else:
+            stripped_text = f"{headline}{content}{cta}"
+
+        errors = {}
+        for ad_type in ad_types:
+            # If any of the chosen ad types require images,
+            # fail validation if there is no image
+            if ad_type.has_image and not image:
+                errors.setdefault("image", []).append(
+                    messages["missing_image"] % {"ad_type": ad_type}
+                )
+
+            if ad_type.has_image and image and not ad_type.validate_image(image):
+                width, height = get_image_dimensions(image)
+                errors.setdefault("image", []).append(
+                    messages["invalid_dimensions"]
+                    % {
+                        "ad_type": ad_type,
+                        "ad_type_width": ad_type.image_width,
+                        "ad_type_height": ad_type.image_height,
+                        "width": width,
+                        "height": height,
+                    }
+                )
+
+            # Check text length
+            if ad_type.max_text_length and not ad_type.validate_text(stripped_text):
+                errors.setdefault("content", []).append(
+                    messages["text_too_long"]
+                    % {
+                        "ad_type": ad_type,
+                        "ad_type_max_chars": ad_type.max_text_length,
+                        "text_len": len(stripped_text),
+                    }
+                )
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return data
+
+    def create(self, validated_data):
+        validated_data["slug"] = Advertisement.generate_slug(validated_data["name"])
+        return super().create(validated_data)
