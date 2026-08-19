@@ -3,6 +3,7 @@
 from crispy_forms import layout
 from crispy_forms.helper import FormHelper
 from django import forms
+from django.core.validators import URLValidator
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries as djcountries
 
@@ -11,7 +12,7 @@ from ..models import Topic
 
 
 class AudienceEstimatorForm(forms.Form):
-    """Get traffic estimates for country/domain/topics/keywords."""
+    """Get traffic estimates for country/domain/topics/keywords/URLs."""
 
     countries = forms.CharField(
         max_length=1024,
@@ -36,6 +37,14 @@ class AudienceEstimatorForm(forms.Form):
         required=False,
         help_text=_(
             "A comma separated list of domains. Multiple domains will result in a wider audience."
+        ),
+    )
+    urls = forms.CharField(
+        label=_("URLs"),
+        max_length=1024,
+        required=False,
+        help_text=_(
+            "A comma separated list of niche targeting URLs. URLs must already have advertiser url embeddings and max distance 0.6 is used"
         ),
     )
 
@@ -79,6 +88,13 @@ class AudienceEstimatorForm(forms.Form):
                 ),
                 css_class="my-3",
             ),
+            layout.Fieldset(
+                _("Niche targeting"),
+                layout.Field(
+                    "urls", placeholder=_("https://docs.readthedocs.io/en/latest, ...")
+                ),
+                css_class="my-3",
+            ),
             layout.Submit("submit", _("Get Estimate")),
             layout.HTML(
                 "<p class='form-text small text-muted'>"
@@ -114,3 +130,11 @@ class AudienceEstimatorForm(forms.Form):
             if "." not in d:
                 raise forms.ValidationError(_("Invalid domain '%s'") % d)
         return domains
+
+    def clean_urls(self):
+        data = self.cleaned_data["urls"]
+        urls = [u.strip().lower() for u in data.split(",") if len(u.strip()) > 0]
+        validator = URLValidator()
+        for u in urls:
+            validator(u)
+        return urls

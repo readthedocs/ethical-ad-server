@@ -804,6 +804,7 @@ class TestAudienceEstimator(TestCase):
                 "topics": ["python"],
                 "keywords": "python, django",
                 "domains": "docs.readthedocs.io, example.com",
+                "urls": "https://docs.readthedocs.io/en/latest/, https://example.com/guide",
             }
         )
         self.assertTrue(form.is_valid())
@@ -811,6 +812,10 @@ class TestAudienceEstimator(TestCase):
         self.assertEqual(form.cleaned_data["keywords"], ["python", "django"])
         self.assertEqual(
             form.cleaned_data["domains"], ["docs.readthedocs.io", "example.com"]
+        )
+        self.assertEqual(
+            form.cleaned_data["urls"],
+            ["https://docs.readthedocs.io/en/latest/", "https://example.com/guide"],
         )
 
     def test_form_validation_errors(self):
@@ -825,6 +830,10 @@ class TestAudienceEstimator(TestCase):
         form = AudienceEstimatorForm(data={"domains": "nodotdomain"})
         self.assertFalse(form.is_valid())
         self.assertIn("domains", form.errors)
+
+        form = AudienceEstimatorForm(data={"urls": "not-a-valid-url"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("urls", form.errors)
 
     def test_view_permissions(self):
         url = reverse("etl-staff-audience-estimator")
@@ -971,6 +980,19 @@ class TestAudienceEstimator(TestCase):
                 self.assertEqual(est, 0)
                 mock_aws.assert_called_once()
 
+    def test_get_estimate_urls_ext_disabled(self):
+        view = AudienceEstimatorView()
+        # When ethicalads_ext.etl is not installed, URLs are skipped and other filters still work
+        est = view.get_estimate(
+            countries=["US"],
+            topics=[],
+            keywords=[],
+            domains=[],
+            urls=["https://docs.readthedocs.io/en/latest/"],
+            parquet_path=self.parquet_path,
+        )
+        self.assertEqual(est, 2)
+
     def test_view_post_estimate(self):
         self.client.force_login(self.staff_user)
         url = reverse("etl-staff-audience-estimator")
@@ -998,11 +1020,55 @@ class TestAudienceEstimator(TestCase):
                         "countries": "US",
                         "keywords": "python",
                         "domains": "docs.readthedocs.io",
+                        "urls": "",
                     },
                 )
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(response.context["estimate"])
                 self.assertEqual(response.context["estimated_views"], 2)
+
+    def test_view_post_estimate_urls_warning(self):
+        self.client.force_login(self.staff_user)
+        url = reverse("etl-staff-audience-estimator")
+
+        today = (
+            timezone.now().date() if hasattr(timezone.now(), "date") else timezone.now()
+        )
+        first_of_month = today.replace(day=1)
+        prev_month = first_of_month - timedelta(days=1)
+        year_month = f"{prev_month.year}-{prev_month.month:02d}"
+
+        monthly_dir = os.path.join(self.temp_dir.name, "querydumps", "monthly-offers")
+        os.makedirs(monthly_dir, exist_ok=True)
+        monthly_file = os.path.join(monthly_dir, f"{year_month}.parquet")
+        write_test_offers_parquet(monthly_file)
+
+        with override_settings(
+            ADSERVER_OFFERS_LOCAL_PATH=self.temp_dir.name,
+            AWS_DATA_STORAGE_BUCKET_NAME=None,
+        ):
+            with mock.patch("adserver.etl.utils.DATA_BUCKET_NAME", None):
+                response = self.client.post(
+                    url,
+                    data={
+                        "countries": "US",
+                        "keywords": "python",
+                        "domains": "docs.readthedocs.io",
+                        "urls": "https://docs.readthedocs.io/en/latest/",
+                    },
+                    follow=True,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context["estimate"])
+                # Since URLs are skipped, the estimate for US/python/docs is still computed (2 views)
+                self.assertEqual(response.context["estimated_views"], 2)
+                messages_list = list(response.context["messages"])
+                self.assertTrue(
+                    any(
+                        "Niche targeting URLs were ignored" in str(m)
+                        for m in messages_list
+                    )
+                )
 
     def test_get_estimate_missing_file(self):
         view = AudienceEstimatorView()

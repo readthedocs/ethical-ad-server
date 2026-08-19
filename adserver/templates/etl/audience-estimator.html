@@ -52,6 +52,14 @@
               </ul>
             </dd>
           {% endif %}
+          {% if urls %}
+            <dt>{% trans "URLs" %}</dt>
+            <dd>
+              <ul>
+                {% for url in urls %}<li>{{ url }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
         </dl>
 
         <p class="lead">

@@ -1,5 +1,3 @@
-"""Views for ETL and audience estimation."""
-
 import functools
 import json
 import logging
@@ -8,7 +6,10 @@ from datetime import timedelta
 
 import duckdb
 import ibis
+from django.conf import settings
+from django.contrib import messages
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.generic import FormView
 
 from ..mixins import StaffUserMixin
@@ -76,6 +77,8 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
     form_class = AudienceEstimatorForm
     template_name = "etl/audience-estimator.html"
 
+    NICHE_SIMILARITY_THRESHOLD = 0.6
+
     def form_valid(self, form):
         """Rather than redirect, just perform and display the estimate."""
         ctx = self.get_context_data()
@@ -84,14 +87,26 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
         topics = form.cleaned_data["topics"]
         keywords = form.cleaned_data["keywords"]
         domains = form.cleaned_data["domains"]
+        urls = form.cleaned_data.get("urls", [])
+
+        if urls and "ethicalads_ext.etl" not in settings.INSTALLED_APPS:
+            messages.warning(
+                self.request,
+                _(
+                    "Niche targeting URLs were ignored because extension modules are not installed."
+                ),
+            )
 
         ctx["estimate"] = True
-        ctx["estimated_views"] = self.get_estimate(countries, topics, keywords, domains)
+        ctx["estimated_views"] = self.get_estimate(
+            countries, topics, keywords, domains, urls=urls
+        )
 
         ctx["countries"] = [COUNTRY_DICT[c] for c in countries]
         ctx["topics"] = topics
         ctx["keywords"] = keywords
         ctx["domains"] = domains
+        ctx["urls"] = urls
 
         return self.render_to_response(ctx)
 
@@ -116,7 +131,15 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
 
         return month_to_daily_offers_parquet_glob(prev_month)
 
-    def get_estimate(self, countries, topics, keywords, domains, parquet_path=None):
+    def get_estimate(
+        self,
+        countries,
+        topics,
+        keywords,
+        domains,
+        urls=None,
+        parquet_path=None,
+    ):
         """Get an audience traffic estimate for the previous month."""
         con = ibis.duckdb.connect()
         try:
@@ -171,6 +194,25 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
             ]
             if kw_conds:
                 query = query.filter(functools.reduce(operator.or_, kw_conds))
+
+        if urls:
+            if "ethicalads_ext.etl" in settings.INSTALLED_APPS:
+                try:
+                    from ethicalads_ext.etl.utils import get_similar_urls
+
+                    matching_urls = get_similar_urls(
+                        urls, con=con, min_similarity=self.NICHE_SIMILARITY_THRESHOLD
+                    )
+                    if matching_urls is not None:
+                        query = query.inner_join(
+                            matching_urls, query.url == matching_urls.url
+                        )
+                except Exception as e:
+                    log.warning("Failed to execute niche targeting query: %s", e)
+            else:
+                log.warning(
+                    "Niche targeting URLs specified, but ethicalads_ext.etl is not installed; skipping URLs"
+                )
 
         try:
             estimated_views = int(query.count().execute())
