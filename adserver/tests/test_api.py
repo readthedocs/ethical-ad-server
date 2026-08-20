@@ -2224,6 +2224,10 @@ class BaseReadOnlyApiTest(BaseApiTest):
             image=None,
             live=True,
             flight=self.flight2,
+            text="",
+            headline="Other Corp:",
+            content="Check out our new thing",
+            cta="Try it now!",
         )
         self.other_ad.ad_types.add(self.ad_type)
 
@@ -2414,6 +2418,9 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
                 "name",
                 "slug",
                 "text",
+                "headline",
+                "content",
+                "cta",
                 "image",
                 "link",
                 "ad_types",
@@ -2433,6 +2440,12 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
         # Staff can see any ad
         resp = self.staff_client.get(self.other_ad_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Newer ads have the headline, content, and call to action
+        data = resp.json()
+        self.assertEqual(data["headline"], "Other Corp:")
+        self.assertEqual(data["content"], "Check out our new thing")
+        self.assertEqual(data["cta"], "Try it now!")
 
         # The ad isn't found under the wrong flight
         url = reverse(

@@ -615,7 +615,10 @@ class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
 
         :>json string name: The name of the ad (not shown to users)
         :>json string slug: A slug identifying the ad
-        :>json string text: The text of the ad
+        :>json string text: The text of the ad (only set on old ads)
+        :>json string headline: The headline at the beginning of the ad
+        :>json string content: The main text of the ad
+        :>json string cta: The call to action at the end of the ad
         :>json string image: A URL of the ad's image (if any)
         :>json string link: The URL of the ad's landing page
         :>json array ad_types: The names of this ad's ad types
