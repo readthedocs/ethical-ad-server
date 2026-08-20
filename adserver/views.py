@@ -441,13 +441,17 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        advertisement_list = self.object.advertisements.order_by("-live", "name")
         context.update(
             {
                 "advertiser": self.advertiser,
-                "advertisement_list": advertisement_list,
-                "live_ads": [ad for ad in advertisement_list if ad.live],
-                "disabled_ads": [ad for ad in advertisement_list if not ad.live],
+                "live_ads": self.object.advertisements.filter(live=True).order_by(
+                    "name"
+                ),
+                # Sort disabled ads by most recently updated
+                # so recently disabled ads appear first
+                "disabled_ads": self.object.advertisements.filter(live=False).order_by(
+                    "-modified"
+                ),
             }
         )
         return context
