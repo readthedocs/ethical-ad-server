@@ -13,13 +13,34 @@ from .views import PublisherViewSet
 
 app_name = "api"
 
-urlpatterns = [path(r"decision/", AdDecisionView.as_view(), name="decision")]
+urlpatterns = [
+    path(r"decision/", AdDecisionView.as_view(), name="decision"),
+    # The flight/advertisement API paths match the URL structure of the advertiser dashboard
+    path(
+        r"advertisers/<slug:advertiser_slug>/flights/",
+        FlightViewSet.as_view({"get": "list"}),
+        name="flights-list",
+    ),
+    path(
+        r"advertisers/<slug:advertiser_slug>/flights/<slug:flight_slug>/",
+        FlightViewSet.as_view({"get": "retrieve"}),
+        name="flights-detail",
+    ),
+    path(
+        r"advertisers/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/",
+        AdvertisementViewSet.as_view({"get": "list"}),
+        name="advertisements-list",
+    ),
+    path(
+        r"advertisers/<slug:advertiser_slug>/flights/<slug:flight_slug>/advertisements/<slug:advertisement_slug>/",
+        AdvertisementViewSet.as_view({"get": "retrieve"}),
+        name="advertisements-detail",
+    ),
+]
 
 router = routers.SimpleRouter()
 router.register(r"advertisers", AdvertiserViewSet, basename="advertisers")
 router.register(r"publishers", PublisherViewSet, basename="publishers")
-router.register(r"flights", FlightViewSet, basename="flights")
-router.register(r"advertisements", AdvertisementViewSet, basename="advertisements")
 
 if "ethicalads_ext.embedding" in settings.INSTALLED_APPS:
     from ethicalads_ext.embedding import urls as embedding_urls  # noqa

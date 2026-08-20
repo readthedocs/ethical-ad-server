@@ -551,19 +551,16 @@ class FlightViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Flight API calls.
 
-    .. http:get:: /api/v1/flights/
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/
 
-        Return a list of flights the user has access to
-
-        :query string advertiser: Limit to flights for a specific advertiser slug
-        :query string campaign: Limit to flights for a specific campaign slug
+        Return a list of the advertiser's flights the user has access to
 
         :>json int count: The number of flights returned
         :>json string next: A URL to the next page of flights (if needed)
         :>json string previous: A URL to the previous page of flights (if needed)
         :>json array results: An array of flight results (see flight details call)
 
-    .. http:get:: /api/v1/flights/(str:slug)/
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/
 
         Return a specific flight.
         The fields returned are the same as the flights
@@ -583,24 +580,17 @@ class FlightViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = FlightSerializer
     lookup_field = "slug"
+    lookup_url_kwarg = "flight_slug"
 
     def get_queryset(self):
         """Returns Flights the user has access to."""
-        if self.request.user.is_staff:
-            queryset = Flight.objects.all()
-        else:
-            queryset = Flight.objects.filter(
+        queryset = Flight.objects.filter(
+            campaign__advertiser__slug=self.kwargs["advertiser_slug"]
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
                 campaign__advertiser__in=self.request.user.advertisers.all()
             )
-
-        advertiser_slug = self.request.query_params.get("advertiser")
-        if advertiser_slug:
-            queryset = queryset.filter(campaign__advertiser__slug=advertiser_slug)
-
-        campaign_slug = self.request.query_params.get("campaign")
-        if campaign_slug:
-            queryset = queryset.filter(campaign__slug=campaign_slug)
-
         return queryset
 
 
@@ -608,19 +598,16 @@ class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Advertisement API calls.
 
-    .. http:get:: /api/v1/advertisements/
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/
 
-        Return a list of advertisements the user has access to
-
-        :query string advertiser: Limit to ads for a specific advertiser slug
-        :query string flight: Limit to ads in a specific flight slug
+        Return a list of the flight's advertisements the user has access to
 
         :>json int count: The number of advertisements returned
         :>json string next: A URL to the next page of advertisements (if needed)
         :>json string previous: A URL to the previous page of advertisements (if needed)
         :>json array results: An array of advertisement results (see details call)
 
-    .. http:get:: /api/v1/advertisements/(str:slug)/
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/(str:advertisement_slug)/
 
         Return a specific advertisement.
         The fields returned are the same as the advertisements
@@ -639,24 +626,16 @@ class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = AdvertisementSerializer
     lookup_field = "slug"
+    lookup_url_kwarg = "advertisement_slug"
 
     def get_queryset(self):
         """Returns Advertisements the user has access to."""
-        if self.request.user.is_staff:
-            queryset = Advertisement.objects.all()
-        else:
-            queryset = Advertisement.objects.filter(
+        queryset = Advertisement.objects.filter(
+            flight__campaign__advertiser__slug=self.kwargs["advertiser_slug"],
+            flight__slug=self.kwargs["flight_slug"],
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
                 flight__campaign__advertiser__in=self.request.user.advertisers.all()
             )
-
-        advertiser_slug = self.request.query_params.get("advertiser")
-        if advertiser_slug:
-            queryset = queryset.filter(
-                flight__campaign__advertiser__slug=advertiser_slug
-            )
-
-        flight_slug = self.request.query_params.get("flight")
-        if flight_slug:
-            queryset = queryset.filter(flight__slug=flight_slug)
-
         return queryset.prefetch_related("ad_types")

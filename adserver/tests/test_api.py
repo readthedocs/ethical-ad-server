@@ -2232,10 +2232,27 @@ class FlightApiTests(BaseReadOnlyApiTest):
     def setUp(self):
         super().setUp()
 
-        self.flight_list_url = reverse("api:flights-list")
-        self.flight1_detail_url = reverse("api:flights-detail", args=[self.flight.slug])
+        self.flight_list_url = reverse(
+            "api:flights-list",
+            kwargs={"advertiser_slug": self.advertiser1.slug},
+        )
+        self.flight2_list_url = reverse(
+            "api:flights-list",
+            kwargs={"advertiser_slug": self.advertiser2.slug},
+        )
+        self.flight1_detail_url = reverse(
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
         self.flight2_detail_url = reverse(
-            "api:flights-detail", args=[self.flight2.slug]
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+            },
         )
 
     def test_flight_list(self):
@@ -2243,32 +2260,24 @@ class FlightApiTests(BaseReadOnlyApiTest):
         resp = self.unauth_client.get(self.flight_list_url)
         self.assertEqual(resp.status_code, 401)
 
-        # The user only sees flights for their advertisers
+        # The user can list flights of their advertisers
         resp = self.client.get(self.flight_list_url)
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.flight.slug)
 
-        # Staff users see all flights
-        resp = self.staff_client.get(self.flight_list_url)
+        # No flights are returned for advertisers the user can't access
+        resp = self.client.get(self.flight2_list_url)
         self.assertEqual(resp.status_code, 200, resp.content)
-        self.assertEqual(resp.json()["count"], 2)
+        self.assertEqual(resp.json()["count"], 0)
 
-    def test_flight_list_filtering(self):
-        for querystring, expected_slugs in (
-            (f"?advertiser={self.advertiser1.slug}", [self.flight.slug]),
-            (f"?advertiser={self.advertiser2.slug}", [self.flight2.slug]),
-            ("?advertiser=nonexistent", []),
-            (f"?campaign={self.campaign2.slug}", [self.flight2.slug]),
-        ):
-            resp = self.staff_client.get(self.flight_list_url + querystring)
-            self.assertEqual(resp.status_code, 200, resp.content)
-            self.assertEqual(
-                [flight["slug"] for flight in resp.json()["results"]],
-                expected_slugs,
-                querystring,
-            )
+        # Staff users can list any advertiser's flights
+        resp = self.staff_client.get(self.flight2_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.flight2.slug)
 
     def test_flight_detail(self):
         resp = self.client.get(self.flight1_detail_url)
@@ -2303,6 +2312,17 @@ class FlightApiTests(BaseReadOnlyApiTest):
         resp = self.staff_client.get(self.flight2_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
 
+        # The flight isn't found under the wrong advertiser
+        url = reverse(
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        resp = self.staff_client.get(url)
+        self.assertEqual(resp.status_code, 404, resp.content)
+
     def test_flight_read_only(self):
         # The API is read-only - writes are rejected even for staff
         resp = self.staff_client.post(
@@ -2327,10 +2347,35 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
     def setUp(self):
         super().setUp()
 
-        self.ad_list_url = reverse("api:advertisements-list")
-        self.ad_detail_url = reverse("api:advertisements-detail", args=[self.ad.slug])
+        self.ad_list_url = reverse(
+            "api:advertisements-list",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.other_ad_list_url = reverse(
+            "api:advertisements-list",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+            },
+        )
+        self.ad_detail_url = reverse(
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
         self.other_ad_detail_url = reverse(
-            "api:advertisements-detail", args=[self.other_ad.slug]
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+                "advertisement_slug": self.other_ad.slug,
+            },
         )
 
     def test_ad_list(self):
@@ -2338,31 +2383,24 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
         resp = self.unauth_client.get(self.ad_list_url)
         self.assertEqual(resp.status_code, 401)
 
-        # The user only sees ads for their advertisers
+        # The user can list ads in their advertisers' flights
         resp = self.client.get(self.ad_list_url)
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.ad.slug)
 
-        # Staff users see all ads
-        resp = self.staff_client.get(self.ad_list_url)
+        # No ads are returned for advertisers the user can't access
+        resp = self.client.get(self.other_ad_list_url)
         self.assertEqual(resp.status_code, 200, resp.content)
-        self.assertEqual(resp.json()["count"], 2)
+        self.assertEqual(resp.json()["count"], 0)
 
-    def test_ad_list_filtering(self):
-        for querystring, expected_slugs in (
-            (f"?advertiser={self.advertiser1.slug}", [self.ad.slug]),
-            (f"?flight={self.flight2.slug}", [self.other_ad.slug]),
-            ("?flight=nonexistent", []),
-        ):
-            resp = self.staff_client.get(self.ad_list_url + querystring)
-            self.assertEqual(resp.status_code, 200, resp.content)
-            self.assertEqual(
-                [ad["slug"] for ad in resp.json()["results"]],
-                expected_slugs,
-                querystring,
-            )
+        # Staff users can list any flight's ads
+        resp = self.staff_client.get(self.other_ad_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.other_ad.slug)
 
     def test_ad_detail(self):
         resp = self.client.get(self.ad_detail_url)
@@ -2395,6 +2433,18 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
         # Staff can see any ad
         resp = self.staff_client.get(self.other_ad_detail_url)
         self.assertEqual(resp.status_code, 200, resp.content)
+
+        # The ad isn't found under the wrong flight
+        url = reverse(
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
+        resp = self.staff_client.get(url)
+        self.assertEqual(resp.status_code, 404, resp.content)
 
     def test_ad_read_only(self):
         # The API is read-only - writes are rejected even for staff
