@@ -584,14 +584,29 @@ if ADSERVER_EXT:
 ADSERVER_DO_NOT_TRACK = False
 
 ADSERVER_ANALYTICS_ID = env("ADSERVER_ANALYTICS_ID", default=None)
+# Links from the dashboard back to external resources (policies, the API
+# reference, and the marketing website). These are configurable so self-hosted
+# instances can point them at their own resources (or unset them to hide the
+# links entirely).
 ADSERVER_PRIVACY_POLICY_URL = env("ADSERVER_PRIVACY_POLICY_URL", default=None)
 ADSERVER_PUBLISHER_POLICY_URL = env("ADSERVER_PUBLISHER_POLICY_URL", default=None)
+ADSERVER_API_DOCUMENTATION_URL = env(
+    "ADSERVER_API_DOCUMENTATION_URL",
+    default="https://ethical-ad-server.readthedocs.io/en/latest/user-guide/api.html",
+)
+ADSERVER_WEBSITE_URL = env("ADSERVER_WEBSITE_URL", default=None)
 ADSERVER_CLICK_RATELIMITS = []
 ADSERVER_VIEW_RATELIMITS = []
 ADSERVER_BLOCKLISTED_USER_AGENTS = env.list(
     "ADSERVER_BLOCKLISTED_USER_AGENTS", default=[]
 )
 ADSERVER_BLOCKLISTED_REFERRERS = env.list("ADSERVER_BLOCKLISTED_REFERRERS", default=[])
+# Ratelimit certain problematic ASNs
+ADSERVER_ASNS_TO_RATELIMIT = {
+    int(x) for x in env.list("ADSERVER_ASNS_TO_RATELIMIT", default=[])
+}
+ADSERVER_ASN_RATELIMITS = env.list("ADSERVER_ASN_RATELIMITS", default=[])
+
 ADSERVER_MINIMUM_PAYOUT = env.int("ADSERVER_MINIMUM_PAYOUT", default=50)
 # Recording views is highly discouraged in production but useful in development
 ADSERVER_RECORD_VIEWS = True

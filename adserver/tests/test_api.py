@@ -2116,6 +2116,34 @@ class TestProxyViews(BaseApiTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["X-Adserver-Reason"], "Ratelimited view impression")
 
+    @override_settings(
+        ADSERVER_ASNS_TO_RATELIMIT=[13335],
+        ADSERVER_ASN_RATELIMITS=["1/m"],
+    )
+    def test_view_tracking_asn_ratelimit(self):
+        with self.modify_settings(
+            MIDDLEWARE={
+                "append": "adserver.middleware.CloudflareGeoIpMiddleware",
+            }
+        ):
+            headers = {"x-cloudflare-geo-asnum": "13335"}
+            resp = self.client.get(self.url, headers=headers)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp["X-Adserver-Reason"], "Billed view")
+
+            # View the ad again with a new nonce from the same ASN
+            offer = self.ad.offer_ad(
+                request=self.request,
+                publisher=self.publisher,
+                ad_type_slug=self.ad_type.slug,
+                div_id="foo",
+                keywords=None,
+            )
+            view_url = offer["view_url"]
+            resp = self.client.get(view_url, headers=headers)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp["X-Adserver-Reason"], "ASN Ratelimited impression")
+
     def test_click_tracking_variable_expansion(self):
         self.ad.link = "http://example.com?utm_source=${publisher}&ad=${advertisement}"
         self.ad.save()

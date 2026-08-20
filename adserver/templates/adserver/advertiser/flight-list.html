@@ -38,14 +38,13 @@
 
 
 {% if flights %}
-  {% regroup flights by state as flight_groups %}
-  {% for state, flight_list in flight_groups %}
-    {% if flight_list %}
-      <div class="table-responsive" id="{{ state|slugify }}-flights">
+  {% for group in flight_groups %}
+    {% if group.flights %}
+      <div class="table-responsive" id="{{ group.state|slugify }}-flights">
         <table class="table table-hover">
           <thead>
             <tr>
-              <th width="33%"><strong>{% blocktrans %}{{ state }} flights{% endblocktrans %}</strong></th>
+              <th width="33%"><strong>{% blocktrans with state=group.state %}{{ state }} flights{% endblocktrans %}</strong></th>
               <th><strong>{% trans 'Start date' %}</strong></th>
               <th><strong>{% trans 'End date' %}</strong></th>
               <th class="text-right"><strong>{% trans 'Budget' %}</strong></th>
@@ -55,7 +54,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for flight in flight_list %}
+            {% for flight in group.flights %}
               <tr>
                 <td>
                   <a href="{% url 'flight_detail' advertiser.slug flight.slug %}">{{ flight.name }}</a>
@@ -91,6 +90,15 @@
               </tr>
             {% endfor %}
           </tbody>
+          {% if group.flights|length > 1 %}
+          <tfoot>
+            <tr>
+              <td colspan="3"><strong>{% trans 'Total' %}</strong></td>
+              <td class="text-right"><strong>${{ group.total_budget|floatformat:2 }}</strong></td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+          {% endif %}
         </table>
       </div>
     {% endif %}

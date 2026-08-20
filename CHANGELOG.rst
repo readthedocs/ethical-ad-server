@@ -6,6 +6,52 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v5.44.0
+---------------
+
+The big change in this release was to upgrade to Node v24.
+Other changes include a few minor bug fixes and dependency updates.
+
+:Date: August 14, 2026
+
+ * @ericholscher: Add validation for Stripe transfer ID in publisher payout (#1259)
+ * @davidfischer: Add celerybeat monthly task for offers aggregation (#1258)
+ * @davidfischer: Show traffic cap to staff (#1256)
+ * @dependabot[bot]: Bump aiohttp from 3.14.1 to 3.14.3 (#1254)
+ * @dependabot[bot]: Bump cryptography from 49.0.0 to 50.0.0 (#1253)
+ * @davidfischer: Upgrade JS to Node v24 (#1252)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.5 (#1249)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1248)
+ * @dependabot[bot]: Bump postcss from 8.5.8 to 8.5.25 (#1247)
+ * @davidfischer: Add ability to ratelimit ASNs (#1246)
+ * @dependabot[bot]: Bump setuptools from 82.0.1 to 83.0.0 (#1245)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.4 (#1244)
+ * @dependabot[bot]: Bump svgo from 4.0.1 to 4.0.2 (#1243)
+ * @dependabot[bot]: Bump immutable from 4.3.8 to 4.3.9 (#1242)
+ * @dependabot[bot]: Bump pillow from 12.2.0 to 12.3.0 (#1241)
+ * @davidfischer: Add flight budget totals to the list view (#1240)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.2 (#1219)
+ * @dependabot[bot]: Bump postcss from 8.5.8 to 8.5.14 (#1217)
+
+
+Version v5.43.0
+---------------
+
+This release had a number of dependency updates and minor bug fixes.
+
+:Date: July 1, 2026
+
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1238)
+ * @ericholscher: Link the dashboard back to the API docs and website (settings-driven) (#1236)
+ * @davidfischer: Slight tweak to bot rules (#1230)
+ * @davidfischer: Upgrade django to 5.2.14 (#1225)
+ * @davidfischer: Pin GHA workflows (#1224)
+ * @ericholscher: Fix staff payout paid filter to check status, not existence (#1223)
+ * @ericholscher: Exclude $ from copied amount in staff payout finish view (#1222)
+ * @dependabot[bot]: Bump urllib3 from 2.6.3 to 2.7.0 (#1221)
+ * @ericholscher: Pin prompt-toolkit>=3.0.43 to fix TypeError on Python 3.12 (#1206)
+
+
 Version v5.42.0
 ---------------
 

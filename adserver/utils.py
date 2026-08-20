@@ -89,6 +89,15 @@ class GeolocationData:
     lat: float = None
     lng: float = None
     continent: str = None
+    asn: int = None
+
+
+def force_int(value) -> int | None:
+    """Force a value to an integer, returning None if it can't be converted."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
 
 
 def get_ad_day():
@@ -279,6 +288,37 @@ def is_click_ratelimited(request, ratelimits=None):
     return False
 
 
+def is_asn_ratelimited(request, ratelimits=None) -> bool:
+    """Returns ``True`` if this user is rate limited by ASN and ``False`` otherwise."""
+    if ratelimits is None:
+        # Explicitly set the rate limits ONLY if the parameter is `None`
+        # If it is an empty list, there's simply no rate limiting
+        ratelimits = settings.ADSERVER_ASN_RATELIMITS
+
+    geo = get_geolocation(request)
+    if not geo or not geo.asn:
+        return False
+
+    asn_int = force_int(geo.asn)
+    if asn_int is None:
+        return False
+
+    if asn_int not in settings.ADSERVER_ASNS_TO_RATELIMIT:
+        return False
+
+    for rate in ratelimits:
+        if is_ratelimited(
+            request,
+            group="ad.asn",
+            key=lambda _, req: str(req.geo.asn),
+            rate=rate,
+            increment=True,
+        ):
+            return True
+
+    return False
+
+
 def is_blocklisted_user_agent(user_agent, blocklist_regexes=None):
     """Returns ``True`` if the UA is blocklisted and ``False`` otherwise."""
     if blocklist_regexes is None:
@@ -343,7 +383,7 @@ def is_allowed_domain(url, allowed_domains):
     return False
 
 
-def get_geolocation(request, force=False):
+def get_geolocation(request, force=False) -> GeolocationData:
     """Gets the geolocation for this IP address."""
     if force:
         return get_geoipdb_geolocation(request)
@@ -357,7 +397,7 @@ def get_geolocation(request, force=False):
     return GeolocationData()
 
 
-def get_geoipdb_geolocation(request):
+def get_geoipdb_geolocation(request) -> GeolocationData:
     """Get geolocation using a GeoIP database (such as MaxMind)."""
     geolocation = GeolocationData()
     ip_address = get_client_ip(request)

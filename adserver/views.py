@@ -20,6 +20,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
 from django.core import signing
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.images import ImageFile
 from django.core.files.storage import default_storage
@@ -35,6 +36,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import CreateView
@@ -128,6 +130,7 @@ from .utils import get_client_ip
 from .utils import get_client_user_agent
 from .utils import get_geolocation
 from .utils import is_allowed_domain
+from .utils import is_asn_ratelimited
 from .utils import is_blocklisted_ip
 from .utils import is_blocklisted_referrer
 from .utils import is_blocklisted_user_agent
@@ -159,7 +162,83 @@ def do_not_track(request):
     return JsonResponse(data, content_type="application/tracking-status+json")
 
 
-def flight_totals_health(request):
+class TaskHealthCheckView(View):
+    """
+    Base view for health checks monitoring Celery periodic tasks.
+
+    Subclasses must set `cache_key` and `max_staleness`.
+    """
+
+    cache_key_prefix = "health."
+    cache_key = None
+    max_staleness = None
+
+    def get_cache_key(self):
+        if not self.cache_key:
+            raise NotImplementedError(
+                "TaskHealthCheckView subclasses must define cache_key"
+            )
+        if self.cache_key.startswith(self.cache_key_prefix):
+            return self.cache_key
+        return f"{self.cache_key_prefix}{self.cache_key}"
+
+    def get(self, request, *args, **kwargs):
+        cache_key = self.get_cache_key()
+        last_refresh = cache.get(cache_key)
+
+        # Fallback for un-prefixed cache key if cache_key doesn't start with prefix
+        if not last_refresh and not self.cache_key.startswith(self.cache_key_prefix):
+            last_refresh = cache.get(self.cache_key)
+
+        if not last_refresh:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Task has never run or cache was cleared",
+                },
+                status=503,
+            )
+
+        # Parse the ISO timestamp
+        last_refresh_time = parse_datetime(last_refresh)
+        if not last_refresh_time:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Invalid timestamp in cache",
+                },
+                status=503,
+            )
+
+        now = timezone.now() if settings.USE_TZ else datetime.now()
+
+        # Calculate how long ago the task ran
+        time_since_refresh = now - last_refresh_time
+
+        if time_since_refresh > self.max_staleness:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "last_refresh": last_refresh,
+                    "minutes_since_refresh": int(
+                        time_since_refresh.total_seconds() / 60
+                    ),
+                    "max_minutes": int(self.max_staleness.total_seconds() / 60),
+                },
+                status=503,
+            )
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "last_refresh": last_refresh,
+                "minutes_since_refresh": int(time_since_refresh.total_seconds() / 60),
+            },
+            status=200,
+        )
+
+
+class FlightTotalsHealthView(TaskHealthCheckView):
     """
     Health check endpoint for Flight denormalized totals refresh task.
 
@@ -169,61 +248,26 @@ def flight_totals_health(request):
     This monitors the periodic Celery task that refreshes denormalized totals
     (total_views, total_clicks) on the Flight model.
     """
-    from datetime import timedelta
 
-    from django.core.cache import cache
-    from django.utils.dateparse import parse_datetime
-
-    # Get the last time the task successfully ran from cache
-    last_refresh = cache.get("flight_totals_last_refresh")
-
-    if not last_refresh:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "Task has never run or cache was cleared",
-            },
-            status=503,
-        )
-
-    # Parse the ISO timestamp
-    last_refresh_time = parse_datetime(last_refresh)
-    if not last_refresh_time:
-        return JsonResponse(
-            {
-                "status": "error",
-                "message": "Invalid timestamp in cache",
-            },
-            status=503,
-        )
-
-    now = timezone.now() if settings.USE_TZ else datetime.now()
-
-    # Calculate how long ago the task ran
-    time_since_refresh = now - last_refresh_time
-
-    # Task runs every 10 minutes, so alert if it hasn't run in 20 minutes
+    cache_key = "flight_totals_last_refresh"
     max_staleness = timedelta(minutes=20)
 
-    if time_since_refresh > max_staleness:
-        return JsonResponse(
-            {
-                "status": "error",
-                "last_refresh": last_refresh,
-                "minutes_since_refresh": int(time_since_refresh.total_seconds() / 60),
-                "max_minutes": int(max_staleness.total_seconds() / 60),
-            },
-            status=503,
-        )
 
-    return JsonResponse(
-        {
-            "status": "ok",
-            "last_refresh": last_refresh,
-            "minutes_since_refresh": int(time_since_refresh.total_seconds() / 60),
-        },
-        status=200,
-    )
+class UpdatePreviousDayReportsHealthView(TaskHealthCheckView):
+    """
+    Health check endpoint for update_previous_day_reports task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the daily task completing report data for the previous day.
+    """
+
+    cache_key = "update_previous_day_reports"
+    max_staleness = timedelta(hours=25)
+
+
+flight_totals_health = FlightTotalsHealthView.as_view()
 
 
 def do_not_track_policy(request):
@@ -356,7 +400,27 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context.update({"advertiser": self.advertiser, "flights": self.get_queryset()})
+        flights = self.get_queryset()
+        flight_groups_dict = collections.OrderedDict()
+        for f in flights:
+            if f.state not in flight_groups_dict:
+                flight_groups_dict[f.state] = {
+                    "state": f.state,
+                    "flights": [],
+                    "total_budget": 0.0,
+                }
+            flight_groups_dict[f.state]["flights"].append(f)
+            flight_groups_dict[f.state]["total_budget"] += float(
+                f.projected_total_value()
+            )
+
+        context.update(
+            {
+                "advertiser": self.advertiser,
+                "flights": flights,
+                "flight_groups": list(flight_groups_dict.values()),
+            }
+        )
 
         return context
 
@@ -377,13 +441,17 @@ class FlightDetailView(AdvertiserAccessMixin, UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        advertisement_list = self.object.advertisements.order_by("-live", "name")
         context.update(
             {
                 "advertiser": self.advertiser,
-                "advertisement_list": advertisement_list,
-                "live_ads": [ad for ad in advertisement_list if ad.live],
-                "disabled_ads": [ad for ad in advertisement_list if not ad.live],
+                "live_ads": self.object.advertisements.filter(live=True).order_by(
+                    "name"
+                ),
+                # Sort disabled ads by most recently updated
+                # so recently disabled ads appear first
+                "disabled_ads": self.object.advertisements.filter(live=False).order_by(
+                    "-modified"
+                ),
             }
         )
         return context
@@ -1206,6 +1274,14 @@ class BaseProxyView(View):
                 geo_data.metro,
             )
             reason = "Invalid targeting impression"
+        elif is_asn_ratelimited(request):
+            log.log(
+                self.log_security_level,
+                "Too many requests from this ASN, Publisher: [%s], ASN: [%s]",
+                offer.publisher,
+                request.geo.asn,
+            )
+            reason = "ASN Ratelimited impression"
         elif self.impression_type == CLICKS and is_click_ratelimited(request):
             log.log(
                 self.log_level,

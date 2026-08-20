@@ -7,6 +7,7 @@ import socket
 from django.conf import settings
 
 from .utils import GeolocationData
+from .utils import force_int
 from .utils import get_geoipdb_geolocation
 
 
@@ -187,6 +188,9 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
     LATITUDE_HEADER = "X-Cloudflare-Geo-Lat"  # ip.src.lat
     LONGITUDE_HEADER = "X-Cloudflare-Geo-Lon"  # ip.src.lon
 
+    # https://developers.cloudflare.com/ruleset-engine/rules-language/fields/reference/ip.src.asnum/
+    ASN_HEADER = "X-Cloudflare-Geo-ASNum"  # ip.src.asn
+
     def get_geoip(self, request):
         geo = super().get_geoip(request)
 
@@ -204,6 +208,7 @@ class CloudflareGeoIpMiddleware(GeoIpMiddleware):
         geo.continent = request.headers.get(self.CONTINENT_HEADER, None)
         geo.lat = request.headers.get(self.LATITUDE_HEADER, None)
         geo.lng = request.headers.get(self.LONGITUDE_HEADER, None)
+        geo.asn = force_int(request.headers.get(self.ASN_HEADER, None))
 
         return geo
 
