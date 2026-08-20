@@ -402,7 +402,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :>json object total: An object of aggregated totals for the advertiser
         :>json array flights: An array of flights for this advertiser in the time period
 
-    .. http:get:: /api/v1/advertisers/(str:slug)/geo_report/
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/geos/
 
         Return a report of ad performance for this advertiser broken down by country.
         This matches the geo report shown in the advertiser dashboard.
@@ -416,7 +416,7 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
             Each result is indexed by the country name in the ``index`` field.
         :>json object total: An object of aggregated totals for the advertiser
 
-    .. http:get:: /api/v1/advertisers/(str:slug)/publisher_report/
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/publishers/
 
         Return a report of ad performance for this advertiser broken down by publisher.
         This matches the publisher report shown in the advertiser dashboard.
@@ -498,12 +498,14 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
             }
         )
 
-    @action(detail=True, methods=["get"])
+    # The URL paths match the URL structure of the advertiser dashboard
+    # (eg. ``advertiser/<slug>/report/geos/``)
+    @action(detail=True, methods=["get"], url_path="report/geos")
     def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
         """Return a report of ad performance for this advertiser broken down by country."""
         return self._breakdown_report(request, AdvertiserGeoReport, GeoImpression)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], url_path="report/publishers")
     def publisher_report(self, request, slug=None):  # pylint: disable=unused-argument
         """Return a report of ad performance for this advertiser broken down by publisher."""
         return self._breakdown_report(request, AdvertiserPublisherReport, AdImpression)
