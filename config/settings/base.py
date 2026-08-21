@@ -355,12 +355,6 @@ LOGGING = {
             "handlers": ["mail_admins"],
             "propagate": True,
         },
-        # Disable azure's super spammy INFO logging
-        "azure": {
-            "level": "WARNING",
-            "handlers": ["console-adserver"],
-            "propagate": False,
-        },
     },
 }
 

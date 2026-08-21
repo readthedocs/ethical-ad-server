@@ -196,8 +196,8 @@ DEFAULT_FILE_STORAGE
 ~~~~~~~~~~~~~~~~~~~~
 
 Adjusts Django's ``DEFAULT_FILE_STORAGE`` setting.
-Defaults to ``storages.backends.azure_storage.AzureStorage`` which
-can be used to storage uploaded ad images in Azure.
+Defaults to ``storages.backends.s3.S3Storage`` which
+can be used to store uploaded ad images in S3.
 See Django's :doc:`storage documentation <django:ref/files/storage>` for details.
 
 

@@ -117,7 +117,7 @@ class Command(BaseCommand):
             )
         )
 
-        # Azure storage automatically stores the md5sum in the ContentMd5 header/property
+        # S3 stores the md5sum of (non-multipart) uploads as the object's ETag
         # You can verify it after copying with:
         #  echo -n MD5HEXSUM | xxd -p -r | base64
         self.stdout.write(_("MD5 summing %s...") % zipped_output_file)
