@@ -32,6 +32,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Click
 from ..models import Flight
+from ..models import GeoImpression
 from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
@@ -901,6 +902,12 @@ class AdvertiserApiTests(BaseApiTest):
         self.advertiser2_report_url = reverse(
             "api:advertisers-report", args=[self.advertiser2.slug]
         )
+        self.advertiser1_geo_report_url = reverse(
+            "api:advertisers-geo-report", args=[self.advertiser1.slug]
+        )
+        self.advertiser1_publisher_report_url = reverse(
+            "api:advertisers-publisher-report", args=[self.advertiser1.slug]
+        )
 
     def test_advertiser_access(self):
         # User has access to advertiser1 but not advertiser2
@@ -912,7 +919,12 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.advertiser1.slug)
 
-        for url in (self.advertiser1_detail_url, self.advertiser1_report_url):
+        for url in (
+            self.advertiser1_detail_url,
+            self.advertiser1_report_url,
+            self.advertiser1_geo_report_url,
+            self.advertiser1_publisher_report_url,
+        ):
             resp = self.client.get(url, content_type="application/json")
             self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -997,6 +1009,90 @@ class AdvertiserApiTests(BaseApiTest):
             self.advertiser1_report_url, content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200, resp.content)
+
+    def test_advertiser_geo_report(self):
+        # No data yet
+        resp = self.client.get(
+            self.advertiser1_geo_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
+        self.assertEqual(data["total"]["clicks"], 0)
+
+        get(
+            GeoImpression,
+            advertisement=self.ad,
+            country="US",
+            date=timezone.now().date(),
+            views=100,
+            clicks=10,
+        )
+        get(
+            GeoImpression,
+            advertisement=self.ad,
+            country="CA",
+            date=timezone.now().date(),
+            views=50,
+            clicks=2,
+        )
+
+        resp = self.client.get(
+            self.advertiser1_geo_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["views"], 150)
+        self.assertEqual(data["total"]["clicks"], 12)
+        self.assertEqual(len(data["results"]), 2)
+        # Ordered by views descending - the US row is first.
+        # The breakdown label is the country name in the "index" field.
+        self.assertEqual(data["results"][0]["index"], "United States of America")
+        self.assertEqual(data["results"][0]["views"], 100)
+        self.assertEqual(data["results"][0]["clicks"], 10)
+        # The flight CPC is 1.0 so cost == clicks
+        self.assertAlmostEqual(data["results"][0]["cost"], 10.0)
+
+    def test_advertiser_publisher_report(self):
+        # No data yet
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
+
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(CLICKS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher2)
+
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["views"], 3)
+        self.assertEqual(data["total"]["clicks"], 1)
+        self.assertEqual(len(data["results"]), 2)
+        # Results are broken down by publisher, labeled in the "index" field
+        self.assertEqual(data["results"][0]["index"], str(self.publisher1))
+        self.assertEqual(data["results"][0]["views"], 2)
+        self.assertEqual(data["results"][0]["clicks"], 1)
+
+        # Respects the start_date filter
+        start_date = (timezone.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url,
+            data={"start_date": start_date},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
 
 
 class PublisherApiTests(BaseApiTest):
