@@ -641,3 +641,100 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
                 "days": report.results,
             }
         )
+
+
+class FlightViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Flight API calls.
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/
+
+        Return a list of the advertiser's flights the user has access to
+
+        :>json int count: The number of flights returned
+        :>json string next: A URL to the next page of flights (if needed)
+        :>json string previous: A URL to the previous page of flights (if needed)
+        :>json array results: An array of flight results (see flight details call)
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/
+
+        Return a specific flight.
+        The fields returned are the same as the flights
+        in the advertiser report API.
+
+        :>json string name: The name of the flight
+        :>json string slug: A slug identifying the flight
+        :>json bool live: Whether the flight is currently shown
+        :>json float cpc: The cost per click of the flight
+        :>json float cpm: The cost per 1,000 impressions of the flight
+        :>json object targeting_parameters: The flight targeting (regions, topics, keywords, etc.)
+        :>json date start_date: The date the flight starts being shown
+        :>json date end_date: The estimated end date for the flight
+        :>json date created: The date the flight was created
+        :>json date modified: The date the flight was last modified
+    """
+
+    serializer_class = FlightSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "flight_slug"
+
+    def get_queryset(self):
+        """Returns Flights the user has access to."""
+        queryset = Flight.objects.filter(
+            campaign__advertiser__slug=self.kwargs["advertiser_slug"]
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset
+
+
+class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Advertisement API calls.
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/
+
+        Return a list of the flight's advertisements the user has access to
+
+        :>json int count: The number of advertisements returned
+        :>json string next: A URL to the next page of advertisements (if needed)
+        :>json string previous: A URL to the previous page of advertisements (if needed)
+        :>json array results: An array of advertisement results (see details call)
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/(str:advertisement_slug)/
+
+        Return a specific advertisement.
+        The fields returned are the same as the advertisements
+        in the advertiser report API.
+
+        :>json string name: The name of the ad (not shown to users)
+        :>json string slug: A slug identifying the ad
+        :>json string text: The text of the ad (only set on old ads)
+        :>json string headline: The headline at the beginning of the ad
+        :>json string content: The main text of the ad
+        :>json string cta: The call to action at the end of the ad
+        :>json string image: A URL of the ad's image (if any)
+        :>json string link: The URL of the ad's landing page
+        :>json array ad_types: The names of this ad's ad types
+        :>json bool live: Whether the ad is enabled
+        :>json date created: The date the ad was created
+        :>json date modified: The date the ad was last modified
+    """
+
+    serializer_class = AdvertisementSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "advertisement_slug"
+
+    def get_queryset(self):
+        """Returns Advertisements the user has access to."""
+        queryset = Advertisement.objects.filter(
+            flight__campaign__advertiser__slug=self.kwargs["advertiser_slug"],
+            flight__slug=self.kwargs["flight_slug"],
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                flight__campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset.prefetch_related("ad_types")
