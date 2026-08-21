@@ -37,7 +37,6 @@ from ..utils import is_blocklisted_user_agent
 from ..utils import is_click_ratelimited
 from ..utils import is_proxy_ip
 from ..utils import is_view_ratelimited
-from ..utils import offers_dump_exists
 from ..utils import parse_date_string
 
 
@@ -354,9 +353,6 @@ class UtilsTest(TestCase):
         with mock.patch("adserver.utils.ipproxy_db") as mock_db:
             mock_db.is_proxy.return_value = 1
             self.assertTrue(is_proxy_ip("1.2.3.4"))
-
-    def test_offers_dump_exists_placeholder(self):
-        self.assertFalse(offers_dump_exists(datetime.date.today()))
 
 
 class CachedMethodTest(TestCase):

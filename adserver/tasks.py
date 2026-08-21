@@ -26,6 +26,12 @@ from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
 from .constants import PUBLISHER_HOUSE_CAMPAIGN
+from .etl.aggregations import DomainAggregation
+from .etl.aggregations import GeoAggregation
+from .etl.aggregations import RegionAggregation
+from .etl.aggregations import RotationAggregation
+from .etl.aggregations import UpliftAggregation
+from .etl.utils import offers_dump_exists
 from .importers import psf
 from .models import AdImpression
 from .models import Advertisement
@@ -52,7 +58,6 @@ from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_day
-from .utils import offers_dump_exists
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -92,9 +97,6 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import GeoAggregation
-        from ethicalads_ext.etl.aggregations import RegionAggregation
-
         if geo:
             agg = GeoAggregation(start_date, end_date)
             agg.aggregate()
@@ -509,8 +511,6 @@ def daily_update_uplift(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import UpliftAggregation
-
         agg = UpliftAggregation(start_date, end_date)
         agg.aggregate()
         return
@@ -572,8 +572,6 @@ def daily_update_domains(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import DomainAggregation
-
         agg = DomainAggregation(start_date, end_date)
         agg.aggregate()
         return
@@ -636,8 +634,6 @@ def daily_update_rotations(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import RotationAggregation
-
         agg = RotationAggregation(start_date, end_date)
         agg.aggregate()
         return
