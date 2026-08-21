@@ -547,13 +547,6 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
-def visible_advertisers(user):
-    """Return the advertisers whose data this user can access (staff can access all)."""
-    if user.is_staff:
-        return Advertiser.objects.all()
-    return user.advertisers.all()
-
-
 class FlightViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Flight API calls.
@@ -591,10 +584,14 @@ class FlightViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Returns Flights the user has access to."""
-        return Flight.objects.filter(
-            campaign__advertiser__slug=self.kwargs["advertiser_slug"],
-            campaign__advertiser__in=visible_advertisers(self.request.user),
+        queryset = Flight.objects.filter(
+            campaign__advertiser__slug=self.kwargs["advertiser_slug"]
         )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset
 
 
 class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
@@ -636,8 +633,12 @@ class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Returns Advertisements the user has access to."""
-        return Advertisement.objects.filter(
+        queryset = Advertisement.objects.filter(
             flight__campaign__advertiser__slug=self.kwargs["advertiser_slug"],
-            flight__campaign__advertiser__in=visible_advertisers(self.request.user),
             flight__slug=self.kwargs["flight_slug"],
-        ).prefetch_related("ad_types")
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                flight__campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset.prefetch_related("ad_types")
