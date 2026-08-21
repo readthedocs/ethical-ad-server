@@ -272,6 +272,7 @@ def offers_dump_exists(day, parquet_path=None, con=None):
             table.limit(1).execute()
             return True
         except Exception:
+                log.exception("Error checking for offers dump at %s", target_path)
             return False
 
     return os.path.exists(str(target_path))
