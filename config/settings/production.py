@@ -137,10 +137,9 @@ ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 # User upload storage
 # https://docs.djangoproject.com/en/dev/topics/files/
-# https://django-storages.readthedocs.io/en/latest/backends/azure.html
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 STORAGES["default"]["BACKEND"] = env(
-    "DEFAULT_FILE_STORAGE", default="storages.backends.azure_storage.AzureStorage"
+    "DEFAULT_FILE_STORAGE", default="storages.backends.s3.S3Storage"
 )
 STORAGES["default"]["OPTIONS"] = {}
 custom_domain = env("DEFAULT_FILE_STORAGE_HOSTNAME", default=None)
@@ -148,20 +147,16 @@ if custom_domain:
     STORAGES["default"]["OPTIONS"]["custom_domain"] = custom_domain
 MEDIA_URL = env("MEDIA_URL", default="")
 MEDIA_ROOT = env("MEDIA_ROOT", default="")
-# Azure config (if on Azure)
-AZURE_ACCOUNT_NAME = env("AZURE_ACCOUNT_NAME", default="")
-AZURE_ACCOUNT_KEY = env("AZURE_ACCOUNT_KEY", default="")
-AZURE_CONTAINER = env("AZURE_CONTAINER", default="")
-# S3 config (if on AWS)
+# S3 config
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
 AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=False)
-# This default is true on AWS but false by default on Azure
+# This defaults to true on S3, but we don't want to overwrite files
 AWS_S3_FILE_OVERWRITE = False
 AWS_DATA_STORAGE_BUCKET_NAME = env("AWS_DATA_STORAGE_BUCKET_NAME", default="")
 # Data storage configuration
-DATA_STORAGE = env("DATA_STORAGE", default="config.storage.AzureDataStorage")
+DATA_STORAGE = env("DATA_STORAGE", default="config.storage.S3DataStorage")
 STORAGES["data"] = {"BACKEND": DATA_STORAGE}
 
 

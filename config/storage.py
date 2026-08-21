@@ -1,5 +1,5 @@
 """
-Django storage classes and mixins for custom storage backends (Azure blob storage).
+Django storage classes and mixins for custom storage backends (S3).
 
 By default, this is not used but it can be configured by setting the
 DEFAULT_FILE_STORAGE and DEFAULT_FILE_STORAGE_HOSTNAME envvars.
@@ -10,7 +10,6 @@ from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
 from django.conf import settings
-from storages.backends.azure_storage import AzureStorage
 from storages.backends.s3 import S3Storage
 
 
@@ -35,18 +34,6 @@ class OverrideHostnameMixin:
             url = urlunsplit(parts)
 
         return url
-
-
-class AzureCDNFileStorage(OverrideHostnameMixin, AzureStorage):
-    """An Azure Storage backend that uses a CDN and custom hostname for media."""
-
-    override_hostname = getattr(settings, "DEFAULT_FILE_STORAGE_HOSTNAME", None)
-
-
-class AzureDataStorage(AzureStorage):
-    """An Azure Storage backend for private data/backups/etc."""
-
-    azure_container = getattr(settings, "AZURE_DATA_STORAGE_CONTAINER", None) or "data"
 
 
 class S3CDNFileStorage(OverrideHostnameMixin, S3Storage):
