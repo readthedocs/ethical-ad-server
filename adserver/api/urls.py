@@ -15,7 +15,9 @@ app_name = "api"
 
 urlpatterns = [
     path(r"decision/", AdDecisionView.as_view(), name="decision"),
-    # The flight/advertisement API paths match the URL structure of the advertiser dashboard
+    # The flight/advertisement API paths match the URL structure of the advertiser dashboard.
+    # These viewsets are wired manually because they're nested under the advertiser
+    # which the router can't do: any extra @actions on them must also be added here.
     path(
         r"advertisers/<slug:advertiser_slug>/flights/",
         FlightViewSet.as_view({"get": "list"}),

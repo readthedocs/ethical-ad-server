@@ -2213,23 +2213,19 @@ class BaseReadOnlyApiTest(BaseApiTest):
             slug="another-flight",
             live=True,
             campaign=self.campaign2,
-            sold_clicks=100,
-            cpc=2.0,
         )
-        self.other_ad = get(
-            Advertisement,
-            slug="other-ad",
-            name="Other Ad",
-            link="http://other.example.com",
-            image=None,
-            live=True,
-            flight=self.flight2,
-            text="",
-            headline="Other Corp:",
-            content="Check out our new thing",
-            cta="Try it now!",
-        )
-        self.other_ad.ad_types.add(self.ad_type)
+
+    def assertEndpointsReadOnly(self, list_url, detail_url):
+        """Writes to these API endpoints should be rejected - even for staff."""
+        for method, url in (
+            ("post", list_url),
+            ("patch", detail_url),
+            ("delete", detail_url),
+        ):
+            resp = getattr(self.staff_client, method)(
+                url, "{}", content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 405, f"{method} {url}")
 
 
 class FlightApiTests(BaseReadOnlyApiTest):
@@ -2328,28 +2324,26 @@ class FlightApiTests(BaseReadOnlyApiTest):
         self.assertEqual(resp.status_code, 404, resp.content)
 
     def test_flight_read_only(self):
-        # The API is read-only - writes are rejected even for staff
-        resp = self.staff_client.post(
-            self.flight_list_url,
-            json.dumps({"name": "New Flight"}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 405, resp.content)
-
-        resp = self.staff_client.patch(
-            self.flight1_detail_url,
-            json.dumps({"name": "Updated Name"}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 405, resp.content)
-
-        resp = self.staff_client.delete(self.flight1_detail_url)
-        self.assertEqual(resp.status_code, 405, resp.content)
+        self.assertEndpointsReadOnly(self.flight_list_url, self.flight1_detail_url)
 
 
 class AdvertisementApiTests(BaseReadOnlyApiTest):
     def setUp(self):
         super().setUp()
+
+        # An ad in the other advertiser's flight
+        self.other_ad = get(
+            Advertisement,
+            slug="other-ad",
+            image=None,
+            live=True,
+            flight=self.flight2,
+            text="",
+            headline="Other Corp:",
+            content="Check out our new thing",
+            cta="Try it now!",
+        )
+        self.other_ad.ad_types.add(self.ad_type)
 
         self.ad_list_url = reverse(
             "api:advertisements-list",
@@ -2460,20 +2454,4 @@ class AdvertisementApiTests(BaseReadOnlyApiTest):
         self.assertEqual(resp.status_code, 404, resp.content)
 
     def test_ad_read_only(self):
-        # The API is read-only - writes are rejected even for staff
-        resp = self.staff_client.post(
-            self.ad_list_url,
-            json.dumps({"name": "New Ad"}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 405, resp.content)
-
-        resp = self.staff_client.patch(
-            self.ad_detail_url,
-            json.dumps({"name": "Updated Name"}),
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, 405, resp.content)
-
-        resp = self.staff_client.delete(self.ad_detail_url)
-        self.assertEqual(resp.status_code, 405, resp.content)
+        self.assertEndpointsReadOnly(self.ad_list_url, self.ad_detail_url)
