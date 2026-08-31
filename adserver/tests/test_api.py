@@ -32,6 +32,7 @@ from ..models import Advertiser
 from ..models import Campaign
 from ..models import Click
 from ..models import Flight
+from ..models import GeoImpression
 from ..models import Offer
 from ..models import Publisher
 from ..models import PublisherGroup
@@ -901,6 +902,12 @@ class AdvertiserApiTests(BaseApiTest):
         self.advertiser2_report_url = reverse(
             "api:advertisers-report", args=[self.advertiser2.slug]
         )
+        self.advertiser1_geo_report_url = reverse(
+            "api:advertisers-geo-report", args=[self.advertiser1.slug]
+        )
+        self.advertiser1_publisher_report_url = reverse(
+            "api:advertisers-publisher-report", args=[self.advertiser1.slug]
+        )
 
     def test_advertiser_access(self):
         # User has access to advertiser1 but not advertiser2
@@ -912,7 +919,12 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.advertiser1.slug)
 
-        for url in (self.advertiser1_detail_url, self.advertiser1_report_url):
+        for url in (
+            self.advertiser1_detail_url,
+            self.advertiser1_report_url,
+            self.advertiser1_geo_report_url,
+            self.advertiser1_publisher_report_url,
+        ):
             resp = self.client.get(url, content_type="application/json")
             self.assertEqual(resp.status_code, 200, resp.content)
 
@@ -997,6 +1009,90 @@ class AdvertiserApiTests(BaseApiTest):
             self.advertiser1_report_url, content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200, resp.content)
+
+    def test_advertiser_geo_report(self):
+        # No data yet
+        resp = self.client.get(
+            self.advertiser1_geo_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
+        self.assertEqual(data["total"]["clicks"], 0)
+
+        get(
+            GeoImpression,
+            advertisement=self.ad,
+            country="US",
+            date=timezone.now().date(),
+            views=100,
+            clicks=10,
+        )
+        get(
+            GeoImpression,
+            advertisement=self.ad,
+            country="CA",
+            date=timezone.now().date(),
+            views=50,
+            clicks=2,
+        )
+
+        resp = self.client.get(
+            self.advertiser1_geo_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["views"], 150)
+        self.assertEqual(data["total"]["clicks"], 12)
+        self.assertEqual(len(data["results"]), 2)
+        # Ordered by views descending - the US row is first.
+        # The breakdown label is the country name in the "index" field.
+        self.assertEqual(data["results"][0]["index"], "United States of America")
+        self.assertEqual(data["results"][0]["views"], 100)
+        self.assertEqual(data["results"][0]["clicks"], 10)
+        # The flight CPC is 1.0 so cost == clicks
+        self.assertAlmostEqual(data["results"][0]["cost"], 10.0)
+
+    def test_advertiser_publisher_report(self):
+        # No data yet
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
+
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher1)
+        self.ad.incr(CLICKS, self.publisher1)
+        self.ad.incr(VIEWS, self.publisher2)
+
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["total"]["views"], 3)
+        self.assertEqual(data["total"]["clicks"], 1)
+        self.assertEqual(len(data["results"]), 2)
+        # Results are broken down by publisher, labeled in the "index" field
+        self.assertEqual(data["results"][0]["index"], str(self.publisher1))
+        self.assertEqual(data["results"][0]["views"], 2)
+        self.assertEqual(data["results"][0]["clicks"], 1)
+
+        # Respects the start_date filter
+        start_date = (timezone.now() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        resp = self.client.get(
+            self.advertiser1_publisher_report_url,
+            data={"start_date": start_date},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["results"], [])
+        self.assertEqual(data["total"]["views"], 0)
 
 
 class PublisherApiTests(BaseApiTest):
@@ -2191,3 +2287,267 @@ class TestProxyViews(BaseApiTest):
 
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["X-Adserver-Reason"], "Billed click")
+
+
+class BaseReadOnlyApiTest(BaseApiTest):
+    """Shared setup for the flight and advertisement API tests."""
+
+    def setUp(self):
+        super().setUp()
+
+        self.user.advertisers.add(self.advertiser1)
+
+        # A second advertiser the user does *not* have access to
+        self.advertiser2 = get(
+            Advertiser, name="Another Advertiser", slug="another-advertiser"
+        )
+        self.campaign2 = get(
+            Campaign, slug="another-campaign", advertiser=self.advertiser2
+        )
+        self.flight2 = get(
+            Flight,
+            slug="another-flight",
+            live=True,
+            campaign=self.campaign2,
+        )
+
+    def assertEndpointsReadOnly(self, list_url, detail_url):
+        """Writes to these API endpoints should be rejected - even for staff."""
+        for method, url in (
+            ("post", list_url),
+            ("patch", detail_url),
+            ("delete", detail_url),
+        ):
+            resp = getattr(self.staff_client, method)(
+                url, "{}", content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 405, f"{method} {url}")
+
+
+class FlightApiTests(BaseReadOnlyApiTest):
+    def setUp(self):
+        super().setUp()
+
+        self.flight_list_url = reverse(
+            "api:flights-list",
+            kwargs={"advertiser_slug": self.advertiser1.slug},
+        )
+        self.flight2_list_url = reverse(
+            "api:flights-list",
+            kwargs={"advertiser_slug": self.advertiser2.slug},
+        )
+        self.flight1_detail_url = reverse(
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.flight2_detail_url = reverse(
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+            },
+        )
+
+    def test_flight_list(self):
+        # Unauthenticated requests are rejected
+        resp = self.unauth_client.get(self.flight_list_url)
+        self.assertEqual(resp.status_code, 401)
+
+        # The user can list flights of their advertisers
+        resp = self.client.get(self.flight_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.flight.slug)
+
+        # No flights are returned for advertisers the user can't access
+        resp = self.client.get(self.flight2_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["count"], 0)
+
+        # Staff users can list any advertiser's flights
+        resp = self.staff_client.get(self.flight2_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.flight2.slug)
+
+    def test_flight_detail(self):
+        resp = self.client.get(self.flight1_detail_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+
+        # The fields match the flights in the advertiser report API
+        self.assertEqual(
+            set(data.keys()),
+            {
+                "name",
+                "slug",
+                "live",
+                "cpc",
+                "cpm",
+                "targeting_parameters",
+                "start_date",
+                "end_date",
+                "created",
+                "modified",
+            },
+        )
+        self.assertEqual(data["name"], self.flight.name)
+        self.assertEqual(data["cpc"], 1.0)
+        self.assertTrue(data["live"])
+
+        # No access to flights of other advertisers
+        resp = self.client.get(self.flight2_detail_url)
+        self.assertEqual(resp.status_code, 404, resp.content)
+
+        # Staff can see any flight
+        resp = self.staff_client.get(self.flight2_detail_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # The flight isn't found under the wrong advertiser
+        url = reverse(
+            "api:flights-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        resp = self.staff_client.get(url)
+        self.assertEqual(resp.status_code, 404, resp.content)
+
+    def test_flight_read_only(self):
+        self.assertEndpointsReadOnly(self.flight_list_url, self.flight1_detail_url)
+
+
+class AdvertisementApiTests(BaseReadOnlyApiTest):
+    def setUp(self):
+        super().setUp()
+
+        # An ad in the other advertiser's flight
+        self.other_ad = get(
+            Advertisement,
+            slug="other-ad",
+            image=None,
+            live=True,
+            flight=self.flight2,
+            text="",
+            headline="Other Corp:",
+            content="Check out our new thing",
+            cta="Try it now!",
+        )
+        self.other_ad.ad_types.add(self.ad_type)
+
+        self.ad_list_url = reverse(
+            "api:advertisements-list",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+            },
+        )
+        self.other_ad_list_url = reverse(
+            "api:advertisements-list",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+            },
+        )
+        self.ad_detail_url = reverse(
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser1.slug,
+                "flight_slug": self.flight.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
+        self.other_ad_detail_url = reverse(
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+                "advertisement_slug": self.other_ad.slug,
+            },
+        )
+
+    def test_ad_list(self):
+        # Unauthenticated requests are rejected
+        resp = self.unauth_client.get(self.ad_list_url)
+        self.assertEqual(resp.status_code, 401)
+
+        # The user can list ads in their advertisers' flights
+        resp = self.client.get(self.ad_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.ad.slug)
+
+        # No ads are returned for advertisers the user can't access
+        resp = self.client.get(self.other_ad_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["count"], 0)
+
+        # Staff users can list any flight's ads
+        resp = self.staff_client.get(self.other_ad_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["slug"], self.other_ad.slug)
+
+    def test_ad_detail(self):
+        resp = self.client.get(self.ad_detail_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+
+        # The fields match the advertisements in the advertiser report API
+        self.assertEqual(
+            set(data.keys()),
+            {
+                "name",
+                "slug",
+                "text",
+                "headline",
+                "content",
+                "cta",
+                "image",
+                "link",
+                "ad_types",
+                "live",
+                "created",
+                "modified",
+            },
+        )
+        self.assertEqual(data["name"], self.ad.name)
+        self.assertEqual(data["link"], self.ad.link)
+        self.assertEqual(data["ad_types"], [self.ad_type.name])
+
+        # No access to ads of other advertisers
+        resp = self.client.get(self.other_ad_detail_url)
+        self.assertEqual(resp.status_code, 404, resp.content)
+
+        # Staff can see any ad
+        resp = self.staff_client.get(self.other_ad_detail_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+        # Newer ads have the headline, content, and call to action
+        data = resp.json()
+        self.assertEqual(data["headline"], "Other Corp:")
+        self.assertEqual(data["content"], "Check out our new thing")
+        self.assertEqual(data["cta"], "Try it now!")
+
+        # The ad isn't found under the wrong flight
+        url = reverse(
+            "api:advertisements-detail",
+            kwargs={
+                "advertiser_slug": self.advertiser2.slug,
+                "flight_slug": self.flight2.slug,
+                "advertisement_slug": self.ad.slug,
+            },
+        )
+        resp = self.staff_client.get(url)
+        self.assertEqual(resp.status_code, 404, resp.content)
+
+    def test_ad_read_only(self):
+        self.assertEndpointsReadOnly(self.ad_list_url, self.ad_detail_url)
