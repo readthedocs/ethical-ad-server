@@ -13,6 +13,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -1174,10 +1175,9 @@ class TestETLCeleryTasks(TestCase):
         ):
             with mock.patch(
                 "adserver.etl.tasks.dump_monthly_offers", return_value=None
-            ):
-                with mock.patch("adserver.etl.tasks.slack_message") as mock_slack:
-                    monthly_offers_dump(day="2025-05-01")
-                    mock_slack.assert_not_called()
+            ) as mock_dump:
+                monthly_offers_dump(day="2025-05-01")
+                mock_dump.assert_called_once()
 
     def test_daily_etl_pipeline(self):
         with mock.patch("adserver.etl.tasks.daily_offers_dump.delay") as mock_delay:
@@ -1187,6 +1187,50 @@ class TestETLCeleryTasks(TestCase):
             mock_delay.reset_mock()
             daily_etl_pipeline()
             mock_delay.assert_called_once()
+
+    def test_daily_offers_dump_health_cache(self):
+        cache.clear()
+        self.assertIsNone(cache.get("health.daily_offers_dump"))
+
+        with mock.patch("adserver.etl.tasks.offers_dump_exists", return_value=False):
+            with mock.patch(
+                "adserver.etl.tasks.dump_offers",
+                return_value="s3://bucket/path.parquet",
+            ):
+                # Manual run with explicit day does not set health check cache
+                daily_offers_dump(day=datetime.date(2025, 5, 13))
+                self.assertIsNone(cache.get("health.daily_offers_dump"))
+
+                # Nightly run (day=None) sets health check cache
+                daily_offers_dump()
+                health_cache = cache.get("health.daily_offers_dump")
+                self.assertIsNotNone(health_cache)
+                self.assertTrue(datetime.datetime.fromisoformat(health_cache))
+
+        cache.clear()
+
+    def test_monthly_offers_dump_health_cache(self):
+        cache.clear()
+        self.assertIsNone(cache.get("health.monthly_offers_dump"))
+
+        with mock.patch(
+            "adserver.etl.tasks.monthly_offers_dump_exists", return_value=False
+        ):
+            with mock.patch(
+                "adserver.etl.tasks.dump_monthly_offers",
+                return_value="s3://bucket/path.parquet",
+            ):
+                # Manual run with explicit day does not set health check cache
+                monthly_offers_dump(day=datetime.date(2025, 5, 1))
+                self.assertIsNone(cache.get("health.monthly_offers_dump"))
+
+                # Monthly scheduled run (day=None) sets health check cache
+                monthly_offers_dump()
+                health_cache = cache.get("health.monthly_offers_dump")
+                self.assertIsNotNone(health_cache)
+                self.assertTrue(datetime.datetime.fromisoformat(health_cache))
+
+        cache.clear()
 
 
 class TestTasksUsingAggregations(TestCase):
