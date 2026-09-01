@@ -1,0 +1,78 @@
+{% extends "adserver/staff/base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+
+{% block title %}{% trans 'Audience Estimator' %}{% endblock title %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  <li class="breadcrumb-item active">{% trans 'Audience Estimator' %}</li>
+{% endblock breadcrumbs %}
+
+
+{% block content_container %}
+  <h1>{% block heading %}{% trans "Audience Estimator" %}{% endblock heading %}</h1>
+
+  <div class="row">
+
+    <div class="col">
+      {% if estimate %}
+        <dl>
+          {% if countries %}
+            <dt>{% trans "Countries" %}</dt>
+            <dd>
+              <ul>
+                {% for country in countries %}<li>{{ country }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+          {% if topics %}
+            <dt>{% trans "Topics" %}</dt>
+            <dd>
+              <ul>
+                {% for topic in topics %}<li>{{ topic }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+          {% if keywords %}
+            <dt>{% trans "Keywords" %}</dt>
+            <dd>
+              <ul>
+                {% for keyword in keywords %}<li>{{ keyword }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+          {% if domains %}
+            <dt>{% trans "Domains" %}</dt>
+            <dd>
+              <ul>
+                {% for domain in domains %}<li>{{ domain }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+          {% if urls %}
+            <dt>{% trans "URLs" %}</dt>
+            <dd>
+              <ul>
+                {% for url in urls %}<li>{{ url }}</li>{% endfor %}
+              </ul>
+            </dd>
+          {% endif %}
+        </dl>
+
+        <p class="lead">
+          {% blocktrans trimmed with views=estimated_views|intcomma %}
+            Estimated monthly paid ads for these parameters: {{ views }}
+          {% endblocktrans %}
+        </p>
+
+        <hr>
+      {% endif %}
+
+      {% crispy form form.helper %}
+    </div>
+
+  </div>
+{% endblock content_container %}
