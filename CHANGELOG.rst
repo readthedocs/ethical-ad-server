@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.0.1
+--------------
+
+Fix for a dependency problem in v6.0.0.
+
+:Date: September 1, 2026
+
+ * @davidfischer: Add back Azure storage (#1273)
+
+
 Version v6.0.0
 --------------
 
