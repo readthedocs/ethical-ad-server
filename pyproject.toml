@@ -105,8 +105,8 @@ production = [
     # Hiredis is a faster Redis client implementation in C
     "django-redis[hiredis]",
 
-    # Upload files to cloud storage (S3)
-    "django-storages[s3]",
+    # Upload files to cloud storage (S3/Azure)
+    "django-storages[s3, azure]",
     "boto3>=1.40",
 
     # Logging and monitoring
