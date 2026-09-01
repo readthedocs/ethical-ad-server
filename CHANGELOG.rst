@@ -6,6 +6,29 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.0.0
+--------------
+
+This release moved a number of features that were previously private code
+into this public repository. These changes add a new app (`adserver.etl`)
+that contains ETL code for aggregating data and generating reports.
+Specifically, daily aggregation tasks will create parquet files in cloud storage,
+and reports will rely on this instead of querying the database directly.
+This offers performance improvements and allows for more complex reporting queries.
+
+This release also added some new API read-only reporting endpoints for advertisers.
+
+:Date: September 1, 2026
+
+ * @davidfischer: Move ETL code to public repository (#1260)
+ * @ericholscher: Add read-only flight and advertisement APIs (#1264)
+ * @ericholscher: Sort disabled ads on flight detail by recently updated (#1263)
+ * @dependabot[bot]: Bump sqlparse from 0.5.5 to 0.6.0 (#1262)
+ * @davidfischer: Move ETL code to public repository (#1260)
+ * @davidfischer: Add a daily aggregation health check (#1257)
+ * @ericholscher: Add geo and publisher breakdown reports to the advertiser API (#1237)
+
+
 Version v5.44.0
 ---------------
 

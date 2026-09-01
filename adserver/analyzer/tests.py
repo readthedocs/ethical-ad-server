@@ -206,8 +206,9 @@ class TestTextacyAnalyzerBackend(TestCase):
             </html>
             """,
         )
+        resp = self.analyzer.fetch()
         self.assertEqual(
-            self.analyzer.analyze(),
+            self.analyzer.analyze(resp),
             ["machine-learning", "devops"],
         )
 
@@ -218,7 +219,8 @@ class TestTextacyAnalyzerBackend(TestCase):
             self.url,
             status=404,
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
         responses.reset()
 
@@ -227,7 +229,8 @@ class TestTextacyAnalyzerBackend(TestCase):
             self.url,
             status=500,
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
         responses.reset()
 
@@ -236,7 +239,8 @@ class TestTextacyAnalyzerBackend(TestCase):
             self.url,
             body=requests.exceptions.ConnectTimeout(),
         )
-        self.assertIsNone(self.analyzer.analyze())
+        resp = self.analyzer.fetch()
+        self.assertIsNone(self.analyzer.analyze(resp))
 
 
 @pytest.mark.skipif(skip_ea, reason="EthicalAdsTopicsBackend not setup")

@@ -20,7 +20,10 @@ from ..models import AdImpression
 from ..models import Advertisement
 from ..models import Advertiser
 from ..models import Flight
+from ..models import GeoImpression
 from ..models import Publisher
+from ..reports import AdvertiserGeoReport
+from ..reports import AdvertiserPublisherReport
 from ..reports import AdvertiserReport
 from ..reports import PublisherReport
 from ..utils import get_client_id
@@ -398,10 +401,42 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
         :>json array days: An array of advertiser results per day
         :>json object total: An object of aggregated totals for the advertiser
         :>json array flights: An array of flights for this advertiser in the time period
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/geos/
+
+        Return a report of ad performance for this advertiser broken down by country.
+        This matches the geo report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per country.
+            Each result is indexed by the country name in the ``index`` field.
+        :>json object total: An object of aggregated totals for the advertiser
+
+    .. http:get:: /api/v1/advertisers/(str:slug)/report/publishers/
+
+        Return a report of ad performance for this advertiser broken down by publisher.
+        This matches the publisher report shown in the advertiser dashboard.
+
+        :query date start_date: Start the report on a given day inclusive.
+            If not specified, defaults to 30 days ago
+        :query date end_date: End the report on a given day inclusive.
+            If not specified, no end time is used (up to current)
+
+        :>json array results: An array of advertiser results per publisher.
+            Each result is indexed by the publisher name in the ``index`` field.
+        :>json object total: An object of aggregated totals for the advertiser
     """
 
     serializer_class = AdvertiserSerializer
     lookup_field = "slug"
+
+    # Columns returned for breakdown reports.
+    # This mirrors ``BaseReportView.fieldnames`` used by the dashboard CSV exports.
+    report_fields = ("index", "views", "clicks", "cost", "ctr", "ecpm")
 
     def get_queryset(self):
         """Returns Advertisers the user has access to."""
@@ -410,16 +445,77 @@ class AdvertiserViewSet(viewsets.ReadOnlyModelViewSet):
 
         return self.request.user.advertisers.all()
 
-    @action(detail=True, methods=["get"])
-    def report(self, request, slug=None):  # pylint: disable=unused-argument
-        """Return a report of ad performance for this advertiser."""
-        # This will raise a 404 if the user doesn't have access to the advertiser
-        advertiser = self.get_object()
+    def _date_range(self, request):
+        """Parse the ``start_date``/``end_date`` query params used by the report actions."""
         start_date = parse_date_string(request.query_params.get("start_date"))
         end_date = parse_date_string(request.query_params.get("end_date"))
 
         if not start_date:
             start_date = timezone.now() - timedelta(days=30)
+
+        return start_date, end_date
+
+    def _serialize_report_row(self, row):
+        """
+        Project a report row down to the JSON-serializable report columns.
+
+        This mirrors the dashboard CSV export (``BaseReportView``), which writes
+        the same fields and relies on the ``index`` value being stringified --
+        for the publisher report the raw index is a ``Publisher`` instance.
+        """
+        serialized = {field: row.get(field) for field in self.report_fields}
+        serialized["index"] = str(serialized["index"])
+        return serialized
+
+    def _breakdown_report(self, request, report_class, model):
+        """
+        Generate a breakdown report for the requested advertiser.
+
+        This powers the granular ``geo_report`` and ``publisher_report``
+        actions which break performance down by a single dimension
+        (country or publisher).
+        """
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
+
+        queryset = model.objects.filter(
+            advertisement__flight__campaign__advertiser=advertiser,
+            date__gte=start_date,
+        )
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+
+        report = report_class(queryset)
+        report.generate()
+
+        return Response(
+            {
+                "total": self._serialize_report_row(report.total),
+                "results": [
+                    self._serialize_report_row(result) for result in report.results
+                ],
+            }
+        )
+
+    # The URL paths match the URL structure of the advertiser dashboard
+    # (eg. ``advertiser/<slug>/report/geos/``)
+    @action(detail=True, methods=["get"], url_path="report/geos")
+    def geo_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by country."""
+        return self._breakdown_report(request, AdvertiserGeoReport, GeoImpression)
+
+    @action(detail=True, methods=["get"], url_path="report/publishers")
+    def publisher_report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser broken down by publisher."""
+        return self._breakdown_report(request, AdvertiserPublisherReport, AdImpression)
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):  # pylint: disable=unused-argument
+        """Return a report of ad performance for this advertiser."""
+        # This will raise a 404 if the user doesn't have access to the advertiser
+        advertiser = self.get_object()
+        start_date, end_date = self._date_range(request)
 
         queryset = AdImpression.objects.filter(
             advertisement__flight__campaign__advertiser=advertiser
@@ -545,3 +641,100 @@ class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
                 "days": report.results,
             }
         )
+
+
+class FlightViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Flight API calls.
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/
+
+        Return a list of the advertiser's flights the user has access to
+
+        :>json int count: The number of flights returned
+        :>json string next: A URL to the next page of flights (if needed)
+        :>json string previous: A URL to the previous page of flights (if needed)
+        :>json array results: An array of flight results (see flight details call)
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/
+
+        Return a specific flight.
+        The fields returned are the same as the flights
+        in the advertiser report API.
+
+        :>json string name: The name of the flight
+        :>json string slug: A slug identifying the flight
+        :>json bool live: Whether the flight is currently shown
+        :>json float cpc: The cost per click of the flight
+        :>json float cpm: The cost per 1,000 impressions of the flight
+        :>json object targeting_parameters: The flight targeting (regions, topics, keywords, etc.)
+        :>json date start_date: The date the flight starts being shown
+        :>json date end_date: The estimated end date for the flight
+        :>json date created: The date the flight was created
+        :>json date modified: The date the flight was last modified
+    """
+
+    serializer_class = FlightSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "flight_slug"
+
+    def get_queryset(self):
+        """Returns Flights the user has access to."""
+        queryset = Flight.objects.filter(
+            campaign__advertiser__slug=self.kwargs["advertiser_slug"]
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset
+
+
+class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Advertisement API calls.
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/
+
+        Return a list of the flight's advertisements the user has access to
+
+        :>json int count: The number of advertisements returned
+        :>json string next: A URL to the next page of advertisements (if needed)
+        :>json string previous: A URL to the previous page of advertisements (if needed)
+        :>json array results: An array of advertisement results (see details call)
+
+    .. http:get:: /api/v1/advertisers/(str:advertiser_slug)/flights/(str:flight_slug)/advertisements/(str:advertisement_slug)/
+
+        Return a specific advertisement.
+        The fields returned are the same as the advertisements
+        in the advertiser report API.
+
+        :>json string name: The name of the ad (not shown to users)
+        :>json string slug: A slug identifying the ad
+        :>json string text: The text of the ad (only set on old ads)
+        :>json string headline: The headline at the beginning of the ad
+        :>json string content: The main text of the ad
+        :>json string cta: The call to action at the end of the ad
+        :>json string image: A URL of the ad's image (if any)
+        :>json string link: The URL of the ad's landing page
+        :>json array ad_types: The names of this ad's ad types
+        :>json bool live: Whether the ad is enabled
+        :>json date created: The date the ad was created
+        :>json date modified: The date the ad was last modified
+    """
+
+    serializer_class = AdvertisementSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "advertisement_slug"
+
+    def get_queryset(self):
+        """Returns Advertisements the user has access to."""
+        queryset = Advertisement.objects.filter(
+            flight__campaign__advertiser__slug=self.kwargs["advertiser_slug"],
+            flight__slug=self.kwargs["flight_slug"],
+        )
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                flight__campaign__advertiser__in=self.request.user.advertisers.all()
+            )
+        return queryset.prefetch_related("ad_types")

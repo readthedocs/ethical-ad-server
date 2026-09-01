@@ -64,3 +64,7 @@ GEOIP_PATH = os.path.join(BASE_DIR, "geoip-noexists")
 # https://django-slack.readthedocs.io/#testing
 SLACK_BACKEND = "django_slack.backends.TestBackend"
 SLACK_TOKEN = "this-is-a-test-token"  # noqa: S105
+
+# In testing, avoid reading local development files from media/
+MEDIA_ROOT = os.path.join(BASE_DIR, "media", "testing")
+ADSERVER_OFFERS_LOCAL_PATH = os.path.join(BASE_DIR, "media", "testing")
