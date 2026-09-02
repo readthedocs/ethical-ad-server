@@ -42,7 +42,30 @@ jobs:
       # Update packages where the new version has been out at least 2 weeks
       # https://docs.astral.sh/uv/reference/cli/#uv-lock--exclude-newer
       - name: Update dependencies with uv lock
-        run: uv lock --upgrade --exclude-newer "$(date -I -d '-2 weeks')"
+        # Capture the output of `uv lock` to a file so we can include it in the PR description.
+        # Running `uv sync` afterwards removes the "excludes-newer" block from uv.lock,
+        # while still keeping the updated versions of the dependencies.
+        run: |
+          uv lock --upgrade --exclude-newer "$(date -I -d '-2 weeks')" 2>&1 | tee "${{ runner.temp }}/uv-lock-output.txt"
+          uv sync
+
+      - name: Create PR description
+        run: |
+          {
+            echo "Dependencies: all packages updated via uv lock"
+            echo ""
+            echo 'This PR updates the `uv.lock` file with the latest compatible versions'
+            echo 'of all dependencies specified in `pyproject.toml`.'
+            echo ""
+            echo "<details>"
+            echo "<summary>Updated dependencies</summary>"
+            echo ""
+            echo '```text'
+            cat "${{ runner.temp }}/uv-lock-output.txt"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > "${{ runner.temp }}/pr-body.md"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
@@ -51,11 +74,7 @@ jobs:
             uv.lock
           title: |
             Dependencies: all packages updated via uv lock
-          body: |
-            Dependencies: all packages updated via uv lock
-
-            This PR updates the `uv.lock` file with the latest compatible versions
-            of all dependencies specified in `pyproject.toml`.
+          body-path: ${{ runner.temp }}/pr-body.md
           commit-message: |
             Dependencies: all packages updated via uv lock
           delete-branch: true

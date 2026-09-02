@@ -273,6 +273,17 @@ CELERY_BEAT_SCHEDULE = {
         "task": "adserver.tasks.run_publisher_importers",
         "schedule": crontab(hour="1", minute="0"),
     },
+    # Daily ETL pipeline - dumps offers to parquet
+    # and runs customer ETL jobs if ethicalads_ext.etl is installed
+    # Notably, this should finish before 'update_previous_day_reports' runs at 2:30am
+    "every-day-etl-pipeline": {
+        "task": "adserver.etl.tasks.daily_etl_pipeline",
+        "schedule": crontab(hour="2", minute="0"),
+    },
+    "every-month-offers-dump": {
+        "task": "adserver.etl.tasks.monthly_offers_dump",
+        "schedule": crontab(day_of_month=1, hour="5", minute="0"),
+    },
 }
 
 # Tasks which should only be run if the analyzer is installed
@@ -293,15 +304,6 @@ if "ethicalads_ext.embedding" in INSTALLED_APPS:
     CELERY_BEAT_SCHEDULE["every-day-analyze-advertiser-urls"] = {
         "task": "ethicalads_ext.embedding.tasks.daily_analyze_advertiser_urls",
         "schedule": crontab(hour="4", minute="30"),
-    }
-if "ethicalads_ext.etl" in INSTALLED_APPS:
-    CELERY_BEAT_SCHEDULE["every-day-etl-pipeline"] = {
-        "task": "ethicalads_ext.etl.tasks.daily_etl_pipeline",
-        "schedule": crontab(hour="2", minute="0"),
-    }
-    CELERY_BEAT_SCHEDULE["every-month-offers-dump"] = {
-        "task": "ethicalads_ext.etl.tasks.monthly_offers_dump",
-        "schedule": crontab(day_of_month=1, hour="5", minute="0"),
     }
 
 

@@ -689,6 +689,12 @@ class FlightViewSet(viewsets.ReadOnlyModelViewSet):
             )
         return queryset
 
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if getattr(self, "action", None) == "list":
+            return Flight.order_flights(queryset)
+        return queryset
+
 
 class AdvertisementViewSet(viewsets.ReadOnlyModelViewSet):
     """
