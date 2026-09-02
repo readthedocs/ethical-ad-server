@@ -14,6 +14,12 @@ log = logging.getLogger(__name__)
 QUERYDUMP_OFFERS_PREFIX = "querydumps/offers/"
 MONTHLY_QUERYDUMP_OFFERS_PREFIX = "querydumps/monthly-offers/"
 DATA_BUCKET_NAME = getattr(settings, "AWS_DATA_STORAGE_BUCKET_NAME", None)
+# The larger row group size is more efficient for reading larger parquets from S3
+# It's slightly less efficient for SSD/nvme storage
+# This will result in fewer S3 GET requests and smaller overall file sizes for the same data,
+# but will require more memory to read the entire row group into memory
+# https://duckdb.org/docs/lts/data/parquet/tips#selecting-a-row_group_size
+PARQUET_ROW_GROUP_SIZE = 500_000
 
 
 def _get_duckdb_con(con=None):
@@ -159,32 +165,39 @@ def dump_offers(start_date, end_date, parquet_path=None, con=None) -> str:
         .left_join(advertiser, campaign.advertiser_id == advertiser.advertiser_id)
     )
 
-    filtered = joined.filter(
-        (offers.date >= start_date) & (offers.date < end_date)
-    ).select(
-        id=offers.id,
-        date=offers.date,
-        advertisement_id=offers.advertisement_id,
-        advertiser_id=advertiser.advertiser_id,
-        flight_id=flight.flight_id,
-        flight_cpc=flight.flight_cpc,
-        flight_cpm=flight.flight_cpm,
-        publisher_id=offers.publisher_id,
-        country=offers.country,
-        url=offers.url,
-        domain=offers.domain,
-        viewed=offers.viewed,
-        clicked=offers.clicked,
-        paid_eligible=offers.paid_eligible,
-        uplifted=offers.uplifted,
-        view_time=offers.view_time,
-        rotations=offers.rotations,
-        keywords=offers.keywords,
-        div_id=offers.div_id,
-        ad_type_slug=offers.ad_type_slug,
+    filtered = (
+        joined.filter((offers.date >= start_date) & (offers.date < end_date))
+        .select(
+            id=offers.id,
+            date=offers.date,
+            advertisement_id=offers.advertisement_id,
+            advertiser_id=advertiser.advertiser_id,
+            flight_id=flight.flight_id,
+            flight_cpc=flight.flight_cpc,
+            flight_cpm=flight.flight_cpm,
+            publisher_id=offers.publisher_id,
+            country=offers.country,
+            url=offers.url,
+            domain=offers.domain,
+            viewed=offers.viewed,
+            clicked=offers.clicked,
+            paid_eligible=offers.paid_eligible,
+            uplifted=offers.uplifted,
+            view_time=offers.view_time,
+            rotations=offers.rotations,
+            keywords=offers.keywords,
+            div_id=offers.div_id,
+            ad_type_slug=offers.ad_type_slug,
+        )
+        .order_by(["advertiser_id", "publisher_id"])
     )
 
-    backend.to_parquet(filtered, str(parquet_path))
+    # Sort daily parquet by advertiser/publisher first
+    # This is optimized for advertiser or publisher queries
+    # including customer ETL jobs
+    backend.to_parquet(
+        filtered, str(parquet_path), row_group_size=PARQUET_ROW_GROUP_SIZE
+    )
 
     return str(parquet_path)
 
@@ -305,8 +318,15 @@ def dump_monthly_offers(month_date, parquet_path=None, con=None) -> str:
 
     set_duckdb_memory_limit(con=backend)
 
+    # Sort monthly parquets by day, advertiser, and publisher
+    # This preserves day-level date pruning while enabling clustering on advertisers and publishers
     daily_offers = backend.read_parquet(input_glob)
-    backend.to_parquet(daily_offers, str(parquet_path))
+    daily_offers = daily_offers.order_by(
+        [daily_offers.date.truncate("D"), "advertiser_id", "publisher_id"]
+    )
+    backend.to_parquet(
+        daily_offers, str(parquet_path), row_group_size=PARQUET_ROW_GROUP_SIZE
+    )
 
     return str(parquet_path)
 
