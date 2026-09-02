@@ -28,6 +28,7 @@ from adserver.etl.forms import AudienceEstimatorForm
 from adserver.etl.tasks import daily_etl_pipeline
 from adserver.etl.tasks import daily_offers_dump
 from adserver.etl.tasks import monthly_offers_dump
+from adserver.etl.utils import PARQUET_ROW_GROUP_SIZE
 from adserver.etl.utils import day_to_offers_parquet_url
 from adserver.etl.utils import dump_monthly_offers
 from adserver.etl.utils import dump_offers
@@ -469,6 +470,11 @@ class TestOffersParquetUtils(TestCase):
                 ).fetchone()[0]
                 self.assertEqual(count, 10)
 
+                rows = con.execute(
+                    f"SELECT date_trunc('day', date), advertiser_id, publisher_id FROM read_parquet('{result_path}')"
+                ).fetchall()
+                self.assertEqual(rows, sorted(rows))
+
                 # Test with explicit parquet_path
                 custom_path = os.path.join(
                     self.temp_dir.name, "custom", "2025-05.parquet"
@@ -486,7 +492,18 @@ class TestOffersParquetUtils(TestCase):
                     res,
                     "s3://test-bucket/querydumps/monthly-offers/2025-05.parquet",
                 )
-                mock_backend.to_parquet.assert_called_once()
+                mock_backend.read_parquet.return_value.order_by.assert_called_once_with(
+                    [
+                        mock_backend.read_parquet.return_value.date.truncate.return_value,
+                        "advertiser_id",
+                        "publisher_id",
+                    ]
+                )
+                mock_backend.to_parquet.assert_called_once_with(
+                    mock.ANY,
+                    "s3://test-bucket/querydumps/monthly-offers/2025-05.parquet",
+                    row_group_size=PARQUET_ROW_GROUP_SIZE,
+                )
 
         with override_settings(
             AWS_DATA_STORAGE_BUCKET_NAME=None,
@@ -979,6 +996,19 @@ class TestAudienceEstimator(TestCase):
                 )
                 self.assertEqual(est, 0)
                 mock_aws.assert_called_once()
+
+    def test_get_estimate_sets_memory_limit(self):
+        view = AudienceEstimatorView()
+        with mock.patch("adserver.etl.views.set_duckdb_memory_limit") as mock_mem:
+            est = view.get_estimate(
+                countries=[],
+                topics=[],
+                keywords=[],
+                domains=[],
+                parquet_path=self.parquet_path,
+            )
+            self.assertEqual(est, 3)
+            mock_mem.assert_called_once_with(limit_mb=1000, con=mock.ANY)
 
     def test_get_estimate_urls_ext_disabled(self):
         view = AudienceEstimatorView()
