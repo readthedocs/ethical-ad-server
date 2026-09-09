@@ -26,7 +26,9 @@ def daily_etl_pipeline(day=None):
         not settings.DEBUG and "ethicalads_ext.etl" in settings.INSTALLED_APPS
     )
 
-    daily_offers_dump.delay(day, run_customer_jobs=run_customer_jobs)
+    daily_offers_dump.delay(
+        day, automated=day is None, run_customer_jobs=run_customer_jobs
+    )
 
 
 @app.task(
@@ -34,8 +36,7 @@ def daily_etl_pipeline(day=None):
     retry_kwargs={"max_retries": 3},
     retry_backoff=True,
 )
-def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
-    manual_run = day is not None
+def daily_offers_dump(day=None, automated=False, run_customer_jobs=False, force=False):
     start_date, end_date = get_day(day)
 
     if not day:
@@ -58,7 +59,7 @@ def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
 
         daily_customer_etl.delay(day)
 
-    if not manual_run:
+    if automated:
         # Update cache with last successful run timestamp - used in health checks
         # Only do this for the nightly task,
         # not for manual runs of the task with a specific day.
@@ -75,7 +76,7 @@ def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
     retry_backoff=True,
 )
 def monthly_offers_dump(day=None, force=False):
-    manual_run = day is not None
+    automated = day is None
     if not day:
         today = datetime.date.today()
         first_of_month = today.replace(day=1)
@@ -101,9 +102,9 @@ def monthly_offers_dump(day=None, force=False):
         )
         return
 
-    if not manual_run:
+    if automated:
         # Update cache with last successful run timestamp - used in health checks
-        # Only do this for the monthly task,
+        # Only do this for the automated monthly task,
         # not for manual runs of the task with a specific month.
         cache.set(
             "health.monthly_offers_dump",

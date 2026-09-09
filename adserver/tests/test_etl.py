@@ -1201,8 +1201,8 @@ class TestETLCeleryTasks(TestCase):
                 daily_offers_dump(day=datetime.date(2025, 5, 13))
                 self.assertIsNone(cache.get("health.daily_offers_dump"))
 
-                # Nightly run (day=None) sets health check cache
-                daily_offers_dump()
+                # Nightly run (day=None, automated=True) sets health check cache
+                daily_offers_dump(day=None, automated=True)
                 health_cache = cache.get("health.daily_offers_dump")
                 self.assertIsNotNone(health_cache)
                 self.assertTrue(datetime.datetime.fromisoformat(health_cache))
