@@ -4,7 +4,8 @@ import datetime
 import logging
 
 from django.conf import settings
-from django_slack import slack_message
+from django.core.cache import cache
+from django.utils import timezone
 
 from config.celery_app import app
 
@@ -20,18 +21,14 @@ log = logging.getLogger(__name__)
 
 @app.task
 def daily_etl_pipeline(day=None):
-    start_date, _ = get_day(day)
-
-    if not day:
-        # If not specified, do the previous day now that the day is complete
-        start_date -= datetime.timedelta(days=1)
-
     # Only run customer ETL jobs in production when ethicalads_ext.etl is available
     run_customer_jobs = (
         not settings.DEBUG and "ethicalads_ext.etl" in settings.INSTALLED_APPS
     )
 
-    daily_offers_dump.delay(start_date, run_customer_jobs=run_customer_jobs)
+    daily_offers_dump.delay(
+        day, automated=day is None, run_customer_jobs=run_customer_jobs
+    )
 
 
 @app.task(
@@ -39,8 +36,13 @@ def daily_etl_pipeline(day=None):
     retry_kwargs={"max_retries": 3},
     retry_backoff=True,
 )
-def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
+def daily_offers_dump(day=None, automated=False, run_customer_jobs=False, force=False):
     start_date, end_date = get_day(day)
+
+    if not day:
+        # If not specified, do the previous day now that the day is complete
+        start_date -= datetime.timedelta(days=1)
+        end_date -= datetime.timedelta(days=1)
 
     # Usually, you don't want to re-run the offers dump if it already exists.
     # This is expensive on the DB and unnecessary unless something has changed.
@@ -50,20 +52,22 @@ def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
         return
 
     log.info("Creating offers parquet dump...")
-    offers_parquet_url = dump_offers(start_date, end_date)
-
-    # Send notification to Slack about parquet dump
-    slack_message(
-        "adserver/slack/generic-message.slack",
-        {
-            "text": f"Completed offers dump for {start_date:%Y-%m-%d}: {offers_parquet_url}. :parking:"
-        },
-    )
+    dump_offers(start_date, end_date)
 
     if run_customer_jobs and "ethicalads_ext.etl" in settings.INSTALLED_APPS:
         from ethicalads_ext.etl.tasks import daily_customer_etl
 
         daily_customer_etl.delay(day)
+
+    if automated:
+        # Update cache with last successful run timestamp - used in health checks
+        # Only do this for the nightly task,
+        # not for manual runs of the task with a specific day.
+        cache.set(
+            "health.daily_offers_dump",
+            timezone.now().isoformat(),
+            timeout=None,  # Never expire
+        )
 
 
 @app.task(
@@ -72,6 +76,7 @@ def daily_offers_dump(day=None, run_customer_jobs=False, force=False):
     retry_backoff=True,
 )
 def monthly_offers_dump(day=None, force=False):
+    automated = day is None
     if not day:
         today = datetime.date.today()
         first_of_month = today.replace(day=1)
@@ -97,10 +102,12 @@ def monthly_offers_dump(day=None, force=False):
         )
         return
 
-    # Send notification to Slack about parquet dump
-    slack_message(
-        "adserver/slack/generic-message.slack",
-        {
-            "text": f"Completed monthly offers parquet dump for {day.strftime('%Y-%m')}: {offers_parquet_url}. :calendar:"
-        },
-    )
+    if automated:
+        # Update cache with last successful run timestamp - used in health checks
+        # Only do this for the automated monthly task,
+        # not for manual runs of the task with a specific month.
+        cache.set(
+            "health.monthly_offers_dump",
+            timezone.now().isoformat(),
+            timeout=None,  # Never expire
+        )

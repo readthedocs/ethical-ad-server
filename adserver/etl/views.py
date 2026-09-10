@@ -15,6 +15,7 @@ from django.views.generic import FormView
 from ..mixins import StaffUserMixin
 from ..models import Topic
 from ..utils import COUNTRY_DICT
+from ..views import TaskHealthCheckView
 from .forms import AudienceEstimatorForm
 from .utils import month_to_daily_offers_parquet_glob
 from .utils import month_to_offers_parquet_url
@@ -221,3 +222,31 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
             return 0
 
         return estimated_views
+
+
+class DailyOffersDumpHealthView(TaskHealthCheckView):
+    """
+    Health check endpoint for daily_offers_dump task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the daily task that dumps offers to parquet files.
+    """
+
+    cache_key = "daily_offers_dump"
+    max_staleness = timedelta(hours=25)
+
+
+class MonthlyOffersDumpHealthView(TaskHealthCheckView):
+    """
+    Health check endpoint for monthly_offers_dump task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the monthly task that dumps offers to parquet files.
+    """
+
+    cache_key = "monthly_offers_dump"
+    max_staleness = timedelta(days=32)
