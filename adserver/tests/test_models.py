@@ -533,6 +533,7 @@ class TestAdModels(BaseAdModelsTestCase):
         """Test that offer_ad includes bid rate if publisher enabled it."""
         publisher = self.publisher
         publisher.send_bid_rate = True
+        publisher.revenue_share_percentage = 70.0
         publisher.save()
 
         # Test CPM
@@ -548,7 +549,7 @@ class TestAdModels(BaseAdModelsTestCase):
             "div-id",
             [],
         )
-        self.assertEqual(decision["cpm"], 10.00)
+        self.assertEqual(decision["cpm"], 7.00)
         self.assertNotIn("cpc", decision)
 
         # Test CPC
@@ -563,8 +564,20 @@ class TestAdModels(BaseAdModelsTestCase):
             "div-id",
             [],
         )
-        self.assertEqual(decision["cpc"], 2.50)
+        self.assertEqual(decision["cpc"], 1.75)
         self.assertNotIn("cpm", decision)
+
+        # Test different revenue share percentage
+        publisher.revenue_share_percentage = 50.0
+        publisher.save()
+        decision = self.ad1.offer_ad(
+            self.factory.get("/"),
+            publisher,
+            "text",
+            "div-id",
+            [],
+        )
+        self.assertEqual(decision["cpc"], 1.25)
 
         # Test disabled
         publisher.send_bid_rate = False
