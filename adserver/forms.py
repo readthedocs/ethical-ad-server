@@ -1464,18 +1464,23 @@ class PublisherSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.instance.stripe_connected_account_id:
-            link_obj = stripe.Account.create_login_link(
-                self.instance.stripe_connected_account_id
-            )
-            stripe_block = HTML(
-                format_html(
-                    "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
-                    "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
-                    "</a>",
-                    link_obj.url,
-                    gettext("Manage Stripe account"),
+            try:
+                link_obj = stripe.Account.create_login_link(
+                    self.instance.stripe_connected_account_id
                 )
-            )
+                stripe_block = HTML(
+                    format_html(
+                        "<a href='{}' target='_blank' class='btn btn-sm btn-outline-info mb-4'>"
+                        "<span class='fa fa-cc-stripe fa-fw mr-2' aria-hidden='true'></span> {}"
+                        "</a>",
+                        link_obj.url,
+                        gettext("Manage Stripe account"),
+                    )
+                )
+            except stripe.error.PermissionError:
+                log.info(
+                    "User has revoked access or closed their Stripe connect account "
+                )
         elif settings.STRIPE_CONNECT_CLIENT_ID:
             connect_url = reverse("publisher_stripe_connect", args=[self.instance.slug])
             stripe_block = HTML(
