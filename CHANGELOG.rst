@@ -6,6 +6,18 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.1.0
+--------------
+
+A few minor bug fixes and add CORS permissions to the decision endpoint.
+
+:Date: September 30, 2026
+
+ * @davidfischer: Fix publisher bid rate (#1280)
+ * @davidfischer: Stripe permission fix (#1279)
+ * @davidfischer: Add CORS to the decision endpoint (#1251)
+
+
 Version v6.0.1
 --------------
 
