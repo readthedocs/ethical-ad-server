@@ -13,6 +13,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -28,6 +29,7 @@ from adserver.etl.forms import AudienceEstimatorForm
 from adserver.etl.tasks import daily_etl_pipeline
 from adserver.etl.tasks import daily_offers_dump
 from adserver.etl.tasks import monthly_offers_dump
+from adserver.etl.utils import PARQUET_ROW_GROUP_SIZE
 from adserver.etl.utils import day_to_offers_parquet_url
 from adserver.etl.utils import dump_monthly_offers
 from adserver.etl.utils import dump_offers
@@ -469,6 +471,11 @@ class TestOffersParquetUtils(TestCase):
                 ).fetchone()[0]
                 self.assertEqual(count, 10)
 
+                rows = con.execute(
+                    f"SELECT date_trunc('day', date), advertiser_id, publisher_id FROM read_parquet('{result_path}')"
+                ).fetchall()
+                self.assertEqual(rows, sorted(rows))
+
                 # Test with explicit parquet_path
                 custom_path = os.path.join(
                     self.temp_dir.name, "custom", "2025-05.parquet"
@@ -486,7 +493,18 @@ class TestOffersParquetUtils(TestCase):
                     res,
                     "s3://test-bucket/querydumps/monthly-offers/2025-05.parquet",
                 )
-                mock_backend.to_parquet.assert_called_once()
+                mock_backend.read_parquet.return_value.order_by.assert_called_once_with(
+                    [
+                        mock_backend.read_parquet.return_value.date.truncate.return_value,
+                        "advertiser_id",
+                        "publisher_id",
+                    ]
+                )
+                mock_backend.to_parquet.assert_called_once_with(
+                    mock.ANY,
+                    "s3://test-bucket/querydumps/monthly-offers/2025-05.parquet",
+                    row_group_size=PARQUET_ROW_GROUP_SIZE,
+                )
 
         with override_settings(
             AWS_DATA_STORAGE_BUCKET_NAME=None,
@@ -980,6 +998,19 @@ class TestAudienceEstimator(TestCase):
                 self.assertEqual(est, 0)
                 mock_aws.assert_called_once()
 
+    def test_get_estimate_sets_memory_limit(self):
+        view = AudienceEstimatorView()
+        with mock.patch("adserver.etl.views.set_duckdb_memory_limit") as mock_mem:
+            est = view.get_estimate(
+                countries=[],
+                topics=[],
+                keywords=[],
+                domains=[],
+                parquet_path=self.parquet_path,
+            )
+            self.assertEqual(est, 3)
+            mock_mem.assert_called_once_with(limit_mb=1000, con=mock.ANY)
+
     def test_get_estimate_urls_ext_disabled(self):
         view = AudienceEstimatorView()
         # When ethicalads_ext.etl is not installed, URLs are skipped and other filters still work
@@ -1174,10 +1205,9 @@ class TestETLCeleryTasks(TestCase):
         ):
             with mock.patch(
                 "adserver.etl.tasks.dump_monthly_offers", return_value=None
-            ):
-                with mock.patch("adserver.etl.tasks.slack_message") as mock_slack:
-                    monthly_offers_dump(day="2025-05-01")
-                    mock_slack.assert_not_called()
+            ) as mock_dump:
+                monthly_offers_dump(day="2025-05-01")
+                mock_dump.assert_called_once()
 
     def test_daily_etl_pipeline(self):
         with mock.patch("adserver.etl.tasks.daily_offers_dump.delay") as mock_delay:
@@ -1187,6 +1217,50 @@ class TestETLCeleryTasks(TestCase):
             mock_delay.reset_mock()
             daily_etl_pipeline()
             mock_delay.assert_called_once()
+
+    def test_daily_offers_dump_health_cache(self):
+        cache.clear()
+        self.assertIsNone(cache.get("health.daily_offers_dump"))
+
+        with mock.patch("adserver.etl.tasks.offers_dump_exists", return_value=False):
+            with mock.patch(
+                "adserver.etl.tasks.dump_offers",
+                return_value="s3://bucket/path.parquet",
+            ):
+                # Manual run with explicit day does not set health check cache
+                daily_offers_dump(day=datetime.date(2025, 5, 13))
+                self.assertIsNone(cache.get("health.daily_offers_dump"))
+
+                # Nightly run (day=None, automated=True) sets health check cache
+                daily_offers_dump(day=None, automated=True)
+                health_cache = cache.get("health.daily_offers_dump")
+                self.assertIsNotNone(health_cache)
+                self.assertTrue(datetime.datetime.fromisoformat(health_cache))
+
+        cache.clear()
+
+    def test_monthly_offers_dump_health_cache(self):
+        cache.clear()
+        self.assertIsNone(cache.get("health.monthly_offers_dump"))
+
+        with mock.patch(
+            "adserver.etl.tasks.monthly_offers_dump_exists", return_value=False
+        ):
+            with mock.patch(
+                "adserver.etl.tasks.dump_monthly_offers",
+                return_value="s3://bucket/path.parquet",
+            ):
+                # Manual run with explicit day does not set health check cache
+                monthly_offers_dump(day=datetime.date(2025, 5, 1))
+                self.assertIsNone(cache.get("health.monthly_offers_dump"))
+
+                # Monthly scheduled run (day=None) sets health check cache
+                monthly_offers_dump()
+                health_cache = cache.get("health.monthly_offers_dump")
+                self.assertIsNotNone(health_cache)
+                self.assertTrue(datetime.datetime.fromisoformat(health_cache))
+
+        cache.clear()
 
 
 class TestTasksUsingAggregations(TestCase):

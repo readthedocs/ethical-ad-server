@@ -15,10 +15,12 @@ from django.views.generic import FormView
 from ..mixins import StaffUserMixin
 from ..models import Topic
 from ..utils import COUNTRY_DICT
+from ..views import TaskHealthCheckView
 from .forms import AudienceEstimatorForm
 from .utils import month_to_daily_offers_parquet_glob
 from .utils import month_to_offers_parquet_url
 from .utils import monthly_offers_dump_exists
+from .utils import set_duckdb_memory_limit
 from .utils import setup_duckdb_aws_connection
 
 
@@ -142,6 +144,11 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
     ):
         """Get an audience traffic estimate for the previous month."""
         con = ibis.duckdb.connect()
+        # Cap DuckDB memory to 1GB to prevent web workers from exceeding available RAM
+        # and triggering an OOM kill during estimation queries
+        # For reading parquets, usually memory is lower than this limit,
+        # but this is a safety measure for some possible expensive niche targeting queries.
+        set_duckdb_memory_limit(limit_mb=1000, con=con)
         try:
             target_path = self.get_parquet_path(parquet_path=parquet_path, con=con)
         except RuntimeError as e:
@@ -221,3 +228,31 @@ class AudienceEstimatorView(StaffUserMixin, FormView):
             return 0
 
         return estimated_views
+
+
+class DailyOffersDumpHealthView(TaskHealthCheckView):
+    """
+    Health check endpoint for daily_offers_dump task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the daily task that dumps offers to parquet files.
+    """
+
+    cache_key = "daily_offers_dump"
+    max_staleness = timedelta(hours=25)
+
+
+class MonthlyOffersDumpHealthView(TaskHealthCheckView):
+    """
+    Health check endpoint for monthly_offers_dump task.
+
+    Returns JSON with task status and HTTP 200 if the task has run recently,
+    or HTTP 503 if the task hasn't run within the expected interval.
+
+    This monitors the monthly task that dumps offers to parquet files.
+    """
+
+    cache_key = "monthly_offers_dump"
+    max_staleness = timedelta(days=32)

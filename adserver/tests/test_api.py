@@ -293,6 +293,36 @@ class AdDecisionApiTests(BaseApiTest):
         resp_json = resp.json()
         self.assertEqual(resp_json["id"], "ad-slug", resp_json)
 
+    def test_cors_headers(self):
+        # Test CORS headers on GET request
+        resp = self.client.get(
+            self.url, self.query_params, headers={"origin": "https://example.com"}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+
+        # Test CORS headers on POST request
+        resp = self.client.post(
+            self.url,
+            json.dumps(self.data),
+            content_type="application/json",
+            headers={"origin": "https://example.com"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+
+        # Test CORS headers on OPTIONS preflight request
+        resp = self.client.options(
+            self.url,
+            headers={
+                "origin": "https://example.com",
+                "access-control-request-method": "POST",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+        self.assertIn("POST", resp.headers.get("Access-Control-Allow-Methods", ""))
+
     def test_invalid_auth(self):
         client = Client()
         resp = client.post(
@@ -945,6 +975,15 @@ class AdvertiserApiTests(BaseApiTest):
         self.assertEqual(resp.status_code, 200, resp.content)
         data = resp.json()
         self.assertEqual(data["count"], 2)
+
+    def test_no_cors_headers(self):
+        resp = self.client.get(
+            self.advertiser_list_url,
+            content_type="application/json",
+            headers={"origin": "https://example.com"},
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertNotIn("Access-Control-Allow-Origin", resp.headers)
 
     def test_advertiser_report(self):
         resp = self.client.get(
@@ -2374,6 +2413,90 @@ class FlightApiTests(BaseReadOnlyApiTest):
         data = resp.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["slug"], self.flight2.slug)
+
+    def test_flight_list_ordering(self):
+        """Flights are ordered by Flight.order_flights (state, date, name)."""
+        today = timezone.now().date()
+
+        # A past flight whose name comes first alphabetically
+        get(
+            Flight,
+            name="A Past Flight",
+            slug="a-past-flight",
+            campaign=self.campaign,
+            live=False,
+            start_date=today - datetime.timedelta(days=20),
+            end_date=today - datetime.timedelta(days=10),
+        )
+        # Another past flight with a newer start date
+        get(
+            Flight,
+            name="Z Past Flight",
+            slug="z-past-flight",
+            campaign=self.campaign,
+            live=False,
+            start_date=today - datetime.timedelta(days=10),
+            end_date=today - datetime.timedelta(days=5),
+        )
+        # An upcoming flight
+        get(
+            Flight,
+            name="M Upcoming Flight",
+            slug="m-upcoming-flight",
+            campaign=self.campaign,
+            live=False,
+            start_date=today + datetime.timedelta(days=5),
+            end_date=today + datetime.timedelta(days=15),
+        )
+        # Current flight started older
+        get(
+            Flight,
+            name="B Current Flight",
+            slug="b-current-flight",
+            campaign=self.campaign,
+            live=True,
+            start_date=today - datetime.timedelta(days=10),
+            end_date=today + datetime.timedelta(days=10),
+        )
+        # Current flight started newer
+        get(
+            Flight,
+            name="X Current Flight",
+            slug="x-current-flight",
+            campaign=self.campaign,
+            live=True,
+            start_date=today - datetime.timedelta(days=2),
+            end_date=today + datetime.timedelta(days=10),
+        )
+        # Current flight started newer with name tiebreaker
+        get(
+            Flight,
+            name="C Current Flight",
+            slug="c-current-flight",
+            campaign=self.campaign,
+            live=True,
+            start_date=today - datetime.timedelta(days=2),
+            end_date=today + datetime.timedelta(days=10),
+        )
+
+        resp = self.client.get(self.flight_list_url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+
+        all_flights = Flight.objects.filter(campaign__advertiser=self.advertiser1)
+        expected_ordered_slugs = [f.slug for f in Flight.order_flights(all_flights)]
+        actual_slugs = [f["slug"] for f in data["results"]]
+
+        self.assertEqual(actual_slugs, expected_ordered_slugs)
+
+        # Verify pagination preserves the ordering
+        resp = self.client.get(self.flight_list_url + "?limit=2&offset=2")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        page_data = resp.json()
+        self.assertEqual(
+            [f["slug"] for f in page_data["results"]],
+            expected_ordered_slugs[2:4],
+        )
 
     def test_flight_detail(self):
         resp = self.client.get(self.flight1_detail_url)

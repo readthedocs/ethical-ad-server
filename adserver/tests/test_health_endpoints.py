@@ -121,3 +121,117 @@ class UpdatePreviousDayReportsHealthTest(TestCase):
         data = response.json()
         self.assertEqual(data["status"], "error")
         self.assertIn("Invalid timestamp", data["message"])
+
+
+class DailyOffersDumpHealthTest(TestCase):
+    """Tests for the daily offers dump health check endpoint."""
+
+    def setUp(self):
+        """Clear cache before each test."""
+        cache.clear()
+
+    def test_health_check_no_cache(self):
+        """Test health check returns 503 when task has never run."""
+        response = self.client.get(reverse("health-daily-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("never run", data["message"])
+
+    def test_health_check_recent_run(self):
+        """Test health check returns 200 when task ran recently."""
+        cache.set("health.daily_offers_dump", timezone.now().isoformat())
+
+        response = self.client.get(reverse("health-daily-offers-dump"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+        self.assertLessEqual(data["minutes_since_refresh"], 1)
+
+    def test_health_check_within_25_hours(self):
+        """Test health check returns 200 when task ran 23 hours ago."""
+        recent_time = timezone.now() - timedelta(hours=23)
+        cache.set("health.daily_offers_dump", recent_time.isoformat())
+
+        response = self.client.get(reverse("health-daily-offers-dump"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+
+    def test_health_check_stale_run(self):
+        """Test health check returns 503 when task ran > 25 hours ago."""
+        stale_time = timezone.now() - timedelta(hours=26)
+        cache.set("health.daily_offers_dump", stale_time.isoformat())
+
+        response = self.client.get(reverse("health-daily-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertGreater(data["minutes_since_refresh"], 25 * 60)
+
+    def test_health_check_invalid_timestamp(self):
+        """Test health check returns 503 when cache contains invalid data."""
+        cache.set("health.daily_offers_dump", "invalid-timestamp")
+
+        response = self.client.get(reverse("health-daily-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Invalid timestamp", data["message"])
+
+
+class MonthlyOffersDumpHealthTest(TestCase):
+    """Tests for the monthly offers dump health check endpoint."""
+
+    def setUp(self):
+        """Clear cache before each test."""
+        cache.clear()
+
+    def test_health_check_no_cache(self):
+        """Test health check returns 503 when task has never run."""
+        response = self.client.get(reverse("health-monthly-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("never run", data["message"])
+
+    def test_health_check_recent_run(self):
+        """Test health check returns 200 when task ran recently."""
+        cache.set("health.monthly_offers_dump", timezone.now().isoformat())
+
+        response = self.client.get(reverse("health-monthly-offers-dump"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+        self.assertLessEqual(data["minutes_since_refresh"], 1)
+
+    def test_health_check_within_32_days(self):
+        """Test health check returns 200 when task ran 30 days ago."""
+        recent_time = timezone.now() - timedelta(days=30)
+        cache.set("health.monthly_offers_dump", recent_time.isoformat())
+
+        response = self.client.get(reverse("health-monthly-offers-dump"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+
+    def test_health_check_stale_run(self):
+        """Test health check returns 503 when task ran > 32 days ago."""
+        stale_time = timezone.now() - timedelta(days=33)
+        cache.set("health.monthly_offers_dump", stale_time.isoformat())
+
+        response = self.client.get(reverse("health-monthly-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertGreater(data["minutes_since_refresh"], 32 * 24 * 60)
+
+    def test_health_check_invalid_timestamp(self):
+        """Test health check returns 503 when cache contains invalid data."""
+        cache.set("health.monthly_offers_dump", "invalid-timestamp")
+
+        response = self.client.get(reverse("health-monthly-offers-dump"))
+        self.assertEqual(response.status_code, 503)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Invalid timestamp", data["message"])

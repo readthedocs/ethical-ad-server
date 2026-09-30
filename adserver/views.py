@@ -267,9 +267,6 @@ class UpdatePreviousDayReportsHealthView(TaskHealthCheckView):
     max_staleness = timedelta(hours=25)
 
 
-flight_totals_health = FlightTotalsHealthView.as_view()
-
-
 def do_not_track_policy(request):
     """
     Returns the Do Not Track policy.
