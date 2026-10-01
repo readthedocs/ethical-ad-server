@@ -6,6 +6,16 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.1.1
+--------------
+
+Fix an issue not caught in dev/test.
+
+:Date: September 30, 2026
+
+ * @davidfischer: Fix bid rate type (#1284)
+
+
 Version v6.1.0
 --------------
 
