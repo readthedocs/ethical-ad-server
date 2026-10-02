@@ -57,7 +57,7 @@ def daily_offers_dump(day=None, automated=False, run_customer_jobs=False, force=
     if run_customer_jobs and "ethicalads_ext.etl" in settings.INSTALLED_APPS:
         from ethicalads_ext.etl.tasks import daily_customer_etl
 
-        daily_customer_etl.delay(day)
+        daily_customer_etl.delay(start_date.date())
 
     if automated:
         # Update cache with last successful run timestamp - used in health checks
