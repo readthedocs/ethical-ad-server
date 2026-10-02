@@ -6,6 +6,17 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.1.2
+--------------
+
+Fix a customer ETL issue related to the refactor in v6.1.0
+
+:Date: October 2, 2026
+
+ * @davidfischer: ETL Refactor fix (#1289)
+ * @dependabot[bot]: Bump virtualenv from 21.7.4 to 21.7.12 (#1286)
+
+
 Version v6.1.1
 --------------
 

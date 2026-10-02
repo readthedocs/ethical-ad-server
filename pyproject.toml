@@ -1,6 +1,6 @@
 [project]
 name = "ethical-ad-server"
-version = "6.1.1"
+version = "6.1.2"
 description = "Ethical Ad Server"
 requires-python = ">=3.12, <3.13"
 dependencies = [
