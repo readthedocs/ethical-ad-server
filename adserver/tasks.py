@@ -26,6 +26,12 @@ from .constants import FLIGHT_STATE_CURRENT
 from .constants import FLIGHT_STATE_UPCOMING
 from .constants import PAID_CAMPAIGN
 from .constants import PUBLISHER_HOUSE_CAMPAIGN
+from .etl.aggregations import DomainAggregation
+from .etl.aggregations import GeoAggregation
+from .etl.aggregations import RegionAggregation
+from .etl.aggregations import RotationAggregation
+from .etl.aggregations import UpliftAggregation
+from .etl.utils import offers_dump_exists
 from .importers import psf
 from .models import AdImpression
 from .models import Advertisement
@@ -52,7 +58,6 @@ from .utils import calculate_percent_diff
 from .utils import generate_absolute_url
 from .utils import get_ad_day
 from .utils import get_day
-from .utils import offers_dump_exists
 
 
 log = logging.getLogger(__name__)  # noqa
@@ -92,9 +97,6 @@ def daily_update_geos(day=None, geo=True, region=True):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import GeoAggregation
-        from ethicalads_ext.etl.aggregations import RegionAggregation
-
         if geo:
             agg = GeoAggregation(start_date, end_date)
             agg.aggregate()
@@ -509,8 +511,6 @@ def daily_update_uplift(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import UpliftAggregation
-
         agg = UpliftAggregation(start_date, end_date)
         agg.aggregate()
         return
@@ -572,8 +572,6 @@ def daily_update_domains(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import DomainAggregation
-
         agg = DomainAggregation(start_date, end_date)
         agg.aggregate()
         return
@@ -636,8 +634,6 @@ def daily_update_rotations(day=None):
 
     if offers_dump_exists(start_date):
         # Use the optimized aggregation that requires a daily dump of offers to cloud storage
-        from ethicalads_ext.etl.aggregations import RotationAggregation
-
         agg = RotationAggregation(start_date, end_date)
         agg.aggregate()
         return
@@ -816,12 +812,6 @@ def update_previous_day_reports(day=None):
         # If not specified,
         # do the previous day now that the day is complete
         start_date -= datetime.timedelta(days=1)
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": f"Started aggregating report data for yesterday ({start_date:%Y-%m-%d})."
-            },
-        )
 
     # Do all reports
     daily_update_geos(start_date)
@@ -839,13 +829,12 @@ def update_previous_day_reports(day=None):
     update_flight_traffic_fill.apply_async()
 
     if not day:
-        # Send notification to Slack about previous day's reports
-        # Don't send this notification if run manually
-        slack_message(
-            "adserver/slack/generic-message.slack",
-            {
-                "text": f"Completed aggregating report data for yesterday ({start_date:%Y-%m-%d}). :page_with_curl:"
-            },
+        # Update cache with last successful run timestamp - used in health checks
+        # Only do this for the nightly task, not for manual runs of the task with a specific day.
+        cache.set(
+            "health.update_previous_day_reports",
+            timezone.now().isoformat(),
+            timeout=None,  # Never expire
         )
 
 
@@ -953,7 +942,7 @@ def refresh_flight_denormalized_totals():
 
     # Update cache with last successful run timestamp
     cache.set(
-        "flight_totals_last_refresh",
+        "health.flight_totals_last_refresh",
         timezone.now().isoformat(),
         timeout=None,  # Never expire
     )

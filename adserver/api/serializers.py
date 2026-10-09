@@ -198,7 +198,12 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         fields = (
             "name",
             "slug",
+            # Old ads have `text` while newer ads
+            # have a headline, content, and call to action
             "text",
+            "headline",
+            "content",
+            "cta",
             "image",
             "link",
             "ad_types",

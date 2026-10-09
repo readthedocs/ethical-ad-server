@@ -6,6 +6,100 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.1.2
+--------------
+
+Fix a customer ETL issue related to the refactor in v6.1.0
+
+:Date: October 2, 2026
+
+ * @davidfischer: ETL Refactor fix (#1289)
+ * @dependabot[bot]: Bump virtualenv from 21.7.4 to 21.7.12 (#1286)
+
+
+Version v6.1.1
+--------------
+
+Fix an issue not caught in dev/test.
+
+:Date: September 30, 2026
+
+ * @davidfischer: Fix bid rate type (#1284)
+
+
+Version v6.1.0
+--------------
+
+A few minor bug fixes and add CORS permissions to the decision endpoint.
+
+:Date: September 30, 2026
+
+ * @davidfischer: Fix publisher bid rate (#1280)
+ * @davidfischer: Stripe permission fix (#1279)
+ * @davidfischer: Add CORS to the decision endpoint (#1251)
+
+
+Version v6.0.1
+--------------
+
+Fix for a dependency problem in v6.0.0.
+
+:Date: September 1, 2026
+
+ * @davidfischer: Add back Azure storage (#1273)
+
+
+Version v6.0.0
+--------------
+
+This release moved a number of features that were previously private code
+into this public repository. These changes add a new app (`adserver.etl`)
+that contains ETL code for aggregating data and generating reports.
+Specifically, daily aggregation tasks will create parquet files in cloud storage,
+and reports will rely on this instead of querying the database directly.
+This offers performance improvements and allows for more complex reporting queries.
+
+This release also added some new API read-only reporting endpoints for advertisers.
+
+:Date: September 1, 2026
+
+ * @davidfischer: Move ETL code to public repository (#1260)
+ * @ericholscher: Add read-only flight and advertisement APIs (#1264)
+ * @ericholscher: Sort disabled ads on flight detail by recently updated (#1263)
+ * @dependabot[bot]: Bump sqlparse from 0.5.5 to 0.6.0 (#1262)
+ * @davidfischer: Move ETL code to public repository (#1260)
+ * @davidfischer: Add a daily aggregation health check (#1257)
+ * @ericholscher: Add geo and publisher breakdown reports to the advertiser API (#1237)
+
+
+Version v5.44.0
+---------------
+
+The big change in this release was to upgrade to Node v24.
+Other changes include a few minor bug fixes and dependency updates.
+
+:Date: August 14, 2026
+
+ * @ericholscher: Add validation for Stripe transfer ID in publisher payout (#1259)
+ * @davidfischer: Add celerybeat monthly task for offers aggregation (#1258)
+ * @davidfischer: Show traffic cap to staff (#1256)
+ * @dependabot[bot]: Bump aiohttp from 3.14.1 to 3.14.3 (#1254)
+ * @dependabot[bot]: Bump cryptography from 49.0.0 to 50.0.0 (#1253)
+ * @davidfischer: Upgrade JS to Node v24 (#1252)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.5 (#1249)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1248)
+ * @dependabot[bot]: Bump postcss from 8.5.8 to 8.5.25 (#1247)
+ * @davidfischer: Add ability to ratelimit ASNs (#1246)
+ * @dependabot[bot]: Bump setuptools from 82.0.1 to 83.0.0 (#1245)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.4 (#1244)
+ * @dependabot[bot]: Bump svgo from 4.0.1 to 4.0.2 (#1243)
+ * @dependabot[bot]: Bump immutable from 4.3.8 to 4.3.9 (#1242)
+ * @dependabot[bot]: Bump pillow from 12.2.0 to 12.3.0 (#1241)
+ * @davidfischer: Add flight budget totals to the list view (#1240)
+ * @dependabot[bot]: Bump fast-uri from 3.1.0 to 3.1.2 (#1219)
+ * @dependabot[bot]: Bump postcss from 8.5.8 to 8.5.14 (#1217)
+
+
 Version v5.43.0
 ---------------
 

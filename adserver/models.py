@@ -2248,9 +2248,13 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
 
         if publisher.send_bid_rate:
             if self.flight.cpm:
-                response["cpm"] = self.flight.cpm
+                response["cpm"] = (
+                    float(self.flight.cpm) * publisher.revenue_share_percentage / 100.0
+                )
             if self.flight.cpc:
-                response["cpc"] = self.flight.cpc
+                response["cpc"] = (
+                    float(self.flight.cpc) * publisher.revenue_share_percentage / 100.0
+                )
 
         return response
 

@@ -37,6 +37,7 @@ from .views import FlightListView
 from .views import FlightRenewView
 from .views import FlightRequestView
 from .views import FlightSetAutoRenewView
+from .views import FlightTotalsHealthView
 from .views import FlightUpdateView
 from .views import PublisherAdvertiserReportView
 from .views import PublisherAuthorizedUsersInviteView
@@ -64,10 +65,10 @@ from .views import StaffPublisherReportView
 from .views import StaffRegionReportView
 from .views import StaffRegionTopicReportView
 from .views import StaffUpliftReportView
+from .views import UpdatePreviousDayReportsHealthView
 from .views import dashboard
 from .views import do_not_track
 from .views import do_not_track_policy
-from .views import flight_totals_health
 
 
 urlpatterns = [
@@ -86,8 +87,13 @@ urlpatterns = [
     # Health checks
     path(
         r"health/flight-totals/",
-        flight_totals_health,
+        FlightTotalsHealthView.as_view(),
         name="health-flight-totals",
+    ),
+    path(
+        r"health/update-previous-day-reports/",
+        UpdatePreviousDayReportsHealthView.as_view(),
+        name="health-update-previous-day-reports",
     ),
     # Ad API
     path(r"api/v1/", include("adserver.api.urls")),

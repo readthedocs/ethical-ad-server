@@ -15,7 +15,6 @@ def settings_processor(request):
         "adserver_api_documentation_url": settings.ADSERVER_API_DOCUMENTATION_URL,
         "adserver_website_url": settings.ADSERVER_WEBSITE_URL,
         "adserver_version": settings.ADSERVER_VERSION,
-        "adserver_etl": "ethicalads_ext.etl" in settings.INSTALLED_APPS,
         "metabase_enabled": settings.METABASE_ENABLED,
         "plausible_domain": settings.PLAUSIBLE_DOMAIN,
     }

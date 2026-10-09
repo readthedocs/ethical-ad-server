@@ -118,7 +118,10 @@ def get_day(day=None):
     if day:
         if not isinstance(day, (datetime, date)):
             day = datetime.fromisoformat(day)
-        start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        if isinstance(day, datetime):
+            start_date = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif isinstance(day, date):
+            start_date = datetime(day.year, day.month, day.day, tzinfo=dttimezone.utc)
         if is_naive(start_date):
             start_date = start_date.replace(tzinfo=dttimezone.utc)
     end_date = start_date + timedelta(days=1)
@@ -605,17 +608,6 @@ def generate_publisher_payout_data(
         settings_url=settings_url,
         publisher=publisher,
     )
-
-
-def offers_dump_exists(day):
-    if settings.ADSERVER_EXT and "ethicalads_ext.etl" in settings.INSTALLED_APPS:
-        from ethicalads_ext.etl.utils import offers_dump_exists
-
-        return offers_dump_exists(day)
-    else:
-        # This is a placeholder function to avoid breaking the code
-        # when the ethicalads_ext.etl module is not available.
-        return False
 
 
 # Compile these regular expressions at startup time for performance purposes
