@@ -3,8 +3,10 @@ import sqlite3
 from io import StringIO
 from pathlib import Path
 
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 from django_dynamic_fixture import get
 
 from ..constants import PAID_CAMPAIGN
@@ -15,6 +17,12 @@ from ..models import Campaign
 from ..models import Flight
 from ..models import Publisher
 from ..utils import get_ad_day
+
+
+if "adserver.analyzer" in settings.INSTALLED_APPS:
+    from ..analyzer.models import AnalyzedUrl
+else:
+    AnalyzedUrl = None
 
 
 class ExportD1SqlTestCase(TestCase):
@@ -32,6 +40,43 @@ class ExportD1SqlTestCase(TestCase):
             slug="disabled-pub",
             disabled=True,
         )
+
+        if AnalyzedUrl is not None:
+            self.url_active_1 = AnalyzedUrl.objects.create(
+                publisher=self.publisher_active,
+                url="https://example.com/active-url-1",
+                domain="example.com",
+                keywords=["python", "django"],
+                last_analyzed_date=timezone.now(),
+            )
+            self.url_active_2 = AnalyzedUrl.objects.create(
+                publisher=self.publisher_active,
+                url="https://example.com/active-url-2",
+                domain="example.com",
+                keywords=["flask"],
+                last_analyzed_date=timezone.now(),
+            )
+            self.url_disabled = AnalyzedUrl.objects.create(
+                publisher=self.publisher_disabled,
+                url="https://example.com/disabled-url",
+                domain="example.com",
+                keywords=["python"],
+                last_analyzed_date=timezone.now(),
+            )
+            self.url_no_keywords = AnalyzedUrl.objects.create(
+                publisher=self.publisher_active,
+                url="https://example.com/no-keywords",
+                domain="example.com",
+                keywords=None,
+                last_analyzed_date=timezone.now(),
+            )
+            self.url_not_analyzed = AnalyzedUrl.objects.create(
+                publisher=self.publisher_active,
+                url="https://example.com/not-analyzed",
+                domain="example.com",
+                keywords=["python"],
+                last_analyzed_date=None,
+            )
 
         self.advertiser = get(Advertiser, name="Test Advertiser")
         self.campaign = get(
@@ -116,6 +161,48 @@ class ExportD1SqlTestCase(TestCase):
         # Check advertisement_ad_types output
         self.assertIn("INSERT OR REPLACE INTO advertisement_ad_types", sql_content)
 
+        # Check AnalyzedUrls output
+        self.assertIn("https://example.com/active-url-1", sql_content)
+        self.assertIn("https://example.com/active-url-2", sql_content)
+        self.assertNotIn("https://example.com/disabled-url", sql_content)
+        self.assertNotIn("https://example.com/no-keywords", sql_content)
+        self.assertNotIn("https://example.com/not-analyzed", sql_content)
+
+    def test_export_d1_sql_max_urls(self):
+        out = StringIO()
+        call_command("export_d1_sql", max_urls=1, stdout=out)
+        sql_content = out.getvalue()
+
+        self.assertIn("-- URLs (1)", sql_content)
+        self.assertEqual(sql_content.count("INSERT OR REPLACE INTO urls"), 1)
+
+    def test_export_d1_sql_batching(self):
+        """Test that URLs are batched at 100 per INSERT statement."""
+        if AnalyzedUrl is None:
+            self.skipTest("Analyzer not setup")
+
+        # Create 105 more URLs to test batch splitting (total 107 active URLs)
+        AnalyzedUrl.objects.bulk_create(
+            [
+                AnalyzedUrl(
+                    publisher=self.publisher_active,
+                    url=f"https://example.com/batch-test-{i}",
+                    domain="example.com",
+                    keywords=["batch"],
+                    last_analyzed_date=timezone.now(),
+                )
+                for i in range(105)
+            ]
+        )
+
+        out = StringIO()
+        call_command("export_d1_sql", stdout=out)
+        sql_content = out.getvalue()
+
+        # 2 existing active URLs + 105 new = 107 URLs
+        # 107 URLs batched at 100/statement should produce exactly 2 INSERT statements for urls
+        self.assertEqual(sql_content.count("INSERT OR REPLACE INTO urls"), 2)
+
     def test_sqlite_execution(self):
         """Test executing generated SQL against worker schema.sql in SQLite."""
         schema_path = Path(
@@ -179,6 +266,17 @@ class ExportD1SqlTestCase(TestCase):
         self.assertEqual(len(ad_ad_types), 1)
         self.assertEqual(ad_ad_types[0][0], self.ad_active.id)
         self.assertEqual(ad_ad_types[0][1], "readthedocs-sidebar")
+
+        cursor.execute("SELECT url_hash, url, domain, tags FROM urls")
+        urls = cursor.fetchall()
+        self.assertEqual(len(urls), 2)
+        urls_by_url = {u[1]: u for u in urls}
+        self.assertIn("https://example.com/active-url-1", urls_by_url)
+        self.assertEqual(
+            urls_by_url["https://example.com/active-url-1"][3], "python django"
+        )
+        self.assertIn("https://example.com/active-url-2", urls_by_url)
+        self.assertEqual(urls_by_url["https://example.com/active-url-2"][3], "flask")
 
         conn.close()
 

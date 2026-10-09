@@ -3,7 +3,6 @@
 import hashlib
 import html
 import logging
-from io import StringIO
 
 import bleach
 from django.apps import apps
@@ -21,6 +20,8 @@ from ...utils import get_domain_from_url
 
 log = logging.getLogger(__name__)
 
+URL_BATCH_SIZE = 100
+
 
 def sql_quote(val):
     """Format a value as a SQL literal string, number, boolean, or NULL."""
@@ -32,6 +33,16 @@ def sql_quote(val):
         return str(val)
     s = str(val).replace("'", "''")
     return f"'{s}'"
+
+
+class StdoutBuffer:
+    """Wrapper to write to Django stdout without appending trailing newlines."""
+
+    def __init__(self, stdout):
+        self.stdout = stdout
+
+    def write(self, text):
+        self.stdout.write(text, ending="")
 
 
 class Command(BaseCommand):
@@ -46,10 +57,21 @@ class Command(BaseCommand):
             type=str,
             help="Path to file to write SQL output (defaults to stdout if omitted)",
         )
+        parser.add_argument(
+            "--max-urls",
+            type=int,
+            default=None,
+            help="Maximum number of AnalyzedUrls to export (defaults to all)",
+        )
 
     def handle(self, *args, **options):
         output_file = options.get("output")
-        buffer = StringIO()
+        max_urls = options.get("max_urls")
+
+        if output_file:
+            buffer = open(output_file, "w", encoding="utf-8")
+        else:
+            buffer = StdoutBuffer(self.stdout)
 
         buffer.write("-- Exported SQL data for Cloudflare D1 decision worker\n\n")
 
@@ -243,18 +265,40 @@ class Command(BaseCommand):
         buffer.write("\n")
 
         # Optional: Export AnalyzedUrls if adserver.analyzer is active
+        # These are batched into groups of 100 for efficiency
+        # Note Cloudflare's limits (100kb per SQL statement specifically)
+        # https://developers.cloudflare.com/d1/platform/limits/
         if "adserver.analyzer" in settings.INSTALLED_APPS:
             try:
                 AnalyzedUrl = apps.get_model("adserver_analyzer", "AnalyzedUrl")
                 analyzed_urls = (
-                    AnalyzedUrl.objects.exclude(keywords=None)
-                    .filter(last_analyzed_date__isnull=False)
-                    .order_by("pk")[:5000]
+                    AnalyzedUrl.objects.filter(
+                        publisher__in=publishers,
+                        last_analyzed_date__isnull=False,
+                    )
+                    .exclude(keywords=None)
+                    .only("url", "domain", "last_analyzed_date", "keywords")
+                    .order_by("pk")
                 )
+
+                if max_urls is not None and max_urls >= 0:
+                    analyzed_urls = analyzed_urls[:max_urls]
 
                 if analyzed_urls.exists():
                     buffer.write(f"-- URLs ({analyzed_urls.count()})\n")
-                    for aurl in analyzed_urls:
+
+                    def flush_url_batch(batch):
+                        if not batch:
+                            return
+                        sql = (
+                            "INSERT OR REPLACE INTO urls ("
+                            "url_hash, url, domain, analyzed_at, tags"
+                            ") VALUES\n" + ",\n".join(batch) + ";\n"
+                        )
+                        buffer.write(sql)
+
+                    url_batch = []
+                    for aurl in analyzed_urls.iterator(chunk_size=5000):
                         url_hash = hashlib.sha256(
                             aurl.url.strip().encode("utf-8")
                         ).hexdigest()
@@ -265,25 +309,23 @@ class Command(BaseCommand):
                             if isinstance(aurl.keywords, list)
                             else ""
                         )
-
-                        sql = (
-                            "INSERT OR REPLACE INTO urls ("
-                            "url_hash, url, domain, analyzed_at, tags"
-                            ") VALUES ("
-                            f"{sql_quote(url_hash)}, {sql_quote(aurl.url)}, {sql_quote(domain)}, "
-                            f"{sql_quote(analyzed_at)}, {sql_quote(tags)}"
-                            ");\n"
+                        row_sql = (
+                            f"({sql_quote(url_hash)}, {sql_quote(aurl.url)}, {sql_quote(domain)}, "
+                            f"{sql_quote(analyzed_at)}, {sql_quote(tags)})"
                         )
-                        buffer.write(sql)
+                        url_batch.append(row_sql)
+
+                        if len(url_batch) >= URL_BATCH_SIZE:
+                            flush_url_batch(url_batch)
+                            url_batch = []
+
+                    if url_batch:
+                        flush_url_batch(url_batch)
             except Exception as exc:
                 log.warning("Could not export AnalyzedUrl records: %s", exc)
 
-        content = buffer.getvalue()
         if output_file:
-            with open(output_file, "w", encoding="utf-8") as f:
-                f.write(content)
+            buffer.close()
             self.stdout.write(
                 self.style.SUCCESS(f"Successfully exported SQL to {output_file}")
             )
-        else:
-            self.stdout.write(content, ending="")
