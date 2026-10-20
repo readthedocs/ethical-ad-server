@@ -83,13 +83,16 @@ class Command(BaseCommand):
             default_keywords_str = "|".join(kw_list) if kw_list else ""
             sql = (
                 "INSERT OR REPLACE INTO publishers ("
-                "slug, name, disabled, allow_paid_campaigns, allow_house_campaigns, "
-                "allow_community_campaigns, allow_affiliate_campaigns, allow_api_keywords, default_keywords"
+                "slug, name, allow_paid_campaigns, allow_house_campaigns, "
+                "allow_community_campaigns, allow_affiliate_campaigns, allow_api_keywords, default_keywords, "
+                "revenue_share_percentage, send_bid_rate, ignore_mobile_traffic"
                 ") VALUES ("
-                f"{sql_quote(pub.slug)}, {sql_quote(pub.name)}, {sql_quote(pub.disabled)}, "
+                f"{sql_quote(pub.slug)}, {sql_quote(pub.name)}, "
                 f"{sql_quote(pub.allow_paid_campaigns)}, {sql_quote(pub.allow_house_campaigns)}, "
                 f"{sql_quote(pub.allow_community_campaigns)}, {sql_quote(pub.allow_affiliate_campaigns)}, "
-                f"{sql_quote(pub.allow_api_keywords)}, {sql_quote(default_keywords_str)}"
+                f"{sql_quote(pub.allow_api_keywords)}, {sql_quote(default_keywords_str)}, "
+                f"{sql_quote(pub.revenue_share_percentage)}, {sql_quote(pub.send_bid_rate)}, "
+                f"{sql_quote(pub.ignore_mobile_traffic)}"
                 ");\n"
             )
             buffer.write(sql)
@@ -187,16 +190,19 @@ class Command(BaseCommand):
             flight_logo = flight.flight_logo.url if flight.flight_logo else None
             pacing_interval = flight.pacing_interval or Flight.DEFAULT_PACING_INTERVAL
             clicks_needed = flight.weighted_clicks_needed_this_interval()
+            cpm_val = float(flight.cpm) if flight.cpm else 0.0
+            cpc_val = float(flight.cpc) if flight.cpc else 0.0
 
             sql = (
                 "INSERT OR REPLACE INTO flights ("
                 "slug, campaign_slug, name, priority, target_geos, target_topics, logo, "
-                "pacing_interval, weighted_clicks_needed_this_interval, active"
+                "pacing_interval, weighted_clicks_needed_this_interval, cpm, cpc"
                 ") VALUES ("
                 f"{sql_quote(flight.slug)}, {sql_quote(flight.campaign.slug)}, {sql_quote(flight.name)}, "
                 f"{sql_quote(flight.priority_multiplier)}, {sql_quote(target_geos_str)}, "
                 f"{sql_quote(target_topics_str)}, {sql_quote(flight_logo)}, "
-                f"{sql_quote(pacing_interval)}, {sql_quote(clicks_needed)}, {sql_quote(1)}"
+                f"{sql_quote(pacing_interval)}, {sql_quote(clicks_needed)}, "
+                f"{sql_quote(cpm_val)}, {sql_quote(cpc_val)}"
                 ");\n"
             )
             buffer.write(sql)
@@ -230,12 +236,12 @@ class Command(BaseCommand):
             sql = (
                 "INSERT OR REPLACE INTO advertisements ("
                 "id, slug, flight_slug, title, text_content, body_content, headline, cta, "
-                "image, html_content, destination_url, active"
+                "image, html_content, destination_url"
                 ") VALUES ("
                 f"{sql_quote(ad.pk)}, {sql_quote(ad.slug)}, {sql_quote(ad.flight.slug)}, "
                 f"{sql_quote(ad.name)}, {sql_quote(text_content)}, {sql_quote(body_content)}, "
                 f"{sql_quote(ad.headline)}, {sql_quote(ad.cta)}, {sql_quote(ad_image)}, {sql_quote(html_content)}, "
-                f"{sql_quote(ad.link)}, {sql_quote(1)}"
+                f"{sql_quote(ad.link)}"
                 ");\n"
             )
             buffer.write(sql)

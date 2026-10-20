@@ -210,6 +210,9 @@ class TestExportD1Sql(TestCase):
             slug="active-pub",
             disabled=False,
             default_keywords="python,django",
+            revenue_share_percentage=75.0,
+            send_bid_rate=True,
+            ignore_mobile_traffic=True,
         )
         self.publisher_disabled = get(
             Publisher,
@@ -275,6 +278,7 @@ class TestExportD1Sql(TestCase):
             campaign=self.campaign,
             start_date=get_ad_day().date() - datetime.timedelta(days=1),
             priority_multiplier=10,
+            cpc=1.25,
             targeting_parameters={
                 "include_countries": ["US", "CA"],
                 "include_topics": ["python"],
@@ -320,6 +324,11 @@ class TestExportD1Sql(TestCase):
         # Check publisher output
         self.assertIn("'active-pub'", sql_content)
         self.assertNotIn("'disabled-pub'", sql_content)
+        self.assertIn(
+            "revenue_share_percentage, send_bid_rate, ignore_mobile_traffic",
+            sql_content,
+        )
+        self.assertIn("75.0, 1, 1", sql_content)
 
         # Check campaign output
         self.assertIn("'test-campaign'", sql_content)
@@ -330,6 +339,7 @@ class TestExportD1Sql(TestCase):
         # Check flight output
         self.assertIn("'active-flight'", sql_content)
         self.assertNotIn("'inactive-flight'", sql_content)
+        self.assertIn("0.0, 1.25", sql_content)
 
         # Check advertisement output
         self.assertIn("'active-ad'", sql_content)
