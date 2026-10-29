@@ -1963,6 +1963,9 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
         """
         Add to the number of times this action has been performed, stored in the DB.
 
+        When ``ADSERVER_IMPRESSION_CACHE_ENABLED`` is True, increments are
+        buffered in the cache and written to the DB in batch by a periodic task.
+
         TODO: Refactor this method, moving it off the Advertisement class since it can be called
               without an advertisement when we have a Decision and no Offer.
         """
@@ -1987,6 +1990,15 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             # These fields are now calculated on-demand from AdImpression or
             # refreshed periodically by a background task.
             # See: Flight.refresh_denormalized_totals()
+
+        if settings.ADSERVER_IMPRESSION_CACHE_ENABLED:
+            from .impression_cache import CachedImpressionWriter
+
+            writer = CachedImpressionWriter()
+            ad_id = self.pk if self else None
+            for imp_type in impression_types:
+                writer.increment(ad_id, publisher.pk, day, imp_type)
+            return
 
         # Ensure that an impression object exists for today
         # and make sure to query the writable DB for this
