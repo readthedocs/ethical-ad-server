@@ -144,10 +144,7 @@ analyzer = [
     # Machine learning production requirements
     # Postgres & Postgres vector support
     "pgvector",
-
-    # Numpy v2 has some breaking changes (for now)
-    # https://github.com/explosion/thinc/issues/939
-    "numpy<2",
+    "numpy",
 
     # Language detection for spam detection and other filtering
     "langdetect",
