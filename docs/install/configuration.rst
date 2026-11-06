@@ -84,6 +84,17 @@ By default, this is set to ``"3/5m"`` which is:
 * 3 views per 5 minutes
 
 
+ADSERVER_COUNT_PUBLISHER_HOUSE_DELIVERY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set to ``True`` to keep the delivered views and clicks of publisher house flights up to date.
+By default, these flights are skipped when flight totals are refreshed,
+which is fine for uncapped house ads.
+Enable this setting when publisher house flights have sold impressions or clicks:
+without it, they are paced as if nothing had been delivered and never complete.
+Defaults to ``False``.
+
+
 ADSERVER_DECISION_BACKEND
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -568,6 +568,13 @@ ADSERVER_DECISION_BACKEND = env(
     default="adserver.decisionengine.backends.ProbabilisticFlightBackend",
 )
 
+# Keep total_views/total_clicks up to date on publisher house flights
+# They are skipped by default which is fine for uncapped house ads
+# but breaks pacing and completion when they have sold impressions or clicks
+ADSERVER_COUNT_PUBLISHER_HOUSE_DELIVERY = env.bool(
+    "ADSERVER_COUNT_PUBLISHER_HOUSE_DELIVERY", default=False
+)
+
 # The backend(s) to be used by the ad server
 # for topic and keyword analysis.
 # By default this is empty, you can find options in ``adserver.analyzer.backends``
