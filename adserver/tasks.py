@@ -932,9 +932,9 @@ def refresh_flight_denormalized_totals():
     log.info("Starting refresh of denormalized totals for live flights")
 
     # Only refresh active flights to avoid unnecessary work
-    flights = Flight.objects.filter(live=True).exclude(
-        campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN
-    )
+    flights = Flight.objects.filter(live=True)
+    if not settings.ADSERVER_COUNT_PUBLISHER_HOUSE_DELIVERY:
+        flights = flights.exclude(campaign__campaign_type=PUBLISHER_HOUSE_CAMPAIGN)
     total_flights = flights.count()
 
     for flight in flights:
