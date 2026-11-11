@@ -8,8 +8,11 @@ from django_dynamic_fixture import get
 from django_slack.utils import get_backend
 
 from ..constants import HOUSE_CAMPAIGN
+from ..constants import PUBLISHER_HOUSE_CAMPAIGN
 from ..models import AdImpression
+from ..models import Advertisement
 from ..models import AdvertiserImpression
+from ..models import Campaign
 from ..models import DomainImpression
 from ..models import Flight
 from ..models import GeoImpression
@@ -38,6 +41,7 @@ from ..tasks import notify_of_completed_flights
 from ..tasks import notify_of_daily_traffic_spikes
 from ..tasks import notify_of_first_flight_launched
 from ..tasks import notify_of_publisher_changes
+from ..tasks import refresh_flight_denormalized_totals
 from ..tasks import remove_old_client_ids
 from ..tasks import remove_old_report_data
 from ..tasks import update_previous_day_reports
@@ -141,6 +145,72 @@ class TasksTest(BaseAdModelsTestCase):
 
         self.assertAlmostEqual(self.ad1.sampled_ctr, 100 * (1 / 10))
         self.assertAlmostEqual(self.ad2.sampled_ctr, 100 * (2 / 7))
+
+    def _create_flight_totals_data(self):
+        """Record delivery on the paid flight and on a new publisher house flight."""
+        house_campaign = get(
+            Campaign,
+            advertiser=self.advertiser,
+            campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
+        )
+        house_flight = get(
+            Flight,
+            live=True,
+            campaign=house_campaign,
+            sold_impressions=10_000,
+            cpm=0,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+            targeting_parameters={},
+        )
+        house_ad = get(Advertisement, live=True, image=None, flight=house_flight)
+
+        get(
+            AdImpression,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            date=get_ad_day(),
+            views=20,
+            clicks=2,
+        )
+        get(
+            AdImpression,
+            advertisement=house_ad,
+            publisher=self.publisher,
+            date=get_ad_day(),
+            views=30,
+            clicks=3,
+        )
+
+        return house_flight
+
+    def test_refresh_flight_denormalized_totals(self):
+        house_flight = self._create_flight_totals_data()
+
+        refresh_flight_denormalized_totals()
+
+        self.flight.refresh_from_db()
+        self.assertEqual(self.flight.total_views, 20)
+        self.assertEqual(self.flight.total_clicks, 2)
+
+        # Publisher house flights are skipped by default
+        house_flight.refresh_from_db()
+        self.assertEqual(house_flight.total_views, 0)
+        self.assertEqual(house_flight.total_clicks, 0)
+
+    @override_settings(ADSERVER_COUNT_PUBLISHER_HOUSE_DELIVERY=True)
+    def test_refresh_flight_denormalized_totals_publisher_house(self):
+        house_flight = self._create_flight_totals_data()
+
+        refresh_flight_denormalized_totals()
+
+        self.flight.refresh_from_db()
+        self.assertEqual(self.flight.total_views, 20)
+        self.assertEqual(self.flight.total_clicks, 2)
+
+        house_flight.refresh_from_db()
+        self.assertEqual(house_flight.total_views, 30)
+        self.assertEqual(house_flight.total_clicks, 3)
 
     @override_settings(
         # Use the memory email backend instead of front for testing
