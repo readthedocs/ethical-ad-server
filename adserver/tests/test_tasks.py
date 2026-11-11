@@ -151,7 +151,6 @@ class TasksTest(BaseAdModelsTestCase):
         house_campaign = get(
             Campaign,
             advertiser=self.advertiser,
-            publishers=[self.publisher],
             campaign_type=PUBLISHER_HOUSE_CAMPAIGN,
         )
         house_flight = get(
