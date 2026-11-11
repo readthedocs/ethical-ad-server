@@ -6,6 +6,30 @@ CHANGELOG
 .. This is included by docs/developer/changelog.rst
 
 
+Version v6.2.0
+--------------
+
+This release adds the concept of a "takeover flight" which is a flight that will be shown to all users on a publisher's site.
+It also adds some changes around counting impressions of publisher house flights which were previously uncounted.
+This release also updated a number of dependencies.
+
+This release contains a migration that is safe to run (adds a field).
+
+:Date: November 11, 2026
+
+ * @ericholscher: Don't end takeover flights early in the nightly completion task (#1308)
+ * @davidfischer: Takeover flights (#1307)
+ * @alexandre-petitjean: Add a setting to count the delivery of publisher house flights (#1306)
+ * @alexandre-petitjean: Add a setting to count the delivery of publisher house flights (#1305)
+ * @davidfischer: The package updates broke the tests (#1303)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1300)
+ * @dependabot[bot]: Bump aiohttp from 3.14.3 to 3.14.4 (#1299)
+ * @dependabot[bot]: Bump handlebars from 4.7.9 to 4.7.10 (#1298)
+ * @davidfischer: Uv lock update (#1296)
+ * @dependabot[bot]: Bump multidict from 6.7.1 to 6.9.1 (#1295)
+ * @github-actions[bot]: Dependencies: all packages updated via uv lock (#1287)
+
+
 Version v6.1.2
 --------------
 
