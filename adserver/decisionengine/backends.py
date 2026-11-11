@@ -303,8 +303,13 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
         if not flight.show_on_domain(self.url):
             return False
 
-        # Skip if there are no clicks or views needed today/this interval (ad pacing)
-        if not flight.takeover and flight.weighted_clicks_needed_this_interval() <= 0:
+        if flight.takeover:
+            # Takeovers ignore pacing and sold clicks/views,
+            # so they are only bounded by their dates (always a hard stop)
+            if flight.end_date < get_ad_day().date():
+                return False
+        elif flight.weighted_clicks_needed_this_interval() <= 0:
+            # Skip if there are no clicks or views needed today/this interval (ad pacing)
             return False
 
         # Skip if the flight is not meant to show on these days
