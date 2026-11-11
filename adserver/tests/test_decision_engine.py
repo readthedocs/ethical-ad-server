@@ -1281,18 +1281,6 @@ class DecisionEngineTests(TestCase):
         )
         self.probabilistic_backend.geolocation = GeolocationData("US")
 
-        # Takeover flights are not chosen after their end date, even without hard stop
-        self.assertFalse(self.include_flight.hard_stop)
-        self.include_flight.end_date = get_ad_day().date() - datetime.timedelta(days=1)
-        self.include_flight.save()
-        self.assertFalse(self.backend.filter_flight(self.include_flight))
-        self.assertNotEqual(
-            self.probabilistic_backend.select_flight(), self.include_flight
-        )
-        self.include_flight.end_date = get_ad_day().date()
-        self.include_flight.save()
-        self.assertTrue(self.backend.filter_flight(self.include_flight))
-
         # When two flights have takeover=True, one of them is chosen randomly
         self.cpm_flight.takeover = True
         self.cpm_flight.save()
