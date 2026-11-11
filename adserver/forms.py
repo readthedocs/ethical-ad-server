@@ -98,6 +98,7 @@ class FlightAdminForm(FlightMixin, forms.ModelForm):
             "start_date",
             "end_date",
             "hard_stop",
+            "takeover",
             "live",
             "priority_multiplier",
             "pacing_interval",

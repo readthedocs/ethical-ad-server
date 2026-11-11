@@ -304,7 +304,7 @@ class AdvertisingEnabledBackend(BaseAdDecisionBackend):
             return False
 
         # Skip if there are no clicks or views needed today/this interval (ad pacing)
-        if flight.weighted_clicks_needed_this_interval() <= 0:
+        if not flight.takeover and flight.weighted_clicks_needed_this_interval() <= 0:
             return False
 
         # Skip if the flight is not meant to show on these days
@@ -439,6 +439,7 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
         ):
             # Choose a flight based on the impressions needed
             flight_range = []
+            takeover_flights = []
             total_clicks_needed = 0
             self.niche_weights = None
 
@@ -467,6 +468,10 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
             for flight in possible_flights:
                 # Handle excluding flights based on targeting
                 if not self.filter_flight(flight, regions=regions, topics=topics):
+                    continue
+
+                if flight.takeover:
+                    takeover_flights.append(flight)
                     continue
 
                 # If any impressions/clicks are needed, add this flight
@@ -498,6 +503,16 @@ class ProbabilisticFlightBackend(AdvertisingEnabledBackend):
                         ]
                     )
                     total_clicks_needed += weighted_clicks_needed_this_interval
+
+            # Typically, there should be no more than 1 takeover flight at a time
+            # matching the targeting criteria.
+            # If there are multiple, log a warning and randomly choose one.
+            if takeover_flights:
+                if len(takeover_flights) > 1:
+                    log.warning(
+                        "Multiple takeover flights found. Choosing one randomly."
+                    )
+                return random.choice(takeover_flights)
 
             # Choose a random flight based on the weights computed above.
             # The higher priority flights will have more total "chances".

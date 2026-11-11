@@ -1083,7 +1083,9 @@ def notify_of_completed_flights():
     completed_flights_by_advertiser = defaultdict(list)
     for flight in Flight.objects.filter(live=True).select_related():
         # Check for hard stopped flights
-        if flight.hard_stop and flight.end_date <= cutoff.date():
+        # Takeover flights always stop on their end date
+        # since they don't stop based on clicks/views sold
+        if (flight.hard_stop or flight.takeover) and flight.end_date <= cutoff.date():
             log.info("Flight %s is being hard stopped.", flight)
             value_remaining = round(flight.value_remaining(), 2)
             flight_url = generate_absolute_url(flight.get_absolute_url())
@@ -1110,7 +1112,8 @@ def notify_of_completed_flights():
                 flight
             )
         elif (
-            flight.clicks_remaining() == 0
+            not flight.takeover
+            and flight.clicks_remaining() == 0
             and flight.views_remaining() == 0
             and AdImpression.objects.filter(
                 date__gte=cutoff, advertisement__flight=flight

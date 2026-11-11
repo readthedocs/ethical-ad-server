@@ -829,6 +829,15 @@ class Flight(TimeStampedModel, IndestructibleModel):
             "The flight will be stopped on the end date even if not completely fulfilled"
         ),
     )
+    # Takeover flights ignore impressions and clicks sold
+    # They are *always* prioritized if the targeting parameters match the request
+    takeover = models.BooleanField(
+        _("Takeover"),
+        default=False,
+        help_text=_(
+            "Whether this flight is a takeover flight that is always prioritized over other flights"
+        ),
+    )
     auto_renew = models.BooleanField(
         _("Automatically renew when complete"),
         default=False,

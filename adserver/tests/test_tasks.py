@@ -375,6 +375,38 @@ class TasksTest(BaseAdModelsTestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(mail.outbox[0].subject.startswith("Advertising flight wrapup"))
 
+    def test_notify_completed_flights_takeover(self):
+        # Takeover flights don't complete based on clicks/views sold
+        self.flight.takeover = True
+        self.flight.sold_clicks = 0
+        self.flight.sold_impressions = 0
+        self.flight.total_views = 1_000
+        self.flight.total_clicks = 10
+        self.flight.start_date = timezone.now() - datetime.timedelta(days=5)
+        self.flight.end_date = timezone.now() + datetime.timedelta(days=5)
+        self.flight.save()
+        get(
+            Offer,
+            advertisement=self.ad1,
+            publisher=self.publisher,
+            viewed=True,
+            clicked=True,
+        )
+        daily_update_impressions()
+
+        notify_of_completed_flights()
+        self.flight.refresh_from_db()
+        self.assertTrue(self.flight.live)
+
+        # Takeover flights always stop after their end date, even without hard stop
+        self.assertFalse(self.flight.hard_stop)
+        self.flight.end_date = timezone.now() - datetime.timedelta(days=1)
+        self.flight.save()
+
+        notify_of_completed_flights()
+        self.flight.refresh_from_db()
+        self.assertFalse(self.flight.live)
+
     @override_settings(
         # Use the memory email backend instead of front for testing
         FRONT_BACKEND="django.core.mail.backends.locmem.EmailBackend",

@@ -1251,3 +1251,121 @@ class DecisionEngineTests(TestCase):
         scores = {999: 0.9}
         weight = backend.get_ad_similarity_weight(self.advertisement1, scores)
         self.assertEqual(weight, 0)
+
+    def test_takeover_flight(self):
+        """Test that takeover flights are always selected and respect targeting."""
+        # Give basic_flight high priority and plenty of clicks needed
+        self.basic_flight.sold_clicks = 10_000
+        self.basic_flight.priority_multiplier = 100
+        self.basic_flight.save()
+
+        # Tag include_flight as a takeover flight with 0 sold clicks/impressions
+        # to verify it also bypasses pacing/click/impression limits
+        self.include_flight.takeover = True
+        self.include_flight.sold_clicks = 0
+        self.include_flight.sold_impressions = 0
+        self.include_flight.save()
+
+        # Takeover flight is always selected when targeting matches (US)
+        for _ in range(20):
+            self.assertEqual(
+                self.probabilistic_backend.select_flight(), self.include_flight
+            )
+
+        # When targeting does not match (include_flight only targets US, CA, MX),
+        # the takeover flight is filtered out and another eligible flight is chosen
+        self.probabilistic_backend.geolocation = GeolocationData("DE")
+        self.assertIn(
+            self.probabilistic_backend.select_flight(),
+            (self.exclude_flight, self.basic_flight),
+        )
+        self.probabilistic_backend.geolocation = GeolocationData("US")
+
+        # When two flights have takeover=True, one of them is chosen randomly
+        self.cpm_flight.takeover = True
+        self.cpm_flight.save()
+        cpm_ad = get(
+            Advertisement,
+            name="cpm-ad",
+            slug="cpm-ad-slug",
+            link="http://example.com",
+            live=True,
+            image=None,
+            flight=self.cpm_flight,
+        )
+        cpm_ad.ad_types.add(self.ad_type)
+
+        chosen_flights = {self.probabilistic_backend.select_flight() for _ in range(50)}
+        self.assertEqual(chosen_flights, {self.include_flight, self.cpm_flight})
+
+        # Takeover also applies to non-paid campaigns within their campaign type priority
+        self.include_flight.takeover = False
+        self.include_flight.sold_clicks = 100
+        self.include_flight.save()
+        self.cpm_flight.takeover = False
+        self.cpm_flight.save()
+
+        community_campaign = get(
+            Campaign,
+            campaign_type=COMMUNITY_CAMPAIGN,
+            publisher_groups=[self.publisher_group],
+        )
+        community_flight = get(
+            Flight,
+            campaign=community_campaign,
+            live=True,
+            sold_clicks=10_000,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+        )
+        community_ad1 = get(
+            Advertisement,
+            name="community-normal",
+            slug="community-normal-ad",
+            image=None,
+            live=True,
+            flight=community_flight,
+        )
+        community_ad1.ad_types.add(self.ad_type)
+
+        community_takeover_flight = get(
+            Flight,
+            campaign=community_campaign,
+            live=True,
+            takeover=True,
+            sold_clicks=0,
+            sold_impressions=0,
+            start_date=get_ad_day().date(),
+            end_date=get_ad_day().date() + datetime.timedelta(days=30),
+        )
+        community_ad2 = get(
+            Advertisement,
+            name="community-takeover",
+            slug="community-takeover-ad",
+            image=None,
+            live=True,
+            flight=community_takeover_flight,
+        )
+        community_ad2.ad_types.add(self.ad_type)
+
+        # Paid flights are still chosen over a community flight with takeover=True
+        self.assertNotIn(
+            self.probabilistic_backend.select_flight(),
+            (community_flight, community_takeover_flight),
+        )
+
+        # When paid flights are disabled, the community takeover flight is always chosen
+        for flight in (
+            self.include_flight,
+            self.cpm_flight,
+            self.exclude_flight,
+            self.basic_flight,
+        ):
+            flight.live = False
+            flight.save()
+
+        self.assertTrue(self.backend.filter_flight(community_takeover_flight))
+        for _ in range(20):
+            self.assertEqual(
+                self.probabilistic_backend.select_flight(), community_takeover_flight
+            )
