@@ -3,6 +3,7 @@
 import datetime
 import json
 import logging
+import math
 
 import requests
 import stripe
@@ -96,7 +97,17 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     * paid: Show only payouts that have already been paid
     * publisher: Filter to a specific publisher
     * payout_method: Filter to a specific payout method
+    * min_change: Only show payouts that changed by at least this percent vs. last month
+    * max_change: Only show payouts that changed by at most this percent vs. last month
+    * sort: Sort by percent changed (``change``, ``-change``, or ``abs_change``)
     """
+
+    SORT_OPTIONS = (
+        ("", _("Default")),
+        ("-change", _("% change (high to low)")),
+        ("change", _("% change (low to high)")),
+        ("abs_change", _("Largest % change (either direction)")),
+    )
 
     template_name = "adserver/staff/publisher-payout-list.html"
     # Cache for 24 hours so we can finish payouts
@@ -109,6 +120,11 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         first = self.request.GET.get("first", "")
         paid = self.request.GET.get("paid", "")
         payout_method = self.request.GET.get("payout_method", "")
+        min_change = self._parse_float(self.request.GET.get("min_change"))
+        max_change = self._parse_float(self.request.GET.get("max_change"))
+        sort = self.request.GET.get("sort", "")
+        if sort not in dict(self.SORT_OPTIONS):
+            sort = ""
 
         queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
@@ -188,7 +204,19 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
                 ) * 100
                 payout_context["change"] = change_percent
 
+            change = payout_context.get("change")
+            if (min_change is not None or max_change is not None) and change is None:
+                # When filtering by change, skip publishers with nothing to compare
+                continue
+            if min_change is not None and change < min_change:
+                continue
+            if max_change is not None and change > max_change:
+                continue
+
             payouts[publisher] = payout_context
+
+        if sort:
+            payouts = dict(sorted(payouts.items(), key=self._sort_key(sort)))
 
         context["payouts"] = payouts
         # Filtering options
@@ -196,9 +224,37 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["paid"] = paid
         context["publisher_slug"] = publisher_slug
         context["payout_method"] = payout_method
+        context["min_change"] = "" if min_change is None else min_change
+        context["max_change"] = "" if max_change is None else max_change
+        context["sort"] = sort
+        context["sort_options"] = self.SORT_OPTIONS
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
         context["payout_method_options"] = list(PUBLISHER_PAYOUT_METHODS)
         return context
+
+    @staticmethod
+    def _parse_float(value):
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return None
+        return value if math.isfinite(value) else None
+
+    @staticmethod
+    def _sort_key(sort):
+        """Return a sort key for payout items; payouts with no change always sort last."""
+
+        def key(item):
+            change = item[1].get("change")
+            if change is None:
+                return (1, 0)
+            if sort == "-change":
+                return (0, -change)
+            if sort == "abs_change":
+                return (0, -abs(change))
+            return (0, change)
+
+        return key
 
 
 class PublisherStartPayoutView(StaffUserMixin, FormView):
