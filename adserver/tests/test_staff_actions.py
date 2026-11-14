@@ -335,6 +335,98 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(list_response, "<td>$70.00</td>")
         self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
+    def test_list_view_change_sort_and_filter(self):
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        last_month = timezone.now().replace(day=1) - timedelta(days=1)
+        self.publisher2.created = last_month
+        self.publisher2.save()
+
+        # Publisher 2 also earns $70 this cycle
+        for x in range(50):
+            get(
+                Offer,
+                advertisement=self.ad1,
+                publisher=self.publisher2,
+                viewed=True,
+                clicked=True,
+                date=last_month,
+            )
+        daily_update_impressions(day=last_month)
+        daily_update_publishers(day=last_month)
+
+        # Last month's payouts: publisher1 +40% ($50 -> $70), publisher2 -50% ($140 -> $70)
+        get(
+            PublisherPayout,
+            status="paid",
+            publisher=self.publisher1,
+            amount=50,
+            date=last_month,
+        )
+        get(
+            PublisherPayout,
+            status="paid",
+            publisher=self.publisher2,
+            amount=140,
+            date=last_month,
+        )
+
+        def publishers(response):
+            return [pub.pk for pub in response.context["payouts"]]
+
+        pub1, pub2 = self.publisher1.pk, self.publisher2.pk
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "40.00%")
+        self.assertContains(response, "-50.00%")
+        self.assertEqual(response.context["payouts"][self.publisher1]["change"], 40)
+
+        # Sorting
+        response = self.client.get(url + "?sort=-change")
+        self.assertEqual(publishers(response), [pub1, pub2])
+        response = self.client.get(url + "?sort=change")
+        self.assertEqual(publishers(response), [pub2, pub1])
+        response = self.client.get(url + "?sort=abs_change")
+        self.assertEqual(publishers(response), [pub2, pub1])
+        # Invalid sort falls back to the default
+        response = self.client.get(url + "?sort=bogus")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sort"], "")
+
+        # Filtering
+        response = self.client.get(url + "?min_change=0")
+        self.assertEqual(publishers(response), [pub1])
+        response = self.client.get(url + "?max_change=0")
+        self.assertEqual(publishers(response), [pub2])
+        response = self.client.get(url + "?min_change=-60&max_change=50")
+        self.assertEqual(sorted(publishers(response)), sorted([pub1, pub2]))
+        response = self.client.get(url + "?min_change=50")
+        self.assertEqual(publishers(response), [])
+        # Invalid values are ignored
+        response = self.client.get(url + "?min_change=abc&max_change=nan")
+        self.assertEqual(sorted(publishers(response)), sorted([pub1, pub2]))
+
+    def test_list_view_change_filter_excludes_missing_change(self):
+        """Publishers with no previous payout are excluded when filtering by change."""
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        response = self.client.get(url)
+        self.assertContains(response, f"<span>{self.publisher1.name}</span>")
+
+        response = self.client.get(url + "?min_change=-100")
+        self.assertNotContains(response, f"<span>{self.publisher1.name}</span>")
+
+        # Sorting keeps publishers without a change
+        response = self.client.get(url + "?sort=-change")
+        self.assertContains(response, f"<span>{self.publisher1.name}</span>")
+
     def test_list_view_paid_filter_with_emailed_payout(self):
         """An emailed-but-not-paid payout should count as unpaid, not paid."""
         url = reverse("staff-publisher-payouts")
