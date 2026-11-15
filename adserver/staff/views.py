@@ -95,10 +95,13 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     * first: Show only payouts for the first time
     * paid: Show only payouts that have already been paid
     * publisher: Filter to a specific publisher
-    * payout_method: Filter to a specific payout method
+    * payout_method: Filter to a specific payout method,
+      or ``non-stripe`` for every method except Stripe.
+      This lets staff run Stripe payouts and non-Stripe payouts as separate phases.
     """
 
     template_name = "adserver/staff/publisher-payout-list.html"
+    NON_STRIPE = "non-stripe"
     # Cache for 24 hours so we can finish payouts
     CACHE_SECONDS = 3600 * 24
 
@@ -113,7 +116,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
-        if payout_method:
+        if payout_method == self.NON_STRIPE:
+            queryset = queryset.exclude(payout_method=PAYOUT_STRIPE)
+        elif payout_method:
             queryset = queryset.filter(payout_method=payout_method)
 
         payouts = {}
@@ -197,7 +202,10 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["publisher_slug"] = publisher_slug
         context["payout_method"] = payout_method
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
-        context["payout_method_options"] = list(PUBLISHER_PAYOUT_METHODS)
+        context["payout_method_options"] = [
+            *PUBLISHER_PAYOUT_METHODS,
+            (self.NON_STRIPE, _("Everything except Stripe")),
+        ]
         return context
 
 
