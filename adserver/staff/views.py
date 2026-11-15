@@ -106,7 +106,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         ("", _("Default")),
         ("-change", _("% change (high to low)")),
         ("change", _("% change (low to high)")),
-        ("abs_change", _("Largest % change (either direction)")),
+        ("abs_change", _("Largest change (+/-)")),
     )
 
     template_name = "adserver/staff/publisher-payout-list.html"
@@ -224,8 +224,12 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["paid"] = paid
         context["publisher_slug"] = publisher_slug
         context["payout_method"] = payout_method
-        context["min_change"] = "" if min_change is None else min_change
-        context["max_change"] = "" if max_change is None else max_change
+        context["min_change"] = (
+            "" if min_change is None else self.request.GET["min_change"]
+        )
+        context["max_change"] = (
+            "" if max_change is None else self.request.GET["max_change"]
+        )
         context["sort"] = sort
         context["sort_options"] = self.SORT_OPTIONS
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
