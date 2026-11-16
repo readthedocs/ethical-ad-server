@@ -93,6 +93,7 @@
   </dl>
 
   {% csrf_token %}
+  <input type="hidden" name="payout_id" value="{{ payout.pk }}">
   <input type="submit" value="{% trans "Finish payout" %}" class="btn btn-primary">
   <p class="small">{% trans "This will mark the payout as paid" %}</p>
 
