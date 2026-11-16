@@ -131,8 +131,10 @@ if env.bool("ADSERVER_HTTPS", default=False):
 # See: https://anymail.readthedocs.io
 # --------------------------------------------------------------------------
 INSTALLED_APPS += ["anymail"]
-EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
-ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
+# Any Django or anymail backend can be used instead of SendGrid
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="anymail.backends.sendgrid.EmailBackend")
+if EMAIL_BACKEND == "anymail.backends.sendgrid.EmailBackend":
+    ANYMAIL = {"SENDGRID_API_KEY": env("SENDGRID_API_KEY")}
 
 
 # User upload storage

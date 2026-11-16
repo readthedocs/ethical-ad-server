@@ -21,7 +21,7 @@ There are a few required environment variables and the server will not start wit
 * :ref:`install/configuration:DATABASE_URL`
 * :ref:`install/configuration:REDIS_URL`
 * :ref:`install/configuration:SECRET_KEY`
-* :ref:`install/configuration:SENDGRID_API_KEY`
+* :ref:`install/configuration:SENDGRID_API_KEY` (unless :ref:`install/configuration:EMAIL_BACKEND` is set to another backend)
 
 
 ADSERVER_ADMIN_URL
@@ -212,6 +212,17 @@ can be used to storage uploaded ad images in Azure.
 See Django's :doc:`storage documentation <django:ref/files/storage>` for details.
 
 
+EMAIL_BACKEND
+~~~~~~~~~~~~~
+
+Adjusts Django's ``EMAIL_BACKEND`` setting.
+Defaults to ``anymail.backends.sendgrid.EmailBackend``,
+which requires :ref:`install/configuration:SENDGRID_API_KEY`.
+Set it to another backend such as ``django.core.mail.backends.console.EmailBackend``
+to run without SendGrid.
+See Django's :doc:`email documentation <django:topics/email>` for details.
+
+
 ENFORCE_HOST
 ~~~~~~~~~~~~
 
@@ -252,6 +263,7 @@ SENDGRID_API_KEY
 ~~~~~~~~~~~~~~~~
 
 Set this to your Sendgrid API key to enable sending email through Sendgrid.
+Required when :ref:`install/configuration:EMAIL_BACKEND` is left to its default.
 
 
 STRIPE_SECRET_KEY
