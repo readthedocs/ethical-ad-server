@@ -226,15 +226,34 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         initial["payout_method"] = self.publisher.get_payout_method_display()
         return initial
 
+    def get(self, request, *args, **kwargs):
+        publisher = get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
+        return self.redirect_if_started(publisher) or super().get(
+            request, *args, **kwargs
+        )
+
+    def redirect_if_started(self, publisher):
+        """Redirect if this month's payout was already emailed or paid."""
+        today = timezone.now()
+        payout = publisher.payouts.filter(
+            date__month=today.month, date__year=today.year, status__in=(EMAILED, PAID)
+        ).last()
+        if not payout:
+            return None
+        messages.warning(
+            self.request,
+            _("A payout for %(publisher)s was already started this month (%(status)s).")
+            % {"publisher": publisher.name, "status": payout.get_status_display()},
+        )
+        if payout.status == EMAILED:
+            return redirect("staff-finish-publisher-payout", publisher.slug)
+        return redirect("staff-publisher-payouts")
+
     def form_valid(self, form):
         # Lock the publisher so a resubmit or double click can't email twice
         publisher = Publisher.objects.select_for_update().get(pk=self.publisher.pk)
-        today = timezone.now()
-        if publisher.payouts.filter(
-            date__month=today.month, date__year=today.year, status__in=(EMAILED, PAID)
-        ).exists():
-            messages.warning(self.request, _("A payout was already started this month"))
-            return redirect("staff-publisher-payouts")
+        if response := self.redirect_if_started(publisher):
+            return response
 
         self.object = form.save()
         result = super().form_valid(form)
@@ -298,12 +317,17 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        # Pay only the unpaid payout shown on the page, never "the latest unpaid one",
+        # Pay only the payout shown on the page, never "the latest unpaid one",
         # so a resubmitted form can't pay a different (stale) payout.
         self.payout = get_object_or_404(
-            self.publisher.payouts.select_for_update().exclude(status=PAID),
+            self.publisher.payouts.select_for_update(),
             pk=request.POST.get("payout_id"),
         )
+        if self.payout.status == PAID:
+            messages.warning(
+                request, _("This payout was already paid. Nothing was paid again.")
+            )
+            return redirect(self.payout.get_absolute_url())
 
         # Automatically handle payout via Stripe
         if self.payout.method == PAYOUT_STRIPE and self.request.POST.get(

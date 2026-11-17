@@ -398,7 +398,8 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(mail.outbox[0].subject, "Test subject")
 
         # Resubmitting doesn't send a second email or create a second payout
-        self.client.post(start_url, data=data)
+        post_response = self.client.post(start_url, data=data, follow=True)
+        self.assertContains(post_response, "already started this month")
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(self.publisher1.payouts.count(), 1)
 
@@ -452,9 +453,9 @@ class PublisherPayoutTests(TestCase):
 
         # Resubmitting doesn't pay the older unpaid payouts
         post_response = self.client.post(
-            finish_url, data={"payout_id": self.payout3.pk}
+            finish_url, data={"payout_id": self.payout3.pk}, follow=True
         )
-        self.assertEqual(post_response.status_code, 404)
+        self.assertContains(post_response, "already paid")
         self.assertEqual(
             PublisherPayout.objects.get(pk=self.payout2.pk).status, "emailed"
         )
