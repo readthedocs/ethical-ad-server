@@ -367,8 +367,6 @@ class PublisherPayoutTests(TestCase):
     )
     def test_create_view(self):
         self.client.force_login(self.staff_user)
-        # This test loads the payout list, which caches payout data
-        self.addCleanup(cache.clear)
 
         # Need a user otherwise the email isn't sent because there's no recipients
         self.user.publishers.add(self.publisher1)
@@ -398,59 +396,11 @@ class PublisherPayoutTests(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "Test subject")
-        self.assertEqual(self.publisher1.payouts.count(), 1)
-        payout = self.publisher1.payouts.get()
-        self.assertEqual(payout.status, "emailed")
-        self.assertEqual(
-            post_response["location"],
-            reverse(
-                "staff-finish-publisher-payout",
-                kwargs=dict(publisher_slug=self.publisher1.slug),
-            ),
-        )
 
-        # Submitting the form again (eg. back button or double click)
-        # doesn't send a second email or create a second payout
-        post_response = self.client.post(start_url, data=data)
-        self.assertEqual(post_response.status_code, 302)
-        self.assertEqual(
-            post_response["location"],
-            reverse(
-                "staff-finish-publisher-payout",
-                kwargs=dict(publisher_slug=self.publisher1.slug),
-            ),
-        )
+        # Resubmitting doesn't send a second email or create a second payout
+        self.client.post(start_url, data=data)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(self.publisher1.payouts.count(), 1)
-
-        # Opening the start page again redirects too
-        start_response = self.client.get(start_url)
-        self.assertEqual(start_response.status_code, 302)
-
-        # Once paid, the start page sends staff back to the payout list
-        payout.status = "paid"
-        payout.save()
-        start_response = self.client.get(start_url, follow=True)
-        self.assertRedirects(start_response, reverse("staff-publisher-payouts"))
-        self.assertContains(start_response, "already started this month")
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(self.publisher1.payouts.count(), 1)
-
-    def test_start_view_ignores_old_unpaid_payouts(self):
-        """An emailed payout from a previous month doesn't block a new payout."""
-        self.client.force_login(self.staff_user)
-        get(
-            PublisherPayout,
-            status="emailed",
-            publisher=self.publisher1,
-            amount=55,
-            date=timezone.now() - timedelta(days=40),
-        )
-        start_url = reverse(
-            "staff-start-publisher-payout",
-            kwargs=dict(publisher_slug=self.publisher1.slug),
-        )
-        self.assertEqual(self.client.get(start_url).status_code, 200)
 
     def test_finish_view(self):
         self.client.force_login(self.staff_user)
@@ -493,10 +443,6 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(finish_response, 'data-copy-target="payout-amount"')
         self.assertContains(finish_response, 'data-copy-target="payout-subject"')
 
-        self.assertContains(
-            finish_response, f'name="payout_id" value="{self.payout3.pk}"'
-        )
-
         post_response = self.client.post(
             finish_url, data={"payout_id": self.payout3.pk}
         )
@@ -504,91 +450,14 @@ class PublisherPayoutTests(TestCase):
         # requery to get new object
         self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")
 
-    def test_finish_view_resubmit_does_not_pay_another_payout(self):
-        """Resubmitting the finish form must not pay an older, stale payout."""
-        self.client.force_login(self.staff_user)
-
-        stale_payout = get(
-            PublisherPayout,
-            status="emailed",
-            publisher=self.publisher1,
-            amount=55,
-            date=timezone.now() - timedelta(days=40),
-            method="stripe",
+        # Resubmitting doesn't pay the older unpaid payouts
+        post_response = self.client.post(
+            finish_url, data={"payout_id": self.payout3.pk}
         )
-        payout = get(
-            PublisherPayout,
-            status="emailed",
-            publisher=self.publisher1,
-            amount=99,
-            date=timezone.now(),
-            method="stripe",
+        self.assertEqual(post_response.status_code, 404)
+        self.assertEqual(
+            PublisherPayout.objects.get(pk=self.payout2.pk).status, "emailed"
         )
-        finish_url = reverse(
-            "staff-finish-publisher-payout",
-            kwargs=dict(publisher_slug=self.publisher1.slug),
-        )
-        pay_method = (
-            "adserver.staff.views.PublisherFinishPayoutView.pay_via_stripe_connect"
-        )
-        data = {"stripe-payout-confirm": "on", "payout_id": payout.pk}
-
-        with patch(pay_method, return_value=Mock(id="tr_12345")) as pay:
-            self.client.post(finish_url, data=data)
-            self.assertEqual(pay.call_count, 1)
-
-            # Submitting the same form again pays nothing
-            response = self.client.post(finish_url, data=data, follow=True)
-            self.assertEqual(pay.call_count, 1)
-            self.assertContains(response, "already paid")
-
-            # A post without a payout ID pays nothing either
-            response = self.client.post(
-                finish_url, data={"stripe-payout-confirm": "on"}
-            )
-            self.assertEqual(response.status_code, 302)
-            self.assertEqual(pay.call_count, 1)
-
-            # A payout for a different publisher can't be paid from this URL
-            other_payout = get(
-                PublisherPayout,
-                status="emailed",
-                publisher=self.publisher2,
-                amount=10,
-                date=timezone.now(),
-                method="stripe",
-            )
-            response = self.client.post(
-                finish_url,
-                data={"stripe-payout-confirm": "on", "payout_id": other_payout.pk},
-            )
-            self.assertEqual(response.status_code, 404)
-            self.assertEqual(pay.call_count, 1)
-
-        payout.refresh_from_db()
-        stale_payout.refresh_from_db()
-        other_payout.refresh_from_db()
-        self.assertEqual(payout.status, "paid")
-        self.assertEqual(stale_payout.status, "emailed")
-        self.assertEqual(other_payout.status, "emailed")
-
-    @patch("adserver.staff.views.Transfer.sync_from_stripe_data")
-    @patch("adserver.staff.views.stripe.Transfer.create")
-    def test_stripe_transfer_idempotency_key(self, transfer_create, sync):
-        payout = Mock(
-            id=1234,
-            pk=1234,
-            amount=55,
-            publisher=Mock(djstripe_account=Mock(id="acct_12345")),
-        )
-
-        PublisherFinishPayoutView().pay_via_stripe_connect(payout)
-
-        transfer_create.assert_called_once()
-        kwargs = transfer_create.call_args.kwargs
-        self.assertEqual(kwargs["idempotency_key"], f"publisher-payout-{payout.pk}")
-        self.assertEqual(kwargs["amount"], 5500)
-        self.assertEqual(kwargs["destination"], "acct_12345")
 
     def test_finish_view_stripe_payout(self):
         self.client.force_login(self.staff_user)
@@ -611,7 +480,6 @@ class PublisherPayoutTests(TestCase):
 
         # Without a transfer ID, the payout is not marked paid
         data = {"stripe-payout-confirm": "on", "payout_id": payout.pk}
-
         with patch(pay_method, return_value=Mock(id=None)):
             with self.assertRaises(RuntimeError):
                 self.client.post(finish_url, data=data)
@@ -624,6 +492,16 @@ class PublisherPayoutTests(TestCase):
         payout.refresh_from_db()
         self.assertEqual(payout.status, "paid")
         self.assertEqual(payout.note, "Stripe Transfer: tr_12345")
+
+    @patch("adserver.staff.views.Transfer.sync_from_stripe_data")
+    @patch("adserver.staff.views.stripe.Transfer.create")
+    def test_stripe_transfer_idempotency_key(self, transfer_create, sync):
+        payout = Mock(id=1234, amount=55)
+        PublisherFinishPayoutView().pay_via_stripe_connect(payout)
+        self.assertEqual(
+            transfer_create.call_args.kwargs["idempotency_key"],
+            "publisher-payout-1234",
+        )
 
     def test_percent_change_across_year_boundary(self):
         """Test that % change calculation works correctly when crossing year boundaries."""

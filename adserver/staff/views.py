@@ -3,7 +3,6 @@
 import datetime
 import json
 import logging
-import uuid
 
 import requests
 import stripe
@@ -227,56 +226,15 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         initial["payout_method"] = self.publisher.get_payout_method_display()
         return initial
 
-    def dispatch(self, request, *args, **kwargs):
-        publisher = get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
-        existing_payout = self.get_existing_payout(publisher)
-        if existing_payout:
-            return self.redirect_existing_payout(publisher, existing_payout)
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_existing_payout(self, publisher):
-        """Return a payout already started for this publisher this month, if any."""
-        today = timezone.now()
-        return (
-            publisher.payouts.filter(
-                date__month=today.month,
-                date__year=today.year,
-                status__in=(EMAILED, PAID),
-            )
-            .order_by("-date")
-            .first()
-        )
-
-    def redirect_existing_payout(self, publisher, payout):
-        """Send staff to the existing payout instead of starting a second one."""
-        messages.warning(
-            self.request,
-            _(
-                "A payout for %(publisher)s was already started this month "
-                "(%(status)s, $%(amount).2f). No new email was sent."
-            )
-            % {
-                "publisher": publisher.name,
-                "status": payout.get_status_display(),
-                "amount": payout.amount,
-            },
-        )
-        if payout.status == EMAILED:
-            return redirect(
-                reverse(
-                    "staff-finish-publisher-payout",
-                    kwargs={"publisher_slug": publisher.slug},
-                )
-            )
-        return redirect(reverse("staff-publisher-payouts"))
-
     def form_valid(self, form):
-        # Lock the publisher so two concurrent submissions (eg. a double click)
-        # can't both send the email and create a payout.
+        # Lock the publisher so a resubmit or double click can't email twice
         publisher = Publisher.objects.select_for_update().get(pk=self.publisher.pk)
-        existing_payout = self.get_existing_payout(publisher)
-        if existing_payout:
-            return self.redirect_existing_payout(publisher, existing_payout)
+        today = timezone.now()
+        if publisher.payouts.filter(
+            date__month=today.month, date__year=today.year, status__in=(EMAILED, PAID)
+        ).exists():
+            messages.warning(self.request, _("A payout was already started this month"))
+            return redirect("staff-publisher-payouts")
 
         self.object = form.save()
         result = super().form_valid(form)
@@ -340,34 +298,12 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         self.publisher = get_object_or_404(
             Publisher, slug=self.kwargs["publisher_slug"]
         )
-        finish_url = reverse(
-            "staff-finish-publisher-payout",
-            kwargs={"publisher_slug": self.publisher.slug},
+        # Pay only the unpaid payout shown on the page, never "the latest unpaid one",
+        # so a resubmitted form can't pay a different (stale) payout.
+        self.payout = get_object_or_404(
+            self.publisher.payouts.select_for_update().exclude(status=PAID),
+            pk=request.POST.get("payout_id"),
         )
-
-        # Only pay the exact payout that was shown on the page.
-        # Never fall back to "the latest unpaid payout", since a resubmitted form
-        # could otherwise pay an older, stale payout.
-        try:
-            payout_id = uuid.UUID(request.POST.get("payout_id", ""))
-        except ValueError:
-            messages.error(
-                request, _("No payout was specified. Nothing was paid. Try again.")
-            )
-            return redirect(finish_url)
-
-        # Lock the row so concurrent submissions can't both pay it.
-        self.payout = (
-            self.publisher.payouts.select_for_update().filter(pk=payout_id).first()
-        )
-        if not self.payout:
-            raise Http404("No payout found")
-        if self.payout.status == PAID:
-            messages.warning(
-                request,
-                _("This payout was already paid. Nothing was paid again."),
-            )
-            return redirect(self.payout.get_absolute_url())
 
         # Automatically handle payout via Stripe
         if self.payout.method == PAYOUT_STRIPE and self.request.POST.get(
@@ -406,8 +342,6 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             currency="usd",
             destination=publisher.djstripe_account.id,
             transfer_group=f"PublisherPayout-{payout.id}",
-            # Stripe won't create a second transfer for the same payout
-            # if this request is retried or submitted twice
             idempotency_key=f"publisher-payout-{payout.id}",
         )
         return Transfer.sync_from_stripe_data(xfer)
