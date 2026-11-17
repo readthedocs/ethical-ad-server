@@ -366,6 +366,9 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             currency="usd",
             destination=publisher.djstripe_account.id,
             transfer_group=f"PublisherPayout-{payout.id}",
+            # A request option (sent as the Idempotency-Key header), not a Transfer param.
+            # Prevents a duplicate transfer if this request is retried or resubmitted.
+            # https://docs.stripe.com/api/idempotent_requests
             idempotency_key=f"publisher-payout-{payout.id}",
         )
         return Transfer.sync_from_stripe_data(xfer)
