@@ -25,6 +25,7 @@ from ..models import PublisherGroup
 from ..models import PublisherPayout
 from ..staff.forms import CreateAdvertiserForm
 from ..staff.forms import CreatePublisherForm
+from ..staff.views import PublisherFinishPayoutView
 from ..tasks import daily_update_impressions
 from ..tasks import daily_update_publishers
 from .common import ONE_PIXEL_PNG_BYTES
@@ -427,6 +428,32 @@ class PublisherPayoutTests(TestCase):
         response = self.client.get(url + "?sort=-change")
         self.assertContains(response, f"<span>{self.publisher1.name}</span>")
 
+    def test_list_view_payout_method_phases(self):
+        """Stripe and non-Stripe payouts can be listed separately."""
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+        name = f"<span>{self.publisher1.name}</span>"
+
+        self.publisher1.payout_method = "stripe"
+        self.publisher1.save()
+
+        response = self.client.get(url + "?payout_method=stripe")
+        self.assertContains(response, name)
+        response = self.client.get(url + "?payout_method=non-stripe")
+        self.assertNotContains(response, name)
+        self.assertContains(response, "Everything except Stripe")
+
+        self.publisher1.payout_method = "paypal"
+        self.publisher1.save()
+
+        response = self.client.get(url + "?payout_method=stripe")
+        self.assertNotContains(response, name)
+        response = self.client.get(url + "?payout_method=non-stripe")
+        self.assertContains(response, name)
+        self.assertContains(
+            response, '<option value="non-stripe" selected>', html=False
+        )
+
     def test_list_view_paid_filter_with_emailed_payout(self):
         """An emailed-but-not-paid payout should count as unpaid, not paid."""
         url = reverse("staff-publisher-payouts")
@@ -488,6 +515,12 @@ class PublisherPayoutTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "Test subject")
 
+        # Resubmitting doesn't send a second email or create a second payout
+        post_response = self.client.post(start_url, data=data, follow=True)
+        self.assertContains(post_response, "already started this month")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(self.publisher1.payouts.count(), 1)
+
     def test_finish_view(self):
         self.client.force_login(self.staff_user)
 
@@ -529,10 +562,21 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(finish_response, 'data-copy-target="payout-amount"')
         self.assertContains(finish_response, 'data-copy-target="payout-subject"')
 
-        post_response = self.client.post(finish_url)
+        post_response = self.client.post(
+            finish_url, data={"payout_id": self.payout3.pk}
+        )
         self.assertEqual(post_response.status_code, 302)
         # requery to get new object
         self.assertEqual(PublisherPayout.objects.get(pk=self.payout3.pk).status, "paid")
+
+        # Resubmitting doesn't pay the older unpaid payouts
+        post_response = self.client.post(
+            finish_url, data={"payout_id": self.payout3.pk}, follow=True
+        )
+        self.assertContains(post_response, "already paid")
+        self.assertEqual(
+            PublisherPayout.objects.get(pk=self.payout2.pk).status, "emailed"
+        )
 
     def test_finish_view_stripe_payout(self):
         self.client.force_login(self.staff_user)
@@ -554,18 +598,29 @@ class PublisherPayoutTests(TestCase):
         )
 
         # Without a transfer ID, the payout is not marked paid
+        data = {"stripe-payout-confirm": "on", "payout_id": payout.pk}
         with patch(pay_method, return_value=Mock(id=None)):
             with self.assertRaises(RuntimeError):
-                self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
+                self.client.post(finish_url, data=data)
         payout.refresh_from_db()
         self.assertEqual(payout.status, "emailed")
 
         # With a transfer ID, the payout is marked paid
         with patch(pay_method, return_value=Mock(id="tr_12345")):
-            self.client.post(finish_url, data={"stripe-payout-confirm": "on"})
+            self.client.post(finish_url, data=data)
         payout.refresh_from_db()
         self.assertEqual(payout.status, "paid")
         self.assertEqual(payout.note, "Stripe Transfer: tr_12345")
+
+    @patch("adserver.staff.views.Transfer.sync_from_stripe_data")
+    @patch("adserver.staff.views.stripe.Transfer.create")
+    def test_stripe_transfer_idempotency_key(self, transfer_create, sync):
+        payout = Mock(id=1234, amount=55)
+        PublisherFinishPayoutView().pay_via_stripe_connect(payout)
+        self.assertEqual(
+            transfer_create.call_args.kwargs["idempotency_key"],
+            "publisher-payout-1234",
+        )
 
     def test_percent_change_across_year_boundary(self):
         """Test that % change calculation works correctly when crossing year boundaries."""

@@ -25,6 +25,7 @@ from djstripe.models import Transfer
 
 from adserver.utils import generate_publisher_payout_data
 
+from ..constants import EMAILED
 from ..constants import PAID
 from ..constants import PAYOUT_PAYPAL
 from ..constants import PAYOUT_STRIPE
@@ -96,7 +97,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     * first: Show only payouts for the first time
     * paid: Show only payouts that have already been paid
     * publisher: Filter to a specific publisher
-    * payout_method: Filter to a specific payout method
+    * payout_method: Filter to a specific payout method,
+      or ``non-stripe`` for every method except Stripe.
+      This lets staff run Stripe payouts and non-Stripe payouts as separate phases.
     * min_change: Only show payouts that changed by at least this percent vs. last month
     * max_change: Only show payouts that changed by at most this percent vs. last month
     * sort: Sort by percent changed (``change``, ``-change``, or ``abs_change``)
@@ -110,6 +113,7 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
     )
 
     template_name = "adserver/staff/publisher-payout-list.html"
+    NON_STRIPE = "non-stripe"
     # Cache for 24 hours so we can finish payouts
     CACHE_SECONDS = 3600 * 24
 
@@ -129,7 +133,9 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         queryset = Publisher.objects.filter(skip_payouts=False)
         if publisher_slug:
             queryset = queryset.filter(slug__startswith=publisher_slug)
-        if payout_method:
+        if payout_method == self.NON_STRIPE:
+            queryset = queryset.exclude(payout_method=PAYOUT_STRIPE)
+        elif payout_method:
             queryset = queryset.filter(payout_method=payout_method)
 
         payouts = {}
@@ -233,7 +239,10 @@ class PublisherPayoutView(StaffUserMixin, TemplateView):
         context["sort"] = sort
         context["sort_options"] = self.SORT_OPTIONS
         context["boolean_options"] = [["", "---"], ["True", "True"], ["False", "False"]]
-        context["payout_method_options"] = list(PUBLISHER_PAYOUT_METHODS)
+        context["payout_method_options"] = [
+            *PUBLISHER_PAYOUT_METHODS,
+            (self.NON_STRIPE, _("Everything except Stripe")),
+        ]
         return context
 
     @staticmethod
@@ -285,7 +294,35 @@ class PublisherStartPayoutView(StaffUserMixin, FormView):
         initial["payout_method"] = self.publisher.get_payout_method_display()
         return initial
 
+    def get(self, request, *args, **kwargs):
+        publisher = get_object_or_404(Publisher, slug=self.kwargs["publisher_slug"])
+        return self.redirect_if_started(publisher) or super().get(
+            request, *args, **kwargs
+        )
+
+    def redirect_if_started(self, publisher):
+        """Redirect if this month's payout was already emailed or paid."""
+        today = timezone.now()
+        payout = publisher.payouts.filter(
+            date__month=today.month, date__year=today.year, status__in=(EMAILED, PAID)
+        ).last()
+        if not payout:
+            return None
+        messages.warning(
+            self.request,
+            _("A payout for %(publisher)s was already started this month (%(status)s).")
+            % {"publisher": publisher.name, "status": payout.get_status_display()},
+        )
+        if payout.status == EMAILED:
+            return redirect("staff-finish-publisher-payout", publisher.slug)
+        return redirect("staff-publisher-payouts")
+
     def form_valid(self, form):
+        # Lock the publisher so a resubmit or double click can't email twice
+        publisher = Publisher.objects.select_for_update().get(pk=self.publisher.pk)
+        if response := self.redirect_if_started(publisher):
+            return response
+
         self.object = form.save()
         result = super().form_valid(form)
         messages.success(
@@ -345,7 +382,20 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
-        self.get_object()
+        self.publisher = get_object_or_404(
+            Publisher, slug=self.kwargs["publisher_slug"]
+        )
+        # Pay only the payout shown on the page, never "the latest unpaid one",
+        # so a resubmitted form can't pay a different (stale) payout.
+        self.payout = get_object_or_404(
+            self.publisher.payouts.select_for_update(),
+            pk=request.POST.get("payout_id"),
+        )
+        if self.payout.status == PAID:
+            messages.warning(
+                request, _("This payout was already paid. Nothing was paid again.")
+            )
+            return redirect(self.payout.get_absolute_url())
 
         # Automatically handle payout via Stripe
         if self.payout.method == PAYOUT_STRIPE and self.request.POST.get(
@@ -383,7 +433,11 @@ class PublisherFinishPayoutView(StaffUserMixin, DetailView):
             amount=amount,
             currency="usd",
             destination=publisher.djstripe_account.id,
-            transfer_group=f"PublisherPayout-{ self.payout.id }",
+            transfer_group=f"PublisherPayout-{payout.id}",
+            # A request option (sent as the Idempotency-Key header), not a Transfer param.
+            # Prevents a duplicate transfer if this request is retried or resubmitted.
+            # https://docs.stripe.com/api/idempotent_requests
+            idempotency_key=f"publisher-payout-{payout.id}",
         )
         return Transfer.sync_from_stripe_data(xfer)
 
