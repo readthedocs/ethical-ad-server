@@ -336,6 +336,32 @@ class PublisherPayoutTests(TestCase):
         self.assertContains(list_response, "<td>$70.00</td>")
         self.assertContains(list_response, f"<span>{self.publisher1.name}</span>")
 
+    def test_list_view_payout_method_phases(self):
+        """Stripe and non-Stripe payouts can be listed separately."""
+        url = reverse("staff-publisher-payouts")
+        self.client.force_login(self.staff_user)
+        name = f"<span>{self.publisher1.name}</span>"
+
+        self.publisher1.payout_method = "stripe"
+        self.publisher1.save()
+
+        response = self.client.get(url + "?payout_method=stripe")
+        self.assertContains(response, name)
+        response = self.client.get(url + "?payout_method=non-stripe")
+        self.assertNotContains(response, name)
+        self.assertContains(response, "Everything except Stripe")
+
+        self.publisher1.payout_method = "paypal"
+        self.publisher1.save()
+
+        response = self.client.get(url + "?payout_method=stripe")
+        self.assertNotContains(response, name)
+        response = self.client.get(url + "?payout_method=non-stripe")
+        self.assertContains(response, name)
+        self.assertContains(
+            response, '<option value="non-stripe" selected>', html=False
+        )
+
     def test_list_view_paid_filter_with_emailed_payout(self):
         """An emailed-but-not-paid payout should count as unpaid, not paid."""
         url = reverse("staff-publisher-payouts")
