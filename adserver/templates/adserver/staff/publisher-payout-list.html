@@ -53,6 +53,29 @@
 
           </div>
 
+          <div class="form-row">
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_min_change">{% trans 'Min % change' %}</label>
+              <input type="number" step="any" id="id_min_change" class="form-control" name="min_change" value="{{ min_change }}" placeholder="{% trans 'e.g. -25' %}">
+            </div>
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_max_change">{% trans 'Max % change' %}</label>
+              <input type="number" step="any" id="id_max_change" class="form-control" name="max_change" value="{{ max_change }}" placeholder="{% trans 'e.g. 25' %}">
+            </div>
+
+            <div class="col-xl-3 col-md-6 col-12 mb-3">
+              <label class="col-form-label" for="id_sort">{% trans 'Sort' %}</label>
+              <select class="form-control" name="sort" id="id_sort">
+                {% for option, name in sort_options %}
+                  <option value="{{ option }}"{% if sort == option %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+
           <button class="btn btn-primary" type="submit">{% trans 'Filter report' %}</button>
         </form>
       </div>
@@ -87,7 +110,7 @@
             <td>{{ payout_data.first }}</td>
             <td>${{ payout_data.total }}</td>
             <td>
-            {% if payout_data.change %}
+            {% if payout_data.change is not None %}
             {{ payout_data.change|floatformat:2 }}%
             {% else %}
             {% trans "N/A" %}
