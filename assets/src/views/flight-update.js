@@ -19,7 +19,7 @@ function FlightUpdateViewModel(method) {
     if (Number(this.cpm()) > 0) {
       this.cpc(0);
       this.sold_clicks(0);
-      this.sold_impressions(parseInt(1000 * budget / Number(this.cpm())));
+      this.sold_impressions(Math.round(1000 * budget / Number(this.cpm())));
     }
     if (Number(this.cpc()) > 0) {
       this.cpm(0);

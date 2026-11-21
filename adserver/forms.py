@@ -909,7 +909,7 @@ class FlightRequestForm(FlightCreateForm):
 
             # Set sold impressions/clicks appropriately based on supplied budget
             if self.cleaned_data["budget"] > 0 and self.instance.cpm > 0:
-                self.instance.sold_impressions = int(
+                self.instance.sold_impressions = round(
                     self.cleaned_data["budget"] * 1000 / float(self.instance.cpm)
                 )
             elif self.cleaned_data["budget"] > 0 and self.instance.cpc > 0:
