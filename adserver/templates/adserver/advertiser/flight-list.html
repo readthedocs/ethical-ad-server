@@ -66,7 +66,7 @@
                 </td>
                 <td>{{ flight.start_date }}</td>
                 <td>{{ flight.end_date }}</td>
-                <td class="text-right">${{ flight.projected_total_value|floatformat:2 }}</td>
+                <td class="text-right">${{ flight.projected_total_value|floatformat:2|intcomma }}</td>
                 <td class="text-right">{{ flight.ctr|floatformat:3 }}%</td>
                 <td class="text-right">${{ flight.ecpc|floatformat:2 }}</td>
                 <td class="text-right">
@@ -94,7 +94,7 @@
           <tfoot>
             <tr>
               <td colspan="3"><strong>{% trans 'Total' %}</strong></td>
-              <td class="text-right"><strong>${{ group.total_budget|floatformat:2 }}</strong></td>
+              <td class="text-right"><strong>${{ group.total_budget|floatformat:2|intcomma }}</strong></td>
               <td colspan="3"></td>
             </tr>
           </tfoot>
