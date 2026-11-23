@@ -8,6 +8,8 @@ import urllib
 from collections import namedtuple
 from datetime import datetime
 from datetime import timedelta
+from decimal import ROUND_HALF_UP
+from decimal import Decimal
 
 import stripe
 from django.conf import settings
@@ -404,12 +406,16 @@ class FlightListView(AdvertiserAccessMixin, UserPassesTestMixin, ListView):
                 flight_groups_dict[f.state] = {
                     "state": f.state,
                     "flights": [],
-                    "total_budget": 0.0,
+                    "total_budget": Decimal("0.00"),
                 }
             flight_groups_dict[f.state]["flights"].append(f)
-            flight_groups_dict[f.state]["total_budget"] += float(
-                f.projected_total_value()
+            # Round each flight's projected value to cents using the same
+            # ROUND_HALF_UP rule as Django's floatformat:2 so the group total
+            # matches the sum of the displayed flight budgets.
+            flight_budget = Decimal(str(f.projected_total_value())).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
             )
+            flight_groups_dict[f.state]["total_budget"] += flight_budget
 
         context.update(
             {

@@ -238,11 +238,50 @@ class TestAdvertiserDashboardViews(TestCase):
         )
 
         response = self.client.get(url)
-        # self.flight is 2000 clicks * 2.0 CPC = $4000
-        # flight2 is 1000 clicks * 1.5 CPC = $1500
-        # Total = $5500.00
+        # self.flight is 2000 clicks * 2.0 CPC = $4,000.00
+        # flight2 is 1000 clicks * 1.5 CPC = $1,500.00
+        # Total = $5,500.00
+        self.assertContains(response, "$4,000.00")
+        self.assertContains(response, "$1,500.00")
         self.assertContains(response, "Total")
-        self.assertContains(response, "$5500.00")
+        self.assertContains(response, "$5,500.00")
+
+    def test_flight_list_total_budget_rounding(self):
+        """Total budget matches the sum of displayed rounded flight budgets."""
+        url = reverse("flight_list", kwargs={"advertiser_slug": self.advertiser.slug})
+        self.client.force_login(self.user)
+
+        # Create 4 upcoming CPM flights whose sold_impressions were truncated from
+        # whole-dollar budgets ($64k, $40k, $12k, $4k) at $5.10 CPM.
+        # Each flight's unrounded projected_total_value() is slightly under the
+        # whole dollar (within half a cent), so each displays as .00 individually,
+        # while their unrounded sum is 119999.991 (which would round to $119,999.99).
+        cpm = 5.10
+        start_date = get_ad_day().date() + datetime.timedelta(days=10)
+        end_date = get_ad_day().date() + datetime.timedelta(days=40)
+        for idx, budget in enumerate((64000, 40000, 12000, 4000), start=1):
+            get(
+                Flight,
+                name=f"Upcoming CPM Flight {idx}",
+                slug=f"upcoming-cpm-flight-{idx}",
+                campaign=self.campaign,
+                live=True,
+                cpc=0,
+                sold_clicks=0,
+                cpm=cpm,
+                sold_impressions=int(budget * 1000 / cpm),
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "$64,000.00")
+        self.assertContains(response, "$40,000.00")
+        self.assertContains(response, "$12,000.00")
+        self.assertContains(response, "$4,000.00")
+        self.assertContains(response, "$120,000.00")
+        self.assertNotContains(response, "$119,999.99")
 
     def test_flight_detail_view(self):
         url = reverse(
@@ -859,6 +898,36 @@ class TestAdvertiserDashboardViews(TestCase):
         resp = self.client.post(url, data=data, follow=True)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Successfully setup a new")
+
+        # Modeled on a CPM flight rounds sold_impressions to the nearest integer
+        cpm_flight = get(
+            Flight,
+            name="Old CPM Flight",
+            slug="old-cpm-flight",
+            campaign=self.campaign,
+            live=False,
+            cpc=0,
+            sold_clicks=0,
+            cpm=5.95,
+            sold_impressions=672269,
+            targeting_parameters={},
+            start_date=today - datetime.timedelta(days=30),
+            end_date=today - datetime.timedelta(days=1),
+        )
+        cpm_data = {
+            **data,
+            "name": "Renewed CPM Flight",
+            "budget": "4000",
+        }
+        resp = self.client.post(
+            url + "?old_flight=" + cpm_flight.slug + "&next=step-2",
+            data=cpm_data,
+            follow=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        renewed_cpm_flight = Flight.objects.get(name="Renewed CPM Flight")
+        # 4000 * 1000 / 5.95 = 672268.9075... -> rounds to 672269 (not truncated to 672268)
+        self.assertEqual(renewed_cpm_flight.sold_impressions, 672269)
 
     def test_ad_detail_view(self):
         url = reverse(
