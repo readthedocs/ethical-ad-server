@@ -378,6 +378,8 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 ACCOUNT_ADAPTER = "adserver.auth.adapters.AdServerAccountAdapter"
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1
+# Don't email unknown users who try a password reset
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 # https://docs.allauth.org/en/dev/account/advanced.html#custom-user-models
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
