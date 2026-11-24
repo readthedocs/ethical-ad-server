@@ -332,6 +332,7 @@ class Publisher(TimeStampedModel, IndestructibleModel):
         blank=True,
     )
 
+    # Deprecated - all publishers should allow this
     unauthed_ad_decisions = models.BooleanField(
         default=True,
         help_text=_(
