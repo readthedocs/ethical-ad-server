@@ -1272,6 +1272,7 @@ def check_publisher_metrics_change(
     difference_threshold,
     min_views,
     check_increase_only=False,
+    min_revenue_diff=0,
 ):
     """
     Check if a group of publishers' metrics have changed significantly between two periods.
@@ -1288,6 +1289,7 @@ def check_publisher_metrics_change(
     :param difference_threshold: Notify of differences larger than this (e.g., 0.25 = 25%)
     :param min_views: Don't notify unless there's at least this many total views
     :param check_increase_only: If True, only notify on increases, not decreases
+    :param min_revenue_diff: Don't notify unless revenue changed by at least this many dollars
     """
     for publisher in publishers:
         # Generate a report for the current period
@@ -1319,13 +1321,21 @@ def check_publisher_metrics_change(
         previous_views = previous_report.total["views"]
         total_views = current_views + previous_views
 
+        revenue_diff = abs(
+            current_report.total["revenue"] - previous_report.total["revenue"]
+        )
+
         if current_value > 0 and previous_value > 0:
             if check_increase_only:
                 metric_diff = (current_value / previous_value) - 1
             else:
                 metric_diff = abs((current_value / previous_value) - 1)
 
-            if metric_diff > difference_threshold and total_views >= min_views:
+            if (
+                metric_diff > difference_threshold
+                and total_views >= min_views
+                and revenue_diff >= min_revenue_diff
+            ):
                 perc_diff = calculate_percent_diff(current_value, previous_value)
                 yield publisher, current_value, previous_value, perc_diff
 
@@ -1385,12 +1395,15 @@ def notify_of_publisher_changes(difference_threshold=0.33, min_views=10_000):
 
 
 @app.task()
-def notify_of_daily_traffic_spikes(difference_threshold=2.0, min_views=1_000):
+def notify_of_daily_traffic_spikes(
+    difference_threshold=2.0, min_views=1_000, min_revenue_diff=10
+):
     """
     Send a notification when a publisher's day-over-day traffic spikes.
 
     :param difference_threshold: Notify of increases larger than this (2.0 = 200%)
     :param min_views: Don't notify unless there's at least this many views in the current day
+    :param min_revenue_diff: Don't notify unless revenue changed by at least this many dollars
     """
     yesterday = get_ad_day() - datetime.timedelta(days=1)
     day_before_yesterday = yesterday - datetime.timedelta(days=1)
@@ -1412,6 +1425,7 @@ def notify_of_daily_traffic_spikes(difference_threshold=2.0, min_views=1_000):
         difference_threshold=difference_threshold,
         min_views=min_views,
         check_increase_only=True,
+        min_revenue_diff=min_revenue_diff,
     ):
         log.info(
             "Publisher %s: %s was %s %s and %s %s.",
