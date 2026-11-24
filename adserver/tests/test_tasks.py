@@ -526,6 +526,11 @@ class TasksTest(BaseAdModelsTestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
 
+        # No messages because the revenue change ($12) is below the dollar threshold
+        notify_of_publisher_changes(min_views=100, min_revenue_diff=20)
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
+
     def test_notify_of_daily_traffic_spikes(self):
         # Publisher changes only apply to paid campaigns
         self.publisher.allow_paid_campaigns = True

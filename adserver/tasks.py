@@ -1341,12 +1341,15 @@ def check_publisher_metrics_change(
 
 
 @app.task()
-def notify_of_publisher_changes(difference_threshold=0.33, min_views=10_000):
+def notify_of_publisher_changes(
+    difference_threshold=0.33, min_views=10_000, min_revenue_diff=10
+):
     """
     Send a notification when a publisher's main metrics change week to week.
 
     :param difference_threshold: Notify of differences larger than this (0.33 = 33%)
     :param min_views: Don't notify unless there's at least this many views (between both weeks)
+    :param min_revenue_diff: Don't notify unless revenue changed by at least this many dollars
     """
     a_week_ago = get_ad_day() - datetime.timedelta(days=7)
     two_weeks_ago = a_week_ago - datetime.timedelta(days=7)
@@ -1367,6 +1370,7 @@ def notify_of_publisher_changes(difference_threshold=0.33, min_views=10_000):
         previous_end=a_week_ago,
         difference_threshold=difference_threshold,
         min_views=min_views,
+        min_revenue_diff=min_revenue_diff,
     ):
         log.info(
             "Publisher %s: %s was %s %s and %s %s.",
