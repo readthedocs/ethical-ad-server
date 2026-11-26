@@ -526,6 +526,11 @@ class TasksTest(BaseAdModelsTestCase):
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
 
+        # No messages because the revenue change ($12) is below the dollar threshold
+        notify_of_publisher_changes(min_views=100, min_revenue_diff=20)
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
+
     def test_notify_of_daily_traffic_spikes(self):
         # Publisher changes only apply to paid campaigns
         self.publisher.allow_paid_campaigns = True
@@ -543,14 +548,15 @@ class TasksTest(BaseAdModelsTestCase):
         yesterday = get_ad_day() - datetime.timedelta(days=1)
         day_before = yesterday - datetime.timedelta(days=1)
 
-        # Add 1000 views to yesterday
-        for _ in range(100):
+        # Add 100 views to yesterday, 6 of them clicked ($2 CPC = $12 revenue)
+        for i in range(100):
             get(
                 Offer,
                 advertisement=self.ad1,
                 publisher=self.publisher,
                 date=yesterday,
                 viewed=True,
+                clicked=i < 6,
             )
 
         # Add 10 views to the day before
@@ -582,6 +588,11 @@ class TasksTest(BaseAdModelsTestCase):
 
         # No messages because it's below the minimum views
         notify_of_daily_traffic_spikes(min_views=1000)
+        messages = backend.retrieve_messages()
+        self.assertEqual(len(messages), 0)
+
+        # No messages because the revenue change ($12) is below the dollar threshold
+        notify_of_daily_traffic_spikes(min_views=100, min_revenue_diff=20)
         messages = backend.retrieve_messages()
         self.assertEqual(len(messages), 0)
 
